@@ -1,0 +1,199 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.dreamsportslabs</groupId>
+  <artifactId>guardian</artifactId>
+  <version>0.0.19</version>
+
+  <packaging>jar</packaging>
+  <name>guardian</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <app.release.artifact>/target/guardian</app.release.artifact>
+    <google.guava.version>33.3.1-jre</google.guava.version>
+    <google-api-client.version>2.7.0</google-api-client.version>
+    <fusionauth-jwt.version>5.3.3</fusionauth-jwt.version>
+    <slf4j.version>2.0.7</slf4j.version>
+    <logback.version>1.5.8</logback.version>
+    <vertx.version>4.5.10</vertx.version>
+    <vertx-rest.version>1.1.0</vertx-rest.version>
+    <guice.version>5.1.0</guice.version>
+    <lombok.version>1.18.34</lombok.version>
+    <maven-compiler-version>3.8.1</maven-compiler-version>
+    <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+    <caffeine.version>3.1.8</caffeine.version>
+
+    <!-- Use an older version until https://issues.apache.org/jira/browse/MRESOURCES-237 -->
+    <maven.resources.plugin.version>2.7</maven.resources.plugin.version>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.dream11</groupId>
+      <artifactId>vertx-rest</artifactId>
+      <version>${vertx-rest.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-config-hocon</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-client</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-redis-client</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java3</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>net.logstash.logback</groupId>
+      <artifactId>logstash-logback-encoder</artifactId>
+      <version>${logstash-logback-encoder.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${google.guava.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.api-client</groupId>
+      <artifactId>google-api-client</artifactId>
+      <version>${google-api-client.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>${guice.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-config</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+
+    <dependency>
+      <artifactId>vertx-mysql-client</artifactId>
+      <groupId>io.vertx</groupId>
+      <version>${vertx.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>${caffeine.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.fusionauth</groupId>
+      <artifactId>fusionauth-jwt</artifactId>
+      <version>${fusionauth-jwt.version}</version>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-stack-depchain</artifactId>
+        <version>${vertx.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-version}</version>
+        <configuration>
+          <source>17</source>
+          <target>17</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.3</version>
+        <executions>
+          <execution>
+            <id>create-fat-jar</id>
+            <phase>none</phase>
+          </execution>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <transformers>
+                <transformer
+                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Main-Class>com.dreamsportslabs.guardian.Main</Main-Class>
+                    <Main-Verticle>com.dreamsportslabs.guardian.verticle.MainVerticle</Main-Verticle>
+                    <X-Compile-Source-JDK>17</X-Compile-Source-JDK>
+                    <X-Compile-Target-JDK>17</X-Compile-Target-JDK>
+                  </manifestEntries>
+                </transformer>
+                <transformer
+                    implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+              <outputFile>${project.basedir}/${app.release.artifact}/${project.artifactId}-fat.jar
+              </outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-maven-plugin</artifactId>
+        <version>4.29.2</version>
+        <configuration>
+        <changeLogFile>src/main/resources/changelog.xml</changeLogFile>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.28</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

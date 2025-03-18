@@ -1,0 +1,40 @@
+<configuration>
+  <property name="log.directory.path" value="/var/logs"/>
+  <property name="log.file.name" value="guardian.log"/>
+
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${log.directory.path}/${log.file.name}</file>
+    <append>true</append>
+
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <fieldNames>
+        <thread>process.thread.name</thread>
+        <level>log.level</level>
+        <logger>log.logger</logger>
+        <stackTrace>error.stack_trace</stackTrace>
+      </fieldNames>
+      <includeCallerData>${includeCallerData:-false}</includeCallerData>
+    </encoder>
+
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${log.directory.path}/archived/guardian.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+      <maxFileSize>512MB</maxFileSize>
+      <maxHistory>7</maxHistory>
+      <totalSizeCap>5GB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="FILE"/>
+    <includeCallerData>${includeCallerData:-false}</includeCallerData>
+    <neverBlock>true</neverBlock>
+  </appender>
+
+  <logger name="com.dream11" level="info"/>
+  <logger name="com.dream11.rest.filter.LoggerFilter" level="info"/>
+
+  <root level="info">
+    <appender-ref ref="ASYNC_FILE"/>
+  </root>
+
+</configuration>

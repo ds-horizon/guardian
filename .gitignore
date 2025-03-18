@@ -1,0 +1,17 @@
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+.idea/**
+**/*.iml
+
+### generated ###
+**/generated/*
+**/asciidoc/*
+target/
+
+logs/*
+.vscode
+.config
+.env
