@@ -1,67 +1,86 @@
-# Guardian
+<div align="center">
+  <h1>Guardian</h1>
+  <p><strong>Enterprise-grade Authentication & Authorization for Modern Applications</strong></p>
+</div>
 
-Guardian is an open source Auth solution that lets you-
+## 🌟 Overview
 
-- Implement Login and Registration flows for your native apps or web apps
-- Integrate your existing User Service and be in complete control of your data
-- Become an OpenID Provider, your users can now Login to other apps using your APIs!
+Guardian is a robust, open-source authentication and authorization solution designed for modern applications.
+It provides a comprehensive suite of authentication methods while giving you complete control over your user data.
 
-and much more! You get the flexibility of maintaining your own users
-while Guardian manages the Authentication and Authorization for you.
+### Why Guardian?
 
-## Table of Contents
+- 🔐 **Enterprise-Grade Security**: Built with security best practices and regular security audits
+- 🎯 **Flexible Integration**: Works seamlessly with your existing user service
+- 🚀 **Quick Implementation**: Get up and running in minutes
+- 📱 **Multi-Platform Support**: Native support for web, mobile, and API authentication
 
-1. [Features](#Features)
-2. [Quickstart](#Quickstart)
-3. [Development & Contribution](#development--contribution)
+## 📋 Table of Contents
 
-## Features
+- [Features](#-features)
+- [Getting Started](#-getting-started)
+- [Contributing](#-contributing)
+- [Community](#-community)
+- [License](#-license)
 
-- Register and Login users using
-    - Mobile and Email OTPs (Passwordless)
-    - Username and password
-    - Social Identity Providers (Google, Facebook)
-- Manage Sessions
-    - Get sessions on all devices
-    - Logout from one device
-    - Logout from all devices
-- OpenID provider
-    - Enable your users to Login on other applications via their accounts on your platform
-- Analytics
+## ✨ Features
 
-## Quickstart
+### Authentication Methods
+- 📱 **Passwordless Authentication**
+  - SMS/Email OTP
+- 🔑 **Traditional Authentication**
+  - Username/Password
+- 🌐 **Social Authentication**
+  - Google
+  - Facebook
+  - Custom Providers
 
-You'll need the following dependencies to start working with Guardian on your machine
+### Session Management
+
+- 📊 Multi-device session tracking
+- 🔒 Secure session management
+- ⚡ Real-time session invalidation
+- 🔄 Token refresh mechanisms
+
+### Developer Experience
+
+- 🎯 RESTful APIs
+- 📚 Comprehensive SDK support
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Docker
+- Maven
+
+### Quick Start
+
+1. Clone the repository:
+```bash
+git clone https://github.com/dream-sports-labs/guardian.git
+cd guardian
 ```
-docker
-maven
-```
-Once your dependencies are installed, run the following command-
-```sh
+
+2. Start Guardian:
+```bash
 ./quick-start.sh
 ```
 
-And, That's it! You should now have Guardian running on your local system.  
-Since this is a mock setup, all dependencies, user, sms and email are mocked, along with
-most of the tenant configs.  
+3. Test the setup with a passwordless flow:
 
-
-Let's test the passwordless flow using the signinup flow to register and login a new user. Use the following API to
-start the passwordless flow.  
-
-```curl
+```bash
+# Initialize passwordless authentication
 curl --location 'localhost:8080/v1/passwordless/init' \
 --header 'Content-Type: application/json' \
 --header 'tenant-id: tenant1' \
 --data '{
   "flow": "signinup",
   "responseType": "token",
-  "contacts": [
-    {
-      "channel": "sms",
-      "identifier": "9999999999"
-    }
-  ],
+  "contacts": [{
+    "channel": "sms",
+    "identifier": "9999999999"
+  }],
   "metaInfo": {
     "ip": "127.0.0.1",
     "location": "localhost",
@@ -69,27 +88,36 @@ curl --location 'localhost:8080/v1/passwordless/init' \
     "source": "app"
   }
 }'
-```
 
-To complete the passwordless flow, hit the following API.
-Since this is a mock setup, intead of an actual random OTP, a mock otp (999999) is generated instead. Update the state
-you got from the response of the init API. 
-
-```curl
+# Complete authentication (using mock OTP for development)
 curl --location 'localhost:8080/v1/passwordless/complete' \
 --header 'Content-Type: application/json' \
 --header 'tenant-id: tenant1' \
 --data '{
-  "state": "fill-state-here",
+  "state": "<state-from-init-response>",
   "otp": "999999"
 }'
 ```
 
-Congrats! This user is now registered and logged in to your app.  
-You should now have the user credentials (acessToken and refreshToken) which can be used by your client application to
-access your backend APIs securely. 
- 
+## 🤝 Contributing
 
-## Development & Contribution
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
 
-Link to CONTRIBUTING.MD
+- Code of Conduct
+- Development Process
+- Pull Request Process
+- Coding Standards
+
+## 👥 Community
+
+- [GitHub Discussions](https://github.com/dream-sports-labs/guardian/discussions)
+
+## 📄 License
+
+Guardian is licensed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by the Guardian team and contributors</sub>
+</div>

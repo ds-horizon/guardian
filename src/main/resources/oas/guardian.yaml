@@ -13,12 +13,7 @@ paths:
 
         The first time this API is called, a unique state is returned in the response. Every subsequent request to init (to resend otp), must include the state parameter in the request, otherwise it is treated as a fresh request.
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -54,12 +49,7 @@ paths:
       description: |
         API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -102,12 +92,7 @@ paths:
         This API uses the clients post user API to create a new user account with the provided credentials.
 
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -145,12 +130,7 @@ paths:
 
         This API uses the clients post authenticate user API to validate if the username password combination is correct.
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -185,12 +165,7 @@ paths:
       description: |
         API to signin, signup or signinup using the facebook access_token. The access_token is verified via the https://graph.facebook.com/me endpoint.
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -228,12 +203,7 @@ paths:
 
         The id token is verified statelessly via the public keys exposed by Google using the JWKS URI.
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -270,12 +240,7 @@ paths:
         API to get a new access token using the refresh token.
 
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -314,12 +279,7 @@ paths:
         If isUniversalLogout is set to true, then all refresh tokens are invalidated.
 
       parameters:
-        - name: x-api-key
-          in: header
-          description: API key of the client for integrating Guardian
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
           application/json:
@@ -342,6 +302,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
+  parameters:
+    TenantIdHeader:
+      name: tenant-id
+      in: header
+      description: tenant-id of the client integrating with guardian
+      required: true
+      schema:
+        type: string
   schemas:
     ErrorResponse:
       type: object
