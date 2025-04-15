@@ -1,4 +1,4 @@
-INSERT INTO tenant (id, name) VALUES ('tenant1', 'tenant 1');
+insert into tenant (id, name) VALUES ('tenant1', 'tenant 1');
 insert into auth_code_config (tenant_id, ttl, length) values ('tenant1', 900, 50);
 insert into email_config (tenant_id, is_ssl_enabled, host, port, send_email_path, template_name, template_params) values ('tenant1', 0, 'mock', 5000, '/sendEmail', 'default', '{}');
 insert into fb_config (tenant_id, app_id, app_secret) values ('tenant1', 'id', 'secret');

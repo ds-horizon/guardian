@@ -27,7 +27,7 @@ public class RefreshTokenDao {
 
   public Completable saveRefreshToken(RefreshTokenModel refreshTokenModel) {
     return mysqlClient
-        .getMasterClient()
+        .getWriterPool()
         .preparedQuery(SAVE_REFRESH_TOKEN)
         .rxExecute(
             Tuple.tuple(
@@ -46,7 +46,7 @@ public class RefreshTokenDao {
 
   public Maybe<String> getRefreshToken(String refreshToken, String tenantId) {
     return mysqlClient
-        .getSlaveClient()
+        .getReaderPool()
         .preparedQuery(VALIDATE_REFRESH_TOKEN)
         .rxExecute(Tuple.of(tenantId, refreshToken))
         .filter(rowSet -> rowSet.size() > 0)
@@ -55,7 +55,7 @@ public class RefreshTokenDao {
 
   public Completable invalidateRefreshToken(String refreshToken, String tenantId) {
     return mysqlClient
-        .getMasterClient()
+        .getWriterPool()
         .preparedQuery(INVALIDATE_REFRESH_TOKEN)
         .rxExecute(Tuple.of(tenantId, refreshToken))
         .ignoreElement();
@@ -63,7 +63,7 @@ public class RefreshTokenDao {
 
   public Completable invalidateAllRefreshTokensForUser(String userId, String tenantId) {
     return mysqlClient
-        .getMasterClient()
+        .getWriterPool()
         .preparedQuery(INVALIDATE_ALL_REFRESH_TOKENS_FOR_USER)
         .rxExecute(Tuple.of(tenantId, userId))
         .ignoreElement();
@@ -71,7 +71,7 @@ public class RefreshTokenDao {
 
   public Single<List<String>> getRefreshTokens(String userId, String tenantId) {
     return mysqlClient
-        .getSlaveClient()
+        .getReaderPool()
         .preparedQuery(GET_ALL_REFRESH_TOKENS_FOR_USER)
         .rxExecute(Tuple.of(tenantId, userId))
         .map(rows -> JsonUtils.rowSetToList(rows, String.class));

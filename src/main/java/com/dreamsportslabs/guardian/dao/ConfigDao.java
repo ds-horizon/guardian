@@ -102,7 +102,7 @@ public class ConfigDao {
 
   private <T> Single<T> getConfigFromDb(String tenantId, Class<T> configType, String query) {
     return mysqlClient
-        .getSlaveClient()
+        .getReaderPool()
         .preparedQuery(query)
         .execute(Tuple.of(tenantId))
         .filter(rowSet -> rowSet.size() > 0)

@@ -19,7 +19,6 @@ public class Main extends Launcher {
 
   @Override
   public void beforeStartingVertx(VertxOptions vertxOptions) {
-    // Todo: customize options later on (CONFIG)
     vertxOptions
         .setEventLoopPoolSize(this.getNumOfCores())
         .setPreferNativeTransport(true)

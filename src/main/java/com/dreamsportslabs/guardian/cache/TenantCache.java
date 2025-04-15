@@ -18,18 +18,17 @@ public class TenantCache {
   private static TenantCache tenantCache;
   private final Registry registry;
 
-  private TenantCache() {
+  private TenantCache(int refreshInterval) {
     this.cache =
         Caffeine.newBuilder()
-            // Todo: maybe make the duration configurable someplace (CONFIG)
-            .refreshAfterWrite(Duration.ofSeconds(60))
+            .refreshAfterWrite(Duration.ofSeconds(refreshInterval))
             .buildAsync(getLoader(GuiceInjector.getGuiceInjector().getInstance(ConfigDao.class)));
     this.registry = GuiceInjector.getGuiceInjector().getInstance(Registry.class);
   }
 
-  public static synchronized TenantCache getInstance() {
+  public static synchronized TenantCache getInstance(int refreshInterval) {
     if (tenantCache == null) {
-      tenantCache = new TenantCache();
+      tenantCache = new TenantCache(refreshInterval);
     }
 
     return tenantCache;
