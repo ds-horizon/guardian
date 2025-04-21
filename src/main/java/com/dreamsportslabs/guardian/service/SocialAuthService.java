@@ -171,7 +171,7 @@ public class SocialAuthService {
   private Provider getGoogleProviderData(JsonObject googleUserData, String idToken) {
     return Provider.builder()
         .name(GOOGLE)
-        .providerUserId(googleUserData.getString("id"))
+        .providerUserId(googleUserData.getString("sub"))
         .data(googleUserData.getMap())
         .credentials(Map.of("id_token", idToken))
         .build();
