@@ -66,13 +66,11 @@ public class SocialAuthService {
                 return userService.createUser(
                     getUserDtoFromFbUserData(fbUserData, dto.getAccessToken()), headers, tenantId);
               } else {
-                return userService
-                    .addProvider(
-                        userRes.getString(USERID),
-                        headers,
-                        getFbProviderData(fbUserData, dto.getAccessToken()),
-                        tenantId)
-                    .map(res -> userRes);
+                return userService.addProvider(
+                    userRes.getString(USERID),
+                    headers,
+                    getFbProviderData(fbUserData, dto.getAccessToken()),
+                    tenantId);
               }
             })
         .flatMap(
@@ -140,13 +138,11 @@ public class SocialAuthService {
                     headers,
                     tenantId);
               } else {
-                return userService
-                    .addProvider(
-                        userRes.getString(USERID),
-                        headers,
-                        getGoogleProviderData(googleUserData, dto.getIdToken()),
-                        tenantId)
-                    .map(res -> userRes);
+                return userService.addProvider(
+                    userRes.getString(USERID),
+                    headers,
+                    getGoogleProviderData(googleUserData, dto.getIdToken()),
+                    tenantId);
               }
             })
         .flatMap(
