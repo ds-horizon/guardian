@@ -17,8 +17,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Package
-        run: mvn clean package -q -DskipTests
+      - name: Test and Package
+        env:
+          GUARDIAN_MYSQL_USER: user
+          GUARDIAN_MYSQL_PASSWORD: password
+          GUARDIAN_MYSQL_DATABASE: guardian
+          GUARDIAN_REDIS_PORT: 6379
+        run: mvn clean verify -Dlogback.configurationFile=logback/logback-development.xml
 
       - name: Upload Artefact
         # v2.2.1

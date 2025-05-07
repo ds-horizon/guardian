@@ -9,11 +9,9 @@
     </encoder>
   </appender>
 
-  <logger name="com.dream11" level="trace"/>
-  <logger name="io.netty" level="info"/>
-  <logger name="org.jboss.resteasy" level="info"/>
+  <logger name="com.dreamsportslabs" level="debug"/>
 
-  <root level="debug">
+  <root level="info">
     <appender-ref ref="STDOUT"/>
   </root>
 
