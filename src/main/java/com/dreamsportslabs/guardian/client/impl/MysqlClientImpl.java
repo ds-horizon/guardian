@@ -15,9 +15,7 @@ import io.vertx.mysqlclient.MySQLConnectOptions;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.mysqlclient.MySQLPool;
 import io.vertx.sqlclient.PoolOptions;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class MysqlClientImpl implements MysqlClient {
   private final Vertx vertx;
   private final JsonObject config;
@@ -40,7 +38,6 @@ public class MysqlClientImpl implements MysqlClient {
   }
 
   private void createConnectionPool() {
-    log.info(config.toString());
     MySQLConnectOptions writerConnectOptions =
         new MySQLConnectOptions()
             .setHost(this.config.getString(MYSQL_WRITER_HOST))
