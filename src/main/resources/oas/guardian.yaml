@@ -1,0 +1,510 @@
+openapi: 3.0.1
+info:
+  title: Guardian
+  version: "1.0.0"
+paths:
+  /v1/passwordless/init:
+    post:
+      tags:
+        - Passwordless
+      summary: Initate the passwordless flow
+      description: |
+        API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
+
+        The first time this API is called, a unique state is returned in the response. Every subsequent request to init (to resend otp), must include the state parameter in the request, otherwise it is treated as a fresh request.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1PasswordlessInitRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully sent an OTP
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/State'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/passwordless/complete:
+    post:
+      tags:
+        - Passwordless
+      summary: Complete the passwordless flow
+      description: |
+        API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1PasswordlessCompleteRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed in or up
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Tokens'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/signup:
+    post:
+      tags:
+        - Password
+      summary: Signup a new user using username and password
+      description: |
+        API to sign up a new user using username and password.
+
+        If the username already exists, the API will return a failure, otherwise a new user is created with the given username and password.
+
+        This API uses the clients get user API to ascertain if the username exists or not.
+
+        This API uses the clients post user API to create a new user account with the provided credentials.
+
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1SignupRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed up
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Tokens'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/signin:
+    post:
+      tags:
+        - Password
+      summary: Signin existing user using username and password
+      description: |
+        This API signs in an existing user using username and password.
+
+        This API uses the clients post authenticate user API to validate if the username password combination is correct.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1SigninRequestBody'
+      responses:
+        '200':
+          description: User is successfully signed in
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Tokens'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/auth/fb:
+    post:
+      tags:
+        - Social
+      summary: Signin, Signup or Signinup using the facebook access_token
+      description: |
+        API to signin, signup or signinup using the facebook access_token. The access_token is verified via the https://graph.facebook.com/me endpoint.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1AuthFbRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed in
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Tokens'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/auth/google:
+    post:
+      tags:
+        - Social
+      summary: Signin, Signup or Signinup user using ID token verification.
+      description: |
+        API to signin, signup or signinup a user using Google issued ID token.
+
+        The id token is verified statelessly via the public keys exposed by Google using the JWKS URI.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1AuthGoogleRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed up
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Tokens'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/refreshToken:
+    post:
+      tags:
+        - Session Management
+      summary: API to get a new access token using the refresh token
+      description: |
+        API to get a new access token using the refresh token.
+
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1RefreshTokenRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed up
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/RefreshToken'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/logout:
+    post:
+      tags:
+        - Session Management
+      summary: API to revoke sessions
+      description: |
+        API to revoke sessions.
+
+        If isUniversalLogout is set to true, then all refresh tokens are invalidated.
+
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1LogoutRequestBody'
+        required: true
+      responses:
+        '204':
+          description: User is successfully logged out
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  parameters:
+    TenantIdHeader:
+      name: tenant-id
+      in: header
+      description: tenant-id of the client integrating with guardian
+      required: true
+      schema:
+        type: string
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+              example: Something went wrong.
+    MetaInfo:
+      type: object
+      properties:
+        ip:
+          type: string
+        location:
+          type: string
+        deviceName:
+          type: string
+        source:
+          type: string
+    Template:
+      type: object
+      properties:
+        name:
+          type: string
+          example: templateName
+        params:
+          type: object
+          example:
+            variable-1: value-1
+            variable-2: value-2
+    Contact:
+      type: object
+      properties:
+        channel:
+          type: string
+          example: sms
+        identifier:
+          type: string
+          example: 999999999
+        template:
+          $ref: "#/components/schemas/Template"
+    V1PasswordlessInitRequestBody:
+      type: object
+      properties:
+        state:
+          type: string
+          example: state
+        flow:
+          type: string
+          example: signin
+        responseType:
+          type: string
+          example: token
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contact"
+        metaInfo:
+          $ref: '#/components/schemas/MetaInfo'
+    V1PasswordlessCompleteRequestBody:
+      type: object
+      properties:
+        state:
+          type: string
+          example: state
+        otp:
+          type: string
+          example: 123456
+    V1SignupRequestBody:
+      type: object
+      properties:
+        username:
+          type: string
+          example: JohnTheMan
+        password:
+          type: string
+          example: wordpass@1234
+        responseType:
+          type: string
+          example: token
+        metaInfo:
+          $ref: '#/components/schemas/MetaInfo'
+    V1SigninRequestBody:
+      type: object
+      properties:
+        username:
+          type: string
+          example: JohnTheMan
+        password:
+          type: string
+          example: wordpass@1234
+        responseType:
+          type: string
+          example: token
+        metaInfo:
+          $ref: '#/components/schemas/MetaInfo'
+    V1AuthGoogleRequestBody:
+      type: object
+      properties:
+        idToken:
+          type: string
+        responseType:
+          type: string
+          example: token
+        flow:
+          type: string
+        metaInfo:
+          $ref: '#/components/schemas/MetaInfo'
+    V1AuthFbRequestBody:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        responseType:
+          type: string
+        flow:
+          type: string
+        metaInfo:
+          $ref: '#/components/schemas/MetaInfo'
+    V1RefreshTokenRequestBody:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+    V1LogoutRequestBody:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+        isUniversalLogout:
+          type: boolean
+          default: false
+    State:
+      type: object
+      properties:
+        state:
+          type: string
+          example: accesstoken
+        tries:
+          type: number
+          example: 1
+        retriesLeft:
+          type: number
+          example: 4
+        resends:
+          type: number
+          example: 1
+        resendsLeft:
+          type: number
+          example: 4
+        resendAfter:
+          type: number
+          example: 30
+        isNewUser:
+          type: boolean
+          example: true
+    Tokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: accesstoken
+          description: Short lived Bearer JWT token to access APIs.
+        refreshToken:
+          type: string
+          example: refreshToken
+          description: Long Lived token used to refresh access token.
+        idToken:
+          type: string
+          example: idToken
+          description: type of token. Only supports Bearer for now.
+        tokenType:
+          type: string
+          example: Bearer
+          description: type of token. Only supports Bearer for now.
+        expiresIn:
+          type: integer
+          example: 3600
+          description: expiry of the access token in seconds
+    RefreshToken:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: accesstoken
+          description: Short lived Bearer JWT token to access APIs.
+        tokenType:
+          type: string
+          example: Bearer
+          description: type of token. Only supports Bearer for now.
+        expiresIn:
+          type: integer
+          example: 3600
+          description: expiry of the access token in seconds
