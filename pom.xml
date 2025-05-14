@@ -5,7 +5,7 @@
 
   <groupId>com.dreamsportslabs</groupId>
   <artifactId>guardian</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2-SNAPSHOT</version>
 
   <packaging>jar</packaging>
   <name>guardian</name>
@@ -18,16 +18,23 @@
     <fusionauth-jwt.version>5.3.3</fusionauth-jwt.version>
     <slf4j.version>2.0.7</slf4j.version>
     <logback.version>1.5.8</logback.version>
-    <vertx.version>4.5.10</vertx.version>
+    <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     <vertx-rest.version>1.1.0</vertx-rest.version>
+    <vertx.version>4.5.10</vertx.version>
     <guice.version>5.1.0</guice.version>
     <lombok.version>1.18.34</lombok.version>
-    <maven-compiler-version>3.8.1</maven-compiler-version>
-    <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     <caffeine.version>3.1.8</caffeine.version>
+    <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
+    <rest-assured.version>5.5.1</rest-assured.version>
+    <hamcrest.version>3.0</hamcrest.version>
 
-    <!-- Use an older version until https://issues.apache.org/jira/browse/MRESOURCES-237 -->
-    <maven.resources.plugin.version>2.7</maven.resources.plugin.version>
+    <testcontainers-redis.version>2.2.2</testcontainers-redis.version>
+    <maven-compiler-version>3.8.1</maven-compiler-version>
+    <maven.failsafe.plugin.version>3.5.3</maven.failsafe.plugin.version>
+    <maven.jacoco.plugin.version>0.8.13</maven.jacoco.plugin.version>
+    <junit.version>5.12.2</junit.version>
+    <testcontainers.version>1.20.5</testcontainers.version>
+    <jacoco.it.exec-file.path>${project.build.directory}/coverage-reports/jacoco-it.exec</jacoco.it.exec-file.path>
   </properties>
 
   <dependencies>
@@ -116,6 +123,55 @@
       <artifactId>fusionauth-jwt</artifactId>
       <version>${fusionauth-jwt.version}</version>
     </dependency>
+
+    <!-- Test Dependencies Start-->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <version>${rest-assured.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>${hamcrest.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>mysql</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.redis</groupId>
+      <artifactId>testcontainers-redis</artifactId>
+      <version>${testcontainers-redis.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>${mysql-connector-java.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Test Dependencies End-->
   </dependencies>
 
   <dependencyManagement>
@@ -124,6 +180,22 @@
         <groupId>io.vertx</groupId>
         <artifactId>vertx-stack-depchain</artifactId>
         <version>${vertx.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -175,6 +247,67 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven.failsafe.plugin.version}</version>
+        <configuration>
+          <argLine>${failsafe.jacoco.args}</argLine>
+          <systemPropertyVariables>
+            <!-- Find Extensions automatically from META-INF/services directory-->
+            <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+          </systemPropertyVariables>
+        </configuration>
+
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${maven.jacoco.plugin.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>**/verticle/**</exclude>
+            <exclude>**/injection/**</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+
+          <execution>
+            <id>pre-integration-test</id>
+            <goals>
+              <goal>prepare-agent-integration</goal>
+            </goals>
+            <configuration>
+              <destFile>${jacoco.it.exec-file.path}</destFile>
+              <propertyName>failsafe.jacoco.args</propertyName>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>post-integration-test</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <configuration>
+              <dataFile>${jacoco.it.exec-file.path}</dataFile>
+              <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+            </configuration>
+          </execution>
+          <!-- TODO: add execution for coverage -->
+        </executions>
+
       </plugin>
     </plugins>
   </build>
