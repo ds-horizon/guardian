@@ -27,13 +27,16 @@
     <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
     <rest-assured.version>5.5.1</rest-assured.version>
     <hamcrest.version>3.0</hamcrest.version>
-
     <testcontainers-redis.version>2.2.2</testcontainers-redis.version>
     <maven-compiler-version>3.8.1</maven-compiler-version>
     <maven.failsafe.plugin.version>3.5.3</maven.failsafe.plugin.version>
     <maven.jacoco.plugin.version>0.8.13</maven.jacoco.plugin.version>
     <junit.version>5.12.2</junit.version>
     <testcontainers.version>1.20.5</testcontainers.version>
+    <hikari-cp.version>6.3.0</hikari-cp.version>
+    <jedis.version>6.0.0</jedis.version>
+    <liquibase.version>4.27.0</liquibase.version>
+    <wiremock.version>3.13.0</wiremock.version>
     <jacoco.it.exec-file.path>${project.build.directory}/coverage-reports/jacoco-it.exec</jacoco.it.exec-file.path>
   </properties>
 
@@ -165,9 +168,43 @@
     </dependency>
 
     <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <version>${liquibase.version}</version> <!-- Use latest stable -->
+    </dependency>
+
+    <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>${mysql-connector-java.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>${hikari-cp.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>${jedis.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>3.0.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock</artifactId>
+      <version>${wiremock.version}</version>
       <scope>test</scope>
     </dependency>
 

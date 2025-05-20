@@ -1,8 +1,8 @@
 package com.dreamsportslabs.guardian.service;
 
 import com.dreamsportslabs.guardian.dto.UserDto;
-import com.dreamsportslabs.guardian.dto.request.V1LoginRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1RegisterRequestDto;
+import com.dreamsportslabs.guardian.dto.request.V1SignInRequestDto;
+import com.dreamsportslabs.guardian.dto.request.V1SignUpRequestDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -15,8 +15,8 @@ public class PasswordAuth {
   private final UserService userService;
   private final AuthorizationService authorizationService;
 
-  public Single<Object> login(
-      V1LoginRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+  public Single<Object> signIn(
+      V1SignInRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return userService
         .authenticate(
             UserDto.builder()
@@ -32,8 +32,8 @@ public class PasswordAuth {
                     user, dto.getResponseType(), dto.getMetaInfo(), tenantId));
   }
 
-  public Single<Object> register(
-      V1RegisterRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+  public Single<Object> signUp(
+      V1SignUpRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return userService
         .createUser(
             UserDto.builder()

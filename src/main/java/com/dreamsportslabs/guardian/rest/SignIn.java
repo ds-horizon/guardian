@@ -2,7 +2,7 @@ package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
-import com.dreamsportslabs.guardian.dto.request.V1RegisterRequestDto;
+import com.dreamsportslabs.guardian.dto.request.V1SignInRequestDto;
 import com.dreamsportslabs.guardian.service.PasswordAuth;
 import com.google.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -18,21 +18,21 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Path("/v1/signup")
+@Path("/v1/signin")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-public class Register {
+public class SignIn {
   private final PasswordAuth passwordAuth;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public CompletionStage<Response> authenticate(
-      @Context HttpHeaders headers, V1RegisterRequestDto requestDto) {
+  public CompletionStage<Response> signIn(
+      @Context HttpHeaders headers, V1SignInRequestDto requestDto) {
     requestDto.validate();
-
     String tenantId = headers.getHeaderString(TENANT_ID);
+
     return passwordAuth
-        .register(requestDto, headers.getRequestHeaders(), tenantId)
+        .signIn(requestDto, headers.getRequestHeaders(), tenantId)
         .map(dto -> Response.ok(dto).build())
         .toCompletionStage();
   }
