@@ -11,14 +11,14 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class V1RegisterRequestDto {
+public class V1SignUpRequestDto {
   private String username;
   private String password;
   private String responseType;
   private MetaInfo metaInfo;
   @JsonIgnore private Map<String, Object> additionalInfo;
 
-  private V1RegisterRequestDto() {
+  private V1SignUpRequestDto() {
     this.additionalInfo = new HashMap<>();
     this.metaInfo = new MetaInfo();
   }
