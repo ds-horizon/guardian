@@ -36,7 +36,8 @@ public class ApplicationIoUtils {
     return fn.apply(spec);
   }
 
-  public static Response signIn(String tenantId, String username, String password, String responseType) {
+  public static Response signIn(
+      String tenantId, String username, String password, String responseType) {
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_TENANT_ID, tenantId);
 

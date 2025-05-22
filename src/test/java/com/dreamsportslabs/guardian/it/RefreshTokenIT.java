@@ -12,7 +12,6 @@ import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.dreamsportslabs.guardian.utils.DbUtils;
-import com.github.tomakehurst.wiremock.WireMockServer;
 import io.fusionauth.jwt.domain.JWT;
 import io.fusionauth.jwt.rsa.RSAVerifier;
 import io.restassured.response.Response;
@@ -26,20 +25,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class RefreshTokenIT {
-
-  private WireMockServer wireMockServer;
-
   @BeforeAll
   public static void beforeAll() throws SQLException, IOException {
     DbUtils.executeSqlFile("src/test/resources/test.sql");
   }
 
   @Test()
-  public void test1() {
+  @DisplayName("Should generate access token for a valid refresh token")
+  public void testValidRefreshToken() {
     // Arrange
     String userId = "1234";
     String refreshToken =
@@ -50,7 +48,6 @@ public class RefreshTokenIT {
     Response response = refreshToken("tenant1", refreshToken);
 
     // Validate
-
     response.then().statusCode(HttpStatus.SC_OK).body("accessToken", isA(String.class));
     String accessToken = response.getBody().jsonPath().getString("accessToken");
     Path path = Paths.get("src/test/resources/test-data/tenant1-public-key.pem");
@@ -66,7 +63,54 @@ public class RefreshTokenIT {
     long iat = ((ZonedDateTime) claims.get(JWT_CLAIM_IAT)).toInstant().toEpochMilli() / 1000;
     assertThat(exp - iat, equalTo(900L));
 
+    response.then().body("expiresIn", equalTo((int) (exp - iat)));
+
     assertThat(
         claims.get(JWT_CLAIM_RFT_ID), equalTo(DigestUtils.md5Hex(refreshToken).toUpperCase()));
+  }
+
+  @Test()
+  @DisplayName("Should return error in case of invalid refresh token")
+  public void testInvalidRefreshToken() {
+    // Arrange
+    String refreshToken = "a-random-invalid-refresh-token";
+
+    // Act
+    Response response = refreshToken("tenant1", refreshToken);
+
+    // Validate
+    response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+  }
+
+  @Test()
+  @DisplayName("Should return error in case of invalid refresh token another tenant")
+  public void testInvalidRefreshToken2() {
+    // Arrange
+    String userId = "1234";
+    String refreshToken =
+        DbUtils.insertRefreshToken(
+            "tenant2", userId, -1800L, "source", "device1", "location", "1.2.3.4");
+
+    // Act
+    Response response = refreshToken("tenant1", refreshToken);
+
+    // Validate
+    response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+  }
+
+  @Test()
+  @DisplayName("Should return error in case of expired refresh token")
+  public void testExpiredRefreshToken() {
+    // Arrange
+    String userId = "1234";
+    String refreshToken =
+        DbUtils.insertRefreshToken(
+            "tenant1", userId, -1800L, "source", "device1", "location", "1.2.3.4");
+
+    // Act
+    Response response = refreshToken("tenant1", refreshToken);
+
+    // Validate
+    response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
   }
 }
