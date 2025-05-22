@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.dao.model;
 
+import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.jackson.Jacksonized;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,7 +31,7 @@ public class PasswordlessModel {
   private Integer maxTries;
   private Integer maxResends;
 
-  @Setter private Map<String, Object> user;
+  private Map<String, Object> user;
   private Map<String, String> headers;
 
   private List<Contact> contacts;
@@ -78,7 +78,10 @@ public class PasswordlessModel {
     this.resendInterval = resendInterval;
     this.maxTries = maxTries;
     this.maxResends = maxResends;
+
     this.user = user;
+    this.user.put(IS_NEW_USER, user.get(USERID) == null);
+
     this.headers = headers;
     this.contacts = contacts;
     this.flow = flow;
@@ -87,6 +90,11 @@ public class PasswordlessModel {
     this.createdAtEpoch = createdAtEpoch;
     this.expiry = expiry;
     this.additionalInfo = additionalInfo;
+  }
+
+  public void setUser(Map<String, Object> user) {
+    this.user = user;
+    this.user.put(IS_NEW_USER, true);
   }
 
   public PasswordlessModel incRetry() {

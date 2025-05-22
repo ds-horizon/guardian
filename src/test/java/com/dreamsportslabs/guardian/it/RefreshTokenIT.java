@@ -15,25 +15,19 @@ import com.dreamsportslabs.guardian.utils.DbUtils;
 import io.fusionauth.jwt.domain.JWT;
 import io.fusionauth.jwt.rsa.RSAVerifier;
 import io.restassured.response.Response;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class RefreshTokenIT {
-  @BeforeAll
-  public static void beforeAll() throws SQLException, IOException {
-    DbUtils.executeSqlFile("src/test/resources/test.sql");
-  }
+  public static String tenant1 = "tenant1"; // OTP is mocked for this tenant
 
   @Test()
   @DisplayName("Should generate access token for a valid refresh token")
@@ -42,10 +36,10 @@ public class RefreshTokenIT {
     String userId = "1234";
     String refreshToken =
         DbUtils.insertRefreshToken(
-            "tenant1", userId, 1800L, "source", "device1", "location", "1.2.3.4");
+            tenant1, userId, 1800L, "source", "device1", "location", "1.2.3.4");
 
     // Act
-    Response response = refreshToken("tenant1", refreshToken);
+    Response response = refreshToken(tenant1, refreshToken);
 
     // Validate
     response.then().statusCode(HttpStatus.SC_OK).body("accessToken", isA(String.class));
@@ -76,7 +70,7 @@ public class RefreshTokenIT {
     String refreshToken = "a-random-invalid-refresh-token";
 
     // Act
-    Response response = refreshToken("tenant1", refreshToken);
+    Response response = refreshToken(tenant1, refreshToken);
 
     // Validate
     response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
@@ -92,7 +86,7 @@ public class RefreshTokenIT {
             "tenant2", userId, -1800L, "source", "device1", "location", "1.2.3.4");
 
     // Act
-    Response response = refreshToken("tenant1", refreshToken);
+    Response response = refreshToken(tenant1, refreshToken);
 
     // Validate
     response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
@@ -105,10 +99,10 @@ public class RefreshTokenIT {
     String userId = "1234";
     String refreshToken =
         DbUtils.insertRefreshToken(
-            "tenant1", userId, -1800L, "source", "device1", "location", "1.2.3.4");
+            tenant1, userId, -1800L, "source", "device1", "location", "1.2.3.4");
 
     // Act
-    Response response = refreshToken("tenant1", refreshToken);
+    Response response = refreshToken(tenant1, refreshToken);
 
     // Validate
     response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);

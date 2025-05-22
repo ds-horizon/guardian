@@ -1,15 +1,22 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ADDITIONAL_INFO;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONTACTS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_FLOW;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_META_INFO;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_PASSWORD;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
 import static io.restassured.RestAssured.given;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -22,7 +29,7 @@ public class ApplicationIoUtils {
       Function<RequestSpecification, Response> fn) {
     RequestSpecification spec = given();
     if (body != null) {
-      spec.header("Content-type", "application/json").and().body(body);
+      spec.header(CONTENT_TYPE, "application/json").and().body(body);
     }
 
     if (headers != null) {
@@ -57,5 +64,37 @@ public class ApplicationIoUtils {
     body.put(BODY_PARAM_REFRESH_TOKEN, refreshToken);
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/refreshToken"));
+  }
+
+  public static Response passwordlessInit(
+      String tenantId,
+      String flow,
+      String responseType,
+      List<Map<String, Object>> contacts,
+      Map<String, Object> metaInfo,
+      Map<String, Object> additionalInfo) {
+    Map<String, Object> body = new HashMap<>();
+    body.put(BODY_PARAM_FLOW, flow);
+    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
+    body.put(BODY_PARAM_CONTACTS, contacts);
+    body.put(BODY_PARAM_META_INFO, metaInfo);
+    body.put(BODY_PARAM_ADDITIONAL_INFO, additionalInfo);
+
+    return passwordlessInit(tenantId, body);
+  }
+
+  public static Response passwordlessInit(String tenantId, String state) {
+    Map<String, Object> body = new HashMap<>();
+    body.put(BODY_PARAM_STATE, state);
+
+    return passwordlessInit(tenantId, body);
+  }
+
+  public static Response passwordlessInit(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+    headers.put(CONTENT_TYPE, "application/json");
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/passwordless/init"));
   }
 }
