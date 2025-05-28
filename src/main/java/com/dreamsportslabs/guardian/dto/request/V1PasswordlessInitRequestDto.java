@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.dto.request;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
+import com.dreamsportslabs.guardian.constant.Channel;
 import com.dreamsportslabs.guardian.constant.Constants;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.constant.Flow;
@@ -10,8 +11,10 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -52,11 +55,16 @@ public class V1PasswordlessInitRequestDto {
     if (contacts.isEmpty()) {
       return false;
     }
-    boolean res = true;
+    Set<Channel> uniqueChannels = new HashSet<>();
     for (Contact contact : contacts) {
-      res = contact.validate();
+      if (!contact.validate()) {
+        return false;
+      }
+      if (!uniqueChannels.add(contact.getChannel())) {
+        return false;
+      }
     }
-    return res;
+    return true;
   }
 
   public void validate() {
