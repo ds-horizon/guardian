@@ -11,6 +11,7 @@ import io.vertx.rxjava3.core.Vertx;
 import java.lang.reflect.Field;
 import java.util.List;
 import liquibase.command.CommandScope;
+import liquibase.command.core.ExecuteSqlCommandStep;
 import liquibase.command.core.UpdateCommandStep;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -53,7 +54,10 @@ public class Setup
         "localhost", "3306", mysqlUsername, mysqlPassword, mysqlDatabase);
     DbUtils.initializeRedisConnectionPool("localhost", redisPort);
 
+    // Run migrations to create tables in db
     migrations();
+    // Add tenant related seed data for testing
+    seedData();
 
     this.vertx = Vertx.vertx();
     startApplication();
@@ -91,6 +95,15 @@ public class Setup
         .addArgumentValue("url", "jdbc:mysql://localhost:3306/" + this.mysqlDatabase)
         .addArgumentValue("username", this.mysqlUsername)
         .addArgumentValue("password", this.mysqlPassword)
+        .execute();
+  }
+
+  private void seedData() throws Exception {
+    new CommandScope(ExecuteSqlCommandStep.COMMAND_NAME)
+        .addArgumentValue("url", "jdbc:mysql://localhost:3306/" + this.mysqlDatabase)
+        .addArgumentValue("username", this.mysqlUsername)
+        .addArgumentValue("password", this.mysqlPassword)
+        .addArgumentValue("sqlFile", "src/test/resources/test.sql")
         .execute();
   }
 

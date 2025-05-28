@@ -66,7 +66,7 @@ public class UserService {
               } else if (!resBody.containsKey(USERID)) {
                 throw USER_SERVICE_ERROR.getException();
               }
-              return resBody.put("isNewUser", true);
+              return resBody;
             });
   }
 

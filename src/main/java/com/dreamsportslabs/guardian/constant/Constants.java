@@ -13,6 +13,7 @@ public final class Constants {
 
   public static final String FACEBOOK = "facebook";
   public static final String GOOGLE = "google";
+  public static final String IS_NEW_USER = "isNewUser";
 
   public static final String EXPIRY_OPTION_REDIS = "EX";
   public static final String STATIC_OTP_NUMBER = "9";

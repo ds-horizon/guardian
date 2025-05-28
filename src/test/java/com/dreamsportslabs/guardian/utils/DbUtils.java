@@ -2,16 +2,14 @@ package com.dreamsportslabs.guardian.utils;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.Connection;
+import io.vertx.core.json.JsonObject;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -52,23 +50,6 @@ public class DbUtils {
     mysqlConnectionPool = new HikariDataSource(conf);
   }
 
-  public static void executeSqlFile(String filePath) throws IOException, SQLException {
-    String rawSql = Files.readString(Paths.get(filePath));
-
-    String[] statements = rawSql.split("(?m);\\s*");
-
-    try (Connection conn = mysqlConnectionPool.getConnection();
-        Statement stmt = conn.createStatement()) {
-
-      for (String s : statements) {
-        String trimmed = s.trim();
-        if (!trimmed.isEmpty()) {
-          stmt.execute(trimmed);
-        }
-      }
-    }
-  }
-
   public static String insertRefreshToken(
       String tenantId,
       String userId,
@@ -97,5 +78,70 @@ public class DbUtils {
     }
 
     return refreshToken;
+  }
+
+  public static void createState(
+      String tenantId,
+      String state,
+      int ttl,
+      String otp,
+      boolean isOtpMocked,
+      int tries,
+      int resends,
+      long resendAfter,
+      int resendInterval,
+      int maxTries,
+      int maxResends,
+      Map<String, Object> user,
+      List<Map<String, Object>> contacts,
+      String flow,
+      String responseType,
+      Map<String, Object> metaInfo,
+      Map<String, Object> additionalInfo,
+      long createdAtEpoch,
+      long expiry) {
+    String key = "STATE" + "_" + tenantId + "_" + state;
+    Map<String, String> headers = Map.of("tenant-id", tenantId);
+    JsonObject value =
+        new JsonObject()
+            .put("state", state)
+            .put("otp", otp)
+            .put("isOtpMocked", isOtpMocked)
+            .put("tries", tries)
+            .put("resends", resends)
+            .put("resendAfter", resendAfter)
+            .put("resendInterval", resendInterval)
+            .put("maxTries", maxTries)
+            .put("maxResends", maxResends)
+            .put("user", user)
+            .put("headers", headers)
+            .put("contacts", contacts)
+            .put("flow", flow)
+            .put("responseType", responseType)
+            .put("metaInfo", metaInfo)
+            .put("createdAtEpoch", createdAtEpoch)
+            .put("expiry", expiry)
+            .put("additionalInfo", additionalInfo);
+
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      jedis.setex(key, ttl, value.toString());
+    } catch (Exception e) {
+      log.error("Error setting key in Redis: ", e);
+    }
+  }
+
+  public static JsonObject getState(String state, String tenantId) {
+    String key = "STATE" + "_" + tenantId + "_" + state;
+
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      String jsonValue = jedis.get(key);
+      if (jsonValue == null) {
+        return null;
+      }
+
+      return new JsonObject(jsonValue);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while fetching or parsing Redis key: " + key, e);
+    }
   }
 }

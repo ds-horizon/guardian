@@ -177,14 +177,6 @@ public class Passwordless {
 
   public Single<Object> complete(V1PasswordlessCompleteRequestDto dto, String tenantId) {
     return getPasswordlessModel(dto.getState(), tenantId)
-        .map(
-            model -> {
-              if (model.getTries() >= model.getMaxTries()) {
-                passwordlessDao.deletePasswordlessModel(model.getState(), tenantId);
-                throw RETRIES_EXHAUSTED.getException();
-              }
-              return model;
-            })
         .flatMap(model -> validateOtp(model, dto.getOtp(), tenantId))
         .flatMap(
             model -> {
@@ -225,8 +217,15 @@ public class Passwordless {
       return Single.just(model);
     }
 
+    model.incRetry();
+
+    if (model.getTries() >= model.getMaxTries()) {
+      passwordlessDao.deletePasswordlessModel(model.getState(), tenantId);
+      throw RETRIES_EXHAUSTED.getException();
+    }
+
     return passwordlessDao
-        .setPasswordlessModel(model.incRetry(), tenantId)
+        .setPasswordlessModel(model, tenantId)
         .map(
             m -> {
               throw INCORRECT_OTP.getCustomException(
