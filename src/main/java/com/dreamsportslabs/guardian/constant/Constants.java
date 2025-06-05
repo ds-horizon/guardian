@@ -10,6 +10,7 @@ public final class Constants {
 
   public static final String TOKEN = "token";
   public static final String CODE = "code";
+  public static final String KEYS = "keys";
 
   public static final String FACEBOOK = "facebook";
   public static final String GOOGLE = "google";
