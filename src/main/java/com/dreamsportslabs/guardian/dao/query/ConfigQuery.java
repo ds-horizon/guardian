@@ -71,7 +71,12 @@ public class ConfigQuery {
            refresh_token_expiry,
            id_token_expiry,
            id_token_claims,
-           rsa_keys
+           rsa_keys,
+           cookie_same_site,
+           cookie_path,
+           cookie_domain,
+           cookie_secure,
+           cookie_http_only
     FROM token_config
     WHERE tenant_id = ?
     """;

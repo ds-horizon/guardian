@@ -90,6 +90,11 @@ Guardian application can be configured via environment variables
 | refresh_token_expiry | INT          | Refresh token expiration time in seconds                                                   |
 | id_token_expiry      | INT          | ID token JWT expiration time in seconds                                                    |
 | id_token_claims      | JSON         | Claims (key-values) to inlucde in the ID Token payload (must be part of get user response) |
+| cookie_domain        | VARCHAR(256) | Domain for setting cookies                                                                 |
+| cookie_path          | VARCHAR(256) | Path for setting cookies                                                                   |
+| cookie_secure        | BOOLEAN      | Whether cookies should be secure (HTTPS only)                                              |
+| cookie_http_only     | BOOLEAN      | Whether cookies should be HTTP-only (not accessible via JavaScript)                        |
+| cookie_same_site     | VARCHAR(10)  | SameSite attribute for cookies (LAX, STRICT, NONE)                                         |
 
 ### Auth Code Configuration
 

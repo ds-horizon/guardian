@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class SocialAuthService {
   private final AuthorizationService authorizationService;
   private final Registry registry;
 
-  public Single<Object> authFb(
+  public Single<ResponseBuilder> authFb(
       V1AuthFbRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return registry
         .get(tenantId, FacebookIdProvider.class)
@@ -103,7 +104,7 @@ public class SocialAuthService {
         .build();
   }
 
-  public Single<Object> authGoogle(
+  public Single<ResponseBuilder> authGoogle(
       V1AuthGoogleRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return registry
         .get(tenantId, GoogleIdProvider.class)

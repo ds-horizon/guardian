@@ -12,4 +12,9 @@ public class TokenConfig {
   private Integer idTokenExpiry;
   private List<String> idTokenClaims;
   private List<RsaKey> rsaKeys;
+  private String cookieDomain;
+  private String cookieSameSite;
+  private String cookiePath;
+  private Boolean cookieSecure;
+  private Boolean cookieHttpOnly;
 }
