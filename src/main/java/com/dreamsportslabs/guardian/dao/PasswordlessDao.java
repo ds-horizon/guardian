@@ -4,6 +4,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.CACHE_KEY_STATE;
 import static com.dreamsportslabs.guardian.constant.Constants.EXPIRY_OPTION_REDIS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 
+import com.dreamsportslabs.guardian.dao.model.OtpGenerateModel;
 import com.dreamsportslabs.guardian.dao.model.PasswordlessModel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -28,8 +29,29 @@ public class PasswordlessDao {
         .map(response -> objectMapper.readValue(response.toString(), PasswordlessModel.class));
   }
 
+  public Maybe<OtpGenerateModel> getOtpGenerateModel(String cacheKey) {
+    return redisClient
+        .rxSend(Request.cmd(Command.GET).arg(cacheKey))
+        .map(response -> objectMapper.readValue(response.toString(), OtpGenerateModel.class));
+  }
+
   @SneakyThrows
   public Single<PasswordlessModel> setPasswordlessModel(PasswordlessModel model, String tenantId) {
+    return redisClient
+        .rxSend(
+            Request.cmd(Command.SET)
+                .arg(getCacheKey(tenantId, model.getState()))
+                .arg(objectMapper.writeValueAsString(model))
+                .arg(EXPIRY_OPTION_REDIS)
+                // Todo: arbitrary expiry to eventually expire, > allowed max otp validity
+                .arg(3600))
+        .onErrorResumeNext(err -> Maybe.error(INTERNAL_SERVER_ERROR.getException(err)))
+        .map(response -> model)
+        .toSingle();
+  }
+
+  @SneakyThrows
+  public Single<OtpGenerateModel> setOtpGenerateModel(OtpGenerateModel model, String tenantId) {
     return redisClient
         .rxSend(
             Request.cmd(Command.SET)
@@ -47,7 +69,15 @@ public class PasswordlessDao {
     redisClient.rxSend(Request.cmd(Command.DEL).arg(getCacheKey(tenantId, state))).subscribe();
   }
 
-  private String getCacheKey(String tenantId, String state) {
+  public void deleteOtpGenerateModel(String cacheKey) {
+    redisClient.rxSend(Request.cmd(Command.DEL).arg(cacheKey)).subscribe();
+  }
+
+  public String getCacheKey(String tenantId, String state) {
     return CACHE_KEY_STATE + "_" + tenantId + "_" + state;
+  }
+
+  public String getCacheKeyForOtp(String tenantId, String state) {
+    return CACHE_KEY_STATE + "_otp_only_" + tenantId + "_" + state;
   }
 }
