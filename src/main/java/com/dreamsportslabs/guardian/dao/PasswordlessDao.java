@@ -51,11 +51,11 @@ public class PasswordlessDao {
   }
 
   @SneakyThrows
-  public Single<OtpGenerateModel> setOtpGenerateModel(OtpGenerateModel model, String tenantId) {
+  public Single<OtpGenerateModel> setOtpGenerateModel(OtpGenerateModel model, String cacheKey) {
     return redisClient
         .rxSend(
             Request.cmd(Command.SET)
-                .arg(getCacheKey(tenantId, model.getState()))
+                .arg(cacheKey)
                 .arg(objectMapper.writeValueAsString(model))
                 .arg(EXPIRY_OPTION_REDIS)
                 // Todo: arbitrary expiry to eventually expire, > allowed max otp validity
