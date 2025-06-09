@@ -5,7 +5,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import com.dreamsportslabs.guardian.service.OIDCDiscoveryService;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
-import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
@@ -20,11 +19,11 @@ public class OIDCDiscoveryEndpoint {
 
   @Inject private OIDCDiscoveryService oidcDiscoveryService;
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Single<Response> getOpenIdConfiguration(@HeaderParam(TENANT_ID) String tenantId) {
-        return oidcDiscoveryService
-                .getOIDCDiscovery(tenantId)
-                .map(config -> Response.ok(config).build());
-    }
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  public Single<Response> getOpenIdConfiguration(@HeaderParam(TENANT_ID) String tenantId) {
+    return oidcDiscoveryService
+        .getOIDCDiscovery(tenantId)
+        .map(config -> Response.ok(config).build());
+  }
 }
