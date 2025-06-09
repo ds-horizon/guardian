@@ -93,4 +93,17 @@ public class ConfigQuery {
     FROM otp_config
     WHERE tenant_id = ?
     """;
+
+  public static final String CONTACT_VERIFY_CONFIG =
+      """
+       SELECT otp_length,
+              try_limit,
+              is_otp_mocked,
+              resend_limit,
+              otp_resend_interval,
+              otp_validity,
+              whitelisted_inputs
+       FROM contact_verify_config
+       WHERE tenant_id = ?
+    """;
 }

@@ -6,7 +6,7 @@ import com.dreamsportslabs.guardian.dto.request.SendOtpRequestDto;
 import com.dreamsportslabs.guardian.dto.request.VerifyOtpRequestDto;
 import com.dreamsportslabs.guardian.dto.response.OtpSendResponseDto;
 import com.dreamsportslabs.guardian.dto.response.VerifyOtpResponseDto;
-import com.dreamsportslabs.guardian.service.Passwordless;
+import com.dreamsportslabs.guardian.service.ContactVerifyService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 @Path("/otp")
-public class OtpSendVerify {
-  private final Passwordless passwordless;
+public class ContactVerify {
+  private final ContactVerifyService contactVerifyService;
 
   @POST
   @Path("/send")
@@ -32,9 +32,10 @@ public class OtpSendVerify {
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> send(
       @Context HttpHeaders headers, SendOtpRequestDto requestDto) {
+
     requestDto.validate();
-    // Use Passwordless service to generate and send OTP, but skip user and flow checks
-    return passwordless
+
+    return contactVerifyService
         .initOtpOnly(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
         .map(
             model ->
@@ -58,7 +59,7 @@ public class OtpSendVerify {
   public CompletionStage<Response> verify(
       @Context HttpHeaders headers, VerifyOtpRequestDto requestDto) {
     requestDto.validate();
-    return passwordless
+    return contactVerifyService
         .verifyOtpOnly(
             requestDto.getState(), requestDto.getOtp(), headers.getHeaderString(TENANT_ID))
         .map(

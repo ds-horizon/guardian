@@ -201,3 +201,24 @@ CREATE TABLE refresh_tokens
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE contact_verify_config
+(
+    tenant_id                  CHAR(10)  PRIMARY KEY,
+    is_otp_mocked              BOOLEAN   NOT NULL DEFAULT FALSE,
+    otp_length                 INT       NOT NULL DEFAULT 6,
+    try_limit                  INT       NOT NULL DEFAULT 5,
+    resend_limit               INT       NOT NULL DEFAULT 5,
+    otp_resend_interval        INT       NOT NULL DEFAULT 30,
+    otp_validity               INT       NOT NULL DEFAULT 900,
+    whitelisted_inputs         JSON      NOT NULL,
+    created_at                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_contact_verify_config FOREIGN KEY (tenant_id)
+        REFERENCES tenant (id) ON DELETE CASCADE,
+
+    UNIQUE KEY `idx_tenant_id` (`tenant_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
