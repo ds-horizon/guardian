@@ -27,39 +27,19 @@ CREATE TABLE oidc_tenant_config (
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
--- Dynamic scope management with embedded claims
-CREATE TABLE oidc_tenant_scopes (
-    tenant_id CHAR(10) NOT NULL,
-    scope_name VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_default BOOLEAN,
-    claims JSON NOT NULL,  -- Array of claim names associated with this scope
+-- Scope management with embedded claims
+CREATE TABLE scope (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id VARCHAR(100) NOT NULL,
+    scope VARCHAR(100) NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    description VARCHAR(1000),
+    claims JSON NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    PRIMARY KEY (tenant_id, scope_name),
-    FOREIGN KEY (tenant_id) REFERENCES oidc_tenant_config(tenant_id) ON DELETE CASCADE,
-    
-    INDEX `idx_tenant_id` (`tenant_id`),
-    INDEX `idx_scope_name` (`scope_name`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci;
-
--- Dynamic claim management
-CREATE TABLE oidc_tenant_claims (
-    tenant_id CHAR(10) NOT NULL,
-    claim_name VARCHAR(100) NOT NULL,
-    description TEXT,
-    data_type VARCHAR(50),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (tenant_id, claim_name),
-    FOREIGN KEY (tenant_id) REFERENCES oidc_tenant_config(tenant_id) ON DELETE CASCADE,
-    
-    INDEX `idx_tenant_id` (`tenant_id`),
-    INDEX `idx_claim_name` (`claim_name`)
+    UNIQUE KEY `idx_tenant_scope` (`tenant_id`, `scope`),
+    INDEX `idx_tenant_id` (`tenant_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
