@@ -3,8 +3,6 @@ package com.dreamsportslabs.guardian.injection;
 import com.dreamsportslabs.guardian.cache.TenantCache;
 import com.dreamsportslabs.guardian.client.MysqlClient;
 import com.dreamsportslabs.guardian.client.impl.MysqlClientImpl;
-import com.dreamsportslabs.guardian.dao.OIDCConfigDao;
-import com.dreamsportslabs.guardian.dao.ScopeDao;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.SharedDataUtils;
 import com.google.inject.AbstractModule;
@@ -29,7 +27,5 @@ public class MainModule extends AbstractModule {
     bind(WebClient.class).toProvider(() -> SharedDataUtils.get(vertx, WebClient.class));
     bind(Registry.class).toProvider(() -> SharedDataUtils.get(vertx, Registry.class));
     bind(TenantCache.class).toProvider(() -> SharedDataUtils.get(vertx, TenantCache.class));
-    bind(OIDCConfigDao.class);
-    bind(ScopeDao.class);
   }
 }

@@ -9,12 +9,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.RowSet;
 import io.vertx.rxjava3.sqlclient.Tuple;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class OIDCConfigDao {
 
-  @Inject private MysqlClient mysqlClient;
+  private final MysqlClient mysqlClient;
 
   public Single<OIDCConfig> getOIDCConfig(String tenantId) {
     return mysqlClient

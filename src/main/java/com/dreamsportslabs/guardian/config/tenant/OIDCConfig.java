@@ -18,6 +18,4 @@ public class OIDCConfig {
   private List<String> idTokenSigningAlgValuesSupported;
   private List<String> userinfoSigningAlgValuesSupported;
   private List<String> tokenEndpointAuthMethodsSupported;
-  private List<String> scopesSupported;
-  private List<String> claimsSupported;
 }
