@@ -12,14 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Slf4j
-public class SendOtpRequestDto {
+public class V1SendOtpRequestDto {
   private String state;
   private Contact contact;
-  private MetaInfo metaInfo;
-
-  public SendOtpRequestDto() {
-    this.metaInfo = new MetaInfo();
-  }
 
   private boolean isValidState() {
     return state != null;

@@ -2,10 +2,9 @@ package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
-import com.dreamsportslabs.guardian.dto.request.SendOtpRequestDto;
+import com.dreamsportslabs.guardian.dto.request.V1SendOtpRequestDto;
 import com.dreamsportslabs.guardian.dto.request.VerifyOtpRequestDto;
 import com.dreamsportslabs.guardian.dto.response.OtpSendResponseDto;
-import com.dreamsportslabs.guardian.dto.response.VerifyOtpResponseDto;
 import com.dreamsportslabs.guardian.service.ContactVerifyService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -22,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-@Path("/otp")
+@Path("/v1/otp")
 public class ContactVerify {
   private final ContactVerifyService contactVerifyService;
 
@@ -31,12 +30,12 @@ public class ContactVerify {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> send(
-      @Context HttpHeaders headers, SendOtpRequestDto requestDto) {
+      @Context HttpHeaders headers, V1SendOtpRequestDto requestDto) {
 
     requestDto.validate();
 
     return contactVerifyService
-        .initOtpOnly(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
+        .initOtp(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
         .map(
             model ->
                 Response.ok(
@@ -60,10 +59,8 @@ public class ContactVerify {
       @Context HttpHeaders headers, VerifyOtpRequestDto requestDto) {
     requestDto.validate();
     return contactVerifyService
-        .verifyOtpOnly(
-            requestDto.getState(), requestDto.getOtp(), headers.getHeaderString(TENANT_ID))
-        .map(
-            success -> Response.ok(VerifyOtpResponseDto.builder().success(success).build()).build())
+        .verifyOtp(requestDto.getState(), requestDto.getOtp(), headers.getHeaderString(TENANT_ID))
+        .map(success -> Response.noContent().build())
         .toCompletionStage();
   }
 }

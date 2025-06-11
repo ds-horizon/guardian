@@ -47,7 +47,7 @@ public class PasswordlessDao {
     redisClient.rxSend(Request.cmd(Command.DEL).arg(getCacheKey(tenantId, state))).subscribe();
   }
 
-  public String getCacheKey(String tenantId, String state) {
+  private String getCacheKey(String tenantId, String state) {
     return CACHE_KEY_STATE + "_" + tenantId + "_" + state;
   }
 }

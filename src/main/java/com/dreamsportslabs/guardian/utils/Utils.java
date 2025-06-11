@@ -2,15 +2,10 @@ package com.dreamsportslabs.guardian.utils;
 
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
 
-import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
-import com.dreamsportslabs.guardian.constant.Channel;
-import com.dreamsportslabs.guardian.constant.Contact;
-import com.dreamsportslabs.guardian.constant.Template;
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 
 public final class Utils {
 
@@ -41,26 +36,5 @@ public final class Utils {
 
   public static String getMd5Hash(String input) {
     return DigestUtils.md5Hex(input).toUpperCase();
-  }
-
-  public static String generateState() {
-    return RandomStringUtils.randomAlphanumeric(10);
-  }
-
-  public static void updateContactTemplate(TenantConfig tenantConfig, Contact contact) {
-    if (contact.getTemplate() == null) {
-      if (contact.getChannel() == Channel.EMAIL) {
-        contact.setTemplate(
-            new Template(
-                tenantConfig.getEmailConfig().getTemplateName(),
-                tenantConfig.getEmailConfig().getTemplateParams()));
-      }
-      if (contact.getChannel() == Channel.SMS) {
-        contact.setTemplate(
-            new Template(
-                tenantConfig.getSmsConfig().getTemplateName(),
-                tenantConfig.getSmsConfig().getTemplateParams()));
-      }
-    }
   }
 }

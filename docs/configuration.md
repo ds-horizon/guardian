@@ -114,3 +114,15 @@ Guardian application can be configured via environment variables
 | otp_resend_interval | INT     | Minimum interval in seconds between OTP resends                                                     |
 | otp_validity        | INT     | OTP validity duration in seconds                                                                    |
 | whitelisted_inputs  | JSON    | Whitelisted OTP input patterns                                                                      |
+
+### Contact Verify Configuration
+
+| Field               | Type    | Description                                                                                         |
+|---------------------|---------|-----------------------------------------------------------------------------------------------------|
+| otpLength           | INT     | Length of the OTP code to be generated                                                              |
+| tryLimit            | INT     | Maximum number of verification attempts allowed                                                      |
+| isOtpMocked        | BOOLEAN | Whether to use mock OTPs for testing purposes                                                        |
+| resendLimit        | INT     | Maximum number of times OTP can be resent                                                           |
+| otpResendInterval  | INT     | Minimum time (in seconds) that must elapse before requesting another OTP                            |
+| otpValidity        | INT     | Duration (in seconds) for which the OTP remains valid                                               |
+| whitelistedInputs  | JSON    | Map of allowed input patterns for different channels (e.g., phone, email)                           |

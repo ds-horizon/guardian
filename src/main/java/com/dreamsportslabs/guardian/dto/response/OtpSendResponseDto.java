@@ -13,6 +13,5 @@ public class OtpSendResponseDto {
   private Integer resendsLeft;
   private Long resendAfter;
 
-  private Boolean isNewUser;
   private String state;
 }

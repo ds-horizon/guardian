@@ -1,16 +1,20 @@
 package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.*;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESEND_NOT_ALLOWED;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.RETRIES_EXHAUSTED;
 
 import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.dao.ContactVerifyDao;
 import com.dreamsportslabs.guardian.dao.model.OtpGenerateModel;
-import com.dreamsportslabs.guardian.dto.request.SendOtpRequestDto;
+import com.dreamsportslabs.guardian.dto.request.V1SendOtpRequestDto;
 import com.dreamsportslabs.guardian.registry.Registry;
-import com.dreamsportslabs.guardian.utils.Utils;
+import com.dreamsportslabs.guardian.utils.OtpUtils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -29,8 +33,8 @@ public class ContactVerifyService {
   private final Registry registry;
   private final OtpService otpService;
 
-  public Single<OtpGenerateModel> initOtpOnly(
-      SendOtpRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
+  public Single<OtpGenerateModel> initOtp(
+      V1SendOtpRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
     String state = requestDto.getState();
     Single<OtpGenerateModel> otpGenerateModel;
 
@@ -38,9 +42,9 @@ public class ContactVerifyService {
       otpGenerateModel =
           this.getOtpGenerateModel(contactVerifyDao.getCacheKeyForOtp(tenantId, state));
     } else {
-      state = Utils.generateState();
+      state = OtpUtils.generateState();
       TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-      Utils.updateContactTemplate(tenantConfig, requestDto.getContact());
+      OtpUtils.updateContactTemplate(tenantConfig, requestDto.getContact());
       otpGenerateModel = this.createOtpGenerateModel(requestDto, headers, tenantId, state);
     }
 
@@ -74,12 +78,12 @@ public class ContactVerifyService {
   }
 
   private Single<OtpGenerateModel> createOtpGenerateModel(
-      SendOtpRequestDto dto,
+      V1SendOtpRequestDto dto,
       MultivaluedMap<String, String> headers,
       String tenantId,
       String state) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-    Utils.updateContactTemplate(tenantConfig, dto.getContact());
+    OtpUtils.updateContactTemplate(tenantConfig, dto.getContact());
 
     ContactVerifyConfig config = tenantConfig.getContactVerifyConfig();
 
@@ -98,12 +102,11 @@ public class ContactVerifyService {
             .maxResends(config.getResendLimit())
             .headers(h)
             .contact(dto.getContact())
-            .metaInfo(dto.getMetaInfo())
             .expiry(System.currentTimeMillis() / 1000 + config.getOtpValidity())
             .build());
   }
 
-  public Single<Boolean> verifyOtpOnly(String state, String otp, String tenantId) {
+  public Single<Boolean> verifyOtp(String state, String otp, String tenantId) {
     String cacheKey = contactVerifyDao.getCacheKeyForOtp(tenantId, state);
     return getOtpGenerateModel(cacheKey)
         .flatMap(

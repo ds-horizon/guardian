@@ -211,11 +211,11 @@ CREATE TABLE contact_verify_config
     resend_limit               INT       NOT NULL DEFAULT 5,
     otp_resend_interval        INT       NOT NULL DEFAULT 30,
     otp_validity               INT       NOT NULL DEFAULT 900,
-    whitelisted_inputs         JSON      NOT NULL,
+    whitelisted_inputs         JSON      NOT NULL DEFAULT (JSON_OBJECT()),
     created_at                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_contact_verify_config FOREIGN KEY (tenant_id)
+    CONSTRAINT fk_tenant_contact_verify_config FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
 
     UNIQUE KEY `idx_tenant_id` (`tenant_id`)

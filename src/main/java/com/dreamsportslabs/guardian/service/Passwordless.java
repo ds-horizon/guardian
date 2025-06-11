@@ -16,13 +16,13 @@ import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.Channel;
 import com.dreamsportslabs.guardian.constant.Contact;
-import com.dreamsportslabs.guardian.constant.Template;
 import com.dreamsportslabs.guardian.dao.PasswordlessDao;
 import com.dreamsportslabs.guardian.dao.model.PasswordlessModel;
 import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.dto.request.V1PasswordlessCompleteRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1PasswordlessInitRequestDto;
 import com.dreamsportslabs.guardian.registry.Registry;
+import com.dreamsportslabs.guardian.utils.OtpUtils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
@@ -89,7 +89,7 @@ public class Passwordless {
   private void updateDefaultTemplate(V1PasswordlessInitRequestDto requestDto, String tenantId) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     for (Contact contact : requestDto.getContacts()) {
-      updateContactTemplate(tenantConfig, contact);
+      OtpUtils.updateContactTemplate(tenantConfig, contact);
     }
   }
 
@@ -221,22 +221,5 @@ public class Passwordless {
               throw INCORRECT_OTP.getCustomException(
                   Map.of(OTP_RETRIES_LEFT, model.getMaxTries() - model.getTries()));
             });
-  }
-
-  private void updateContactTemplate(TenantConfig tenantConfig, Contact contact) {
-    if (contact.getTemplate() == null) {
-      if (contact.getChannel() == Channel.EMAIL) {
-        contact.setTemplate(
-            new Template(
-                tenantConfig.getEmailConfig().getTemplateName(),
-                tenantConfig.getEmailConfig().getTemplateParams()));
-      }
-      if (contact.getChannel() == Channel.SMS) {
-        contact.setTemplate(
-            new Template(
-                tenantConfig.getSmsConfig().getTemplateName(),
-                tenantConfig.getSmsConfig().getTemplateParams()));
-      }
-    }
   }
 }
