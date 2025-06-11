@@ -125,4 +125,4 @@ Guardian application can be configured via environment variables
 | resendLimit        | INT     | Maximum number of times OTP can be resent                                                           |
 | otpResendInterval  | INT     | Minimum time (in seconds) that must elapse before requesting another OTP                            |
 | otpValidity        | INT     | Duration (in seconds) for which the OTP remains valid                                               |
-| whitelistedInputs  | JSON    | Map of allowed input patterns for different channels (e.g., phone, email)                           |
+| whitelistedInputs  | JSON    | Map of allowed input patterns for different channels                           |
