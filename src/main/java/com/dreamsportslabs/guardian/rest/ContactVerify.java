@@ -4,7 +4,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
 import com.dreamsportslabs.guardian.dto.request.V1SendOtpRequestDto;
 import com.dreamsportslabs.guardian.dto.request.VerifyOtpRequestDto;
-import com.dreamsportslabs.guardian.dto.response.OtpSendResponseDto;
+import com.dreamsportslabs.guardian.dto.response.V1OtpSendResponseDto;
 import com.dreamsportslabs.guardian.service.ContactVerifyService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -39,7 +39,7 @@ public class ContactVerify {
         .map(
             model ->
                 Response.ok(
-                        OtpSendResponseDto.builder()
+                        V1OtpSendResponseDto.builder()
                             .tries(model.getTries())
                             .retriesLeft(model.getMaxTries() - model.getTries())
                             .resends(model.getResends())

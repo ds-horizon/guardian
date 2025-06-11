@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class OtpSendResponseDto {
+public class V1OtpSendResponseDto {
   private Integer tries;
   private Integer retriesLeft;
 
