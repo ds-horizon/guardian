@@ -6,6 +6,7 @@ import com.dreamsportslabs.guardian.dto.request.V1SignUpRequestDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,7 +16,7 @@ public class PasswordAuth {
   private final UserService userService;
   private final AuthorizationService authorizationService;
 
-  public Single<Object> signIn(
+  public Single<ResponseBuilder> signIn(
       V1SignInRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return userService
         .authenticate(
@@ -32,7 +33,7 @@ public class PasswordAuth {
                     user, dto.getResponseType(), dto.getMetaInfo(), tenantId));
   }
 
-  public Single<Object> signUp(
+  public Single<ResponseBuilder> signUp(
       V1SignUpRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return userService
         .createUser(

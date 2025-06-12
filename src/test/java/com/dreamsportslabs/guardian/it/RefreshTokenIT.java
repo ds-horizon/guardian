@@ -6,8 +6,10 @@ import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_ISS;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_RFT_ID;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.JWT_HEADER_KID;
+import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.refreshToken;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -61,6 +63,9 @@ public class RefreshTokenIT {
 
     assertThat(
         claims.get(JWT_CLAIM_RFT_ID), equalTo(DigestUtils.md5Hex(refreshToken).toUpperCase()));
+    assertThat(response.getCookies().containsKey(ACCESS_TOKEN_COOKIE_NAME), is(true));
+    // Validate that the access token is set in the cookie
+    assertThat(accessToken, equalTo(response.getCookie(ACCESS_TOKEN_COOKIE_NAME)));
   }
 
   @Test()

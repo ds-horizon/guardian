@@ -12,6 +12,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +29,6 @@ public class PasswordlessComplete {
   public CompletionStage<Response> complete(
       @HeaderParam(TENANT_ID) String tenantId, V1PasswordlessCompleteRequestDto dto) {
     dto.validate();
-    return passwordless
-        .complete(dto, tenantId)
-        .map(res -> Response.ok(res).build())
-        .toCompletionStage();
+    return passwordless.complete(dto, tenantId).map(ResponseBuilder::build).toCompletionStage();
   }
 }
