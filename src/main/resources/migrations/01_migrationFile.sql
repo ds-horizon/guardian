@@ -222,3 +222,21 @@ CREATE TABLE contact_verify_config
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE `scope` (
+ `id` INT NOT NULL AUTO_INCREMENT,
+ `tenant_id` VARCHAR(100) NOT NULL,
+ `scope` VARCHAR(100) NOT NULL,
+ `display_name` VARCHAR(100),
+ `description` VARCHAR(1000),
+ `icon_url` VARCHAR(2083),
+ `claims` JSON NOT NULL DEFAULT (JSON_OBJECT()),
+ `is_oidc` BOOLEAN DEFAULT FALSE,
+ `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+ PRIMARY KEY (`id`),
+ UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `scope`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
