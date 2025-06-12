@@ -1,18 +1,16 @@
 package com.dreamsportslabs.guardian.rest.config;
 
+import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
+
 import com.dreamsportslabs.guardian.dto.request.CreateScopeRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.service.ScopeService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.concurrent.CompletionStage;
-
-import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
 @Slf4j
 @Path("/config/scope")
@@ -42,6 +40,19 @@ public class ScopeConfig {
     return scopeService
         .createScope(tenantId, request)
         .map(dto -> Response.status(Response.Status.CREATED).entity(dto).build())
+        .toCompletionStage();
+  }
+
+  @DELETE
+  @Path("/{name}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public CompletionStage<Response> deleteScope(
+      @HeaderParam(TENANT_ID) String tenantId, @PathParam("name") String name) {
+
+    return scopeService
+        .deleteScope(tenantId, name)
+        .map(deleted -> deleted ? Response.noContent() : Response.status(Response.Status.NOT_FOUND))
+        .map(Response.ResponseBuilder::build)
         .toCompletionStage();
   }
 }
