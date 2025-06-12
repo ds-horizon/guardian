@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.dao;
 
+import static com.dreamsportslabs.guardian.dao.query.OidcConfigQuery.*;
+
 import com.dreamsportslabs.guardian.client.MysqlClient;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.utils.JsonUtils;
@@ -8,12 +10,9 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.rxjava3.mysqlclient.MySQLClient;
 import io.vertx.rxjava3.sqlclient.Tuple;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-
-import static com.dreamsportslabs.guardian.dao.query.OidcConfigQuery.*;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -28,13 +27,13 @@ public class ScopeDao {
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }
 
-    public Single<List<ScopeModel>> getAllScopes(String tenantId, int page, int pageSize) {
-        return mysqlClient
-                .getReaderPool()
-                .preparedQuery(GET_ALL_SCOPES)
-                .execute(Tuple.of(tenantId, page, pageSize))
-                .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
-    }
+  public Single<List<ScopeModel>> getAllScopes(String tenantId, int page, int pageSize) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(GET_ALL_SCOPES)
+        .execute(Tuple.of(tenantId, page, pageSize))
+        .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
+  }
 
   public Single<ScopeModel> saveScopes(ScopeModel model) {
     return mysqlClient
@@ -53,5 +52,13 @@ public class ScopeDao {
               model.setId(Integer.parseInt(rowId));
               return model;
             });
+  }
+
+  public Single<Boolean> deleteScope(String tenantId, String scope) {
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(DELETE_SCOPE)
+        .execute(Tuple.of(tenantId, scope))
+        .map(result -> result.rowCount() > 0);
   }
 }

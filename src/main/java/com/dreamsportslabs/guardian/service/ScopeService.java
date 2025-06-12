@@ -9,11 +9,10 @@ import com.dreamsportslabs.guardian.dto.response.ScopeListResponseDto;
 import com.dreamsportslabs.guardian.dto.response.ScopeResponseDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -57,6 +56,10 @@ public class ScopeService {
               return scopeDao.saveScopes(scopeModel);
             })
         .map(this::toResponseDto);
+  }
+
+  public Single<Boolean> deleteScope(String tenantId, String name) {
+    return scopeDao.deleteScope(tenantId, name);
   }
 
   private ScopeResponseDto toResponseDto(ScopeModel model) {
