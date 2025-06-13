@@ -97,4 +97,27 @@ public class ApplicationIoUtils {
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/passwordless/init"));
   }
+
+  // Scope Config API methods
+  public static Response createScope(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/config/scope"));
+  }
+
+  public static Response listScopes(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(null, headers, queryParams, spec -> spec.get("/config/scope"));
+  }
+
+  public static Response deleteScope(String tenantId, String scopeName) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(
+        null, headers, new HashMap<>(), spec -> spec.delete("/config/scope/" + scopeName));
+  }
 }

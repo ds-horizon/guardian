@@ -25,14 +25,6 @@ public final class OidcConfigQuery {
             VALUES (?, ?, ?, ?, ?)
         """;
 
-  public static final String UPDATE_SCOPE =
-      "UPDATE scope SET "
-          + "display_name = $3, "
-          + "description = $4, "
-          + "claims = $5 "
-          + "WHERE tenant_id = $1 AND scope = $2 "
-          + "RETURNING id";
-
   public static final String DELETE_SCOPE =
       """
         DELETE FROM scope WHERE tenant_id = ? AND scope = ?
