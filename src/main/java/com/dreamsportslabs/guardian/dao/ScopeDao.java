@@ -27,11 +27,11 @@ public class ScopeDao {
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }
 
-  public Single<List<ScopeModel>> getAllScopes(String tenantId, int page, int pageSize) {
+  public Single<List<ScopeModel>> getAllScopes(String tenantId, int offset, int limit) {
     return mysqlClient
         .getReaderPool()
         .preparedQuery(GET_ALL_SCOPES)
-        .execute(Tuple.of(tenantId, page, pageSize))
+        .execute(Tuple.of(tenantId, limit, offset))
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }
 

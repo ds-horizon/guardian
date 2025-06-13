@@ -22,9 +22,18 @@ public class ScopeService {
   public Single<ScopeListResponseDto> getScopes(
       String tenantId, String scopeName, int page, int pageSize) {
 
+    // Validate pagination parameters
+    if (page <= 0) {
+      page = 1; // Default to page 1 if invalid
+    }
+    if (pageSize <= 0) {
+      pageSize = 10; // Default to 10 if invalid
+    }
+
     Single<List<ScopeModel>> scopesSingle;
     if (StringUtils.isEmpty(scopeName)) {
-      scopesSingle = scopeDao.getAllScopes(tenantId, (page - 1) * pageSize, pageSize);
+      int offset = (page - 1) * pageSize;
+      scopesSingle = scopeDao.getAllScopes(tenantId, offset, pageSize);
     } else {
       scopesSingle = scopeDao.getScopesByName(tenantId, scopeName);
     }
