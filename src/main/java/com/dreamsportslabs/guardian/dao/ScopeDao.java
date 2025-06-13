@@ -31,7 +31,7 @@ public class ScopeDao {
     return mysqlClient
         .getReaderPool()
         .preparedQuery(GET_ALL_SCOPES)
-        .execute(Tuple.of(tenantId, page, pageSize))
+        .execute(Tuple.of(tenantId, pageSize, page))
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }
 
