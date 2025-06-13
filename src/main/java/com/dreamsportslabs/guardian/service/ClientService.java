@@ -132,7 +132,10 @@ public class ClientService {
   private String generateClientSecret() {
     byte[] randomBytes = new byte[32];
     secureRandom.nextBytes(randomBytes);
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(randomBytes)
+        .replaceAll("[^A-Za-z0-9]", "");
   }
 
   private ClientResponseDto mapToResponseDto(ClientModel model) {

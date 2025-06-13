@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
 
 import com.dreamsportslabs.guardian.dto.request.CreateClientRequestDto;
 import com.dreamsportslabs.guardian.dto.request.UpdateClientRequestDto;
@@ -68,7 +69,7 @@ public class ClientResource {
     return clientService
         .getClient(clientId, tenantId)
         .map(client -> Response.ok(client).build())
-        .switchIfEmpty(Single.just(Response.status(Response.Status.NOT_FOUND).build()))
+        .switchIfEmpty(Single.error(CLIENT_NOT_FOUND.getException()))
         .toCompletionStage();
   }
 

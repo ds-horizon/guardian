@@ -49,6 +49,9 @@ public class Constants {
   public static final String JWT_CLAIM_SUB = "sub";
   public static final String JWT_CLAIM_RFT_ID = "rft_id";
 
+  // Test Constants for OIDC Client Management
+  public static final String TENANT_ID_HEADER = "tenant-id";
+
   // Error Response
   public static final String ERROR = "error";
   public static final String CODE = "code";

@@ -5,6 +5,7 @@ import static com.dreamsportslabs.guardian.dao.query.ClientQuery.INSERT_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.SELECT_CLIENTS_BY_TENANT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.SELECT_CLIENT_BY_ID;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.UPDATE_CLIENT;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_ALREADY_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import io.vertx.mysqlclient.MySQLException;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +49,18 @@ public class ClientDao {
           .preparedQuery(INSERT_CLIENT)
           .rxExecute(params)
           .map(result -> client)
-          .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)));
+          .onErrorResumeNext(
+              err -> {
+                if (!(err instanceof MySQLException mySQLException)) {
+                  return Single.error(INTERNAL_SERVER_ERROR.getException(err));
+                }
+                if (mySQLException.getErrorCode() == 1062) {
+                  return Single.error(
+                      CLIENT_ALREADY_EXISTS.getCustomException(
+                          client.getClientName() + " already exists"));
+                }
+                return Single.error(INTERNAL_SERVER_ERROR.getException(err));
+              });
     } catch (JsonProcessingException e) {
       return Single.error(INTERNAL_SERVER_ERROR.getException(e));
     }

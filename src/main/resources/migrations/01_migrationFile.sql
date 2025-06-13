@@ -238,6 +238,7 @@ CREATE TABLE client
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (client_id),
+    UNIQUE KEY unique_tenant_client_id (tenant_id, client_name),
     INDEX          idx_tenant_id (tenant_id)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
