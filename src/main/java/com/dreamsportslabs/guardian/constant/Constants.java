@@ -82,4 +82,7 @@ public final class Constants {
 
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
+
+  public static final int PAGE = 1;
+  public static final int MAX_PAGE_SIZE = 500;
 }

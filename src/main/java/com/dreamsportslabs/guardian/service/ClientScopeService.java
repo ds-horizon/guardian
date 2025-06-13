@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.MAX_PAGE_SIZE;
+import static com.dreamsportslabs.guardian.constant.Constants.PAGE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.dao.ClientDao;
@@ -35,7 +37,7 @@ public class ClientScopeService {
             client ->
                 // validate scope exists
                 scopeService
-                    .getScopes(tenantId, null, 1, 100)
+                    .getScopes(tenantId, null, PAGE, MAX_PAGE_SIZE)
                     .flatMap(
                         scopes -> {
                           // Check if the requested scopes exists in the tenant's scopes

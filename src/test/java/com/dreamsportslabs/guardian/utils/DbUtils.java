@@ -3,6 +3,7 @@ package com.dreamsportslabs.guardian.utils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.vertx.core.json.JsonObject;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.time.Instant;
 import java.util.List;
@@ -44,7 +45,7 @@ public class DbUtils {
     conf.setJdbcUrl(jdbcUrl);
     conf.setUsername(username);
     conf.setPassword(password);
-    conf.setMaximumPoolSize(10);
+    conf.setMaximumPoolSize(45);
     conf.setConnectionTimeout(1000);
 
     mysqlConnectionPool = new HikariDataSource(conf);
@@ -60,8 +61,8 @@ public class DbUtils {
       String ip) {
     String refreshToken = RandomStringUtils.randomAlphanumeric(32);
 
-    try (PreparedStatement stmt =
-        mysqlConnectionPool.getConnection().prepareStatement(INSERT_REFRESH_TOKEN)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(INSERT_REFRESH_TOKEN)) {
       stmt.setString(1, tenantId);
       stmt.setString(2, userId);
       stmt.setString(3, refreshToken);
@@ -72,6 +73,7 @@ public class DbUtils {
       stmt.setString(8, ip);
 
       stmt.executeUpdate();
+      stmt.close();
     } catch (Exception e) {
       log.error("Error while inserting refresh token", e);
       return null;
@@ -150,16 +152,17 @@ public class DbUtils {
     String deleteClientScopes = "DELETE FROM client_scope WHERE tenant_id = ?";
     String deleteClients = "DELETE FROM client WHERE tenant_id = ?";
 
-    try (PreparedStatement stmt1 =
-            mysqlConnectionPool.getConnection().prepareStatement(deleteClientScopes);
-        PreparedStatement stmt2 =
-            mysqlConnectionPool.getConnection().prepareStatement(deleteClients)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(deleteClientScopes);
+        PreparedStatement stmt2 = conn.prepareStatement(deleteClients)) {
 
       stmt1.setString(1, tenantId);
       stmt1.executeUpdate();
+      stmt1.close();
 
       stmt2.setString(1, tenantId);
       stmt2.executeUpdate();
+      stmt2.close();
     } catch (Exception e) {
       log.error("Error while cleaning up clients", e);
     }
@@ -168,7 +171,8 @@ public class DbUtils {
   public static boolean clientExists(String tenantId, String clientId) {
     String query = "SELECT COUNT(*) FROM client WHERE tenant_id = ? AND client_id = ?";
 
-    try (PreparedStatement stmt = mysqlConnectionPool.getConnection().prepareStatement(query)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
       stmt.setString(1, tenantId);
       stmt.setString(2, clientId);
 
@@ -176,6 +180,7 @@ public class DbUtils {
       if (rs.next()) {
         return rs.getInt(1) > 0;
       }
+      stmt.close();
     } catch (Exception e) {
       log.error("Error while checking client existence", e);
     }
@@ -184,19 +189,30 @@ public class DbUtils {
 
   // Scope management utilities
   public static void cleanupScopes(String tenantId) {
-    String deleteClientScopes = "DELETE FROM client_scope WHERE tenant_id = ?";
-    String deleteScopes = "DELETE FROM scope WHERE tenant_id = ?";
+    String deleteScopes = "DELETE FROM scopes WHERE tenant_id = ?";
 
-    try (PreparedStatement stmt1 =
-            mysqlConnectionPool.getConnection().prepareStatement(deleteClientScopes);
-        PreparedStatement stmt2 =
-            mysqlConnectionPool.getConnection().prepareStatement(deleteScopes)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(deleteScopes)) {
 
       stmt1.setString(1, tenantId);
       stmt1.executeUpdate();
+      stmt1.close();
+    } catch (Exception e) {
+      log.error("Error while cleaning up scopes", e);
+    }
+  }
 
-      stmt2.setString(1, tenantId);
-      stmt2.executeUpdate();
+  // Scope management utilities
+  public static void addScope(String tenantId, String scope) {
+    String addScopeQuery = "INSERT INTO scope (tenant_id, scope) VALUES (?, ?)";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(addScopeQuery)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.setString(2, scope);
+      stmt1.executeUpdate();
+      stmt1.close();
     } catch (Exception e) {
       log.error("Error while cleaning up scopes", e);
     }
@@ -206,28 +222,31 @@ public class DbUtils {
   public static void cleanupClientScopes(String tenantId) {
     String deleteQuery = "DELETE FROM client_scope WHERE tenant_id = ?";
 
-    try (PreparedStatement stmt =
-        mysqlConnectionPool.getConnection().prepareStatement(deleteQuery)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
       stmt.setString(1, tenantId);
       stmt.executeUpdate();
+      stmt.close();
     } catch (Exception e) {
       log.error("Error while cleaning up client scopes", e);
     }
   }
 
-  public static boolean clientScopeExists(String tenantId, String clientId, String scopeId) {
+  public static boolean clientScopeExists(String tenantId, String clientId, String scope) {
     String query =
-        "SELECT COUNT(*) FROM client_scope WHERE tenant_id = ? AND client_id = ? AND scope_id = ?";
+        "SELECT COUNT(*) FROM client_scope WHERE tenant_id = ? AND client_id = ? AND scope = ?";
 
-    try (PreparedStatement stmt = mysqlConnectionPool.getConnection().prepareStatement(query)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
       stmt.setString(1, tenantId);
       stmt.setString(2, clientId);
-      stmt.setString(3, scopeId);
+      stmt.setString(3, scope);
 
       var rs = stmt.executeQuery();
       if (rs.next()) {
         return rs.getInt(1) > 0;
       }
+      stmt.close();
     } catch (Exception e) {
       log.error("Error while checking client scope existence", e);
     }
