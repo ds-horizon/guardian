@@ -13,7 +13,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +30,12 @@ public class RefreshToken {
     requestDto.validate();
     return authorizationService
         .refreshTokens(requestDto, tenantId)
-        .map(ResponseBuilder::build)
+        .map(
+            resp ->
+                Response.ok(resp)
+                    .cookie(
+                        authorizationService.getAccessTokenCookie(resp.getAccessToken(), tenantId))
+                    .build())
         .toCompletionStage();
   }
 }

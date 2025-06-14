@@ -28,7 +28,6 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -166,7 +165,7 @@ public class Passwordless {
     return RandomStringUtils.random(config.getOtpLength(), false, true);
   }
 
-  public Single<ResponseBuilder> complete(V1PasswordlessCompleteRequestDto dto, String tenantId) {
+  public Single<Object> complete(V1PasswordlessCompleteRequestDto dto, String tenantId) {
     return getPasswordlessModel(dto.getState(), tenantId)
         .flatMap(model -> validateOtp(model, dto.getOtp(), tenantId))
         .flatMap(

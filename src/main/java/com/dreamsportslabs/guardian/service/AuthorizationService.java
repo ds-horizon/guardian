@@ -33,8 +33,6 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.NewCookie;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -51,15 +49,12 @@ public class AuthorizationService {
   private final CodeDao codeDao;
   private final RevocationDao revocationDao;
 
-  public Single<ResponseBuilder> generate(
+  public Single<Object> generate(
       JsonObject user, String responseType, MetaInfo metaInfo, String tenantId) {
     if (responseType.equals(TOKEN)) {
-      return generateTokens(user, metaInfo, tenantId)
-          .map(
-              tokenResponseDto ->
-                  Response.ok(tokenResponseDto).cookie(getCookies(tokenResponseDto, tenantId)));
+      return generateTokens(user, metaInfo, tenantId).map(res -> res);
     } else if (responseType.equals(CODE)) {
-      return generateCode(user, metaInfo, tenantId).map(Response::ok);
+      return generateCode(user, metaInfo, tenantId).map(res -> res);
     }
     throw INVALID_REQUEST.getException();
   }
@@ -68,12 +63,6 @@ public class AuthorizationService {
     NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
     NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
     return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
-  }
-
-  public ResponseBuilder unsetCookies(ResponseBuilder responseBuilder, String tenantId) {
-    NewCookie accessTokenCookie = getAccessTokenCookie(null, tenantId);
-    NewCookie refreshTokenCookie = getRefreshTokenCookie(null, tenantId);
-    return responseBuilder.cookie(accessTokenCookie).cookie(refreshTokenCookie);
   }
 
   private Single<TokenResponseDto> generateTokens(
@@ -114,7 +103,8 @@ public class AuthorizationService {
         .build();
   }
 
-  public Single<ResponseBuilder> refreshTokens(V1RefreshTokenRequestDto dto, String tenantId) {
+  public Single<RefreshTokenResponseDto> refreshTokens(
+      V1RefreshTokenRequestDto dto, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     return refreshTokenDao
         .getRefreshToken(dto.getRefreshToken(), tenantId)
@@ -129,12 +119,7 @@ public class AuthorizationService {
         .map(
             accessToken ->
                 new RefreshTokenResponseDto(
-                    accessToken, TOKEN_TYPE, config.getTokenConfig().getAccessTokenExpiry()))
-        .map(
-            refreshTokenResponseDto ->
-                Response.ok(refreshTokenResponseDto)
-                    .cookie(
-                        getAccessTokenCookie(refreshTokenResponseDto.getAccessToken(), tenantId)));
+                    accessToken, TOKEN_TYPE, config.getTokenConfig().getAccessTokenExpiry()));
   }
 
   private String getRftId(String refreshToken) {
@@ -157,16 +142,13 @@ public class AuthorizationService {
         .andThen(Single.just(new CodeResponseDto(code, config.getTtl())));
   }
 
-  public Single<ResponseBuilder> codeTokenExchange(
+  public Single<TokenResponseDto> codeTokenExchange(
       V1CodeTokenExchangeRequestDto dto, String tenantId) {
     return codeDao
         .getCode(dto.getCode(), tenantId)
         .switchIfEmpty(Single.error(INVALID_CODE.getException()))
         .flatMap(
             model -> generateTokens(new JsonObject(model.getUser()), model.getMetaInfo(), tenantId))
-        .map(
-            tokenResponseDto ->
-                Response.ok(tokenResponseDto).cookie(getCookies(tokenResponseDto, tenantId)))
         .doOnSuccess(res -> codeDao.deleteCode(dto.getCode(), tenantId).subscribe());
   }
 

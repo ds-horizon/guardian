@@ -12,7 +12,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +31,9 @@ public class CodeTokenExchange {
 
     return authorizationService
         .codeTokenExchange(dto, tenantId)
-        .map(ResponseBuilder::build)
+        .map(
+            resp ->
+                Response.ok(resp).cookie(authorizationService.getCookies(resp, tenantId)).build())
         .toCompletionStage();
   }
 }

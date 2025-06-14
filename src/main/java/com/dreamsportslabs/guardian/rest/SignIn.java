@@ -3,6 +3,8 @@ package com.dreamsportslabs.guardian.rest;
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
 import com.dreamsportslabs.guardian.dto.request.V1SignInRequestDto;
+import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
+import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.dreamsportslabs.guardian.service.PasswordAuth;
 import com.google.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -13,7 +15,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class SignIn {
   private final PasswordAuth passwordAuth;
+  private final AuthorizationService authorizationService;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
@@ -34,7 +36,15 @@ public class SignIn {
 
     return passwordAuth
         .signIn(requestDto, headers.getRequestHeaders(), tenantId)
-        .map(ResponseBuilder::build)
+        .map(
+            resp -> {
+              if (resp instanceof TokenResponseDto tokenResponseDto) {
+                return Response.ok(tokenResponseDto)
+                    .cookie(authorizationService.getCookies(tokenResponseDto, tenantId))
+                    .build();
+              }
+              return Response.ok(resp).build();
+            })
         .toCompletionStage();
   }
 }
