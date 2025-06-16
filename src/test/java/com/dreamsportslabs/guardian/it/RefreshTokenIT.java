@@ -7,6 +7,7 @@ import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_RFT_ID;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.JWT_HEADER_KID;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.refreshToken;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -65,7 +66,7 @@ public class RefreshTokenIT {
         claims.get(JWT_CLAIM_RFT_ID), equalTo(DigestUtils.md5Hex(refreshToken).toUpperCase()));
     assertThat(response.getCookies().containsKey(ACCESS_TOKEN_COOKIE_NAME), is(true));
     // Validate that the access token is set in the cookie
-    assertThat(accessToken, equalTo(response.getCookie(ACCESS_TOKEN_COOKIE_NAME)));
+    assertThat(response.getCookie(ACCESS_TOKEN_COOKIE_NAME), equalTo(accessToken));
   }
 
   @Test()
@@ -79,6 +80,10 @@ public class RefreshTokenIT {
 
     // Validate
     response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+    assertThat(response.getCookies().containsKey(ACCESS_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookies().containsKey(REFRESH_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookie(ACCESS_TOKEN_COOKIE_NAME), equalTo(""));
+    assertThat(response.getCookie(REFRESH_TOKEN_COOKIE_NAME), equalTo(""));
   }
 
   @Test()
@@ -95,6 +100,10 @@ public class RefreshTokenIT {
 
     // Validate
     response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+    assertThat(response.getCookies().containsKey(ACCESS_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookies().containsKey(REFRESH_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookie(ACCESS_TOKEN_COOKIE_NAME), equalTo(""));
+    assertThat(response.getCookie(REFRESH_TOKEN_COOKIE_NAME), equalTo(""));
   }
 
   @Test()
@@ -111,5 +120,9 @@ public class RefreshTokenIT {
 
     // Validate
     response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+    assertThat(response.getCookies().containsKey(ACCESS_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookies().containsKey(REFRESH_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookie(ACCESS_TOKEN_COOKIE_NAME), equalTo(""));
+    assertThat(response.getCookie(REFRESH_TOKEN_COOKIE_NAME), equalTo(""));
   }
 }

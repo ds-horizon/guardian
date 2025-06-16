@@ -45,7 +45,6 @@ public class RefreshToken {
                   && webAppEx.getResponse() != null) {
                 if (webAppEx.getResponse().getEntity() instanceof ErrorEntity errorEntity
                     && errorEntity.getError().getCode().equals(UNAUTHORIZED_ERROR_CODE)) {
-                  // Unauthorized, clear cookies
                   return Response.status(webAppEx.getResponse().getStatus())
                       .entity(errorEntity)
                       .cookie(authorizationService.getAccessTokenCookie(null, tenantId))
