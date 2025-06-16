@@ -3,7 +3,7 @@
 --changeset guardian:create-oidc-tenant-config
 CREATE TABLE `oidc_tenant_config` (
                                       `id` INT NOT NULL AUTO_INCREMENT,
-                                      `tenant_id` VARCHAR(100) NOT NULL,
+                                      `tenant_id` CHAR(10) NOT NULL,
                                       `issuer` VARCHAR(255) NOT NULL,
                                       `authorization_endpoint` VARCHAR(255) NOT NULL,
                                       `token_endpoint` VARCHAR(255) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE `oidc_tenant_config` (
 --changeset guardian:create-scope-table
 CREATE TABLE `scope` (
                          `id` INT NOT NULL AUTO_INCREMENT,
-                         `tenant_id` VARCHAR(100) NOT NULL,
+                         `tenant_id` CHAR(10) NOT NULL,
                          `scope` VARCHAR(100) NOT NULL,
                          `display_name` VARCHAR(100),
                          `description` VARCHAR(1000),
