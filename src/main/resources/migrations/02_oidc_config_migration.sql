@@ -1,7 +1,6 @@
--- OIDC Configuration Migration
--- This migration adds OpenID Connect discovery document configuration tables
+--liquibase formatted sql
 
--- Static infrastructure OIDC configuration
+--changeset guardian:create-oidc-tenant-config
 CREATE TABLE `oidc_tenant_config` (
                                       `id` INT NOT NULL AUTO_INCREMENT,
                                       `tenant_id` VARCHAR(100) NOT NULL,
@@ -28,7 +27,7 @@ CREATE TABLE `oidc_tenant_config` (
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
--- Scope management with embedded claims
+--changeset guardian:create-scope-table
 CREATE TABLE `scope` (
                          `id` INT NOT NULL AUTO_INCREMENT,
                          `tenant_id` VARCHAR(100) NOT NULL,
