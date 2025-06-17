@@ -30,11 +30,19 @@ public class JwksService {
             });
   }
 
-  public static JsonObject getKeysInJwksFormat(String publicKey, String kid, String alg) {
+  private JsonObject getKeysInJwksFormat(String publicKey, String kid, String alg) {
     JSONWebKey jwk = JSONWebKey.build(publicKey);
     jwk.kid = kid;
     jwk.kty = KeyType.RSA;
-    jwk.alg = Algorithm.fromName(alg);
+    jwk.alg = resolveAlgorithmSafely(alg);
     return new JsonObject(jwk.toJSON());
+  }
+
+  private Algorithm resolveAlgorithmSafely(String alg) {
+    try {
+      return Algorithm.valueOf(alg);
+    } catch (IllegalArgumentException | NullPointerException e) {
+      return null;
+    }
   }
 }

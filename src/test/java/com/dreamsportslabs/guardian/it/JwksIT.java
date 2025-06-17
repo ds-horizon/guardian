@@ -14,36 +14,37 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class JwksIT {
 
-    /** Generates a unique tenant ID for testing */
-    private static final String TENANT_VALID = "tenant1";
-    private static final String TENANT_UNKNOWN = randomAlphanumeric(8);
+  /** Generates a unique tenant ID for testing */
+  private static final String TENANT_VALID = "tenant1";
 
-    private static JsonArray extractKeys(Response response) {
-        JsonObject json = new JsonObject(response.getBody().asString());
-        Assertions.assertTrue(json.containsKey("keys"));
-        return json.getJsonArray("keys");
-    }
+  private static final String TENANT_UNKNOWN = randomAlphanumeric(8);
 
-    @Test
-    void jwksStructureIsCorrect() {
-        Response response = getJwks(TENANT_VALID);
+  private static JsonArray extractKeys(Response response) {
+    JsonObject json = new JsonObject(response.getBody().asString());
+    Assertions.assertTrue(json.containsKey("keys"));
+    return json.getJsonArray("keys");
+  }
 
-        Assertions.assertEquals(200, response.getStatusCode());
+  @Test
+  void jwksStructureIsCorrect() {
+    Response response = getJwks(TENANT_VALID);
 
-        JsonArray keys = extractKeys(response);
-        Assertions.assertEquals(1, keys.size());
+    Assertions.assertEquals(200, response.getStatusCode());
 
-        JsonObject key = keys.getJsonObject(0);
-        Assertions.assertEquals("RSA", key.getString("kty"));
-        Assertions.assertEquals("sig", key.getString("use"));
-        assertNotNull(key.getString("kid"));
-        assertNotNull(key.getString("n"));
-        Assertions.assertEquals("AQAB", key.getString("e"));
-    }
+    JsonArray keys = extractKeys(response);
+    Assertions.assertEquals(1, keys.size());
 
-    @Test
-    void unknownTenantReturnsError() {
-        Response response = getJwks(TENANT_UNKNOWN);
-        Assertions.assertEquals(400, response.getStatusCode());
-    }
+    JsonObject key = keys.getJsonObject(0);
+    Assertions.assertEquals("RSA", key.getString("kty"));
+    Assertions.assertEquals("sig", key.getString("use"));
+    assertNotNull(key.getString("kid"));
+    assertNotNull(key.getString("n"));
+    Assertions.assertEquals("AQAB", key.getString("e"));
+  }
+
+  @Test
+  void unknownTenantReturnsError() {
+    Response response = getJwks(TENANT_UNKNOWN);
+    Assertions.assertEquals(400, response.getStatusCode());
+  }
 }
