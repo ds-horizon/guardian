@@ -1,7 +1,5 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.constant.Constants.MAX_PAGE_SIZE;
-import static com.dreamsportslabs.guardian.constant.Constants.PAGE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.dao.ClientDao;
@@ -37,16 +35,18 @@ public class ClientScopeService {
             client ->
                 // validate scope exists
                 scopeService
-                    .getScopes(tenantId, null, PAGE, MAX_PAGE_SIZE)
+                    .filterExistingScopes(tenantId, requestDto.getScopes())
                     .flatMap(
                         scopes -> {
                           // Check if the requested scopes exists in the tenant's scopes
-                          HashSet<String> allScopesSet = new HashSet<>();
-                          scopes.getScopes().forEach(s -> allScopesSet.add(s.getScope()));
-                          HashSet<String> scopesSet = new HashSet<>(requestDto.getScopes());
-                          if (!allScopesSet.containsAll(scopesSet)) {
+                          if (scopes.isEmpty()) {
                             return Single.error(
-                                INVALID_REQUEST.getCustomException("Scopes set are not valid"));
+                                INVALID_REQUEST.getCustomException("No valid scopes found"));
+                          }
+                          HashSet<String> inputScopes = new HashSet<>(requestDto.getScopes());
+                          if (inputScopes.size() != requestDto.getScopes().size()) {
+                            return Single.error(
+                                INVALID_REQUEST.getCustomException("Duplicate scopes found"));
                           }
                           return Single.just(client);
                         }))

@@ -9,6 +9,7 @@ import com.dreamsportslabs.guardian.dto.response.ScopeListResponseDto;
 import com.dreamsportslabs.guardian.dto.response.ScopeResponseDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,19 @@ public class ScopeService {
     return scopesSingle
         .map(scopesList -> scopesList.stream().map(this::toResponseDto).toList())
         .map(ScopeListResponseDto::new);
+  }
+
+  public Single<HashSet<String>> filterExistingScopes(String tenantId, List<String> scopes) {
+    return scopeDao
+        .getScopesByName(tenantId, scopes)
+        .map(
+            scopeModels -> {
+              HashSet<String> existingScopes = new HashSet<>();
+              for (ScopeModel model : scopeModels) {
+                existingScopes.add(model.getScope());
+              }
+              return existingScopes;
+            });
   }
 
   public Single<ScopeResponseDto> createScope(String tenantId, CreateScopeRequestDto requestDto) {

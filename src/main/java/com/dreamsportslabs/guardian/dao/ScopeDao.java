@@ -35,6 +35,19 @@ public class ScopeDao {
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }
 
+  public Single<List<ScopeModel>> getScopesByName(String tenantId, List<String> scopes) {
+    Tuple params = Tuple.tuple();
+    params.addString(tenantId);
+    for (String scope : scopes) {
+      params.addString(scope);
+    }
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(getScopesInListQuery(scopes.size()))
+        .execute(params)
+        .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
+  }
+
   public Single<ScopeModel> saveScopes(ScopeModel model) {
     return mysqlClient
         .getWriterPool()

@@ -29,4 +29,18 @@ public final class OidcConfigQuery {
       """
         DELETE FROM scope WHERE tenant_id = ? AND scope = ?
       """;
+
+  public static String getScopesInListQuery(int count) {
+    StringBuilder query =
+        new StringBuilder(
+            "SELECT id, scope, display_name, description, claims FROM scope WHERE tenant_id = ? AND scope IN (");
+    for (int i = 0; i < count; i++) {
+      query.append("?");
+      if (i < count - 1) {
+        query.append(", ");
+      }
+    }
+    query.append(")");
+    return query.toString();
+  }
 }
