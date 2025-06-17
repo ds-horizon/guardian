@@ -34,11 +34,11 @@ public class JwksService {
     JSONWebKey jwk = JSONWebKey.build(publicKey);
     jwk.kid = kid;
     jwk.kty = KeyType.RSA;
-    jwk.alg = resolveAlgorithmSafely(alg);
+    jwk.alg = verifyAlgorithm(alg);
     return new JsonObject(jwk.toJSON());
   }
 
-  private Algorithm resolveAlgorithmSafely(String alg) {
+  private Algorithm verifyAlgorithm(String alg) {
     try {
       return Algorithm.valueOf(alg);
     } catch (IllegalArgumentException | NullPointerException e) {
