@@ -5,6 +5,7 @@ import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.CONTACT_VERIFY_
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.EMAIL_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.FB_AUTH_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.GOOGLE_AUTH_CONFIG;
+import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OIDC_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OTP_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.SMS_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.TOKEN_CONFIG;
@@ -17,6 +18,7 @@ import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
 import com.dreamsportslabs.guardian.config.tenant.FbConfig;
 import com.dreamsportslabs.guardian.config.tenant.GoogleConfig;
+import com.dreamsportslabs.guardian.config.tenant.OIDCConfig;
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.SmsConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
