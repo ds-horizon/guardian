@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.dto.response;
 
+import com.dreamsportslabs.guardian.config.tenant.OIDCConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.Builder;
@@ -49,4 +50,24 @@ public class OIDCDiscoveryResponseDto {
 
   @JsonProperty("claims_supported")
   private List<String> claimsSupported;
+
+  public static OIDCDiscoveryResponseDto from(
+      OIDCConfig config, List<String> scopes, List<String> claims) {
+    return OIDCDiscoveryResponseDto.builder()
+        .issuer(config.getIssuer())
+        .authorizationEndpoint(config.getAuthorizationEndpoint())
+        .tokenEndpoint(config.getTokenEndpoint())
+        .userinfoEndpoint(config.getUserinfoEndpoint())
+        .revocationEndpoint(config.getRevocationEndpoint())
+        .jwksUri(config.getJwksUri())
+        .grantTypesSupported(config.getGrantTypesSupported())
+        .responseTypesSupported(config.getResponseTypesSupported())
+        .subjectTypesSupported(config.getSubjectTypesSupported())
+        .idTokenSigningAlgValuesSupported(config.getIdTokenSigningAlgValuesSupported())
+        .userinfoSigningAlgValuesSupported(config.getUserinfoSigningAlgValuesSupported())
+        .tokenEndpointAuthMethodsSupported(config.getTokenEndpointAuthMethodsSupported())
+        .scopesSupported(scopes)
+        .claimsSupported(claims)
+        .build();
+  }
 }

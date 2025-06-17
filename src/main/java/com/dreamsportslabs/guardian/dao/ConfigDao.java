@@ -48,7 +48,8 @@ public class ConfigDao {
             appendGoogleConfig(tenantId, builder),
             appendSmsConfig(tenantId, builder),
             appendOtpConfig(tenantId, builder),
-            appendContactVerifyConfig(tenantId, builder));
+            appendContactVerifyConfig(tenantId, builder),
+            appendOidcConfig(tenantId, builder));
     return Completable.merge(configSources)
         .andThen(Single.defer(() -> Single.just(builder.build())));
   }
@@ -107,6 +108,12 @@ public class ConfigDao {
   private Completable appendSmsConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
     return getConfigFromDb(tenantId, SmsConfig.class, SMS_CONFIG)
         .map(builder::smsConfig)
+        .ignoreElement();
+  }
+
+  private Completable appendOidcConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
+    return getConfigFromDb(tenantId, OIDCConfig.class, OIDC_CONFIG)
+        .map(builder::oidcConfig)
         .ignoreElement();
   }
 
