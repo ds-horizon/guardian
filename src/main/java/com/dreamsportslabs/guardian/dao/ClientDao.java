@@ -1,7 +1,7 @@
 package com.dreamsportslabs.guardian.dao;
 
+import static com.dreamsportslabs.guardian.dao.query.ClientQuery.CREATE_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.DELETE_CLIENT;
-import static com.dreamsportslabs.guardian.dao.query.ClientQuery.INSERT_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.SELECT_CLIENTS_BY_TENANT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.SELECT_CLIENT_BY_ID;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.UPDATE_CLIENT;
@@ -46,7 +46,7 @@ public class ClientDao {
           .addBoolean(client.getSkipConsent());
       return mysqlClient
           .getWriterPool()
-          .preparedQuery(INSERT_CLIENT)
+          .preparedQuery(CREATE_CLIENT)
           .rxExecute(params)
           .map(result -> client)
           .onErrorResumeNext(

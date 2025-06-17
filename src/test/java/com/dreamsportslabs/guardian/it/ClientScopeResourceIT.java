@@ -2,8 +2,12 @@ package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.Constants.TENANT_ID_HEADER;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dreamsportslabs.guardian.Setup;
 import com.dreamsportslabs.guardian.utils.DbUtils;
@@ -65,7 +69,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should add scope to client successfully")
-  void testAddScopeToClient_Success() {
+  void testAddScopeToClientSuccess() {
     // Arrange
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("scopes", List.of(TEST_SCOPE_1, TEST_SCOPE_2));
@@ -87,7 +91,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should return error when adding non-existent scope to client")
-  void testAddScopeToClient_ScopeNotFound() {
+  void testAddScopeToClientScopeNotFound() {
     // Arrange
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("scopes", List.of(TEST_SCOPE_4));
@@ -102,12 +106,32 @@ public class ClientScopeResourceIT {
         .then()
         .statusCode(400)
         .body("error.code", equalTo("invalid_request"))
-        .body("error.message", containsString("Scopes set are not valid"));
+        .body("error.message", containsString("No valid scopes found"));
+  }
+
+  @Test
+  @DisplayName("Should return error when adding non-existent some scope to client")
+  void testAddScopeToClientSoneScopeNotFound() {
+    // Arrange
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("scopes", List.of(TEST_SCOPE_4, TEST_SCOPE_2));
+
+    // Act & Assert
+    given()
+        .header(TENANT_ID_HEADER, TENANT_ID)
+        .contentType(ContentType.JSON)
+        .body(requestBody)
+        .when()
+        .post(CLIENT_ENDPOINT + "/" + testClientId + "/scope")
+        .then()
+        .statusCode(400)
+        .body("error.code", equalTo("invalid_request"))
+        .body("error.message", containsString("Some scopes do not exist"));
   }
 
   @Test
   @DisplayName("Should return error when adding scope to non-existent client")
-  void testAddScopeToClient_ClientNotFound() {
+  void testAddScopeToClientClientNotFound() {
     // Arrange
     String nonExistentClientId = UUID.randomUUID().toString();
     Map<String, Object> requestBody = new HashMap<>();
@@ -128,7 +152,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should return error when adding duplicate scope to client")
-  void testAddScopeToClient_DuplicateScope() {
+  void testAddScopeToClientDuplicateScope() {
     // Arrange
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("scopes", List.of(TEST_SCOPE_1));
@@ -158,7 +182,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should list client scopes successfully")
-  void testGetClientScopes_Success() {
+  void testGetClientScopesSuccess() {
     // Arrange
     addScopeToClient(TENANT_ID, testClientId, TEST_SCOPE_1, TEST_SCOPE_2);
 
@@ -181,7 +205,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should return empty list when client has no scopes")
-  void testGetClientScopes_EmptyList() {
+  void testGetClientScopesEmptyList() {
     // Act & Assert
     Response response =
         given()
@@ -198,7 +222,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should return error when listing scopes for non-existent client")
-  void testGetClientScopes_ClientNotFound() {
+  void testGetClientScopesClientNotFound() {
     // Arrange
     String nonExistentClientId = UUID.randomUUID().toString();
 
@@ -215,7 +239,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should remove scope from client successfully")
-  void testRemoveScopeFromClient_Success() {
+  void testRemoveScopeFromClientSuccess() {
     // Arrange
     addScopeToClient(TENANT_ID, testClientId, TEST_SCOPE_2);
 
@@ -234,7 +258,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should return error when removing non-existent scope from client")
-  void testRemoveScopeFromClient_ScopeNotAssigned() {
+  void testRemoveScopeFromClientScopeNotAssigned() {
     // Act & Assert
     given()
         .header(TENANT_ID_HEADER, TENANT_ID)
@@ -249,7 +273,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should return error when removing scope from non-existent client")
-  void testRemoveScopeFromClient_ClientNotFound() {
+  void testRemoveScopeFromClientClientNotFound() {
     // Arrange
     String nonExistentClientId = UUID.randomUUID().toString();
 
@@ -267,7 +291,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should validate required fields when adding scope")
-  void testAddScopeToClient_MissingFields() {
+  void testAddScopeToClientMissingFields() {
     // Arrange
     Map<String, Object> requestBody = new HashMap<>();
     // Missing scopes
@@ -287,7 +311,7 @@ public class ClientScopeResourceIT {
 
   @Test
   @DisplayName("Should return error when tenant ID is missing")
-  void testAddScopeToClient_MissingTenantId() {
+  void testAddScopeToClientMissingTenantId() {
     // Arrange
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("scopes", List.of(TEST_SCOPE_1));

@@ -46,7 +46,7 @@ public class ScopeService {
 
   public Single<HashSet<String>> filterExistingScopes(String tenantId, List<String> scopes) {
     return scopeDao
-        .getScopesByName(tenantId, scopes)
+        .getScopeByNames(tenantId, scopes)
         .map(
             scopeModels -> {
               HashSet<String> existingScopes = new HashSet<>();

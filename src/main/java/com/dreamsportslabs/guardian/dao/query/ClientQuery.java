@@ -2,7 +2,7 @@ package com.dreamsportslabs.guardian.dao.query;
 
 public final class ClientQuery {
 
-  public static final String INSERT_CLIENT =
+  public static final String CREATE_CLIENT =
       """
       INSERT INTO client (
           tenant_id, client_id, client_name, client_secret, client_uri,

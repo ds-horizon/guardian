@@ -2,9 +2,13 @@ package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
+import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dto.request.CreateClientRequestDto;
 import com.dreamsportslabs.guardian.dto.request.UpdateClientRequestDto;
+import com.dreamsportslabs.guardian.dto.response.ClientListResponseDto;
+import com.dreamsportslabs.guardian.dto.response.ClientResponseDto;
 import com.dreamsportslabs.guardian.service.ClientService;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -41,6 +45,7 @@ public class ClientResource {
 
     return clientService
         .createClient(requestDto, tenantId)
+        .map(this::mapToResponseDto)
         .map(client -> Response.status(Response.Status.CREATED).entity(client).build())
         .toCompletionStage();
   }
@@ -52,9 +57,22 @@ public class ClientResource {
       @QueryParam("page") @DefaultValue("1") int page,
       @QueryParam("limit") @DefaultValue("20") int limit) {
     String tenantId = headers.getHeaderString(TENANT_ID);
+    if (page < 1) {
+      throw INVALID_REQUEST.getCustomException("Page must be greater than 0");
+    }
+    if (limit < 1 || limit > 100) {
+      throw INVALID_REQUEST.getCustomException("Limit must be between 1 and 100");
+    }
 
     return clientService
         .getClients(tenantId, page, limit)
+        .map(
+            clientModels ->
+                ClientListResponseDto.builder()
+                    .clients(clientModels.stream().map(this::mapToResponseDto).toList())
+                    .limit(limit)
+                    .page(page)
+                    .build())
         .map(clients -> Response.ok(clients).build())
         .toCompletionStage();
   }
@@ -68,6 +86,7 @@ public class ClientResource {
 
     return clientService
         .getClient(clientId, tenantId)
+        .map(this::mapToResponseDto)
         .map(client -> Response.ok(client).build())
         .switchIfEmpty(Single.error(CLIENT_NOT_FOUND.getException()))
         .toCompletionStage();
@@ -85,6 +104,7 @@ public class ClientResource {
 
     return clientService
         .updateClient(clientId, requestDto, tenantId)
+        .map(this::mapToResponseDto)
         .map(client -> Response.ok(client).build())
         .toCompletionStage();
   }
@@ -113,5 +133,21 @@ public class ClientResource {
         .map(
             newSecret -> Response.ok().entity(java.util.Map.of("client_secret", newSecret)).build())
         .toCompletionStage();
+  }
+
+  private ClientResponseDto mapToResponseDto(ClientModel model) {
+    return ClientResponseDto.builder()
+        .clientId(model.getClientId())
+        .clientName(model.getClientName())
+        .clientSecret(model.getClientSecret())
+        .clientUri(model.getClientUri())
+        .contacts(model.getContacts())
+        .grantTypes(model.getGrantTypes())
+        .logoUri(model.getLogoUri())
+        .policyUri(model.getPolicyUri())
+        .redirectUris(model.getRedirectUris())
+        .responseTypes(model.getResponseTypes())
+        .skipConsent(model.getSkipConsent())
+        .build();
   }
 }

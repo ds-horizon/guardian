@@ -44,9 +44,9 @@ public class ClientScopeService {
                                 INVALID_REQUEST.getCustomException("No valid scopes found"));
                           }
                           HashSet<String> inputScopes = new HashSet<>(requestDto.getScopes());
-                          if (inputScopes.size() != requestDto.getScopes().size()) {
+                          if (inputScopes.size() != scopes.size()) {
                             return Single.error(
-                                INVALID_REQUEST.getCustomException("Duplicate scopes found"));
+                                INVALID_REQUEST.getCustomException("Some scopes do not exist"));
                           }
                           return Single.just(client);
                         }))

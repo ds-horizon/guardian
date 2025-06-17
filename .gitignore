@@ -15,3 +15,4 @@ logs/*
 .vscode
 .config
 .env
+.history

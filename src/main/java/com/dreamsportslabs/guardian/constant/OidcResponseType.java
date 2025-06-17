@@ -3,12 +3,12 @@ package com.dreamsportslabs.guardian.constant;
 import lombok.Getter;
 
 @Getter
-public enum OidcResponseTypes {
+public enum OidcResponseType {
   CODE("code");
 
   private final String type;
 
-  OidcResponseTypes(String type) {
+  OidcResponseType(String type) {
     this.type = type;
   }
 

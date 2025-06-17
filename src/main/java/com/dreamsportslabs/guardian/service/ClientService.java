@@ -7,30 +7,25 @@ import com.dreamsportslabs.guardian.dao.ClientScopeDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dto.request.CreateClientRequestDto;
 import com.dreamsportslabs.guardian.dto.request.UpdateClientRequestDto;
-import com.dreamsportslabs.guardian.dto.response.ClientListResponseDto;
-import com.dreamsportslabs.guardian.dto.response.ClientResponseDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
-import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.UUID;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class ClientService {
   private final ClientDao clientDao;
   private final ClientScopeDao clientScopeDao;
-  private final SecureRandom secureRandom = new SecureRandom();
 
-  public Single<ClientResponseDto> createClient(
-      CreateClientRequestDto requestDto, String tenantId) {
+  public Single<ClientModel> createClient(CreateClientRequestDto requestDto, String tenantId) {
     requestDto.validate();
 
-    String clientId = UUID.randomUUID().toString().replace("-", "");
-    String clientSecret = generateClientSecret();
+    String clientId = RandomStringUtils.randomAlphanumeric(20);
+    String clientSecret = RandomStringUtils.randomAlphanumeric(32);
 
     ClientModel clientModel =
         ClientModel.builder()
@@ -48,35 +43,19 @@ public class ClientService {
             .skipConsent(requestDto.getSkipConsent())
             .build();
 
-    return clientDao.createClient(clientModel).map(this::mapToResponseDto);
+    return clientDao.createClient(clientModel);
   }
 
-  public Maybe<ClientResponseDto> getClient(String clientId, String tenantId) {
-    return clientDao.getClientById(clientId, tenantId).map(this::mapToResponseDto);
+  public Maybe<ClientModel> getClient(String clientId, String tenantId) {
+    return clientDao.getClientById(clientId, tenantId);
   }
 
-  public Single<ClientListResponseDto> getClients(String tenantId, int page, int limit) {
-    if (page < 1) {
-      throw INVALID_REQUEST.getCustomException("Page must be greater than 0");
-    }
-    if (limit < 1 || limit > 100) {
-      throw INVALID_REQUEST.getCustomException("Limit must be between 1 and 100");
-    }
-
+  public Single<List<ClientModel>> getClients(String tenantId, int page, int limit) {
     int offset = (page - 1) * limit;
-
-    return clientDao
-        .getClientsByTenant(tenantId, limit, offset)
-        .map(
-            clientModels ->
-                ClientListResponseDto.builder()
-                    .clients(clientModels.stream().map(this::mapToResponseDto).toList())
-                    .limit(limit)
-                    .page(page)
-                    .build());
+    return clientDao.getClientsByTenant(tenantId, limit, offset);
   }
 
-  public Single<ClientResponseDto> updateClient(
+  public Single<ClientModel> updateClient(
       String clientId, UpdateClientRequestDto requestDto, String tenantId) {
     requestDto.validate();
 
@@ -102,8 +81,7 @@ public class ClientService {
                       .build();
 
               return clientDao.updateClient(updatedClient);
-            })
-        .map(this::mapToResponseDto);
+            });
   }
 
   public Single<Boolean> deleteClient(String clientId, String tenantId) {
@@ -123,34 +101,9 @@ public class ClientService {
         .switchIfEmpty(Single.error(INVALID_REQUEST.getCustomException("Client not found")))
         .flatMap(
             existingClient -> {
-              String newSecret = generateClientSecret();
+              String newSecret = RandomStringUtils.randomAlphanumeric(32);
               existingClient.setClientSecret(newSecret);
               return clientDao.updateClient(existingClient).map(updated -> newSecret);
             });
-  }
-
-  private String generateClientSecret() {
-    byte[] randomBytes = new byte[32];
-    secureRandom.nextBytes(randomBytes);
-    return Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(randomBytes)
-        .replaceAll("[^A-Za-z0-9]", "");
-  }
-
-  private ClientResponseDto mapToResponseDto(ClientModel model) {
-    return ClientResponseDto.builder()
-        .clientId(model.getClientId())
-        .clientName(model.getClientName())
-        .clientSecret(model.getClientSecret())
-        .clientUri(model.getClientUri())
-        .contacts(model.getContacts())
-        .grantTypes(model.getGrantTypes())
-        .logoUri(model.getLogoUri())
-        .policyUri(model.getPolicyUri())
-        .redirectUris(model.getRedirectUris())
-        .responseTypes(model.getResponseTypes())
-        .skipConsent(model.getSkipConsent())
-        .build();
   }
 }

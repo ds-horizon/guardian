@@ -2,8 +2,12 @@ package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.Constants.TENANT_ID_HEADER;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dreamsportslabs.guardian.utils.DbUtils;
 import io.restassured.http.ContentType;
@@ -32,7 +36,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should create OIDC client successfully")
-  void testCreateClient_Success() {
+  void testCreateClientSuccess() {
     // Arrange
     Map<String, Object> requestBody = createValidClientRequest();
 
@@ -62,7 +66,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should return error when required fields are missing")
-  void testCreateClient_MissingRequiredFields() {
+  void testCreateClientMissingRequiredFields() {
     // Arrange
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("clientUri", "https://example.com");
@@ -83,7 +87,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should return error when tenant ID is missing")
-  void testCreateClient_MissingTenantId() {
+  void testCreateClientMissingTenantId() {
     // Arrange
     Map<String, Object> requestBody = createValidClientRequest();
 
@@ -99,7 +103,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should return error when client name already exists for tenant")
-  void testCreateClient_DuplicateClientName() {
+  void testCreateClientDuplicateClientName() {
     // Arrange
     Map<String, Object> requestBody = createValidClientRequest();
     String clientName = (String) requestBody.get("client_name");
@@ -132,7 +136,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should get client by ID successfully")
-  void testGetClient_Success() {
+  void testGetClientSuccess() {
     // Arrange
     String clientId = createTestClient().jsonPath().getString("client_id");
 
@@ -150,7 +154,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should return 404 when client not found")
-  void testGetClient_NotFound() {
+  void testGetClientNotFound() {
     // Arrange
     String nonExistentClientId = UUID.randomUUID().toString();
 
@@ -166,7 +170,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should list clients with pagination")
-  void testGetClients_WithPagination() {
+  void testGetClientsWithPagination() {
     // Arrange
     createTestClient();
     createTestClient();
@@ -192,7 +196,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should update client successfully")
-  void testUpdateClient_Success() {
+  void testUpdateClientSuccess() {
     // Arrange
     Map<String, Object> updateRequest = copyClientResponseToRequestBody(createTestClient());
     updateRequest.put("client_name", "Updated Client Name");
@@ -213,7 +217,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should delete client successfully")
-  void testDeleteClient_Success() {
+  void testDeleteClientSuccess() {
     // Arrange
     String clientId = createTestClient().jsonPath().getString("client_id");
 
@@ -231,7 +235,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should return 404 when deleting non-existent client")
-  void testDeleteClient_NotFound() {
+  void testDeleteClientNotFound() {
     // Arrange
     String nonExistentClientId = UUID.randomUUID().toString();
 
@@ -248,7 +252,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should validate grant types")
-  void testCreateClient_InvalidGrantTypes() {
+  void testCreateClientInvalidGrantTypes() {
     // Arrange
     Map<String, Object> requestBody = createValidClientRequest();
     requestBody.put("grant_types", Arrays.asList("invalid_grant_type"));
@@ -268,7 +272,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should validate response types")
-  void testCreateClient_InvalidResponseTypes() {
+  void testCreateClientInvalidResponseTypes() {
     // Arrange
     Map<String, Object> requestBody = createValidClientRequest();
     requestBody.put("response_types", Arrays.asList("invalid_response_type"));
@@ -288,7 +292,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should handle concurrent client creation")
-  void testCreateClient_ConcurrentRequests() {
+  void testCreateClientConcurrentRequests() {
     // This test would require more complex setup for true concurrency testing
     // For now, we'll test sequential creation with unique names
 
@@ -317,7 +321,7 @@ public class ClientResourceIT {
 
   @Test
   @DisplayName("Should generate secure client secret with minimum length")
-  void testCreateClient_GeneratesSecureSecret() {
+  void testCreateClientGeneratesSecureSecret() {
     // Arrange
     Map<String, Object> requestBody = createValidClientRequest();
 

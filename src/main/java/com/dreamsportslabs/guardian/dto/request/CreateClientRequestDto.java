@@ -2,8 +2,8 @@ package com.dreamsportslabs.guardian.dto.request;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
-import com.dreamsportslabs.guardian.constant.OidcGrantTypes;
-import com.dreamsportslabs.guardian.constant.OidcResponseTypes;
+import com.dreamsportslabs.guardian.constant.OidcGrantType;
+import com.dreamsportslabs.guardian.constant.OidcResponseType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.List;
@@ -60,7 +60,7 @@ public class CreateClientRequestDto {
 
     // Validate grant types
     List<String> validGrantTypes =
-        Arrays.stream(OidcGrantTypes.values()).map(OidcGrantTypes::getValue).toList();
+        Arrays.stream(OidcGrantType.values()).map(OidcGrantType::getValue).toList();
     for (String grantType : grantTypes) {
       if (!validGrantTypes.contains(grantType)) {
         throw INVALID_REQUEST.getCustomException("Invalid grant type: " + grantType);
@@ -69,7 +69,7 @@ public class CreateClientRequestDto {
 
     // Validate response types
     List<String> validResponseTypes =
-        Arrays.stream(OidcResponseTypes.values()).map(OidcResponseTypes::getValue).toList();
+        Arrays.stream(OidcResponseType.values()).map(OidcResponseType::getValue).toList();
     for (String responseType : responseTypes) {
       if (!validResponseTypes.contains(responseType)) {
         throw INVALID_REQUEST.getCustomException("Invalid response type: " + responseType);
