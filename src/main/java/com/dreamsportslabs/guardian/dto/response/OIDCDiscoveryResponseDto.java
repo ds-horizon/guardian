@@ -52,7 +52,7 @@ public class OIDCDiscoveryResponseDto {
   private List<String> claimsSupported;
 
   public static OIDCDiscoveryResponseDto from(
-          OidcConfig config, List<String> scopes, List<String> claims) {
+      OidcConfig config, List<String> scopes, List<String> claims) {
     return OIDCDiscoveryResponseDto.builder()
         .issuer(config.getIssuer())
         .authorizationEndpoint(config.getAuthorizationEndpoint())
