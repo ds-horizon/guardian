@@ -1,6 +1,6 @@
 package com.dreamsportslabs.guardian.dto.response;
 
-import com.dreamsportslabs.guardian.config.tenant.OIDCConfig;
+import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.Builder;
@@ -52,7 +52,7 @@ public class OIDCDiscoveryResponseDto {
   private List<String> claimsSupported;
 
   public static OIDCDiscoveryResponseDto from(
-      OIDCConfig config, List<String> scopes, List<String> claims) {
+          OidcConfig config, List<String> scopes, List<String> claims) {
     return OIDCDiscoveryResponseDto.builder()
         .issuer(config.getIssuer())
         .authorizationEndpoint(config.getAuthorizationEndpoint())

@@ -4,7 +4,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class OIDCConfig {
+public class OidcConfig {
   private String tenantId;
   private String issuer;
   private String authorizationEndpoint;

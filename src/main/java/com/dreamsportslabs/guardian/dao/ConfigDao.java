@@ -18,7 +18,7 @@ import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
 import com.dreamsportslabs.guardian.config.tenant.FbConfig;
 import com.dreamsportslabs.guardian.config.tenant.GoogleConfig;
-import com.dreamsportslabs.guardian.config.tenant.OIDCConfig;
+import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.SmsConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -114,9 +114,13 @@ public class ConfigDao {
   }
 
   private Completable appendOidcConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, OIDCConfig.class, OIDC_CONFIG)
+    return getConfigFromDb(tenantId, OidcConfig.class, OIDC_CONFIG)
         .map(builder::oidcConfig)
         .ignoreElement();
+  }
+
+  public Single<OidcConfig> getOidcConfig(String tenantId) {
+    return getConfigFromDb(tenantId, OidcConfig.class, OIDC_CONFIG);
   }
 
   private <T> Single<T> getConfigFromDb(String tenantId, Class<T> configType, String query) {
