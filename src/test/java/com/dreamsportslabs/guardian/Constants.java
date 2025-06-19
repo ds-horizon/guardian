@@ -27,6 +27,7 @@ public class Constants {
   public static final String BODY_PARAM_LOCATION = "location";
   public static final String BODY_PARAM_PARAMS = "params";
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String BODY_PARAM_CONTACT = "contact";
 
   // Request Body Params Values
 
@@ -63,6 +64,7 @@ public class Constants {
   public static final String ERROR_RESENDS_EXHAUSTED = "resends_exhausted";
   public static final String ERROR_RETRIES_EXHAUSTED = "retries_exhausted";
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
+  public static final String ERROR_SMS_SERVICE = "sms_service_error";
 
   // Response Body Params
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
