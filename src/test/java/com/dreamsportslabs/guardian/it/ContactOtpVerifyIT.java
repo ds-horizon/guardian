@@ -15,7 +15,6 @@ import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RETRIES
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.constant.Channel.SMS;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -31,29 +30,13 @@ import io.restassured.response.Response;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class ContactOtpVerifyIT {
   private static final String TENANT_ID = "tenant1"; // OTP is mocked for this tenant
   private static final String TENANT_ID_NON_MOCKED = "tenant2"; // OTP is NOT mocked for this tenant
-  private static WireMockServer wireMockServer;
-
-  @BeforeAll
-  public static void setupWireMock() {
-    wireMockServer = new WireMockServer(8087); // or any available port
-    wireMockServer.start();
-    configureFor("localhost", 8087);
-  }
-
-  @AfterAll
-  public static void teardownWireMock() {
-    if (wireMockServer != null) {
-      wireMockServer.stop();
-    }
-  }
+  private WireMockServer wireMockServer;
 
   private StubMapping getStubForSendSms() {
     return wireMockServer.stubFor(

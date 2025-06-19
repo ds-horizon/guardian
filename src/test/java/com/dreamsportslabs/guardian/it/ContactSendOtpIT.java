@@ -16,29 +16,13 @@ import io.restassured.response.Response;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class ContactSendOtpIT {
   private static final String TENANT_ID = "tenant1"; // OTP is mocked for this tenant
   private static final String TENANT_ID_NON_MOCKED = "tenant2"; // OTP is NOT mocked for this tenant
-  private static WireMockServer wireMockServer;
-
-  @BeforeAll
-  public static void setupWireMock() {
-    wireMockServer = new WireMockServer(8088); // or any available port
-    wireMockServer.start();
-    configureFor("localhost", 8088);
-  }
-
-  @AfterAll
-  public static void teardownWireMock() {
-    if (wireMockServer != null) {
-      wireMockServer.stop();
-    }
-  }
+  private WireMockServer wireMockServer;
 
   private StubMapping getStubForSendSms() {
     return wireMockServer.stubFor(
