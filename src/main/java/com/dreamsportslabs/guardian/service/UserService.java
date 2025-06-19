@@ -1,6 +1,8 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.PROVIDER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_IS_NEW_USER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_SERVICE_ERROR;
 
@@ -67,7 +69,7 @@ public class UserService {
               } else if (!resBody.containsKey(USERID)) {
                 throw USER_SERVICE_ERROR.getException();
               }
-              return resBody;
+              return resBody.put(USER_RESPONSE_IS_NEW_USER, true);
             });
   }
 
@@ -99,7 +101,7 @@ public class UserService {
         .post(userConfig.getPort(), userConfig.getHost(), userConfig.getAddProviderPath())
         .ssl(userConfig.getIsSslEnabled())
         .putHeaders(Utils.getForwardingHeaders(headers))
-        .rxSendJson(new JsonObject().put(USERID, userId).put("provider", provider))
+        .rxSendJson(new JsonObject().put(USERID, userId).put(PROVIDER, provider))
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {

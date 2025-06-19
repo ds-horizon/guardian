@@ -1,9 +1,30 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK;
-import static com.dreamsportslabs.guardian.constant.Constants.GOOGLE;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_EMAIL;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_FIRST_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_FULL_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_LAST_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_MIDDLE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_PICTURE;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_PICTURE_DATA;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_PICTURE_DATA_URL;
+import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_USER_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.NO_PICTURE;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_EMAIL;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_FAMILY_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_FULL_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_GIVEN_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_MIDDLE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_PICTURE;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_SUB;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PROVIDERS_FACEBOOK;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PROVIDERS_GOOGLE;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_TOKENS_ACCESS_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_TOKENS_ID_TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
@@ -42,12 +63,12 @@ public class SocialAuthService {
                 userService
                     .getUser(
                         Map.of(
-                            "email",
-                            fbUserData.getString("email"),
-                            "providerName",
-                            "facebook",
-                            "providerId",
-                            fbUserData.getString("id")),
+                            USER_FILTERS_EMAIL,
+                            fbUserData.getString(FACEBOOK_FIELDS_EMAIL),
+                            USER_FILTERS_PROVIDER_NAME,
+                            OIDC_PROVIDERS_FACEBOOK,
+                            USER_FILTERS_PROVIDER_USER_ID,
+                            fbUserData.getString(FACEBOOK_FIELDS_USER_ID)),
                         headers,
                         tenantId)
                     .map(res -> Pair.of(fbUserData, res)))
@@ -84,23 +105,26 @@ public class SocialAuthService {
 
   private UserDto getUserDtoFromFbUserData(JsonObject fbUserData, String accessToken) {
     return UserDto.builder()
-        .name(fbUserData.getString("name"))
-        .firstName(fbUserData.getString("first_name"))
-        .middleName(fbUserData.getString("middle_name"))
-        .lastName(fbUserData.getString("last_name"))
-        .email(fbUserData.getString("email"))
+        .name(fbUserData.getString(FACEBOOK_FIELDS_FULL_NAME))
+        .firstName(fbUserData.getString(FACEBOOK_FIELDS_FIRST_NAME))
+        .middleName(fbUserData.getString(FACEBOOK_FIELDS_MIDDLE_NAME))
+        .lastName(fbUserData.getString(FACEBOOK_FIELDS_LAST_NAME))
+        .email(fbUserData.getString(FACEBOOK_FIELDS_EMAIL))
         .picture(
-            fbUserData.getJsonObject("picture", NO_PICTURE).getJsonObject("data").getString("url"))
+            fbUserData
+                .getJsonObject(FACEBOOK_FIELDS_PICTURE, NO_PICTURE)
+                .getJsonObject(FACEBOOK_FIELDS_PICTURE_DATA)
+                .getString(FACEBOOK_FIELDS_PICTURE_DATA_URL))
         .provider(getFbProviderData(fbUserData, accessToken))
         .build();
   }
 
   private Provider getFbProviderData(JsonObject fbUserData, String accessToken) {
     return Provider.builder()
-        .name(FACEBOOK)
-        .providerUserId(fbUserData.getString("id"))
+        .name(OIDC_PROVIDERS_FACEBOOK)
+        .providerUserId(fbUserData.getString(FACEBOOK_FIELDS_USER_ID))
         .data(fbUserData.getMap())
-        .credentials(Map.of("access_token", accessToken))
+        .credentials(Map.of(OIDC_TOKENS_ACCESS_TOKEN, accessToken))
         .build();
   }
 
@@ -114,12 +138,12 @@ public class SocialAuthService {
                 userService
                     .getUser(
                         Map.of(
-                            "email",
-                            googleUserData.getString("email"),
-                            "providerName",
-                            "google",
-                            "providerId",
-                            googleUserData.getString("sub")),
+                            USER_FILTERS_EMAIL,
+                            googleUserData.getString(OIDC_CLAIMS_EMAIL),
+                            USER_FILTERS_PROVIDER_NAME,
+                            OIDC_PROVIDERS_GOOGLE,
+                            USER_FILTERS_PROVIDER_USER_ID,
+                            googleUserData.getString(OIDC_CLAIMS_SUB)),
                         headers,
                         tenantId)
                     .map(res -> Pair.of(googleUserData, res)))
@@ -158,22 +182,22 @@ public class SocialAuthService {
 
   private UserDto getUserDtoFromGoogleUserData(JsonObject googleUserData, String idToken) {
     return UserDto.builder()
-        .name(googleUserData.getString("name"))
-        .firstName(googleUserData.getString("given_name"))
-        .middleName(googleUserData.getString("middle_name"))
-        .lastName(googleUserData.getString("family_name"))
-        .email(googleUserData.getString("email"))
-        .picture(googleUserData.getString("picture"))
+        .name(googleUserData.getString(OIDC_CLAIMS_FULL_NAME))
+        .firstName(googleUserData.getString(OIDC_CLAIMS_GIVEN_NAME))
+        .middleName(googleUserData.getString(OIDC_CLAIMS_MIDDLE_NAME))
+        .lastName(googleUserData.getString(OIDC_CLAIMS_FAMILY_NAME))
+        .email(googleUserData.getString(OIDC_CLAIMS_EMAIL))
+        .picture(googleUserData.getString(OIDC_CLAIMS_PICTURE))
         .provider(getGoogleProviderData(googleUserData, idToken))
         .build();
   }
 
   private Provider getGoogleProviderData(JsonObject googleUserData, String idToken) {
     return Provider.builder()
-        .name(GOOGLE)
-        .providerUserId(googleUserData.getString("sub"))
+        .name(OIDC_PROVIDERS_GOOGLE)
+        .providerUserId(googleUserData.getString(OIDC_CLAIMS_SUB))
         .data(googleUserData.getMap())
-        .credentials(Map.of("id_token", idToken))
+        .credentials(Map.of(OIDC_TOKENS_ID_TOKEN, idToken))
         .build();
   }
 }

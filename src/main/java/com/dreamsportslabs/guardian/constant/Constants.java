@@ -5,16 +5,46 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 
 public final class Constants {
+  public static final String DELIMITER_COMMA = ",";
+
   public static final String TENANT_ID = "tenant-id";
   public static final String USERID = "userId";
+  public static final String PROVIDER = "provider";
+  public static final String USER_RESPONSE_IS_NEW_USER = "isNewUser";
 
   public static final String TOKEN = "token";
   public static final String CODE = "code";
   public static final String JWKS_KEYS = "keys";
 
-  public static final String FACEBOOK = "facebook";
-  public static final String GOOGLE = "google";
-  public static final String IS_NEW_USER = "isNewUser";
+  public static final String OIDC_TOKENS_ID_TOKEN = "id_token";
+  public static final String OIDC_TOKENS_ACCESS_TOKEN = "access_token";
+
+  public static final String OIDC_PROVIDERS_FACEBOOK = "facebook";
+  public static final String OIDC_PROVIDERS_GOOGLE = "google";
+
+  public static final String FACEBOOK_FIELDS_EMAIL = "email";
+  public static final String FACEBOOK_FIELDS_USER_ID = "id";
+  public static final String FACEBOOK_FIELDS_FULL_NAME = "name";
+  public static final String FACEBOOK_FIELDS_FIRST_NAME = "first_name";
+  public static final String FACEBOOK_FIELDS_MIDDLE_NAME = "middle_name";
+  public static final String FACEBOOK_FIELDS_LAST_NAME = "last_name";
+  public static final String FACEBOOK_FIELDS_PICTURE = "picture";
+  public static final String FACEBOOK_FIELDS_PICTURE_DATA = "data";
+  public static final String FACEBOOK_FIELDS_PICTURE_DATA_URL = "url";
+
+  public static final String FACEBOOK_GRAPHQL_HOST = "graph.facebook.com";
+  public static final String FACEBOOK_ME_QUERY_PATH = "/me";
+  public static final String FACEBOOK_ME_QUERY_FILTER_ACCESS_TOKEN = "access_token";
+  public static final String FACEBOOK_ME_QUERY_FILTER_APP_SECRET_PROOF = "appsecret_proof";
+  public static final String FACEBOOK_ME_QUERY_FILTER_FIELDS = "fields";
+
+  public static final String OIDC_CLAIMS_EMAIL = "email";
+  public static final String OIDC_CLAIMS_SUB = "sub";
+  public static final String OIDC_CLAIMS_FULL_NAME = "name";
+  public static final String OIDC_CLAIMS_GIVEN_NAME = "given_name";
+  public static final String OIDC_CLAIMS_FAMILY_NAME = "family_name";
+  public static final String OIDC_CLAIMS_MIDDLE_NAME = "middle_name";
+  public static final String OIDC_CLAIMS_PICTURE = "picture";
 
   public static final String EXPIRY_OPTION_REDIS = "EX";
   public static final String STATIC_OTP_NUMBER = "9";
@@ -61,8 +91,10 @@ public final class Constants {
     prohibitedForwardingHeaders.add("ACCEPT-ENCODING");
   }
 
-  public static final String EMAIL = "email";
-  public static final String PHONE = "phoneNumber";
+  public static final String USER_FILTERS_EMAIL = "email";
+  public static final String USER_FILTERS_PHONE = "phoneNumber";
+  public static final String USER_FILTERS_PROVIDER_NAME = "providerName";
+  public static final String USER_FILTERS_PROVIDER_USER_ID = "providerId";
 
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
@@ -81,6 +113,17 @@ public final class Constants {
   public static final Integer REVOCATIONS_KEY_SCORE_END_INDEX = 2;
   public static final String REVOCATIONS_REDIS_KEY_PREFIX = "revocations";
 
+<<<<<<< HEAD
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
+=======
+  public static final String OTP_RESEND_AFTER = "resendAfter";
+  public static final String OTP_RETRIES_LEFT = "retriesLeft";
+
+  public static final String MESSAGE_CHANNEL = "channel";
+  public static final String MESSAGE_TO = "to";
+  public static final String MESSAGE_TEMPLATE_NAME = "templateName";
+  public static final String MESSAGE_TEMPLATE_PARAMS = "templateParams";
+  public static final String MESSAGE_TEMPLATE_PARAMS_OTP = "otp";
+>>>>>>> 6a359f0 (refactor)
 }

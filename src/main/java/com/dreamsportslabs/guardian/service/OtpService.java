@@ -1,5 +1,10 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_CHANNEL;
+import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_PARAMS;
+import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_PARAMS_OTP;
+import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TO;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.EMAIL_SERVICE_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.SMS_SERVICE_ERROR;
@@ -32,7 +37,7 @@ public class OtpService {
       List<Contact> contacts, String otp, MultivaluedMap<String, String> headers, String tenantId) {
     List<Completable> completables = new ArrayList<>();
     for (Contact contact : contacts) {
-      contact.getTemplate().getParams().put("otp", otp);
+      contact.getTemplate().getParams().put(MESSAGE_TEMPLATE_PARAMS_OTP, otp);
       if (contact.getChannel().equals(Channel.EMAIL)) {
         completables.add(sendOtpViaEmail(contact, headers, tenantId));
       } else {
@@ -51,10 +56,10 @@ public class OtpService {
         .putHeaders(Utils.getForwardingHeaders(headers))
         .rxSendJson(
             new JsonObject()
-                .put("channel", contact.getChannel().getName())
-                .put("to", contact.getIdentifier())
-                .put("templateName", contact.getTemplate().getName())
-                .put("templateParams", contact.getTemplate().getParams()))
+                .put(MESSAGE_CHANNEL, contact.getChannel().getName())
+                .put(MESSAGE_TO, contact.getIdentifier())
+                .put(MESSAGE_TEMPLATE_NAME, contact.getTemplate().getName())
+                .put(MESSAGE_TEMPLATE_PARAMS, contact.getTemplate().getParams()))
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
@@ -75,10 +80,10 @@ public class OtpService {
         .putHeaders(Utils.getForwardingHeaders(headers))
         .rxSendJson(
             new JsonObject()
-                .put("channel", contact.getChannel().getName())
-                .put("to", contact.getIdentifier())
-                .put("templateName", contact.getTemplate().getName())
-                .put("templateParams", contact.getTemplate().getParams()))
+                .put(MESSAGE_CHANNEL, contact.getChannel().getName())
+                .put(MESSAGE_TO, contact.getIdentifier())
+                .put(MESSAGE_TEMPLATE_NAME, contact.getTemplate().getName())
+                .put(MESSAGE_TEMPLATE_PARAMS, contact.getTemplate().getParams()))
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {

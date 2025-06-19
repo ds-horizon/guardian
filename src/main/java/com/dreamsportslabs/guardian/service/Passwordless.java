@@ -1,9 +1,11 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.constant.Constants.EMAIL;
-import static com.dreamsportslabs.guardian.constant.Constants.PHONE;
+import static com.dreamsportslabs.guardian.constant.Constants.OTP_RESEND_AFTER;
+import static com.dreamsportslabs.guardian.constant.Constants.OTP_RETRIES_LEFT;
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
@@ -66,7 +68,7 @@ public class Passwordless {
 
               if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
                 throw RESEND_NOT_ALLOWED.getCustomException(
-                    Map.of("resendAfter", model.getResendAfter()));
+                    Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
               }
 
               return model;
@@ -123,11 +125,11 @@ public class Passwordless {
     Map<String, String> userFilters = new HashMap<>();
     for (Contact contact : dto.getContacts()) {
       if (contact.getChannel() == Channel.EMAIL) {
-        userFilters.put(EMAIL, contact.getIdentifier());
+        userFilters.put(USER_FILTERS_EMAIL, contact.getIdentifier());
       }
 
       if (contact.getChannel() == Channel.SMS) {
-        userFilters.put(PHONE, contact.getIdentifier());
+        userFilters.put(USER_FILTERS_PHONE, contact.getIdentifier());
       }
     }
     return userService
@@ -230,7 +232,7 @@ public class Passwordless {
         .map(
             m -> {
               throw INCORRECT_OTP.getCustomException(
-                  Map.of("retriesLeft", model.getMaxTries() - model.getTries()));
+                  Map.of(OTP_RETRIES_LEFT, model.getMaxTries() - model.getTries()));
             });
   }
 }

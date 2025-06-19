@@ -6,6 +6,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOK
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_IS_NEW_USER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
@@ -91,7 +92,7 @@ public class AuthorizationService {
                     idToken,
                     TOKEN_TYPE,
                     config.getTokenConfig().getAccessTokenExpiry(),
-                    user.getBoolean("isNewUser", false)))
+                    user.getBoolean(USER_RESPONSE_IS_NEW_USER, false)))
         .flatMap(
             dto ->
                 refreshTokenDao
