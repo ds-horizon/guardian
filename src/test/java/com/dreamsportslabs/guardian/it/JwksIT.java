@@ -7,6 +7,7 @@ import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,15 +15,28 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class JwksIT {
 
-  /** Generates a unique tenant ID for testing */
   private static final String TENANT_VALID = "tenant1";
-
   private static final String TENANT_UNKNOWN = randomAlphanumeric(8);
 
   private static JsonArray extractKeys(Response response) {
     JsonObject json = new JsonObject(response.getBody().asString());
     Assertions.assertTrue(json.containsKey("keys"));
     return json.getJsonArray("keys");
+  }
+
+  @Test
+  void jwksReturnsMultipleKeys() {
+
+    Response response = getJwks("tenant3");
+    Assertions.assertEquals(200, response.getStatusCode());
+
+    JsonArray keys = extractKeys(response);
+    Assertions.assertEquals(2, keys.size(), "Expected exactly 2 keys");
+
+    List<String> kids = keys.stream().map(o -> ((JsonObject) o).getString("kid")).toList();
+
+    Assertions.assertTrue(kids.contains("multi-key-1"));
+    Assertions.assertTrue(kids.contains("multi-key-2"));
   }
 
   @Test
@@ -40,6 +54,7 @@ public class JwksIT {
     assertNotNull(key.getString("kid"));
     assertNotNull(key.getString("n"));
     Assertions.assertEquals("AQAB", key.getString("e"));
+    Assertions.assertEquals("RS256", key.getString("alg"));
   }
 
   @Test
