@@ -55,6 +55,7 @@ import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_TRIES;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.passwordlessInit;
 import static com.dreamsportslabs.guardian.utils.DbUtils.createState;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
@@ -81,13 +82,29 @@ import java.util.Map;
 import java.util.Random;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.core.CombinableMatcher;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class PasswordlessInitIT {
   public static String tenant1 = "tenant1"; // OTP is mocked for this tenant
   public static String tenant2 = "tenant2"; // OTP is not mocked for this tenant
-  private WireMockServer wireMockServer;
+  private static WireMockServer wireMockServer;
+
+  @BeforeAll
+  public static void setupWireMock() {
+    wireMockServer = new WireMockServer(8089); // or any available port
+    wireMockServer.start();
+    configureFor("localhost", 8089);
+  }
+
+  @AfterAll
+  public static void teardownWireMock() {
+    if (wireMockServer != null) {
+      wireMockServer.stop();
+    }
+  }
 
   @Test
   @DisplayName("Should return error when phone number is not provided")

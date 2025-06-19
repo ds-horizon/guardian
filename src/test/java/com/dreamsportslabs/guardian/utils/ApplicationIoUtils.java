@@ -105,6 +105,13 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/otp/send"));
   }
 
+  public static Response verifyOtp(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+    headers.put(CONTENT_TYPE, "application/json");
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/otp/verify"));
+  }
+
   public static Response getJwks(String tenantId) {
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_TENANT_ID, tenantId);

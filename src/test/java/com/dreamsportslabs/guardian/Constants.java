@@ -74,6 +74,7 @@ public class Constants {
   public static final String RESPONSE_BODY_PARAM_RESENDS_LEFT = "resendsLeft";
   public static final String RESPONSE_BODY_PARAM_RESEND_AFTER = "resendAfter";
   public static final String RESPONSE_BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA = "retriesLeft";
 
   // Passwordless Model
   public static final String PASSWORDLESS_MODEL_IS_NEW_USER = "isNewUser";

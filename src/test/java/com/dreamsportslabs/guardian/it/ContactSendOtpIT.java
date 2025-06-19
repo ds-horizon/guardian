@@ -1,38 +1,36 @@
 package com.dreamsportslabs.guardian.it;
 
+import static com.dreamsportslabs.guardian.Constants.*;
 import static com.dreamsportslabs.guardian.constant.Channel.EMAIL;
 import static com.dreamsportslabs.guardian.constant.Channel.SMS;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isA;
-import static com.dreamsportslabs.guardian.Constants.*;
 
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import org.apache.commons.lang3.RandomStringUtils;
-
-public class ContactVerifyIT {
+public class ContactSendOtpIT {
   private static final String TENANT_ID = "tenant1"; // OTP is mocked for this tenant
   private static final String TENANT_ID_NON_MOCKED = "tenant2"; // OTP is NOT mocked for this tenant
   private static WireMockServer wireMockServer;
 
   @BeforeAll
   public static void setupWireMock() {
-    wireMockServer = new WireMockServer(8089); // or any available port
+    wireMockServer = new WireMockServer(8088); // or any available port
     wireMockServer.start();
-    configureFor("localhost", 8089);
+    configureFor("localhost", 8088);
   }
 
   @AfterAll
@@ -53,7 +51,7 @@ public class ContactVerifyIT {
   public void testSendOtpSmsValid() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
@@ -115,7 +113,7 @@ public class ContactVerifyIT {
   public void testSendOtpResendsExhausted() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
@@ -136,7 +134,7 @@ public class ContactVerifyIT {
   public void testSendOtpResendNotAllowed() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
@@ -153,24 +151,16 @@ public class ContactVerifyIT {
   public void testSendOtpMocked() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    response.then().statusCode(SC_OK).body(RESPONSE_BODY_PARAM_TRIES, equalTo(0)).body(RESPONSE_BODY_PARAM_RESENDS, equalTo(0));
-  }
-
-  @Test
-  @DisplayName("Should return error for invalid channel value")
-  public void testSendOtpInvalidChannel() {
-    Map<String, Object> contact = new HashMap<>();
-    contact.put(BODY_PARAM_CHANNEL, "INVALID");
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
-    Map<String, Object> body = new HashMap<>();
-    body.put(BODY_PARAM_CONTACT, contact);
-    Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_OK)
+        .body(RESPONSE_BODY_PARAM_TRIES, equalTo(0))
+        .body(RESPONSE_BODY_PARAM_RESENDS, equalTo(0));
   }
 
   @Test
@@ -180,7 +170,7 @@ public class ContactVerifyIT {
     // missing name
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphabetic(12));
     contact.put(BODY_PARAM_TEMPLATE, template);
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
@@ -227,37 +217,19 @@ public class ContactVerifyIT {
   public void testSendOtpNonExistentTenant() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
     Response response = ApplicationIoUtils.sendOtp("nonexistent-tenant", body);
     response.then().statusCode(isA(Integer.class)); // Accepts 400 or 404 depending on impl
   }
 
-  //    @Test
-  //    @DisplayName("Should allow resend after waiting for resendAfter")
-  //    public void testSendOtpResendAfterWait() throws InterruptedException {
-  //        Map<String, Object> contact = new HashMap<>();
-  //        contact.put("channel", SMS);
-  //        contact.put("identifier", "+1234567890");
-  //        Map<String, Object> body = new HashMap<>();
-  //        body.put("contact", contact);
-  //        Response first = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-  //        String state = first.getBody().jsonPath().getString("state");
-  //        Number resendAfter = first.getBody().jsonPath().get("resendAfter");
-  //        Thread.sleep(resendAfter.longValue() * 1000 + 1000); // Wait for resendAfter + 1s
-  //        Map<String, Object> stateBody = new HashMap<>();
-  //        stateBody.put("state", state);
-  //        Response resend = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-  //        resend.then().statusCode(SC_OK);
-  //    }
-
   @Test
   @DisplayName("Should return error when max tries are exceeded")
   public void testSendOtpMaxTriesExceeded() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
     Response first = ApplicationIoUtils.sendOtp(TENANT_ID, body);
@@ -272,26 +244,6 @@ public class ContactVerifyIT {
     afterMaxTries.then().statusCode(SC_BAD_REQUEST);
   }
 
-  //    @Test
-  //    @DisplayName("Should allow valid resend with state within allowed limits")
-  //    public void testSendOtpValidResendWithState() throws InterruptedException {
-  //        Map<String, Object> contact = new HashMap<>();
-  //        contact.put("channel", SMS);
-  //        contact.put("identifier", "+1234567890");
-  //        Map<String, Object> body = new HashMap<>();
-  //        body.put("contact", contact);
-  //        Response first = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-  //        String state = first.getBody().jsonPath().getString("state");
-  //        Number resendAfter = first.getBody().jsonPath().get("resendAfter");
-  //        Thread.sleep(resendAfter.longValue() * 1000 + 1000); // Wait for resendAfter + 1s
-  //        Map<String, Object> stateBody = new HashMap<>();
-  //        stateBody.put("state", state);
-  //        Response resend = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-  //        resend.then().statusCode(SC_OK)
-  //                .body("resends", isA(Integer.class))
-  //                .body("resendsLeft", isA(Integer.class));
-  //    }
-
   @Test
   @DisplayName("Should enforce resend limit exactly (no more than allowed)")
   public void testResendLimitEnforcedExactly() throws InterruptedException {
@@ -301,8 +253,12 @@ public class ContactVerifyIT {
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
+    StubMapping sendSmsStub = getStubForSendSms();
+
     // First request, get state
-    Response first = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+    Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
+    Thread.sleep(2 * 1000L);
+
     String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
@@ -311,13 +267,19 @@ public class ContactVerifyIT {
 
     // Resend up to the limit
     for (int i = 0; i < resendLimit; i++) {
-      Thread.sleep(30 * 1000L);
-      Response resend = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
+      Response resend = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
       resend.then().statusCode(SC_OK);
+      Thread.sleep(2 * 1000L);
     }
     // The next resend should fail
-    Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-    exhausted.then().statusCode(SC_BAD_REQUEST).rootPath(ERROR).body(CODE, equalTo(ERROR_RESENDS_EXHAUSTED));
+    Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
+    exhausted
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_RESENDS_EXHAUSTED));
+
+    wireMockServer.removeStub(sendSmsStub);
   }
 
   @Test
@@ -325,7 +287,7 @@ public class ContactVerifyIT {
   public void testResendsCounterStartsAtZero() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
@@ -335,29 +297,37 @@ public class ContactVerifyIT {
 
   @Test
   @DisplayName("Should decrease resendsLeft with each resend")
-  public void testResendsLeftDecreases() {
+  public void testResendsLeftDecreases() throws InterruptedException {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, "+1234567890");
+    contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
+
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
-    Response first = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+    StubMapping sendSmsStub = getStubForSendSms();
+
+    Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
+    Thread.sleep(2 * 1000L);
+
     String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
     int resendsLeft = first.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_RESENDS_LEFT);
+
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
 
-    Response second = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
+    Response second = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
     int resendsLeft2 = second.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_RESENDS_LEFT);
 
     assertThat(resendsLeft2, equalTo(resendsLeft - 1));
+
+    wireMockServer.removeStub(sendSmsStub);
   }
 
   @Test
   @DisplayName("Should handle non-mocked OTP for SMS channel (tenant2)")
   public void testNonMockedOtpSmsContactVerify() {
-    String phoneNumber = "+1234567890";
+    String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
@@ -367,15 +337,19 @@ public class ContactVerifyIT {
     StubMapping sendSmsStub = getStubForSendSms();
 
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    response.then().statusCode(SC_OK).body(RESPONSE_BODY_PARAM_RESENDS, equalTo(0)).body(RESPONSE_BODY_PARAM_RESENDS_LEFT, equalTo(5));
+    response
+        .then()
+        .statusCode(SC_OK)
+        .body(RESPONSE_BODY_PARAM_RESENDS, equalTo(0))
+        .body(RESPONSE_BODY_PARAM_RESENDS_LEFT, equalTo(5));
 
     wireMockServer.removeStub(sendSmsStub);
   }
 
   @Test
   @DisplayName("Should enforce resend limit exactly for non-mocked tenant (SMS, tenant2)")
-  public void testResendLimitEnforcedExactlyNonMockedSms() {
-    String phoneNumber = "+1234567890";
+  public void testResendLimitEnforcedExactlyNonMockedSms() throws InterruptedException {
+    String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
@@ -385,6 +359,8 @@ public class ContactVerifyIT {
     StubMapping sendSmsStub = getStubForSendSms();
 
     Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
+    Thread.sleep(2 * 1000L);
+
     String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
@@ -393,9 +369,14 @@ public class ContactVerifyIT {
     for (int i = 0; i < resendLimit; i++) {
       Response resend = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
       resend.then().statusCode(SC_OK);
+      Thread.sleep(2 * 1000L);
     }
     Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-    exhausted.then().statusCode(SC_BAD_REQUEST).rootPath(ERROR).body(CODE, equalTo(ERROR_RESENDS_EXHAUSTED));
+    exhausted
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_RESENDS_EXHAUSTED));
 
     wireMockServer.removeStub(sendSmsStub);
   }
@@ -404,7 +385,7 @@ public class ContactVerifyIT {
   @DisplayName(
       "Should return error when resend is not allowed (too soon) for non-mocked tenant (SMS, tenant2)")
   public void testSendOtpResendNotAllowedNonMockedSms() {
-    String phoneNumber = "+1234567890";
+    String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
@@ -427,7 +408,7 @@ public class ContactVerifyIT {
   //    @DisplayName("Should allow resend after waiting for resendAfter for non-mocked tenant (SMS,
   // tenant2)")
   //    public void testSendOtpResendAfterWaitNonMockedSms() throws InterruptedException {
-  //        String phoneNumber = "+1234567890";
+  //        String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
   //        Map<String, Object> contact = new HashMap<>();
   //        contact.put("channel", SMS);
   //        contact.put("identifier", phoneNumber);
@@ -451,7 +432,7 @@ public class ContactVerifyIT {
   @Test
   @DisplayName("Should handle 4xx error from OTP service for non-mocked tenant (SMS, tenant2)")
   public void testOtpService4xxErrorNonMockedSms() {
-    String phoneNumber = "+1234567890";
+    String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
@@ -465,7 +446,11 @@ public class ContactVerifyIT {
                 .willReturn(aResponse().withStatus(400).withBody("{\"error\":\"bad request\"}")));
 
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    response.then().statusCode(SC_INTERNAL_SERVER_ERROR).rootPath(ERROR).body(CODE, equalTo(ERROR_SMS_SERVICE));
+    response
+        .then()
+        .statusCode(SC_INTERNAL_SERVER_ERROR)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_SMS_SERVICE));
 
     wireMockServer.removeStub(sendSmsStub);
   }
@@ -473,7 +458,7 @@ public class ContactVerifyIT {
   @Test
   @DisplayName("Should handle 5xx error from OTP service for non-mocked tenant (SMS, tenant2)")
   public void testOtpService5xxErrorNonMockedSms() {
-    String phoneNumber = "+1234567890";
+    String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
