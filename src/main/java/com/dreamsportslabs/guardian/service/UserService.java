@@ -11,6 +11,7 @@ import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.core.buffer.Buffer;
@@ -91,7 +92,7 @@ public class UserService {
             });
   }
 
-  public Single<JsonObject> addProvider(
+  public Completable addProvider(
       String userId, MultivaluedMap<String, String> headers, Provider provider, String tenantId) {
     UserConfig userConfig = registry.get(tenantId, TenantConfig.class).getUserConfig();
     return webClient
@@ -102,11 +103,12 @@ public class UserService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              JsonObject resBody = res.bodyAsJsonObject();
               if (res.statusCode() / 100 != 2) {
+                JsonObject resBody = res.bodyAsJsonObject();
                 throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
               }
-              return resBody;
-            });
+              return res;
+            })
+        .ignoreElement();
   }
 }
