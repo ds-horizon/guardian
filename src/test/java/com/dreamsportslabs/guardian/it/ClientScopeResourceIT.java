@@ -31,7 +31,6 @@ public class ClientScopeResourceIT {
   private static final String TENANT_ID = "tenant1";
   private static final String TENANT_ID_2 = "tenant2";
   private static final String CLIENT_ENDPOINT = "/v1/admin/client";
-  private static final String SCOPE_ENDPOINT = "/v1/admin/scope";
 
   private static final String TEST_SCOPE_1 = "scope1";
   private static final String TEST_SCOPE_2 = "scope2";
