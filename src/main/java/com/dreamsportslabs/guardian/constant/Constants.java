@@ -65,6 +65,7 @@ public final class Constants {
 
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
+  public static final String CACHE_KEY_AUTH_SESSION = "AUTH_SESSION";
 
   public static final String TOKEN_TYPE = "Bearer";
 
@@ -82,4 +83,8 @@ public final class Constants {
 
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
+
+  // OIDC Configuration
+  public static final String LOGIN_PAGE_URI = "login_page_uri";
+  public static final String AUTHORIZE_TTL = "authorize_ttl";
 }

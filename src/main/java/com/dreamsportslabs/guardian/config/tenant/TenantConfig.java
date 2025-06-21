@@ -17,4 +17,5 @@ public class TenantConfig {
   private OtpConfig otpConfig;
   private UserConfig userConfig;
   private TokenConfig tokenConfig;
+  private OidcConfig oidcConfig;
 }
