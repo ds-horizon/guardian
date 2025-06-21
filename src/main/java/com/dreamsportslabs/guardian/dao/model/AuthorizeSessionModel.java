@@ -3,7 +3,10 @@ package com.dreamsportslabs.guardian.dao.model;
 import com.dreamsportslabs.guardian.dto.request.AuthorizeRequestDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+<<<<<<< HEAD
 import java.util.List;
+=======
+>>>>>>> e725673 (add authorize api)
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,9 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 public class AuthorizeSessionModel {
   private String responseType;
+<<<<<<< HEAD
   private List<String> allowedScopes;
   private List<String> consentedScopes;
   private ClientModel client;
+=======
+  private String scope;
+  private String clientId;
+>>>>>>> e725673 (add authorize api)
   private String redirectUri;
   private String state;
   private String nonce;
@@ -23,6 +31,7 @@ public class AuthorizeSessionModel {
   private String codeChallengeMethod;
   private String prompt;
   private String loginHint;
+<<<<<<< HEAD
   private String userId;
 
   public AuthorizeSessionModel(
@@ -30,6 +39,15 @@ public class AuthorizeSessionModel {
     this.responseType = requestDto.getResponseType();
     this.allowedScopes = allowedScopes;
     this.client = client;
+=======
+  private String loginChallenge;
+  private String userId;
+
+  public AuthorizeSessionModel(AuthorizeRequestDto requestDto, String loginChallenge) {
+    this.responseType = requestDto.getResponseType();
+    this.scope = requestDto.getScope();
+    this.clientId = requestDto.getClientId();
+>>>>>>> e725673 (add authorize api)
     this.redirectUri = requestDto.getRedirectUri();
     this.state = requestDto.getState();
     this.nonce = requestDto.getNonce();
@@ -37,6 +55,10 @@ public class AuthorizeSessionModel {
     this.codeChallengeMethod = requestDto.getCodeChallengeMethod();
     this.prompt = requestDto.getPrompt();
     this.loginHint = requestDto.getLoginHint();
+<<<<<<< HEAD
+=======
+    this.loginChallenge = loginChallenge;
+>>>>>>> e725673 (add authorize api)
   }
 
   @Override

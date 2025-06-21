@@ -26,8 +26,13 @@ public class AuthorizeSessionDao {
 
   @SneakyThrows
   public Completable saveAuthorizeSession(
+<<<<<<< HEAD
       String loginChallenge, AuthorizeSessionModel model, String tenantId, Integer ttl) {
     String cacheKey = getCacheKey(loginChallenge, tenantId);
+=======
+      AuthorizeSessionModel model, String tenantId, Integer ttl) {
+    String cacheKey = getCacheKey(model.getLoginChallenge(), tenantId);
+>>>>>>> e725673 (add authorize api)
     String value = model.toString();
 
     return redisClient
