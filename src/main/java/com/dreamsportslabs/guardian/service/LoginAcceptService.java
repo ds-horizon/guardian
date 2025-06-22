@@ -11,7 +11,7 @@ import com.dreamsportslabs.guardian.dao.model.UserConsentModel;
 import com.dreamsportslabs.guardian.dto.request.LoginAcceptRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.LoginAcceptResponseDto;
-import com.dreamsportslabs.guardian.exception.OidcErrorEnum;
+import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -47,9 +47,7 @@ public class LoginAcceptService {
     return refreshTokenDao
         .getRefreshToken(refreshToken, tenantId)
         .switchIfEmpty(
-            Single.error(
-                OidcErrorEnum.ACCESS_DENIED.getCustomException(
-                    "Invalid refresh token", null, null)));
+            Single.error(ErrorEnum.UNAUTHORIZED.getCustomException("Invalid refresh token")));
   }
 
   private Single<Response> validateLoginChallengeAndProcess(
@@ -59,8 +57,7 @@ public class LoginAcceptService {
         .onErrorResumeNext(
             err ->
                 Single.error(
-                    OidcErrorEnum.INVALID_REQUEST.getCustomException(
-                        "Invalid login challenge", null, null)))
+                    ErrorEnum.INVALID_REQUEST.getCustomException("Invalid login challenge")))
         .flatMap(session -> processConsentDecision(session, userId, tenantId, loginChallenge));
   }
 
