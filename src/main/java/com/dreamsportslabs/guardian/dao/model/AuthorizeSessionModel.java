@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -15,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 public class AuthorizeSessionModel {
   private String responseType;
-  private List<String> requestedScopes;
+  private List<String> allowedScopes;
   private List<String> consentedScopes;
   private ClientModel client;
   private String redirectUri;
@@ -28,9 +27,11 @@ public class AuthorizeSessionModel {
   private String loginChallenge;
   private String userId;
 
-  public AuthorizeSessionModel(AuthorizeRequestDto requestDto, String loginChallenge) {
+  public AuthorizeSessionModel(AuthorizeRequestDto requestDto, String loginChallenge, 
+                               List<String> allowedScopes, ClientModel client) {
     this.responseType = requestDto.getResponseType();
-    this.requestedScopes = Arrays.asList(requestDto.getScope().split(" "));
+    this.allowedScopes = allowedScopes;
+    this.client = client;
     this.redirectUri = requestDto.getRedirectUri();
     this.state = requestDto.getState();
     this.nonce = requestDto.getNonce();
@@ -39,10 +40,6 @@ public class AuthorizeSessionModel {
     this.prompt = requestDto.getPrompt();
     this.loginHint = requestDto.getLoginHint();
     this.loginChallenge = loginChallenge;
-  }
-
-  public void setClient(ClientModel client) {
-    this.client = client;
   }
 
   @Override

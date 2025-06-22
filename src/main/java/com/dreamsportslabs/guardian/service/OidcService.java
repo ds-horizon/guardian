@@ -13,6 +13,8 @@ import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -44,13 +46,8 @@ public class OidcService {
               return filterSupportedScopes(
                       requestDto.getClientId(), requestDto.getScope(), tenantId)
                   .map(
-                      supportedScopes -> {
-                        AuthorizeSessionModel sessionModel =
-                            new AuthorizeSessionModel(requestDto, loginChallenge);
-                        sessionModel.setScope(supportedScopes);
-                        sessionModel.setClient(client);
-                        return sessionModel;
-                      })
+                      allowedScopes -> 
+                        new AuthorizeSessionModel(requestDto, loginChallenge, allowedScopes, client))
                   .flatMap(
                       sessionModel ->
                           authorizeSessionDao
@@ -112,7 +109,7 @@ public class OidcService {
     }
   }
 
-  private Single<String> filterSupportedScopes(
+  private Single<List<String>> filterSupportedScopes(
       String clientId, String requestedScopes, String tenantId) {
     String[] requestedScopeArray = requestedScopes.split(" ");
 
@@ -120,21 +117,18 @@ public class OidcService {
         .getClientScopes(clientId, tenantId)
         .map(
             clientScopes -> {
-              Set<String> allowedScopes =
+              Set<String> clientAllowedScopes =
                   clientScopes.stream().map(ClientScopeModel::getScope).collect(Collectors.toSet());
 
-              StringBuilder supportedScopes = new StringBuilder();
+              List<String> allowedScopes = new ArrayList<>();
               for (String scope : requestedScopeArray) {
                 String trimmedScope = scope.trim();
-                if (allowedScopes.contains(trimmedScope)) {
-                  if (supportedScopes.length() > 0) {
-                    supportedScopes.append(" ");
-                  }
-                  supportedScopes.append(trimmedScope);
+                if (clientAllowedScopes.contains(trimmedScope)) {
+                  allowedScopes.add(trimmedScope);
                 }
               }
 
-              return supportedScopes.toString();
+              return allowedScopes;
             });
   }
 }
