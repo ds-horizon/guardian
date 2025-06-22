@@ -46,13 +46,11 @@ public class OidcService {
               return filterSupportedScopes(
                       requestDto.getClientId(), requestDto.getScope(), tenantId)
                   .map(
-                      allowedScopes ->
-                          new AuthorizeSessionModel(
-                              requestDto, loginChallenge, allowedScopes, client))
+                      allowedScopes -> new AuthorizeSessionModel(requestDto, allowedScopes, client))
                   .flatMap(
                       sessionModel ->
                           authorizeSessionDao
-                              .saveAuthorizeSession(sessionModel, tenantId, 600)
+                              .saveAuthorizeSession(loginChallenge, sessionModel, tenantId, 600)
                               .andThen(
                                   Single.fromCallable(
                                       () -> {

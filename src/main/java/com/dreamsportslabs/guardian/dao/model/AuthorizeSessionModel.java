@@ -23,14 +23,10 @@ public class AuthorizeSessionModel {
   private String codeChallengeMethod;
   private String prompt;
   private String loginHint;
-  private String loginChallenge;
   private String userId;
 
   public AuthorizeSessionModel(
-      AuthorizeRequestDto requestDto,
-      String loginChallenge,
-      List<String> allowedScopes,
-      ClientModel client) {
+      AuthorizeRequestDto requestDto, List<String> allowedScopes, ClientModel client) {
     this.responseType = requestDto.getResponseType();
     this.allowedScopes = allowedScopes;
     this.client = client;
@@ -41,7 +37,6 @@ public class AuthorizeSessionModel {
     this.codeChallengeMethod = requestDto.getCodeChallengeMethod();
     this.prompt = requestDto.getPrompt();
     this.loginHint = requestDto.getLoginHint();
-    this.loginChallenge = loginChallenge;
   }
 
   @Override
