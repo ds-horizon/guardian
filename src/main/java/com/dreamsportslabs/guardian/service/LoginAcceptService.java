@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,73 +37,104 @@ public class LoginAcceptService {
   public Single<Response> loginAccept(
       LoginAcceptRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
 
+    return validateRefreshToken(requestDto.getRefreshToken(), tenantId)
+        .flatMap(
+            userId ->
+                validateLoginChallengeAndProcess(requestDto.getLoginChallenge(), userId, tenantId));
+  }
+
+  private Single<String> validateRefreshToken(String refreshToken, String tenantId) {
+    return refreshTokenDao
+        .getRefreshToken(refreshToken, tenantId)
+        .switchIfEmpty(
+            Single.error(
+                OidcErrorEnum.ACCESS_DENIED.getCustomException(
+                    "Invalid refresh token", null, null)));
+  }
+
+  private Single<Response> validateLoginChallengeAndProcess(
+      String loginChallenge, String userId, String tenantId) {
     return authorizeSessionDao
-        .getAuthorizeSession(requestDto.getLoginChallenge(), tenantId)
+        .getAuthorizeSession(loginChallenge, tenantId)
         .onErrorResumeNext(
             err ->
                 Single.error(
                     OidcErrorEnum.INVALID_REQUEST.getCustomException(
                         "Invalid login challenge", null, null)))
-        .flatMap(
-            session ->
-                refreshTokenDao
-                    .getRefreshToken(requestDto.getRefreshToken(), tenantId)
-                    .switchIfEmpty(
-                        Single.error(
-                            OidcErrorEnum.ACCESS_DENIED.getCustomException(
-                                "Invalid refresh token",
-                                session.getState(),
-                                session.getRedirectUri())))
-                    .flatMap(
-                        userId -> {
-                          if (Boolean.TRUE.equals(session.getClient().getSkipConsent())) {
-                            session.setConsentedScopes(session.getAllowedScopes());
-                            return generateAndStoreAuthorizationCode(session, userId, tenantId)
-                                .map(
-                                    code ->
-                                        new CodeResponseDto(
-                                                session.getRedirectUri(), session.getState(), code)
-                                            .toResponse());
-                          } else {
-                            return checkExistingConsent(session, userId, tenantId);
-                          }
-                        }));
+        .flatMap(session -> processConsentDecision(session, userId, tenantId, loginChallenge));
+  }
+
+  private Single<Response> processConsentDecision(
+      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
+    if (Boolean.TRUE.equals(session.getClient().getSkipConsent())) {
+      return handleSkipConsent(session, userId, tenantId, loginChallenge);
+    } else {
+      return checkExistingConsent(session, userId, tenantId, loginChallenge);
+    }
+  }
+
+  private Single<Response> handleSkipConsent(
+      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
+    session.setConsentedScopes(session.getAllowedScopes());
+    return generateAndStoreAuthorizationCode(session, userId, tenantId)
+        .map(code -> createCodeResponse(session, code))
+        .doOnSuccess(response -> deleteLoginChallengeAsync(loginChallenge, tenantId));
+  }
+
+  private Response createCodeResponse(AuthorizeSessionModel session, String code) {
+    return new CodeResponseDto(session.getRedirectUri(), session.getState(), code).toResponse();
   }
 
   private Single<Response> checkExistingConsent(
-      AuthorizeSessionModel session, String userId, String tenantId) {
+      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
 
+    return getUserConsentedScopes(session, userId, tenantId)
+        .map(consentedScopes -> hasAllRequiredConsents(session.getAllowedScopes(), consentedScopes))
+        .flatMap(
+            hasAllConsents ->
+                processConsentCheck(session, userId, tenantId, hasAllConsents, loginChallenge));
+  }
+
+  private Single<Set<String>> getUserConsentedScopes(
+      AuthorizeSessionModel session, String userId, String tenantId) {
     return userConsentDao
         .getUserConsents(tenantId, session.getClient().getClientId(), userId)
         .map(
-            existingConsents -> {
-              Set<String> consentedScopes =
-                  existingConsents.stream()
-                      .map(UserConsentModel::getScope)
-                      .collect(Collectors.toSet());
+            existingConsents ->
+                existingConsents.stream()
+                    .map(UserConsentModel::getScope)
+                    .collect(Collectors.toSet()));
+  }
 
-              boolean hasAllConsents = true;
-              for (String scope : session.getAllowedScopes()) {
-                if (!consentedScopes.contains(scope.trim())) {
-                  hasAllConsents = false;
-                  break;
-                }
-              }
-              return hasAllConsents;
-            })
-        .flatMap(
-            hasAllConsents -> {
-              if (hasAllConsents) {
-                session.setConsentedScopes(session.getAllowedScopes());
-                return generateAndStoreAuthorizationCode(session, userId, tenantId)
-                    .map(
-                        code ->
-                            new CodeResponseDto(session.getRedirectUri(), session.getState(), code)
-                                .toResponse());
-              } else {
-                return handleConsentRequired(session, userId, tenantId);
-              }
-            });
+  private boolean hasAllRequiredConsents(List<String> requiredScopes, Set<String> consentedScopes) {
+    for (String scope : requiredScopes) {
+      if (!consentedScopes.contains(scope.trim())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private Single<Response> processConsentCheck(
+      AuthorizeSessionModel session,
+      String userId,
+      String tenantId,
+      boolean hasAllConsents,
+      String loginChallenge) {
+
+    if (hasAllConsents) {
+      return handleExistingConsent(session, userId, tenantId, loginChallenge);
+    } else {
+      return handleConsentRequired(session, userId, tenantId);
+    }
+  }
+
+  private Single<Response> handleExistingConsent(
+      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
+    session.setConsentedScopes(session.getAllowedScopes());
+    return generateAndStoreAuthorizationCode(session, userId, tenantId)
+        .map(code -> createCodeResponse(session, code))
+        .doOnSuccess(response -> deleteLoginChallengeAsync(loginChallenge, tenantId));
   }
 
   private Single<Response> handleConsentRequired(
@@ -131,5 +163,19 @@ public class LoginAcceptService {
     return codeSessionDao
         .saveCodeSession(code, codeSession, tenantId, 600)
         .andThen(Single.just(code));
+  }
+
+  private void deleteLoginChallengeAsync(String loginChallenge, String tenantId) {
+    if (loginChallenge != null) {
+      authorizeSessionDao
+          .deleteAuthorizeSession(loginChallenge, tenantId)
+          .subscribe(
+              () -> log.debug("Successfully deleted login challenge: {}", loginChallenge),
+              error ->
+                  log.warn(
+                      "Failed to delete login challenge: {}, error: {}",
+                      loginChallenge,
+                      error.getMessage()));
+    }
   }
 }
