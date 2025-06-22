@@ -222,3 +222,30 @@ CREATE TABLE contact_verify_config
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE contact_api_blocks
+(
+    id           BIGINT       NOT NULL AUTO_INCREMENT,
+    tenant_id    CHAR(10)     NOT NULL,
+    contact      VARCHAR(64)  NOT NULL,
+    api_path     VARCHAR(255) NOT NULL,
+    reason       TEXT,
+    operator     VARCHAR(128),
+    unblocked_at BIGINT,
+    is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+
+    CONSTRAINT fk_tenant_contact_api_blocks FOREIGN KEY (tenant_id)
+        REFERENCES tenant (id) ON DELETE CASCADE,
+
+    CONSTRAINT uk_tenant_contact_api_active UNIQUE (tenant_id, contact, api_path) Where is_active=true,
+
+    KEY `idx_contact_api_blocks_tenant_contact` (`tenant_id`, `contact`, `is_active`),
+    KEY `idx_contact_api_blocks_tenant_contact_api` (`tenant_id`, `contact`, `api_path`, `is_active`)
+
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
