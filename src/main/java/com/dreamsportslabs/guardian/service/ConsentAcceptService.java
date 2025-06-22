@@ -8,6 +8,7 @@ import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
 import com.dreamsportslabs.guardian.dao.model.CodeSessionModel;
 import com.dreamsportslabs.guardian.dto.request.ConsentAcceptRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
+import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.dreamsportslabs.guardian.exception.OidcErrorEnum;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
@@ -49,9 +50,7 @@ public class ConsentAcceptService {
     return refreshTokenDao
         .getRefreshToken(refreshToken, tenantId)
         .switchIfEmpty(
-            Single.error(
-                OidcErrorEnum.ACCESS_DENIED.getCustomException(
-                    "Invalid refresh token", null, null)));
+            Single.error(ErrorEnum.UNAUTHORIZED.getCustomException("Invalid refresh token")));
   }
 
   private Single<AuthorizeSessionModel> validateConsentChallenge(
@@ -61,8 +60,7 @@ public class ConsentAcceptService {
         .onErrorResumeNext(
             err ->
                 Single.error(
-                    OidcErrorEnum.INVALID_REQUEST.getCustomException(
-                        "Invalid consent challenge", null, null)));
+                    ErrorEnum.INVALID_REQUEST.getCustomException("Invalid consent challenge")));
   }
 
   private Single<Response> processConsent(
@@ -96,10 +94,7 @@ public class ConsentAcceptService {
 
   private void validateUserMatch(AuthorizeSessionModel session, String userId) {
     if (!userId.equals(session.getUserId())) {
-      throw OidcErrorEnum.ACCESS_DENIED.getCustomException(
-          "Refresh token does not match session user",
-          session.getState(),
-          session.getRedirectUri());
+      throw ErrorEnum.UNAUTHORIZED.getCustomException("Refresh token does not match session user");
     }
   }
 
