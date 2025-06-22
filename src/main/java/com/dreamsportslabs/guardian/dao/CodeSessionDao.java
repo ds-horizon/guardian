@@ -27,8 +27,8 @@ public class CodeSessionDao {
 
   @SneakyThrows
   public Completable saveCodeSession(
-      CodeSessionModel model, String tenantId, Integer ttl) {
-    String cacheKey = getCacheKey(model.getCode(), tenantId);
+      String code, CodeSessionModel model, String tenantId, Integer ttl) {
+    String cacheKey = getCacheKey(code, tenantId);
     String value = model.toString();
 
     return redisClient

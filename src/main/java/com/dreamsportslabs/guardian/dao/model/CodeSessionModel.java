@@ -12,7 +12,6 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class CodeSessionModel {
-  private String code;
   private String userId;
   private ClientModel client;
   private List<String> consentedScopes;
@@ -21,27 +20,16 @@ public class CodeSessionModel {
   private String nonce;
   private String codeChallenge;
   private String codeChallengeMethod;
-  private Long issuedAt;
-  private Long expiresAt;
 
-  public CodeSessionModel(String code, String userId, ClientModel client, List<String> consentedScopes,
-                         String redirectUri, String state, String nonce, String codeChallenge, 
-                         String codeChallengeMethod) {
-    this.code = code;
-    this.userId = userId;
-    this.client = client;
-    this.consentedScopes = consentedScopes;
-    this.redirectUri = redirectUri;
-    this.state = state;
-    this.nonce = nonce;
-    this.codeChallenge = codeChallenge;
-    this.codeChallengeMethod = codeChallengeMethod;
-    this.issuedAt = System.currentTimeMillis();
-    this.expiresAt = this.issuedAt + (10 * 60 * 1000);
-  }
-
-  public boolean isExpired() {
-    return System.currentTimeMillis() > this.expiresAt;
+  public CodeSessionModel(AuthorizeSessionModel session) {
+    this.userId = session.getUserId();
+    this.client = session.getClient();
+    this.consentedScopes = session.getConsentedScopes();
+    this.redirectUri = session.getRedirectUri();
+    this.state = session.getState();
+    this.nonce = session.getNonce();
+    this.codeChallenge = session.getCodeChallenge();
+    this.codeChallengeMethod = session.getCodeChallengeMethod();
   }
 
   @Override

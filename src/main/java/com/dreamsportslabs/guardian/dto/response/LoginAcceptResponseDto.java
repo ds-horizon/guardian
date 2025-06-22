@@ -11,8 +11,6 @@ public class LoginAcceptResponseDto {
   private String redirectUri;
   private String state;
   private String code;
-  private String clientId;
-  private String scopes;
   private String consentChallenge;
 
   public LoginAcceptResponseDto(String redirectUri, String state, String code) {
@@ -21,10 +19,8 @@ public class LoginAcceptResponseDto {
     this.code = code;
   }
 
-  public LoginAcceptResponseDto(String consentPageUri, String clientId, String scopes, String consentChallenge) {
+  public LoginAcceptResponseDto(String consentPageUri, String consentChallenge) {
     this.redirectUri = consentPageUri;
-    this.clientId = clientId;
-    this.scopes = scopes;
     this.consentChallenge = consentChallenge;
   }
 
@@ -37,14 +33,6 @@ public class LoginAcceptResponseDto {
 
     if (state != null) {
       uriBuilder.queryParam("state", state);
-    }
-
-    if (clientId != null) {
-      uriBuilder.queryParam("client_id", clientId);
-    }
-
-    if (scopes != null) {
-      uriBuilder.queryParam("scopes", scopes);
     }
 
     if (consentChallenge != null) {

@@ -66,7 +66,6 @@ public final class Constants {
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
   public static final String CACHE_KEY_AUTH_SESSION = "AUTH_SESSION";
-  public static final String CACHE_KEY_CONSENT_SESSION = "CONSENT_SESSION";
   public static final String CACHE_KEY_CODE_SESSION = "CODE_SESSION";
 
   public static final String TOKEN_TYPE = "Bearer";
