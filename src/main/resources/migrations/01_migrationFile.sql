@@ -241,7 +241,7 @@ CREATE TABLE contact_api_blocks
     CONSTRAINT fk_tenant_contact_api_blocks FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
 
-    CONSTRAINT uk_tenant_contact_api_active UNIQUE (tenant_id, contact, api_path) Where is_active=true,
+    CONSTRAINT uk_tenant_contact_api_active UNIQUE (tenant_id, contact, api_path, is_active),
 
     KEY `idx_contact_api_blocks_tenant_contact` (`tenant_id`, `contact`, `is_active`),
     KEY `idx_contact_api_blocks_tenant_contact_api` (`tenant_id`, `contact`, `api_path`, `is_active`)
