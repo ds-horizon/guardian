@@ -48,6 +48,7 @@ public class OidcService {
                         AuthorizeSessionModel sessionModel =
                             new AuthorizeSessionModel(requestDto, loginChallenge);
                         sessionModel.setScope(supportedScopes);
+                        sessionModel.setClient(client);
                         return sessionModel;
                       })
                   .flatMap(

@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthorizeSessionModel {
   private String responseType;
   private String scope;
-  private String clientId;
+  private ClientModel client;
   private String redirectUri;
   private String state;
   private String nonce;
@@ -27,7 +27,6 @@ public class AuthorizeSessionModel {
   public AuthorizeSessionModel(AuthorizeRequestDto requestDto, String loginChallenge) {
     this.responseType = requestDto.getResponseType();
     this.scope = requestDto.getScope();
-    this.clientId = requestDto.getClientId();
     this.redirectUri = requestDto.getRedirectUri();
     this.state = requestDto.getState();
     this.nonce = requestDto.getNonce();
@@ -36,6 +35,10 @@ public class AuthorizeSessionModel {
     this.prompt = requestDto.getPrompt();
     this.loginHint = requestDto.getLoginHint();
     this.loginChallenge = loginChallenge;
+  }
+
+  public void setClient(ClientModel client) {
+    this.client = client;
   }
 
   @Override
