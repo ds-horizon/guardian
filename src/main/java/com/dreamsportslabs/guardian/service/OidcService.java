@@ -46,8 +46,9 @@ public class OidcService {
               return filterSupportedScopes(
                       requestDto.getClientId(), requestDto.getScope(), tenantId)
                   .map(
-                      allowedScopes -> 
-                        new AuthorizeSessionModel(requestDto, loginChallenge, allowedScopes, client))
+                      allowedScopes ->
+                          new AuthorizeSessionModel(
+                              requestDto, loginChallenge, allowedScopes, client))
                   .flatMap(
                       sessionModel ->
                           authorizeSessionDao

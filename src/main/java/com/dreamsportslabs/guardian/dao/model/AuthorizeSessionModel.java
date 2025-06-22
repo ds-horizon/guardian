@@ -3,11 +3,10 @@ package com.dreamsportslabs.guardian.dao.model;
 import com.dreamsportslabs.guardian.dto.request.AuthorizeRequestDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
 
 @Slf4j
 @Data
@@ -27,8 +26,11 @@ public class AuthorizeSessionModel {
   private String loginChallenge;
   private String userId;
 
-  public AuthorizeSessionModel(AuthorizeRequestDto requestDto, String loginChallenge, 
-                               List<String> allowedScopes, ClientModel client) {
+  public AuthorizeSessionModel(
+      AuthorizeRequestDto requestDto,
+      String loginChallenge,
+      List<String> allowedScopes,
+      ClientModel client) {
     this.responseType = requestDto.getResponseType();
     this.allowedScopes = allowedScopes;
     this.client = client;
