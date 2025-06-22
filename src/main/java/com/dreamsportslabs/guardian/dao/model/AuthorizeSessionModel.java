@@ -7,12 +7,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Slf4j
 @Data
 @NoArgsConstructor
 public class AuthorizeSessionModel {
   private String responseType;
-  private String scope;
+  private List<String> requestedScopes;
+  private List<String> consentedScopes;
   private ClientModel client;
   private String redirectUri;
   private String state;
@@ -26,7 +30,7 @@ public class AuthorizeSessionModel {
 
   public AuthorizeSessionModel(AuthorizeRequestDto requestDto, String loginChallenge) {
     this.responseType = requestDto.getResponseType();
-    this.scope = requestDto.getScope();
+    this.requestedScopes = Arrays.asList(requestDto.getScope().split(" "));
     this.redirectUri = requestDto.getRedirectUri();
     this.state = requestDto.getState();
     this.nonce = requestDto.getNonce();
