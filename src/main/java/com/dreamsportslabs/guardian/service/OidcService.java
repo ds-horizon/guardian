@@ -32,39 +32,65 @@ public class OidcService {
   public Single<AuthorizeResponseDto> authorize(
       AuthorizeRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
 
+    return getAndValidateClient(requestDto, tenantId)
+        .flatMap(client -> processAuthorization(client, requestDto, tenantId));
+  }
+
+  private Single<ClientModel> getAndValidateClient(
+      AuthorizeRequestDto requestDto, String tenantId) {
     return clientService
         .getClient(requestDto.getClientId(), tenantId)
         .switchIfEmpty(
             Single.error(
                 OidcErrorEnum.INVALID_REQUEST.getCustomException(
                     "Invalid client_id", requestDto.getState(), requestDto.getRedirectUri())))
-        .flatMap(client -> validateClient(client, requestDto, tenantId))
+        .flatMap(client -> validateClient(client, requestDto, tenantId));
+  }
+
+  private Single<AuthorizeResponseDto> processAuthorization(
+      ClientModel client, AuthorizeRequestDto requestDto, String tenantId) {
+
+    String loginChallenge = generateLoginChallenge();
+
+    return filterSupportedScopes(requestDto.getClientId(), requestDto.getScope(), tenantId)
+        .map(allowedScopes -> createAuthorizeSession(requestDto, allowedScopes, client))
         .flatMap(
-            client -> {
-              String loginChallenge = UUID.randomUUID().toString();
+            sessionModel ->
+                saveSessionAndCreateResponse(loginChallenge, sessionModel, requestDto, tenantId));
+  }
 
-              return filterSupportedScopes(
-                      requestDto.getClientId(), requestDto.getScope(), tenantId)
-                  .map(
-                      allowedScopes -> new AuthorizeSessionModel(requestDto, allowedScopes, client))
-                  .flatMap(
-                      sessionModel ->
-                          authorizeSessionDao
-                              .saveAuthorizeSession(loginChallenge, sessionModel, tenantId, 600)
-                              .andThen(
-                                  Single.fromCallable(
-                                      () -> {
-                                        TenantConfig tenantConfig =
-                                            registry.get(tenantId, TenantConfig.class);
-                                        String loginPageUri =
-                                            tenantConfig.getOidcConfig() != null
-                                                ? tenantConfig.getOidcConfig().getLoginPageUri()
-                                                : null;
+  private String generateLoginChallenge() {
+    return UUID.randomUUID().toString();
+  }
 
-                                        return new AuthorizeResponseDto(
-                                            loginChallenge, requestDto.getState(), loginPageUri);
-                                      })));
-            });
+  private AuthorizeSessionModel createAuthorizeSession(
+      AuthorizeRequestDto requestDto, List<String> allowedScopes, ClientModel client) {
+    return new AuthorizeSessionModel(requestDto, allowedScopes, client);
+  }
+
+  private Single<AuthorizeResponseDto> saveSessionAndCreateResponse(
+      String loginChallenge,
+      AuthorizeSessionModel sessionModel,
+      AuthorizeRequestDto requestDto,
+      String tenantId) {
+
+    return authorizeSessionDao
+        .saveAuthorizeSession(loginChallenge, sessionModel, tenantId, 600)
+        .andThen(
+            Single.fromCallable(
+                () -> createAuthorizeResponse(loginChallenge, requestDto, tenantId)));
+  }
+
+  private AuthorizeResponseDto createAuthorizeResponse(
+      String loginChallenge, AuthorizeRequestDto requestDto, String tenantId) {
+
+    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
+    String loginPageUri =
+        tenantConfig.getOidcConfig() != null
+            ? tenantConfig.getOidcConfig().getLoginPageUri()
+            : null;
+
+    return new AuthorizeResponseDto(loginChallenge, requestDto.getState(), loginPageUri);
   }
 
   private Single<ClientModel> validateClient(
