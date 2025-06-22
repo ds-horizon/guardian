@@ -32,7 +32,8 @@ public class UserConsentDao {
         .onErrorResumeNext(err -> Completable.error(INTERNAL_SERVER_ERROR.getException(err)));
   }
 
-  public Single<List<UserConsentModel>> getUserConsents(String tenantId, String clientId, String userId) {
+  public Single<List<UserConsentModel>> getUserConsents(
+      String tenantId, String clientId, String userId) {
     Tuple params = Tuple.of(tenantId, clientId, userId);
 
     return mysqlClient
@@ -53,4 +54,4 @@ public class UserConsentDao {
         .ignoreElement()
         .onErrorResumeNext(err -> Completable.error(INTERNAL_SERVER_ERROR.getException(err)));
   }
-} 
+}

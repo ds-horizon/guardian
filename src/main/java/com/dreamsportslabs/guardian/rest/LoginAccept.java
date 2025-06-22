@@ -32,7 +32,6 @@ public class LoginAccept {
 
     return loginAcceptService
         .loginAccept(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
-        .map(responseDto -> responseDto.toResponse())
         .toCompletionStage();
   }
-} 
+}

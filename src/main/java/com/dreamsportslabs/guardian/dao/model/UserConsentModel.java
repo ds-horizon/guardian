@@ -15,4 +15,4 @@ public class UserConsentModel {
   private String clientId;
   private String userId;
   private String scope;
-} 
+}

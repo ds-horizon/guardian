@@ -1,6 +1,5 @@
 package com.dreamsportslabs.guardian.dao;
 
-import static com.dreamsportslabs.guardian.constant.Constants.CACHE_KEY_CODE_SESSION;
 import static com.dreamsportslabs.guardian.constant.Constants.EXPIRY_OPTION_REDIS;
 
 import com.dreamsportslabs.guardian.dao.model.CodeSessionModel;
@@ -22,7 +21,7 @@ public class CodeSessionDao {
   private final Redis redisClient;
   private final ObjectMapper objectMapper;
 
-
+  private static final String CACHE_KEY_CODE_SESSION = "CODE_SESSION";
   private static final int DEFAULT_TTL = 600;
 
   @SneakyThrows
@@ -61,12 +60,11 @@ public class CodeSessionDao {
         .rxSend(Request.cmd(Command.DEL).arg(cacheKey))
         .doOnSuccess(
             response ->
-                log.info(
-                    "Deleted CodeSession with key: {} for tenant: {}", cacheKey, tenantId))
+                log.info("Deleted CodeSession with key: {} for tenant: {}", cacheKey, tenantId))
         .ignoreElement();
   }
 
   private String getCacheKey(String code, String tenantId) {
     return CACHE_KEY_CODE_SESSION + "_" + tenantId + "_" + code;
   }
-} 
+}

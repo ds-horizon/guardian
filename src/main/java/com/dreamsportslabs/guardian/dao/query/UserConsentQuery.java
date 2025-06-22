@@ -21,6 +21,5 @@ public final class UserConsentQuery {
       WHERE tenant_id = ? AND client_id = ? AND user_id = ?
       """;
 
-  private UserConsentQuery() {
-  }
-} 
+  private UserConsentQuery() {}
+}

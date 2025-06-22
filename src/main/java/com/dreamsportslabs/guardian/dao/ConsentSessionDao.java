@@ -22,12 +22,10 @@ public class ConsentSessionDao {
   private final Redis redisClient;
   private final ObjectMapper objectMapper;
 
-
   private static final int DEFAULT_TTL = 600;
 
   @SneakyThrows
-  public Completable saveConsentSession(
-      ConsentSessionModel model, String tenantId, Integer ttl) {
+  public Completable saveConsentSession(ConsentSessionModel model, String tenantId, Integer ttl) {
     String cacheKey = getCacheKey(model.getConsentChallenge(), tenantId);
     String value = model.toString();
 
@@ -61,12 +59,11 @@ public class ConsentSessionDao {
         .rxSend(Request.cmd(Command.DEL).arg(cacheKey))
         .doOnSuccess(
             response ->
-                log.info(
-                    "Deleted ConsentSession with key: {} for tenant: {}", cacheKey, tenantId))
+                log.info("Deleted ConsentSession with key: {} for tenant: {}", cacheKey, tenantId))
         .ignoreElement();
   }
 
   private String getCacheKey(String consentChallenge, String tenantId) {
     return CACHE_KEY_CONSENT_SESSION + "_" + tenantId + "_" + consentChallenge;
   }
-} 
+}

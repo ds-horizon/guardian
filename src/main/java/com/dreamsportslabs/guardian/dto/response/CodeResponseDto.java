@@ -1,11 +1,28 @@
 package com.dreamsportslabs.guardian.dto.response;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 
-@Getter
+@Data
 @AllArgsConstructor
 public class CodeResponseDto {
+  private String redirectUri;
+  private String state;
   private String code;
-  private Integer expiresIn;
+
+  public Response toResponse() {
+    UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
+
+    if (code != null) {
+      uriBuilder.queryParam("code", code);
+    }
+
+    if (state != null) {
+      uriBuilder.queryParam("state", state);
+    }
+
+    return Response.status(Response.Status.FOUND).location(uriBuilder.build()).build();
+  }
 }
