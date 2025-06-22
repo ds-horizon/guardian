@@ -35,7 +35,14 @@ public class ConsentAcceptService {
         .flatMap(
             userId ->
                 validateConsentChallenge(requestDto.getConsentChallenge(), tenantId)
-                    .flatMap(session -> processConsent(session, userId, requestDto, tenantId)));
+                    .flatMap(
+                        session ->
+                            processConsent(
+                                session,
+                                userId,
+                                requestDto,
+                                tenantId,
+                                requestDto.getConsentChallenge())));
   }
 
   private Single<String> validateRefreshToken(String refreshToken, String tenantId) {
@@ -62,7 +69,8 @@ public class ConsentAcceptService {
       AuthorizeSessionModel session,
       String userId,
       ConsentAcceptRequestDto requestDto,
-      String tenantId) {
+      String tenantId,
+      String consentChallenge) {
 
     validateUserMatch(session, userId);
 
@@ -82,7 +90,8 @@ public class ConsentAcceptService {
         .map(
             code ->
                 new CodeResponseDto(session.getRedirectUri(), session.getState(), code)
-                    .toResponse());
+                    .toResponse())
+        .doOnSuccess(response -> deleteConsentChallengeAsync(consentChallenge, tenantId));
   }
 
   private void validateUserMatch(AuthorizeSessionModel session, String userId) {
@@ -131,5 +140,19 @@ public class ConsentAcceptService {
     return codeSessionDao
         .saveCodeSession(code, codeSession, tenantId, 600)
         .andThen(Single.just(code));
+  }
+
+  private void deleteConsentChallengeAsync(String consentChallenge, String tenantId) {
+    if (consentChallenge != null) {
+      authorizeSessionDao
+          .deleteAuthorizeSession(consentChallenge, tenantId)
+          .subscribe(
+              () -> log.debug("Successfully deleted consent challenge: {}", consentChallenge),
+              error ->
+                  log.warn(
+                      "Failed to delete consent challenge: {}, error: {}",
+                      consentChallenge,
+                      error.getMessage()));
+    }
   }
 }
