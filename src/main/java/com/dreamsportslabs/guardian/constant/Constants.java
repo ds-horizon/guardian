@@ -5,8 +5,6 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 
 public final class Constants {
-  public static final String DELIMITER_COMMA = ",";
-
   public static final String TENANT_ID = "tenant-id";
   public static final String USERID = "userId";
   public static final String PROVIDER = "provider";
@@ -31,12 +29,6 @@ public final class Constants {
   public static final String FACEBOOK_FIELDS_PICTURE = "picture";
   public static final String FACEBOOK_FIELDS_PICTURE_DATA = "data";
   public static final String FACEBOOK_FIELDS_PICTURE_DATA_URL = "url";
-
-  public static final String FACEBOOK_GRAPHQL_HOST = "graph.facebook.com";
-  public static final String FACEBOOK_ME_QUERY_PATH = "/me";
-  public static final String FACEBOOK_ME_QUERY_FILTER_ACCESS_TOKEN = "access_token";
-  public static final String FACEBOOK_ME_QUERY_FILTER_APP_SECRET_PROOF = "appsecret_proof";
-  public static final String FACEBOOK_ME_QUERY_FILTER_FIELDS = "fields";
 
   public static final String OIDC_CLAIMS_EMAIL = "email";
   public static final String OIDC_CLAIMS_SUB = "sub";
