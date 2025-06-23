@@ -26,13 +26,8 @@ public class AuthorizeSessionDao {
 
   @SneakyThrows
   public Completable saveAuthorizeSession(
-<<<<<<< HEAD
-      String loginChallenge, AuthorizeSessionModel model, String tenantId, Integer ttl) {
-    String cacheKey = getCacheKey(loginChallenge, tenantId);
-=======
-      AuthorizeSessionModel model, String tenantId, Integer ttl) {
-    String cacheKey = getCacheKey(model.getLoginChallenge(), tenantId);
->>>>>>> e725673 (add authorize api)
+      String challenge, AuthorizeSessionModel model, String tenantId, Integer ttl) {
+    String cacheKey = getCacheKey(challenge, tenantId);
     String value = model.toString();
 
     return redisClient
@@ -48,8 +43,8 @@ public class AuthorizeSessionDao {
         .ignoreElement();
   }
 
-  public Single<AuthorizeSessionModel> getAuthorizeSession(String loginChallenge, String tenantId) {
-    String cacheKey = getCacheKey(loginChallenge, tenantId);
+  public Single<AuthorizeSessionModel> getAuthorizeSession(String challenge, String tenantId) {
+    String cacheKey = getCacheKey(challenge, tenantId);
 
     return redisClient
         .rxSend(Request.cmd(Command.GET).arg(cacheKey))
@@ -58,8 +53,8 @@ public class AuthorizeSessionDao {
         .toSingle();
   }
 
-  public Completable deleteAuthorizeSession(String loginChallenge, String tenantId) {
-    String cacheKey = getCacheKey(loginChallenge, tenantId);
+  public Completable deleteAuthorizeSession(String challenge, String tenantId) {
+    String cacheKey = getCacheKey(challenge, tenantId);
 
     return redisClient
         .rxSend(Request.cmd(Command.DEL).arg(cacheKey))
@@ -70,7 +65,7 @@ public class AuthorizeSessionDao {
         .ignoreElement();
   }
 
-  private String getCacheKey(String loginChallenge, String tenantId) {
-    return CACHE_KEY_AUTH_SESSION + "_" + tenantId + "_" + loginChallenge;
+  private String getCacheKey(String challenge, String tenantId) {
+    return CACHE_KEY_AUTH_SESSION + "_" + tenantId + "_" + challenge;
   }
 }
