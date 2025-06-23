@@ -51,7 +51,9 @@ public class V1BlockContactRequestDto {
       throw INVALID_REQUEST.getCustomException("Operator is required");
     }
 
-    if (unblockedAt != null) {
+    if (unblockedAt == null) {
+      throw INVALID_REQUEST.getCustomException("unblockedAt is required");
+    } else {
       Long currentTimestamp = System.currentTimeMillis() / 1000;
       if (unblockedAt <= currentTimestamp) {
         throw INVALID_REQUEST.getCustomException("unblockedAt must be a future timestamp");

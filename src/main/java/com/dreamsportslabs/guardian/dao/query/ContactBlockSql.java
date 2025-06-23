@@ -18,5 +18,5 @@ public class ContactBlockSql {
       "SELECT contact, api_path, unblocked_at FROM contact_api_blocks WHERE tenant_id = ? AND contact = ? AND is_active = 1";
 
   public static final String CHECK_API_BLOCKED =
-      "SELECT COUNT(*) as count FROM contact_api_blocks WHERE tenant_id = ? AND contact = ? AND api_path = ? AND is_active = 1 AND (unblocked_at IS NULL OR unblocked_at > UNIX_TIMESTAMP())";
+      "SELECT COUNT(*) as count FROM contact_api_blocks WHERE tenant_id = ? AND contact = ? AND api_path = ? AND is_active = 1 AND (unblocked_at > UNIX_TIMESTAMP())";
 }

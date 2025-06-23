@@ -41,7 +41,7 @@ public class ContactBlockApiIT {
   public void blockApi_success() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contactId,
@@ -70,7 +70,7 @@ public class ContactBlockApiIT {
   @DisplayName("Should block APIs successfully with email contact")
   public void blockApi_emailContact_success() {
     // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             EMAIL_CONTACT,
@@ -99,7 +99,7 @@ public class ContactBlockApiIT {
   public void blockApi_updateExisting_success() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt1 = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt1 = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody1 =
         generateBlockRequestBody(
             contactId,
@@ -115,7 +115,7 @@ public class ContactBlockApiIT {
     assertThat(blockedApis1.size(), equalTo(1));
     assertThat(blockedApis1.contains(API_ENDPOINT_1), equalTo(true));
 
-    Long unblockedAt2 = Instant.now().plusSeconds(7200).toEpochMilli();
+    Long unblockedAt2 = Instant.now().plusSeconds(7200).toEpochMilli() / 1000;
     Map<String, Object> requestBody2 =
         generateBlockRequestBody(
             contactId,
@@ -144,7 +144,7 @@ public class ContactBlockApiIT {
   @DisplayName("Should return error for missing contact")
   public void blockApi_missingContact() {
     // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -168,7 +168,7 @@ public class ContactBlockApiIT {
   @DisplayName("Should return error for empty contact")
   public void blockApi_emptyContact() {
     // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
 
     Map<String, Object> requestBody =
         generateBlockRequestBody(
@@ -195,7 +195,7 @@ public class ContactBlockApiIT {
   public void blockApi_missingBlockApis() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contact", contactId);
@@ -220,7 +220,7 @@ public class ContactBlockApiIT {
   public void blockApi_emptyBlockApis() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contactId,
@@ -246,7 +246,7 @@ public class ContactBlockApiIT {
   public void blockApi_missingReason() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contact", contactId);
     requestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -270,7 +270,7 @@ public class ContactBlockApiIT {
   public void blockApi_emptyReason() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contactId, new String[] {API_ENDPOINT_1}, "", randomAlphanumeric(10), unblockedAt);
@@ -292,7 +292,7 @@ public class ContactBlockApiIT {
   public void blockApi_missingOperator() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contact", contactId);
     requestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -316,7 +316,7 @@ public class ContactBlockApiIT {
   public void blockApi_emptyOperator() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contactId, new String[] {API_ENDPOINT_1}, randomAlphanumeric(10), "", unblockedAt);
@@ -338,7 +338,7 @@ public class ContactBlockApiIT {
   public void blockApi_pastUnblockedAt() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long pastTime = Instant.now().minusSeconds(3600).toEpochMilli();
+    Long pastTime = Instant.now().minusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contactId,
@@ -364,7 +364,7 @@ public class ContactBlockApiIT {
   public void blockApi_currentUnblockedAt() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long currentTime = Instant.now().toEpochMilli();
+    Long currentTime = Instant.now().toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contactId,
@@ -390,7 +390,7 @@ public class ContactBlockApiIT {
   public void blockApi_unknownTenant() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contactId,
@@ -416,7 +416,7 @@ public class ContactBlockApiIT {
   public void blockApi_nullBlockApis() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contact", contactId);
     requestBody.put("blockApis", null);
@@ -441,7 +441,7 @@ public class ContactBlockApiIT {
   public void blockApi_nullReason() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contact", contactId);
     requestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -466,7 +466,7 @@ public class ContactBlockApiIT {
   public void blockApi_nullOperator() {
     // Arrange
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contact", contactId);
     requestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -490,7 +490,7 @@ public class ContactBlockApiIT {
   @DisplayName("Should return error for null contact")
   public void blockApi_nullContact() {
     // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contact", null);
     requestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -508,5 +508,28 @@ public class ContactBlockApiIT {
         .rootPath("error")
         .body("code", equalTo("invalid_request"))
         .body("message", equalTo("Contact is required"));
+  }
+
+  @Test
+  @DisplayName("Should return error for missing operator")
+  public void blockApi_missingUnblockedAt() {
+    // Arrange
+    String contactId = randomNumeric(10);
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("contact", contactId);
+    requestBody.put("blockApis", new String[] {API_ENDPOINT_1});
+    requestBody.put("reason", randomAlphanumeric(10));
+    requestBody.put("operator", randomAlphanumeric(10));
+
+    // Act
+    Response response = blockContactApis(TENANT_ID, requestBody);
+
+    // Assert
+    response
+        .then()
+        .statusCode(HttpStatus.SC_BAD_REQUEST)
+        .rootPath("error")
+        .body("code", equalTo("invalid_request"))
+        .body("message", equalTo("unblockedAt is required"));
   }
 }

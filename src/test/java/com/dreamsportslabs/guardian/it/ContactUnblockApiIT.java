@@ -40,7 +40,7 @@ public class ContactUnblockApiIT {
   public void unblockApi_success() {
     // Arrange - First block some APIs
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> blockRequestBody = new HashMap<>();
     blockRequestBody.put("contact", contactId);
     blockRequestBody.put("blockApis", new String[] {API_ENDPOINT_1, API_ENDPOINT_2});
@@ -75,7 +75,7 @@ public class ContactUnblockApiIT {
   @DisplayName("Should unblock APIs successfully with email contact")
   public void unblockApi_emailContact_success() {
     // Arrange - First block some APIs
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> blockRequestBody = new HashMap<>();
     blockRequestBody.put("contact", EMAIL_CONTACT);
     blockRequestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -111,7 +111,7 @@ public class ContactUnblockApiIT {
   public void unblockApi_allApis_success() {
     // Arrange - First block some APIs
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> blockRequestBody = new HashMap<>();
     blockRequestBody.put("contact", contactId);
     blockRequestBody.put("blockApis", new String[] {API_ENDPOINT_1, API_ENDPOINT_2});

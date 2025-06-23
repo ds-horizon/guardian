@@ -100,9 +100,6 @@ public class ContactBlockService {
   }
 
   private boolean isBlockActive(ContactApiBlockModel block) {
-    if (block.getUnblockedAt() == null) {
-      return true; // Permanent block
-    }
     long currentTimestamp = System.currentTimeMillis() / 1000;
     return currentTimestamp < block.getUnblockedAt();
   }

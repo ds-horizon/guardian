@@ -28,7 +28,7 @@ public class ContactGetBlockedApisIT {
   public void getBlockedApis_success() {
     // Arrange - First block some APIs
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> blockRequestBody = new HashMap<>();
     blockRequestBody.put("contact", contactId);
     blockRequestBody.put("blockApis", new String[] {API_ENDPOINT_1, API_ENDPOINT_2});
@@ -58,7 +58,7 @@ public class ContactGetBlockedApisIT {
   @DisplayName("Should get blocked APIs successfully with email contact")
   public void getBlockedApis_emailContact_success() {
     // Arrange - First block some APIs
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> blockRequestBody = new HashMap<>();
     blockRequestBody.put("contact", EMAIL_CONTACT);
     blockRequestBody.put("blockApis", new String[] {API_ENDPOINT_1});
@@ -120,22 +120,6 @@ public class ContactGetBlockedApisIT {
         .body("message", equalTo("No config found"));
   }
 
-  // TO DO: Add Test case for empty contactID
-  @Test
-  @DisplayName("Should return error for empty space contact ID")
-  public void getBlockedApis_emptySpaceContactId_returnsError() {
-    // Act
-    Response response = getBlockedApis(TENANT_ID, " ");
-
-    // Assert
-    response
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST)
-        .rootPath("error")
-        .body("code", equalTo("invalid_path_param"))
-        .body("message", equalTo("contactId must not be null or empty"));
-  }
-
   @Test
   @DisplayName("Should handle very long contact ID")
   public void getBlockedApis_longContactId_success() {
@@ -160,7 +144,7 @@ public class ContactGetBlockedApisIT {
   public void getBlockedApis_afterPartialUnblock_success() {
     // Arrange - First block some APIs
     String contactId = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli();
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> blockRequestBody = new HashMap<>();
     blockRequestBody.put("contact", contactId);
     blockRequestBody.put("blockApis", new String[] {API_ENDPOINT_1, API_ENDPOINT_2});

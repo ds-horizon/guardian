@@ -69,7 +69,7 @@ public class ContactBlockDao {
     return mysqlClient
         .getReaderPool()
         .preparedQuery(CHECK_API_BLOCKED)
-        .rxExecute(Tuple.of(tenantId, contact, apiPath)) // NEW: Include tenantId
+        .rxExecute(Tuple.of(tenantId, contact, apiPath))
         .map(rows -> rows.iterator().next().getInteger("count") > 0);
   }
 }
