@@ -9,7 +9,7 @@ import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
 import com.dreamsportslabs.guardian.dao.model.CodeSessionModel;
 import com.dreamsportslabs.guardian.dao.model.UserConsentModel;
 import com.dreamsportslabs.guardian.dto.request.LoginAcceptRequestDto;
-import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
+import com.dreamsportslabs.guardian.dto.response.AuthCodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.LoginAcceptResponseDto;
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.dreamsportslabs.guardian.registry.Registry;
@@ -79,7 +79,7 @@ public class LoginAcceptService {
   }
 
   private Response createCodeResponse(AuthorizeSessionModel session, String code) {
-    return new CodeResponseDto(session.getRedirectUri(), session.getState(), code).toResponse();
+    return new AuthCodeResponseDto(session.getRedirectUri(), session.getState(), code).toResponse();
   }
 
   private Single<Response> checkExistingConsent(
