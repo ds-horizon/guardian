@@ -13,11 +13,8 @@ import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import jakarta.ws.rs.core.MultivaluedMap;
-<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.List;
-=======
->>>>>>> e725673 (add authorize api)
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,22 +32,18 @@ public class OidcService {
   public Single<AuthorizeResponseDto> authorize(
       AuthorizeRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
 
-<<<<<<< HEAD
     return getAndValidateClient(requestDto, tenantId)
         .flatMap(client -> processAuthorization(client, requestDto, tenantId));
   }
 
   private Single<ClientModel> getAndValidateClient(
       AuthorizeRequestDto requestDto, String tenantId) {
-=======
->>>>>>> e725673 (add authorize api)
     return clientService
         .getClient(requestDto.getClientId(), tenantId)
         .switchIfEmpty(
             Single.error(
                 OidcErrorEnum.INVALID_REQUEST.getCustomException(
                     "Invalid client_id", requestDto.getState(), requestDto.getRedirectUri())))
-<<<<<<< HEAD
         .flatMap(client -> validateClient(client, requestDto, tenantId));
   }
 
@@ -98,40 +91,6 @@ public class OidcService {
             : null;
 
     return new AuthorizeResponseDto(loginChallenge, requestDto.getState(), loginPageUri);
-=======
-        .flatMap(client -> validateClient(client, requestDto, tenantId))
-        .flatMap(
-            client -> {
-              String loginChallenge = UUID.randomUUID().toString();
-
-              return filterSupportedScopes(
-                      requestDto.getClientId(), requestDto.getScope(), tenantId)
-                  .map(
-                      supportedScopes -> {
-                        AuthorizeSessionModel sessionModel =
-                            new AuthorizeSessionModel(requestDto, loginChallenge);
-                        sessionModel.setScope(supportedScopes);
-                        return sessionModel;
-                      })
-                  .flatMap(
-                      sessionModel ->
-                          authorizeSessionDao
-                              .saveAuthorizeSession(sessionModel, tenantId, 600)
-                              .andThen(
-                                  Single.fromCallable(
-                                      () -> {
-                                        TenantConfig tenantConfig =
-                                            registry.get(tenantId, TenantConfig.class);
-                                        String loginPageUri =
-                                            tenantConfig.getOidcConfig() != null
-                                                ? tenantConfig.getOidcConfig().getLoginPageUri()
-                                                : null;
-
-                                        return new AuthorizeResponseDto(
-                                            loginChallenge, requestDto.getState(), loginPageUri);
-                                      })));
-            });
->>>>>>> e725673 (add authorize api)
   }
 
   private Single<ClientModel> validateClient(
@@ -175,11 +134,7 @@ public class OidcService {
     }
   }
 
-<<<<<<< HEAD
   private Single<List<String>> filterSupportedScopes(
-=======
-  private Single<String> filterSupportedScopes(
->>>>>>> e725673 (add authorize api)
       String clientId, String requestedScopes, String tenantId) {
     String[] requestedScopeArray = requestedScopes.split(" ");
 
@@ -187,7 +142,6 @@ public class OidcService {
         .getClientScopes(clientId, tenantId)
         .map(
             clientScopes -> {
-<<<<<<< HEAD
               Set<String> clientAllowedScopes =
                   clientScopes.stream().map(ClientScopeModel::getScope).collect(Collectors.toSet());
 
@@ -200,23 +154,6 @@ public class OidcService {
               }
 
               return allowedScopes;
-=======
-              Set<String> allowedScopes =
-                  clientScopes.stream().map(ClientScopeModel::getScope).collect(Collectors.toSet());
-
-              StringBuilder supportedScopes = new StringBuilder();
-              for (String scope : requestedScopeArray) {
-                String trimmedScope = scope.trim();
-                if (allowedScopes.contains(trimmedScope)) {
-                  if (supportedScopes.length() > 0) {
-                    supportedScopes.append(" ");
-                  }
-                  supportedScopes.append(trimmedScope);
-                }
-              }
-
-              return supportedScopes.toString();
->>>>>>> e725673 (add authorize api)
             });
   }
 }
