@@ -2,7 +2,6 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.PROVIDER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
-import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_IS_NEW_USER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_SERVICE_ERROR;
 
@@ -69,7 +68,7 @@ public class UserService {
               } else if (!resBody.containsKey(USERID)) {
                 throw USER_SERVICE_ERROR.getException();
               }
-              return resBody.put(USER_RESPONSE_IS_NEW_USER, true);
+              return resBody;
             });
   }
 

@@ -1,14 +1,5 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_EMAIL;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_FIRST_NAME;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_FULL_NAME;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_LAST_NAME;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_MIDDLE_NAME;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_PICTURE;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_PICTURE_DATA;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_PICTURE_DATA_URL;
-import static com.dreamsportslabs.guardian.constant.Constants.FACEBOOK_FIELDS_USER_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.NO_PICTURE;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_FAMILY_NAME;
@@ -52,6 +43,16 @@ public class SocialAuthService {
   private final UserService userService;
   private final AuthorizationService authorizationService;
   private final Registry registry;
+
+  private static final String FACEBOOK_FIELDS_EMAIL = "email";
+  private static final String FACEBOOK_FIELDS_USER_ID = "id";
+  private static final String FACEBOOK_FIELDS_FULL_NAME = "name";
+  private static final String FACEBOOK_FIELDS_FIRST_NAME = "first_name";
+  private static final String FACEBOOK_FIELDS_MIDDLE_NAME = "middle_name";
+  private static final String FACEBOOK_FIELDS_LAST_NAME = "last_name";
+  private static final String FACEBOOK_FIELDS_PICTURE = "picture";
+  private static final String FACEBOOK_FIELDS_PICTURE_DATA = "data";
+  private static final String FACEBOOK_FIELDS_PICTURE_DATA_URL = "url";
 
   public Single<ResponseBuilder> authFb(
       V1AuthFbRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {

@@ -20,16 +20,6 @@ public final class Constants {
   public static final String OIDC_PROVIDERS_FACEBOOK = "facebook";
   public static final String OIDC_PROVIDERS_GOOGLE = "google";
 
-  public static final String FACEBOOK_FIELDS_EMAIL = "email";
-  public static final String FACEBOOK_FIELDS_USER_ID = "id";
-  public static final String FACEBOOK_FIELDS_FULL_NAME = "name";
-  public static final String FACEBOOK_FIELDS_FIRST_NAME = "first_name";
-  public static final String FACEBOOK_FIELDS_MIDDLE_NAME = "middle_name";
-  public static final String FACEBOOK_FIELDS_LAST_NAME = "last_name";
-  public static final String FACEBOOK_FIELDS_PICTURE = "picture";
-  public static final String FACEBOOK_FIELDS_PICTURE_DATA = "data";
-  public static final String FACEBOOK_FIELDS_PICTURE_DATA_URL = "url";
-
   public static final String OIDC_CLAIMS_EMAIL = "email";
   public static final String OIDC_CLAIMS_SUB = "sub";
   public static final String OIDC_CLAIMS_FULL_NAME = "name";
