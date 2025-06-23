@@ -52,7 +52,7 @@ public class V1BlockContactRequestDto {
     }
 
     if (unblockedAt != null) {
-      long currentTimestamp = System.currentTimeMillis() / 1000;
+      Long currentTimestamp = System.currentTimeMillis() / 1000;
       if (unblockedAt <= currentTimestamp) {
         throw INVALID_REQUEST.getCustomException("unblockedAt must be a future timestamp");
       }

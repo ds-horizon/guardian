@@ -8,6 +8,7 @@ import com.dreamsportslabs.guardian.service.ContactBlockService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,15 @@ public class ContactBlockFlow {
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> getBlockedApis(
       @Context HttpHeaders headers, @PathParam("contactId") String contactId) {
+
     String tenantId = headers.getHeaderString(TENANT_ID);
+
+    if (contactId == null || contactId.trim().isEmpty()) {
+      return CompletableFuture.completedFuture(
+          Response.status(Response.Status.BAD_REQUEST)
+              .entity("contactId must not be null or empty")
+              .build());
+    }
 
     return contactBlockService
         .getBlockedApis(tenantId, contactId)

@@ -33,7 +33,7 @@ public class V1UnblockContactRequestDto {
   }
 
   public void validate() {
-    if (contact == null || contact.trim().isEmpty()) {
+    if (StringUtils.isBlank(contact)) {
       throw INVALID_REQUEST.getCustomException("Contact is required");
     }
 
