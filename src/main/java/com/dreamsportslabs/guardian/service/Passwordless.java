@@ -89,7 +89,8 @@ public class Passwordless {
   private void updateDefaultTemplate(V1PasswordlessInitRequestDto requestDto, String tenantId) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     for (Contact contact : requestDto.getContacts()) {
-      OtpUtils.updateContactTemplate(tenantConfig, contact);
+      OtpUtils.updateContactTemplate(
+          tenantConfig.getSmsConfig(), tenantConfig.getEmailConfig(), contact);
     }
   }
 

@@ -39,21 +39,22 @@ public class ContactVerifyService {
     Single<OtpGenerateModel> otpGenerateModel;
 
     if (state != null) {
-      otpGenerateModel =
-          this.getOtpGenerateModel(contactVerifyDao.getCacheKeyForOtp(tenantId, state));
+      otpGenerateModel = this.getOtpGenerateModel(tenantId, state);
     } else {
       state = OtpUtils.generateState();
       TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-      OtpUtils.updateContactTemplate(tenantConfig, requestDto.getContact());
+
+      OtpUtils.updateContactTemplate(
+          tenantConfig.getSmsConfig(), tenantConfig.getEmailConfig(), requestDto.getContact());
+
       otpGenerateModel = this.createOtpGenerateModel(requestDto, headers, tenantId, state);
     }
 
-    String cacheKey = contactVerifyDao.getCacheKeyForOtp(tenantId, state);
     return otpGenerateModel
         .map(
             model -> {
               if (model.getResends() >= model.getMaxResends()) {
-                contactVerifyDao.deleteOtpGenerateModel(cacheKey);
+                contactVerifyDao.deleteOtpGenerateModel(tenantId, model.getState());
                 throw RESENDS_EXHAUSTED.getException();
               }
 
@@ -74,7 +75,7 @@ public class ContactVerifyService {
                   .andThen(Single.just(model));
             })
         .map(OtpGenerateModel::updateResend)
-        .flatMap(model -> contactVerifyDao.setOtpGenerateModel(model, cacheKey));
+        .flatMap(model -> contactVerifyDao.setOtpGenerateModel(model, tenantId, model.getState()));
   }
 
   private Single<OtpGenerateModel> createOtpGenerateModel(
@@ -83,7 +84,9 @@ public class ContactVerifyService {
       String tenantId,
       String state) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-    OtpUtils.updateContactTemplate(tenantConfig, dto.getContact());
+
+    OtpUtils.updateContactTemplate(
+        tenantConfig.getSmsConfig(), tenantConfig.getEmailConfig(), dto.getContact());
 
     ContactVerifyConfig config = tenantConfig.getContactVerifyConfig();
 
@@ -107,24 +110,23 @@ public class ContactVerifyService {
   }
 
   public Single<Boolean> verifyOtp(String state, String otp, String tenantId) {
-    String cacheKey = contactVerifyDao.getCacheKeyForOtp(tenantId, state);
-    return getOtpGenerateModel(cacheKey)
+    return getOtpGenerateModel(tenantId, state)
         .flatMap(
             model -> {
               if (model.getOtp().equals(otp)) {
-                contactVerifyDao.deleteOtpGenerateModel(cacheKey);
+                contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 return Single.just(true);
               }
 
               model.incRetry();
 
               if (model.getTries() >= model.getMaxTries()) {
-                contactVerifyDao.deleteOtpGenerateModel(cacheKey);
+                contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 return Single.error(RETRIES_EXHAUSTED.getException());
               }
 
               return contactVerifyDao
-                  .setOtpGenerateModel(model, cacheKey)
+                  .setOtpGenerateModel(model, tenantId, state)
                   .flatMap(
                       m ->
                           Single.error(
@@ -133,14 +135,14 @@ public class ContactVerifyService {
             });
   }
 
-  private Single<OtpGenerateModel> getOtpGenerateModel(String cacheKey) {
+  private Single<OtpGenerateModel> getOtpGenerateModel(String tenantId, String state) {
     return contactVerifyDao
-        .getOtpGenerateModel(cacheKey)
+        .getOtpGenerateModel(tenantId, state)
         .switchIfEmpty(Single.error(INVALID_STATE.getException()))
         .map(
             model -> {
               if (System.currentTimeMillis() / 1000 > model.getExpiry()) {
-                contactVerifyDao.deleteOtpGenerateModel(cacheKey);
+                contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 throw INVALID_STATE.getException();
               }
               return model;
@@ -158,6 +160,7 @@ public class ContactVerifyService {
         return whitelistedOtp;
       }
     }
+
     return RandomStringUtils.random(config.getOtpLength(), false, true);
   }
 }

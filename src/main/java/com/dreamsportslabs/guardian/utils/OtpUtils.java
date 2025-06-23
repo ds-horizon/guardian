@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
-import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
+import com.dreamsportslabs.guardian.config.tenant.SmsConfig;
 import com.dreamsportslabs.guardian.constant.Channel;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.constant.Template;
@@ -16,22 +17,19 @@ public final class OtpUtils {
     return RandomStringUtils.randomAlphanumeric(10);
   }
 
-  public static void updateContactTemplate(TenantConfig tenantConfig, Contact contact) {
+  public static void updateContactTemplate(
+      SmsConfig smsConfig, EmailConfig emailConfig, Contact contact) {
     if (contact.getTemplate() != null) {
       return;
     }
 
     if (contact.getChannel() == Channel.EMAIL) {
       contact.setTemplate(
-          new Template(
-              tenantConfig.getEmailConfig().getTemplateName(),
-              tenantConfig.getEmailConfig().getTemplateParams()));
+          new Template(emailConfig.getTemplateName(), emailConfig.getTemplateParams()));
     }
+
     if (contact.getChannel() == Channel.SMS) {
-      contact.setTemplate(
-          new Template(
-              tenantConfig.getSmsConfig().getTemplateName(),
-              tenantConfig.getSmsConfig().getTemplateParams()));
+      contact.setTemplate(new Template(smsConfig.getTemplateName(), smsConfig.getTemplateParams()));
     }
   }
 }

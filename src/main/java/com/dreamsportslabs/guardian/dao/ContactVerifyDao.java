@@ -22,14 +22,17 @@ public class ContactVerifyDao {
   private final Redis redisClient;
   private final ObjectMapper objectMapper;
 
-  public Maybe<OtpGenerateModel> getOtpGenerateModel(String cacheKey) {
+  public Maybe<OtpGenerateModel> getOtpGenerateModel(String tenantId, String state) {
+    String cacheKey = getCacheKeyForOtp(tenantId, state);
     return redisClient
         .rxSend(Request.cmd(Command.GET).arg(cacheKey))
         .map(response -> objectMapper.readValue(response.toString(), OtpGenerateModel.class));
   }
 
   @SneakyThrows
-  public Single<OtpGenerateModel> setOtpGenerateModel(OtpGenerateModel model, String cacheKey) {
+  public Single<OtpGenerateModel> setOtpGenerateModel(
+      OtpGenerateModel model, String tenantId, String state) {
+    String cacheKey = getCacheKeyForOtp(tenantId, state);
     return redisClient
         .rxSend(
             Request.cmd(Command.SET)
@@ -42,7 +45,8 @@ public class ContactVerifyDao {
         .toSingle();
   }
 
-  public void deleteOtpGenerateModel(String cacheKey) {
+  public void deleteOtpGenerateModel(String tenantId, String state) {
+    String cacheKey = getCacheKeyForOtp(tenantId, state);
     redisClient.rxSend(Request.cmd(Command.DEL).arg(cacheKey)).subscribe();
   }
 
