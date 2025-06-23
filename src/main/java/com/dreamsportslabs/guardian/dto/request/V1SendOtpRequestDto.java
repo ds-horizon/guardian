@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Getter
 @Setter
@@ -18,7 +17,7 @@ public class V1SendOtpRequestDto {
   private Contact contact;
 
   private boolean isValidState() {
-    return StringUtils.isNotBlank(state);
+    return state != null;
   }
 
   private boolean isValidContact() {

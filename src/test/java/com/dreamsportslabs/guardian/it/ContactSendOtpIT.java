@@ -57,8 +57,10 @@ public class ContactSendOtpIT {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, EMAIL);
     contact.put(BODY_PARAM_IDENTIFIER, "test@example.com");
+
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
+    body.put(BODY_PARAM_STATE, null);
 
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
     response
