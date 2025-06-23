@@ -105,10 +105,8 @@ public final class Constants {
   public static final Integer REVOCATIONS_KEY_SCORE_END_INDEX = 2;
   public static final String REVOCATIONS_REDIS_KEY_PREFIX = "revocations";
 
-<<<<<<< HEAD
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
-=======
   public static final String OTP_RESEND_AFTER = "resendAfter";
   public static final String OTP_RETRIES_LEFT = "retriesLeft";
 
@@ -117,5 +115,4 @@ public final class Constants {
   public static final String MESSAGE_TEMPLATE_NAME = "templateName";
   public static final String MESSAGE_TEMPLATE_PARAMS = "templateParams";
   public static final String MESSAGE_TEMPLATE_PARAMS_OTP = "otp";
->>>>>>> 6a359f0 (refactor)
 }
