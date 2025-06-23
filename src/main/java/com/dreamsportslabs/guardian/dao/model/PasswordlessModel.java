@@ -1,7 +1,7 @@
 package com.dreamsportslabs.guardian.dao.model;
 
-import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_IS_NEW_USER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
@@ -80,7 +80,7 @@ public class PasswordlessModel {
     this.maxResends = maxResends;
 
     this.user = user;
-    this.user.put(IS_NEW_USER, user.get(USERID) == null);
+    this.user.put(USER_RESPONSE_IS_NEW_USER, user.get(USERID) == null);
 
     this.headers = headers;
     this.contacts = contacts;
@@ -94,7 +94,7 @@ public class PasswordlessModel {
 
   public void setUser(Map<String, Object> user) {
     this.user = user;
-    this.user.put(IS_NEW_USER, true);
+    this.user.put(USER_RESPONSE_IS_NEW_USER, true);
   }
 
   public PasswordlessModel incRetry() {
