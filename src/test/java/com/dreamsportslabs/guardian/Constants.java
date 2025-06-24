@@ -40,7 +40,7 @@ public class Constants {
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
 
   // Scope Configuration Params
-  public static final String BODY_PARAM_SCOPE = "scope";
+  public static final String BODY_PARAM_SCOPE = "name";
   public static final String BODY_PARAM_DISPLAY_NAME = "displayName";
   public static final String BODY_PARAM_DESCRIPTION = "description";
   public static final String BODY_PARAM_CLAIMS = "claims";
@@ -65,7 +65,7 @@ public class Constants {
   public static final String TENANT_2 = "tenant2";
 
   // Error messages
-  public static final String ERROR_MSG_SCOPE_REQUIRED = "scope is required";
+  public static final String ERROR_MSG_SCOPE_REQUIRED = "scope name is required";
   public static final String ERROR_MSG_OIDC_REQUIRED = "isOidc field is required";
   public static final String ERROR_CODE_SCOPE_ALREADY_EXISTS = "scope_already_exists";
   public static final String ERROR_MSG_SCOPE_ALREADY_EXISTS = "Scope already exists for tenant";

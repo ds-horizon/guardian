@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateScopeRequestDto {
-  private String scope;
+  private String name;
   private String displayName;
   private String description;
   private List<String> claims;
@@ -21,8 +21,8 @@ public class CreateScopeRequestDto {
   private Boolean isOidc;
 
   public void validate() {
-    if (scope == null || scope.isBlank()) {
-      throw INVALID_REQUEST.getCustomException("scope is required");
+    if (name == null || name.isBlank()) {
+      throw INVALID_REQUEST.getCustomException("scope name is required");
     }
 
     if (isOidc == null) {

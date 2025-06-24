@@ -25,12 +25,12 @@ public class ScopeService {
 
     Single<List<ScopeModel>> scopesSingle;
 
-    if (StringUtils.isEmpty(getScopeRequestDto.getScope())) {
+    if (StringUtils.isEmpty(getScopeRequestDto.getName())) {
       scopesSingle =
-          scopeDao.getAllScopes(
+          scopeDao.getScopesWithPagination(
               tenantId, getScopeRequestDto.getPage() - 1, getScopeRequestDto.getPageSize());
     } else {
-      scopesSingle = scopeDao.getScopes(tenantId, getScopeRequestDto.getScope());
+      scopesSingle = scopeDao.getScope(tenantId, getScopeRequestDto.getName());
     }
 
     return scopesSingle
@@ -40,7 +40,7 @@ public class ScopeService {
 
   public Single<ScopeResponseDto> createScope(String tenantId, CreateScopeRequestDto requestDto) {
     return scopeDao
-        .getScopes(tenantId, requestDto.getScope())
+        .getScope(tenantId, requestDto.getName())
         .flatMap(
             scopeModels -> {
               if (!scopeModels.isEmpty()) {
@@ -51,7 +51,7 @@ public class ScopeService {
               ScopeModel scopeModel =
                   ScopeModel.builder()
                       .tenantId(tenantId)
-                      .scope(requestDto.getScope())
+                      .name(requestDto.getName())
                       .displayName(requestDto.getDisplayName())
                       .description(requestDto.getDescription())
                       .claims(requestDto.getClaims())
@@ -70,7 +70,7 @@ public class ScopeService {
 
   private ScopeResponseDto toResponseDto(ScopeModel model) {
     return ScopeResponseDto.builder()
-        .scope(model.getScope())
+        .name(model.getName())
         .displayName(model.getDisplayName())
         .description(model.getDescription())
         .claims(model.getClaims())

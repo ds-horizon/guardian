@@ -232,7 +232,7 @@ public class ScopeConfigIT {
 
     // Validate
     response.then().statusCode(SC_OK);
-    List<String> scopes = response.jsonPath().getList("scopes.scope");
+    List<String> scopes = response.jsonPath().getList("scopes.name");
     assertThat(scopes, hasItem(scopeName));
 
     // Cleanup
@@ -256,7 +256,7 @@ public class ScopeConfigIT {
     Response response = listScopes(tenant1, queryParams);
 
     // Validate
-    List<String> scopes = response.jsonPath().getList("scopes.scope");
+    List<String> scopes = response.jsonPath().getList("scopes.name");
     assertThat(scopes, hasItem(scopeName));
 
     // Cleanup
@@ -433,7 +433,7 @@ public class ScopeConfigIT {
     Response response = createScope(tenant1, requestBody);
 
     // Validate
-    response.then().statusCode(SC_CREATED).body("scope", equalTo(scopeName));
+    response.then().statusCode(SC_CREATED).body("name", equalTo(scopeName));
 
     // Cleanup
     deleteScope(tenant1, scopeName);
@@ -459,7 +459,7 @@ public class ScopeConfigIT {
     response
         .then()
         .statusCode(SC_CREATED)
-        .body("scope", equalTo(longScopeName))
+        .body("name", equalTo(longScopeName))
         .body("description", equalTo(longDescription));
 
     // Cleanup
@@ -486,7 +486,7 @@ public class ScopeConfigIT {
     // Validate - Should still return 200 and find the scope (defaults to page 1)
     response.then().statusCode(SC_OK);
 
-    List<String> scopes = response.jsonPath().getList("scopes.scope");
+    List<String> scopes = response.jsonPath().getList("scopes.name");
     assertThat(scopes, hasItem(scopeName));
 
     // Cleanup
@@ -512,7 +512,7 @@ public class ScopeConfigIT {
     // Validate - Should still return 200 and find the scope (defaults to pageSize 10)
     response.then().statusCode(SC_OK);
 
-    List<String> scopes = response.jsonPath().getList("scopes.scope");
+    List<String> scopes = response.jsonPath().getList("scopes.name");
     assertThat(scopes, hasItem(scopeName));
 
     // Cleanup
@@ -532,7 +532,6 @@ public class ScopeConfigIT {
     Map<String, String> queryParams = new HashMap<>();
     queryParams.put("page", "0");
     queryParams.put("pageSize", "10");
-    //    queryParams.put("scope", scopeName);
 
     // Act
     Response response = listScopes(tenant1, queryParams);
@@ -540,7 +539,7 @@ public class ScopeConfigIT {
     // Validate - Should still return 200 and find the scope (defaults to page 1)
     response.then().statusCode(SC_OK);
 
-    List<String> scopes = response.jsonPath().getList("scopes.scope");
+    List<String> scopes = response.jsonPath().getList("scopes.name");
     assertThat(scopes, hasItem(scopeName));
 
     // Cleanup
@@ -567,7 +566,7 @@ public class ScopeConfigIT {
     // Validate - Should still return 200 and find the scope (defaults to pageSize 10)
     response.then().statusCode(SC_OK);
 
-    List<String> scopes = response.jsonPath().getList("scopes.scope");
+    List<String> scopes = response.jsonPath().getList("scopes.name");
     assertThat(scopes, hasItem(scopeName));
 
     // Cleanup

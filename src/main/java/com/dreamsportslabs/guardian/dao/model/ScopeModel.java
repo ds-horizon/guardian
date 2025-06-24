@@ -11,8 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScopeModel {
-  private Integer id;
-  private String scope;
+  private String name;
   private String displayName;
   private String description;
   private List<String> claims;

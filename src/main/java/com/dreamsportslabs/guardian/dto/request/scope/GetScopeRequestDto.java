@@ -9,8 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 
 @Data
 public class GetScopeRequestDto {
-  @QueryParam("scope")
-  private String scope;
+  @QueryParam("name")
+  private String name;
 
   @QueryParam("page")
   @DefaultValue("1")
@@ -21,8 +21,8 @@ public class GetScopeRequestDto {
   private int pageSize;
 
   public void validate() {
-    if (scope != null && StringUtils.isBlank(scope)) {
-      throw INVALID_REQUEST.getCustomException("scope cannot be empty");
+    if (name != null && StringUtils.isBlank(name)) {
+      throw INVALID_REQUEST.getCustomException("scope name cannot be empty");
     }
 
     if (page <= 1) {

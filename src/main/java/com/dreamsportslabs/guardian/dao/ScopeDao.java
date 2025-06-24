@@ -1,6 +1,9 @@
 package com.dreamsportslabs.guardian.dao;
 
-import static com.dreamsportslabs.guardian.dao.query.OidcConfigQuery.*;
+import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.DELETE_SCOPE;
+import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_ALL_SCOPES;
+import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_SCOPE_BY_NAME;
+import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.SAVE_SCOPE;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
@@ -20,15 +23,15 @@ import lombok.extern.slf4j.Slf4j;
 public class ScopeDao {
   private final MysqlClient mysqlClient;
 
-  public Single<List<ScopeModel>> getScopes(String tenantId, String scope) {
+  public Single<List<ScopeModel>> getScope(String tenantId, String name) {
     return mysqlClient
         .getReaderPool()
-        .preparedQuery(GET_SCOPES_BY_NAME)
-        .execute(Tuple.of(tenantId, scope))
+        .preparedQuery(GET_SCOPE_BY_NAME)
+        .execute(Tuple.of(tenantId, name))
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }
 
-  public Single<List<ScopeModel>> getAllScopes(String tenantId, int offset, int limit) {
+  public Single<List<ScopeModel>> getScopesWithPagination(String tenantId, int offset, int limit) {
     return mysqlClient
         .getReaderPool()
         .preparedQuery(GET_ALL_SCOPES)
@@ -39,30 +42,26 @@ public class ScopeDao {
   public Single<ScopeModel> saveScopes(ScopeModel model) {
     return mysqlClient
         .getWriterPool()
-        .preparedQuery(CREATE_SCOPE)
+        .preparedQuery(SAVE_SCOPE)
         .execute(
             Tuple.wrap(
                 Arrays.asList(
                     model.getTenantId(),
-                    model.getScope(),
+                    model.getName(),
                     model.getDisplayName(),
                     model.getDescription(),
                     new JsonArray(model.getClaims() == null ? List.of() : model.getClaims()),
                     model.getIsOidc(),
                     model.getIconUrl())))
         .map(rows -> String.valueOf(rows.property(MySQLClient.LAST_INSERTED_ID)))
-        .map(
-            rowId -> {
-              model.setId(Integer.parseInt(rowId));
-              return model;
-            });
+        .map(rowId -> model);
   }
 
-  public Single<Boolean> deleteScope(String tenantId, String scope) {
+  public Single<Boolean> deleteScope(String tenantId, String name) {
     return mysqlClient
         .getWriterPool()
         .preparedQuery(DELETE_SCOPE)
-        .execute(Tuple.of(tenantId, scope))
+        .execute(Tuple.of(tenantId, name))
         .map(result -> result.rowCount() > 0);
   }
 }

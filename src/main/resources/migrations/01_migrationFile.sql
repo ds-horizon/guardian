@@ -225,18 +225,18 @@ CREATE TABLE contact_verify_config
 
 CREATE TABLE `scope` (
  `id` INT NOT NULL AUTO_INCREMENT,
- `tenant_id` VARCHAR(100) NOT NULL,
- `scope` VARCHAR(100) NOT NULL,
+ `tenant_id` VARCHAR(10) NOT NULL,
+ `name` VARCHAR(100) NOT NULL,
  `display_name` VARCHAR(100),
  `description` VARCHAR(1000),
  `icon_url` VARCHAR(2083),
- `claims` JSON NOT NULL DEFAULT (JSON_OBJECT()),
+ `claims` JSON NOT NULL,
  `is_oidc` BOOLEAN DEFAULT FALSE,
  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
  PRIMARY KEY (`id`),
- UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `scope`)
+ UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `name`)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
