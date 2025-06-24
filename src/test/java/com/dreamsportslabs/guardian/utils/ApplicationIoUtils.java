@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 public class ApplicationIoUtils {
 
-  private static Response execute(
+  public static Response execute(
       Map<String, Object> body,
       Map<String, String> headers,
       Map<String, String> queryParams,

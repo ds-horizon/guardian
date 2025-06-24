@@ -1,7 +1,7 @@
 package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
-import static io.restassured.RestAssured.given;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.execute;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -10,11 +10,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.DisplayName;
@@ -48,27 +46,6 @@ public class OIDCDiscoveryIT {
       Map<String, String> headers, Map<String, String> queryParams, Map<String, Object> body) {
     return execute(
         body, headers, queryParams, spec -> spec.put("/.well-known/openid-configuration"));
-  }
-
-  private Response execute(
-      Map<String, Object> body,
-      Map<String, String> headers,
-      Map<String, String> queryParams,
-      Function<RequestSpecification, Response> fn) {
-    RequestSpecification spec = given();
-    if (body != null) {
-      spec.header("Content-Type", "application/json").and().body(body);
-    }
-
-    if (headers != null) {
-      spec.headers(headers);
-    }
-
-    if (queryParams != null) {
-      spec.queryParams(queryParams);
-    }
-
-    return fn.apply(spec);
   }
 
   @Test
