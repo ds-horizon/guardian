@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Path("/certs")
+@Path("/v1/certs")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class Jwks {
 

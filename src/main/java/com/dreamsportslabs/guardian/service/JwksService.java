@@ -32,15 +32,7 @@ public class JwksService {
   private JsonObject getKeysInJwksFormat(String publicKey, String kid, String alg) {
     JSONWebKey jwk = JSONWebKey.build(publicKey);
     jwk.kid = kid;
-    jwk.alg = verifyAlgorithm(alg);
+    jwk.alg = Algorithm.valueOf(alg);
     return new JsonObject(jwk.toJSON());
-  }
-
-  private Algorithm verifyAlgorithm(String alg) {
-    try {
-      return Algorithm.valueOf(alg);
-    } catch (Exception e) {
-      return null;
-    }
   }
 }

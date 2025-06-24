@@ -2,6 +2,8 @@ package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.getJwks;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 
 import io.restassured.response.Response;
@@ -9,7 +11,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -20,46 +22,56 @@ public class JwksIT {
 
   private static JsonArray extractKeys(Response response) {
     JsonObject json = new JsonObject(response.getBody().asString());
-    Assertions.assertTrue(json.containsKey("keys"));
+    assertThat(json.containsKey("keys"), equalTo(true));
     return json.getJsonArray("keys");
   }
 
   @Test
+  @DisplayName("Should return Multiple JWKS keys successfully")
   void jwksReturnsMultipleKeys() {
 
+    // Act
     Response response = getJwks("tenant3");
-    Assertions.assertEquals(200, response.getStatusCode());
+
+    // validate
+    assertThat(response.getStatusCode(), equalTo(200));
 
     JsonArray keys = extractKeys(response);
-    Assertions.assertEquals(2, keys.size(), "Expected exactly 2 keys");
+    assertThat(keys.size(), equalTo(2));
 
     List<String> kids = keys.stream().map(o -> ((JsonObject) o).getString("kid")).toList();
 
-    Assertions.assertTrue(kids.contains("multi-key-1"));
-    Assertions.assertTrue(kids.contains("multi-key-2"));
+    assertThat(kids.contains("multi-key-1"), equalTo(true));
+    assertThat(kids.contains("multi-key-2"), equalTo(true));
   }
 
   @Test
+  @DisplayName("Validate JWKS structure")
   void jwksStructureIsCorrect() {
+    // Act
     Response response = getJwks(TENANT_VALID);
 
-    Assertions.assertEquals(200, response.getStatusCode());
+    // Validate
+    assertThat(response.getStatusCode(), equalTo(200));
 
     JsonArray keys = extractKeys(response);
-    Assertions.assertEquals(1, keys.size());
+    assertThat(keys.size(), equalTo(1));
 
     JsonObject key = keys.getJsonObject(0);
-    Assertions.assertEquals("RSA", key.getString("kty"));
-    Assertions.assertEquals("sig", key.getString("use"));
+    assertThat(key.getString("kty"), equalTo("RSA"));
+    assertThat(key.getString("use"), equalTo("sig"));
     assertNotNull(key.getString("kid"));
     assertNotNull(key.getString("n"));
-    Assertions.assertEquals("AQAB", key.getString("e"));
-    Assertions.assertEquals("RS256", key.getString("alg"));
+    assertThat(key.getString("e"), equalTo("AQAB"));
+    assertThat(key.getString("alg"), equalTo("RS256"));
   }
 
   @Test
+  @DisplayName("Should return error for unknown tenant")
   void unknownTenantReturnsError() {
+    // Act
     Response response = getJwks(TENANT_UNKNOWN);
-    Assertions.assertEquals(400, response.getStatusCode());
+    // Validate
+    assertThat(response.getStatusCode(), equalTo(400));
   }
 }
