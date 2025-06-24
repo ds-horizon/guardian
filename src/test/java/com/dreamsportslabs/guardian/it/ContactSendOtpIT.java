@@ -37,13 +37,17 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should send OTP via SMS for valid request and default template is used")
   public void testSendOtpSmsValid() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response
         .then()
         .statusCode(SC_OK)
@@ -58,6 +62,7 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should send OTP via EMAIL for valid request")
   public void testSendOtpEmailValid() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, EMAIL);
     contact.put(BODY_PARAM_IDENTIFIER, "test@example.com");
@@ -66,7 +71,10 @@ public class ContactSendOtpIT {
     body.put(BODY_PARAM_CONTACT, contact);
     body.put(BODY_PARAM_STATE, null);
 
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response
         .then()
         .statusCode(SC_OK)
@@ -81,26 +89,37 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should return error when contact is missing")
   public void testSendOtpMissingContact() {
+    // Arrange
     Map<String, Object> body = new HashMap<>();
+
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error when contact is invalid (missing identifier)")
   public void testSendOtpInvalidContact() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     // missing identifier
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
+
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error when resends are exhausted")
   public void testSendOtpResendsExhausted() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
@@ -115,13 +134,17 @@ public class ContactSendOtpIT {
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
 
+    // Act
     Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
+
+    // Validate
     exhausted.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error when resend is not allowed (too soon)")
   public void testSendOtpResendNotAllowed() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
@@ -132,20 +155,28 @@ public class ContactSendOtpIT {
     String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
+
+    // Act
     Response resend = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
+
+    // Validate
     resend.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should handle mocked OTP for tenant1")
   public void testSendOtpMocked() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response
         .then()
         .statusCode(SC_OK)
@@ -156,6 +187,7 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should return error for contact with invalid template")
   public void testSendOtpInvalidTemplate() {
+    // Arrange
     Map<String, Object> template = new HashMap<>();
     // missing name
     Map<String, Object> contact = new HashMap<>();
@@ -164,13 +196,18 @@ public class ContactSendOtpIT {
     contact.put(BODY_PARAM_TEMPLATE, template);
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
+
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should send OTP with valid template")
   public void testSendOtpValidTemplate() {
+    // Arrange
     Map<String, Object> template = new HashMap<>();
     template.put(BODY_PARAM_NAME, "otp-template");
     template.put(BODY_PARAM_PARAMS, new HashMap<>());
@@ -180,7 +217,11 @@ public class ContactSendOtpIT {
     contact.put(BODY_PARAM_TEMPLATE, template);
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
+
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response
         .then()
         .statusCode(SC_OK)
@@ -195,28 +236,39 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should return error for expired state")
   public void testSendOtpExpiredState() {
+    // Arrange
     // Simulate by using a random/invalid state
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, "expired-or-invalid-state");
+
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
+
+    // Validate
     response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error for non-existent tenant ID")
   public void testSendOtpNonExistentTenant() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
+
+    // Act
     Response response = ApplicationIoUtils.sendOtp("nonexistent-tenant", body);
+
+    // Validate
     response.then().statusCode(isA(Integer.class)); // Accepts 400 or 404 depending on impl
   }
 
   @Test
   @DisplayName("Should return error when max tries are exceeded")
   public void testSendOtpMaxTriesExceeded() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
@@ -231,13 +283,18 @@ public class ContactSendOtpIT {
     for (int i = 0; i < 10; i++) {
       ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
     }
+
+    // Act
     Response afterMaxTries = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
+
+    // Validate
     afterMaxTries.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should enforce resend limit exactly (no more than allowed)")
   public void testResendLimitEnforcedExactly() throws InterruptedException {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
@@ -262,8 +319,12 @@ public class ContactSendOtpIT {
       resend.then().statusCode(SC_OK);
       Thread.sleep(2 * 1000L);
     }
+
+    // Act
     // The next resend should fail
     Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
+
+    // Validate
     exhausted
         .then()
         .statusCode(SC_BAD_REQUEST)
@@ -276,19 +337,24 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should start resends counter at 0")
   public void testResendsCounterStartsAtZero() {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
+
+    // Validate
     response.then().statusCode(SC_OK).body(RESPONSE_BODY_PARAM_RESENDS, equalTo(0));
   }
 
   @Test
   @DisplayName("Should decrease resendsLeft with each resend")
   public void testResendsLeftDecreases() throws InterruptedException {
+    // Arrange
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, RandomStringUtils.randomAlphanumeric(12));
@@ -307,7 +373,10 @@ public class ContactSendOtpIT {
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
 
+    // Act
     Response second = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
+
+    // Validate
     int resendsLeft2 = second.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_RESENDS_LEFT);
 
     assertThat(resendsLeft2, equalTo(resendsLeft - 1));
@@ -318,6 +387,7 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should handle non-mocked OTP for SMS channel (tenant2)")
   public void testNonMockedOtpSmsContactVerify() {
+    // Arrange
     String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -327,7 +397,10 @@ public class ContactSendOtpIT {
 
     StubMapping sendSmsStub = getStubForSendSms();
 
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
+
+    // Validate
     response
         .then()
         .statusCode(SC_OK)
@@ -340,6 +413,7 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should enforce resend limit exactly for non-mocked tenant (SMS, tenant2)")
   public void testResendLimitEnforcedExactlyNonMockedSms() throws InterruptedException {
+    // Arrange
     StubMapping sendSmsStub = getStubForSendSms();
     String state = RandomStringUtils.randomAlphanumeric(8);
 
@@ -358,7 +432,10 @@ public class ContactSendOtpIT {
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
 
+    // Act
     Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
+
+    // Validate
     exhausted
         .then()
         .statusCode(SC_BAD_REQUEST)
@@ -372,6 +449,7 @@ public class ContactSendOtpIT {
   @DisplayName(
       "Should return error when resend is not allowed (too soon) for non-mocked tenant (SMS, tenant2)")
   public void testSendOtpResendNotAllowedNonMockedSms() {
+    // Arrange
     String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -387,7 +465,10 @@ public class ContactSendOtpIT {
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
 
+    // Act
     Response resend = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
+
+    // Validate
     resend.then().statusCode(SC_BAD_REQUEST);
 
     wireMockServer.removeStub(sendSmsStub);
@@ -396,6 +477,7 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should handle 4xx error from OTP service for non-mocked tenant (SMS, tenant2)")
   public void testOtpService4xxErrorNonMockedSms() {
+    // Arrange
     String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
 
     Map<String, Object> contact = new HashMap<>();
@@ -411,7 +493,10 @@ public class ContactSendOtpIT {
             post(urlPathMatching("/sendSms"))
                 .willReturn(aResponse().withStatus(400).withBody("{\"error\":\"bad request\"}")));
 
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
+
+    // Validate
     response
         .then()
         .statusCode(SC_INTERNAL_SERVER_ERROR)
@@ -424,6 +509,7 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should handle 5xx error from OTP service for non-mocked tenant (SMS, tenant2)")
   public void testOtpService5xxErrorNonMockedSms() {
+    // Arrange
     String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -438,7 +524,10 @@ public class ContactSendOtpIT {
                 .willReturn(
                     aResponse().withStatus(500).withBody("{\"error\":\"internal error\"}")));
 
+    // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
+
+    // Validate
     response
         .then()
         .statusCode(SC_INTERNAL_SERVER_ERROR); // Adjust if your API returns a different code
@@ -449,6 +538,7 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should handle 4xx error for OTP retried after expired time")
   public void testOtpService4xxErrorExpired() throws InterruptedException {
+    // Arrange
     // Stub the SMS service to return 400
     StubMapping sendSmsStub = getStubForSendSms();
 
@@ -469,7 +559,10 @@ public class ContactSendOtpIT {
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
 
+    // Act
     Response expiredResponse = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
+
+    // Validate
     expiredResponse
         .then()
         .statusCode(SC_BAD_REQUEST)

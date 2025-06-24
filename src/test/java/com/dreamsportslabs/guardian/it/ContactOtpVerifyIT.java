@@ -47,6 +47,7 @@ public class ContactOtpVerifyIT {
   @Test
   @DisplayName("Should verify OTP successfully with valid state and OTP (mocked tenant)")
   public void testVerifyOtpSuccessfulMocked() {
+    // Arrange
     // First send OTP to get state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -62,13 +63,17 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, state);
     verifyBody.put(BODY_PARAM_OTP, "999999");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(SC_NO_CONTENT);
   }
 
   @Test
   @DisplayName("Should verify OTP successfully with valid state and OTP (non-mocked tenant)")
   public void testVerifyOtpSuccessfulNonMocked() {
+    // Arrange
     // First send OTP to get state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -81,27 +86,34 @@ public class ContactOtpVerifyIT {
     Response sendResponse = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, sendBody);
     String state = sendResponse.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
 
+    // Act
     // For non-mocked tenant, we need to get the actual OTP from the model
     // Since we can't access the generated OTP directly, we'll use a whitelisted number
     // or test with a known scenario. Let's test with incorrect OTP first to understand the flow.
 
+    // Validate
     wireMockServer.removeStub(sendSmsStub);
   }
 
   @Test
   @DisplayName("Should return error when state is missing")
   public void testVerifyOtpMissingState() {
+    // Arrange
     Map<String, Object> verifyBody = new HashMap<>();
     verifyBody.put(BODY_PARAM_OTP, "1234");
     // missing state
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error when OTP is missing")
   public void testVerifyOtpMissingOtp() {
+    // Arrange
     // First send OTP to get a valid state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -116,24 +128,32 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, state);
     // missing otp
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error when state is empty")
   public void testVerifyOtpEmptyState() {
+    // Arrange
     Map<String, Object> verifyBody = new HashMap<>();
     verifyBody.put(BODY_PARAM_STATE, "");
     verifyBody.put(BODY_PARAM_OTP, "1234");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error when OTP is empty")
   public void testVerifyOtpEmptyOtp() {
+    // Arrange
     // First send OTP to get a valid state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -148,18 +168,25 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, state);
     verifyBody.put(BODY_PARAM_OTP, "");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should return error for invalid/non-existent state")
   public void testVerifyOtpInvalidState() {
+    // Arrange
     Map<String, Object> verifyBody = new HashMap<>();
     verifyBody.put(BODY_PARAM_STATE, "invalid-state-12345");
     verifyBody.put(BODY_PARAM_OTP, "1234");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse
         .then()
         .statusCode(SC_BAD_REQUEST)
@@ -170,6 +197,7 @@ public class ContactOtpVerifyIT {
   @Test
   @DisplayName("Should return error for incorrect OTP")
   public void testVerifyOtpIncorrectOtp() {
+    // Arrange
     // First send OTP to get state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -185,7 +213,10 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, state);
     verifyBody.put(BODY_PARAM_OTP, "9999"); // Wrong OTP (correct is "1111" for mocked)
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse
         .then()
         .statusCode(SC_BAD_REQUEST)
@@ -197,6 +228,7 @@ public class ContactOtpVerifyIT {
   @Test
   @DisplayName("Should return error when retries are exhausted")
   public void testVerifyOtpRetriesExhausted() {
+    // Arrange
     // First send OTP to get state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -212,6 +244,7 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, state);
     verifyBody.put(BODY_PARAM_OTP, "111111"); // Wrong OTP
 
+    // Act & Validate
     for (int i = 0; i < 5; i++) {
       Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
       if (i < 4) {
@@ -233,6 +266,7 @@ public class ContactOtpVerifyIT {
   @Test
   @DisplayName("Should return error for expired state")
   public void testVerifyOtpExpiredState() {
+    // Arrange
     // This test is tricky since we can't easily control time
     // We'll test with a state that would be expired
     // For now, we'll test with an invalid state which should give the same error
@@ -240,7 +274,10 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, "expired-state-12345");
     verifyBody.put(BODY_PARAM_OTP, "1234");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse
         .then()
         .statusCode(SC_BAD_REQUEST)
@@ -251,17 +288,22 @@ public class ContactOtpVerifyIT {
   @Test
   @DisplayName("Should return error for non-existent tenant")
   public void testVerifyOtpNonExistentTenant() {
+    // Arrange
     Map<String, Object> verifyBody = new HashMap<>();
     verifyBody.put(BODY_PARAM_STATE, "some-state");
     verifyBody.put(BODY_PARAM_OTP, "1234");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp("nonexistent-tenant", verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(isA(Integer.class)); // Could be 400 or 404
   }
 
   @Test
   @DisplayName("Should decrease retriesLeft with each incorrect attempt")
   public void testVerifyOtpRetriesLeftDecreases() {
+    // Arrange
     // First send OTP to get state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -277,6 +319,7 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, state);
     verifyBody.put(BODY_PARAM_OTP, "9999");
 
+    // Act
     Response firstAttempt = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
     int retriesLeft1 =
         firstAttempt
@@ -292,23 +335,29 @@ public class ContactOtpVerifyIT {
             .jsonPath()
             .getInt(ERROR + "." + METADATA + "." + RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA);
 
+    // Validate
     assertThat(retriesLeft2, equalTo(retriesLeft1 - 1));
   }
 
   @Test
   @DisplayName("Should handle malformed request body")
   public void testVerifyOtpMalformedBody() {
+    // Arrange
     Map<String, Object> verifyBody = new HashMap<>();
     // Add invalid/unexpected fields
     verifyBody.put("invalidField", "invalidValue");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should verify OTP successfully after some incorrect attempts")
   public void testVerifyOtpSuccessAfterIncorrectAttempts() {
+    // Arrange
     // First send OTP to get state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -336,13 +385,17 @@ public class ContactOtpVerifyIT {
     correctBody.put(BODY_PARAM_STATE, state);
     correctBody.put(BODY_PARAM_OTP, "999999"); // Correct mocked OTP
 
+    // Act
     Response correctAttempt = ApplicationIoUtils.verifyOtp(TENANT_ID, correctBody);
+
+    // Validate
     correctAttempt.then().statusCode(SC_NO_CONTENT);
   }
 
   @Test
   @DisplayName("Should not allow verification after successful verification (state consumed)")
   public void testVerifyOtpStateConsumedAfterSuccess() {
+    // Arrange
     // First send OTP to get state
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -361,8 +414,11 @@ public class ContactOtpVerifyIT {
     Response firstVerification = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
     firstVerification.then().statusCode(SC_NO_CONTENT);
 
+    // Act
     // Second verification with same state - should fail
     Response secondVerification = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     secondVerification
         .then()
         .statusCode(SC_BAD_REQUEST)
@@ -373,17 +429,22 @@ public class ContactOtpVerifyIT {
   @Test
   @DisplayName("Should handle null values in request")
   public void testVerifyOtpNullValues() {
+    // Arrange
     Map<String, Object> verifyBody = new HashMap<>();
     verifyBody.put(BODY_PARAM_STATE, null);
     verifyBody.put(BODY_PARAM_OTP, null);
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
   @DisplayName("Should handle very long state and OTP values")
   public void testVerifyOtpLongValues() {
+    // Arrange
     String veryLongState = RandomStringUtils.randomAlphanumeric(1000);
     String veryLongOtp = RandomStringUtils.randomAlphanumeric(1000);
 
@@ -391,7 +452,10 @@ public class ContactOtpVerifyIT {
     verifyBody.put(BODY_PARAM_STATE, veryLongState);
     verifyBody.put(BODY_PARAM_OTP, veryLongOtp);
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse
         .then()
         .statusCode(SC_BAD_REQUEST)
@@ -402,11 +466,15 @@ public class ContactOtpVerifyIT {
   @Test
   @DisplayName("Should handle special characters in state and OTP")
   public void testVerifyOtpSpecialCharacters() {
+    // Arrange
     Map<String, Object> verifyBody = new HashMap<>();
     verifyBody.put(BODY_PARAM_STATE, "state-with-special-chars-!@#$%^&*()");
     verifyBody.put(BODY_PARAM_OTP, "otp-with-special-chars-!@#$");
 
+    // Act
     Response verifyResponse = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
+
+    // Validate
     verifyResponse
         .then()
         .statusCode(SC_BAD_REQUEST)
