@@ -228,7 +228,7 @@ CREATE TABLE contact_api_blocks
     id           BIGINT       NOT NULL AUTO_INCREMENT,
     tenant_id    CHAR(10)     NOT NULL,
     contact      VARCHAR(64)  NOT NULL,
-    api_path     VARCHAR(255) NOT NULL,
+    flow_name    VARCHAR(50)  NOT NULL,
     reason       TEXT,
     operator     VARCHAR(128),
     unblocked_at BIGINT,
@@ -238,13 +238,13 @@ CREATE TABLE contact_api_blocks
 
     PRIMARY KEY (`id`),
 
-    CONSTRAINT fk_tenant_contact_api_blocks FOREIGN KEY (tenant_id)
+    CONSTRAINT fk_tenant_contact_flow_blocks FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
 
-    CONSTRAINT uk_tenant_contact_api_active UNIQUE (tenant_id, contact, api_path),
+    CONSTRAINT uk_tenant_contact_flow_active UNIQUE (tenant_id, contact, flow_name),
 
-    KEY `idx_contact_api_blocks_tenant_contact` (`tenant_id`, `contact`, `is_active`),
-    KEY `idx_contact_api_blocks_tenant_contact_api` (`tenant_id`, `contact`, `api_path`, `is_active`)
+    KEY `idx_contact_flow_blocks_tenant_contact` (`tenant_id`, `contact`, `is_active`),
+    KEY `idx_contact_flow_blocks_tenant_contact_flow` (`tenant_id`, `contact`, `flow_name`, `is_active`)
 
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
