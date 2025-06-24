@@ -10,6 +10,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.rxjava3.mysqlclient.MySQLClient;
 import io.vertx.rxjava3.sqlclient.Tuple;
+import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ScopeDao {
   private final MysqlClient mysqlClient;
 
-  public Single<List<ScopeModel>> getScopesByName(String tenantId, String scope) {
+  public Single<List<ScopeModel>> getScopes(String tenantId, String scope) {
     return mysqlClient
         .getReaderPool()
         .preparedQuery(GET_SCOPES_BY_NAME)
@@ -40,12 +41,15 @@ public class ScopeDao {
         .getWriterPool()
         .preparedQuery(CREATE_SCOPE)
         .execute(
-            Tuple.of(
-                model.getTenantId(),
-                model.getScope(),
-                model.getDisplayName(),
-                model.getDescription(),
-                new JsonArray(model.getClaims())))
+            Tuple.wrap(
+                Arrays.asList(
+                    model.getTenantId(),
+                    model.getScope(),
+                    model.getDisplayName(),
+                    model.getDescription(),
+                    new JsonArray(model.getClaims() == null ? List.of() : model.getClaims()),
+                    model.getIsOidc(),
+                    model.getIconUrl())))
         .map(rows -> String.valueOf(rows.property(MySQLClient.LAST_INSERTED_ID)))
         .map(
             rowId -> {

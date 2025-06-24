@@ -2,7 +2,8 @@ package com.dreamsportslabs.guardian.rest.config;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
-import com.dreamsportslabs.guardian.dto.request.CreateScopeRequestDto;
+import com.dreamsportslabs.guardian.dto.request.scope.CreateScopeRequestDto;
+import com.dreamsportslabs.guardian.dto.request.scope.GetScopeRequestDto;
 import com.dreamsportslabs.guardian.service.ScopeService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.*;
@@ -13,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Path("/config/scope")
+@Path("/scopes")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class ScopeConfig {
   private final ScopeService scopeService;
@@ -21,12 +22,12 @@ public class ScopeConfig {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> listScopes(
-      @HeaderParam(TENANT_ID) String tenantId,
-      @QueryParam("name") String name,
-      @DefaultValue("1") @QueryParam("page") int page,
-      @DefaultValue("10") @QueryParam("pageSize") int pageSize) {
+      @HeaderParam(TENANT_ID) String tenantId, @BeanParam GetScopeRequestDto getScopeRequestDto) {
+
+    getScopeRequestDto.validate();
+
     return scopeService
-        .getScopes(tenantId, name, page, pageSize)
+        .getScopes(tenantId, getScopeRequestDto)
         .map(dto -> Response.ok(dto).build())
         .toCompletionStage();
   }

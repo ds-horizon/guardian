@@ -4,7 +4,8 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.SCOPE_ALREADY_EXI
 
 import com.dreamsportslabs.guardian.dao.ScopeDao;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
-import com.dreamsportslabs.guardian.dto.request.CreateScopeRequestDto;
+import com.dreamsportslabs.guardian.dto.request.scope.CreateScopeRequestDto;
+import com.dreamsportslabs.guardian.dto.request.scope.GetScopeRequestDto;
 import com.dreamsportslabs.guardian.dto.response.ScopeListResponseDto;
 import com.dreamsportslabs.guardian.dto.response.ScopeResponseDto;
 import com.google.inject.Inject;
@@ -20,22 +21,16 @@ public class ScopeService {
   private final ScopeDao scopeDao;
 
   public Single<ScopeListResponseDto> getScopes(
-      String tenantId, String scopeName, int page, int pageSize) {
-
-    // Validate pagination parameters
-    if (page <= 0) {
-      page = 1; // Default to page 1 if invalid
-    }
-    if (pageSize <= 0) {
-      pageSize = 10; // Default to 10 if invalid
-    }
+      String tenantId, GetScopeRequestDto getScopeRequestDto) {
 
     Single<List<ScopeModel>> scopesSingle;
-    if (StringUtils.isEmpty(scopeName)) {
-      int offset = (page - 1) * pageSize;
-      scopesSingle = scopeDao.getAllScopes(tenantId, offset, pageSize);
+
+    if (StringUtils.isEmpty(getScopeRequestDto.getScope())) {
+      scopesSingle =
+          scopeDao.getAllScopes(
+              tenantId, getScopeRequestDto.getPage() - 1, getScopeRequestDto.getPageSize());
     } else {
-      scopesSingle = scopeDao.getScopesByName(tenantId, scopeName);
+      scopesSingle = scopeDao.getScopes(tenantId, getScopeRequestDto.getScope());
     }
 
     return scopesSingle
@@ -45,7 +40,7 @@ public class ScopeService {
 
   public Single<ScopeResponseDto> createScope(String tenantId, CreateScopeRequestDto requestDto) {
     return scopeDao
-        .getScopesByName(tenantId, requestDto.getScope())
+        .getScopes(tenantId, requestDto.getScope())
         .flatMap(
             scopeModels -> {
               if (!scopeModels.isEmpty()) {
@@ -60,6 +55,8 @@ public class ScopeService {
                       .displayName(requestDto.getDisplayName())
                       .description(requestDto.getDescription())
                       .claims(requestDto.getClaims())
+                      .iconUrl(requestDto.getIconUrl())
+                      .isOidc(requestDto.getIsOidc())
                       .build();
 
               return scopeDao.saveScopes(scopeModel);
@@ -73,11 +70,12 @@ public class ScopeService {
 
   private ScopeResponseDto toResponseDto(ScopeModel model) {
     return ScopeResponseDto.builder()
-        .id(model.getId())
         .scope(model.getScope())
         .displayName(model.getDisplayName())
         .description(model.getDescription())
         .claims(model.getClaims())
+        .iconUrl(model.getIconUrl())
+        .isOidc(model.getIsOidc())
         .build();
   }
 }

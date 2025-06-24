@@ -17,4 +17,6 @@ public class ScopeModel {
   private String description;
   private List<String> claims;
   private String tenantId;
+  private String iconUrl;
+  private Boolean isOidc;
 }

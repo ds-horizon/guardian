@@ -1,4 +1,4 @@
-package com.dreamsportslabs.guardian.dto.request;
+package com.dreamsportslabs.guardian.dto.request.scope;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
@@ -17,19 +17,16 @@ public class CreateScopeRequestDto {
   private String displayName;
   private String description;
   private List<String> claims;
+  private String iconUrl;
+  private Boolean isOidc;
 
   public void validate() {
     if (scope == null || scope.isBlank()) {
       throw INVALID_REQUEST.getCustomException("scope is required");
     }
-    if (displayName == null || displayName.isBlank()) {
-      throw INVALID_REQUEST.getCustomException("display_name is required");
-    }
-    if (description == null || description.isBlank()) {
-      throw INVALID_REQUEST.getCustomException("description is required");
-    }
-    if (claims == null || claims.isEmpty()) {
-      throw INVALID_REQUEST.getCustomException("claims is required");
+
+    if (isOidc == null) {
+      throw INVALID_REQUEST.getCustomException("isOidc field is required");
     }
   }
 }

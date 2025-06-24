@@ -11,9 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScopeResponseDto {
-  private Integer id;
   private String scope;
   private String displayName;
   private String description;
+  private String iconUrl;
+  private Boolean isOidc;
   private List<String> claims;
 }

@@ -12,6 +12,7 @@ public class Constants {
   public static final String BODY_PARAM_RESPONSE_TYPE_TOKEN = "token";
   public static final String BODY_PARAM_FLOW = "flow";
   public static final String BODY_PARAM_CONTACTS = "contacts";
+  public static final String BODY_PARAM_CONTACT = "contact";
   public static final String BODY_PARAM_META_INFO = "metaInfo";
   public static final String BODY_PARAM_ADDITIONAL_INFO = "additionalInfo";
   public static final String BODY_PARAM_OTP = "otp";
@@ -37,12 +38,37 @@ public class Constants {
   public static final String BODY_PARAM_LOCATION = "location";
   public static final String BODY_PARAM_PARAMS = "params";
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
-  public static final String BODY_PARAM_CONTACT = "contact";
+
+  // Scope Configuration Params
+  public static final String BODY_PARAM_SCOPE = "scope";
+  public static final String BODY_PARAM_DISPLAY_NAME = "displayName";
+  public static final String BODY_PARAM_DESCRIPTION = "description";
+  public static final String BODY_PARAM_CLAIMS = "claims";
+  public static final String BODY_PARAM_ICON_URL = "iconUrl";
+  public static final String BODY_PARAM_IS_OIDC = "isOidc";
 
   // Request Body Params Values
-
   public static final String BODY_CHANNEL_EMAIL = "EMAIL";
   public static final String BODY_CHANNEL_SMS = "SMS";
+
+  // Test Data Values
+  public static final String TEST_SCOPE_NAME = "Test Scope";
+  public static final String TEST_DESCRIPTION = "Test description";
+  public static final String TEST_ICON_URL = "https://example.com/icon.png";
+  public static final String TEST_EMAIL_CLAIM = "email";
+  public static final String TEST_NAME_CLAIM = "name";
+  public static final String TEST_PICTURE_CLAIM = "picture";
+  public static final String TEST_PHONE_CLAIM = "phone";
+
+  // Tenant IDs
+  public static final String TENANT_1 = "tenant1";
+  public static final String TENANT_2 = "tenant2";
+
+  // Error messages
+  public static final String ERROR_MSG_SCOPE_REQUIRED = "scope is required";
+  public static final String ERROR_MSG_OIDC_REQUIRED = "isOidc field is required";
+  public static final String ERROR_CODE_SCOPE_ALREADY_EXISTS = "scope_already_exists";
+  public static final String ERROR_MSG_SCOPE_ALREADY_EXISTS = "Scope already exists for tenant";
 
   // Passwordless Flow
   public static final String PASSWORDLESS_FLOW_SIGNINUP = "SIGNINUP";
@@ -76,6 +102,7 @@ public class Constants {
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_SMS_SERVICE = "sms_service_error";
   public static final String INVALID_STATE = "invalid_state";
+  public static final String ERROR_INTERNAL_ERROR = "internal_error";
 
   // Response Body Params
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
