@@ -1,7 +1,6 @@
 package com.dreamsportslabs.guardian.dao.model;
 
 import com.dreamsportslabs.guardian.constant.Contact;
-import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import java.time.Instant;
 import java.util.Map;
 import lombok.Builder;
@@ -27,7 +26,6 @@ public class OtpGenerateModel {
   private Map<String, String> headers;
 
   private Contact contact;
-  @Builder.Default private MetaInfo metaInfo = new MetaInfo();
   @Builder.Default private Long createdAtEpoch = Instant.now().toEpochMilli();
   private Long expiry;
 

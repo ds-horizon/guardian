@@ -10,11 +10,15 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isA;
 
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
+import com.dreamsportslabs.guardian.utils.DbUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +35,7 @@ public class ContactSendOtpIT {
   }
 
   @Test
-  @DisplayName("Should send OTP via SMS for valid request")
+  @DisplayName("Should send OTP via SMS for valid request and default template is used")
   public void testSendOtpSmsValid() {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
@@ -103,14 +107,14 @@ public class ContactSendOtpIT {
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
-    // Simulate resends exhausted by sending multiple requests with the same state
-    Response first = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
+    String state = RandomStringUtils.randomAlphanumeric(8);
+
+    addStateInRedis(
+        TENANT_ID, state, 60, BODY_CHANNEL_SMS, 4, 5, Instant.now().toEpochMilli(), 5, true, 60);
+
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
-    for (int i = 0; i < 10; i++) {
-      ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-    }
+
     Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
     exhausted.then().statusCode(SC_BAD_REQUEST);
   }
@@ -220,7 +224,8 @@ public class ContactSendOtpIT {
     body.put(BODY_PARAM_CONTACT, contact);
     Response first = ApplicationIoUtils.sendOtp(TENANT_ID, body);
     String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
-    // Simulate max tries by calling resend many times (simulate user entering wrong OTP)
+    // Simulate max tries by calling resend many times (simulate user entering wrong
+    // OTP)
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
     for (int i = 0; i < 10; i++) {
@@ -335,28 +340,24 @@ public class ContactSendOtpIT {
   @Test
   @DisplayName("Should enforce resend limit exactly for non-mocked tenant (SMS, tenant2)")
   public void testResendLimitEnforcedExactlyNonMockedSms() throws InterruptedException {
-    String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
-    Map<String, Object> contact = new HashMap<>();
-    contact.put(BODY_PARAM_CHANNEL, SMS);
-    contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
-    Map<String, Object> body = new HashMap<>();
-    body.put(BODY_PARAM_CONTACT, contact);
-
     StubMapping sendSmsStub = getStubForSendSms();
+    String state = RandomStringUtils.randomAlphanumeric(8);
 
-    Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    Thread.sleep(2 * 1000L);
+    addStateInRedis(
+        TENANT_ID_NON_MOCKED,
+        state,
+        60,
+        BODY_CHANNEL_SMS,
+        4,
+        5,
+        Instant.now().toEpochMilli(),
+        5,
+        false,
+        60);
 
-    String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
 
-    int resendLimit = 5; // from migration default
-    for (int i = 0; i < resendLimit; i++) {
-      Response resend = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-      resend.then().statusCode(SC_OK);
-      Thread.sleep(2 * 1000L);
-    }
     Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
     exhausted
         .then()
@@ -382,46 +383,25 @@ public class ContactSendOtpIT {
 
     Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
     String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
+
     Map<String, Object> stateBody = new HashMap<>();
     stateBody.put(BODY_PARAM_STATE, state);
+
     Response resend = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
     resend.then().statusCode(SC_BAD_REQUEST);
 
     wireMockServer.removeStub(sendSmsStub);
   }
 
-  //    @Test
-  //    @DisplayName("Should allow resend after waiting for resendAfter for non-mocked tenant (SMS,
-  // tenant2)")
-  //    public void testSendOtpResendAfterWaitNonMockedSms() throws InterruptedException {
-  //        String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
-  //        Map<String, Object> contact = new HashMap<>();
-  //        contact.put("channel", SMS);
-  //        contact.put("identifier", phoneNumber);
-  //        Map<String, Object> body = new HashMap<>();
-  //        body.put("contact", contact);
-  //
-  //        StubMapping sendSmsStub = getStubForSendSms();
-  //
-  //        Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-  //        String state = first.getBody().jsonPath().getString("state");
-  //        Number resendAfter = first.getBody().jsonPath().get("resendAfter");
-  //        Thread.sleep(resendAfter.longValue() * 1000 + 1000); // Wait for resendAfter + 1s
-  //        Map<String, Object> stateBody = new HashMap<>();
-  //        stateBody.put("state", state);
-  //        Response resend = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-  //        resend.then().statusCode(SC_OK);
-  //
-  //        wireMockServer.removeStub(sendSmsStub);
-  //    }
-
   @Test
   @DisplayName("Should handle 4xx error from OTP service for non-mocked tenant (SMS, tenant2)")
   public void testOtpService4xxErrorNonMockedSms() {
     String phoneNumber = RandomStringUtils.randomAlphanumeric(12);
+
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, SMS);
     contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
+
     Map<String, Object> body = new HashMap<>();
     body.put(BODY_PARAM_CONTACT, contact);
 
@@ -464,5 +444,85 @@ public class ContactSendOtpIT {
         .statusCode(SC_INTERNAL_SERVER_ERROR); // Adjust if your API returns a different code
 
     wireMockServer.removeStub(sendSmsStub);
+  }
+
+  @Test
+  @DisplayName("Should handle 4xx error for OTP retried after expired time")
+  public void testOtpService4xxErrorExpired() throws InterruptedException {
+    // Stub the SMS service to return 400
+    StubMapping sendSmsStub = getStubForSendSms();
+
+    // Simulate expired state by adding a state with past expiry
+    String state = RandomStringUtils.randomAlphanumeric(12);
+    addStateInRedis(
+        TENANT_ID_NON_MOCKED,
+        state,
+        60,
+        BODY_CHANNEL_SMS,
+        0,
+        0,
+        Instant.now().minus(10, ChronoUnit.MINUTES).toEpochMilli() / 1000,
+        5,
+        false,
+        -1);
+
+    Map<String, Object> stateBody = new HashMap<>();
+    stateBody.put(BODY_PARAM_STATE, state);
+
+    Response expiredResponse = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
+    expiredResponse
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_STATE));
+
+    wireMockServer.removeStub(sendSmsStub);
+  }
+
+  private void addStateInRedis(
+      String tenantId,
+      String state,
+      int ttlSec,
+      String channel,
+      int tries,
+      int resends,
+      long resendAfter,
+      int otpResendInterval,
+      Boolean isOtpMocked,
+      int expiry) {
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, channel);
+
+    if (channel.equalsIgnoreCase(BODY_CHANNEL_SMS)) {
+      String phoneNuber = generateRandomPhoneNumber();
+      contact.put(BODY_PARAM_IDENTIFIER, phoneNuber);
+    } else {
+      String email = generateRandomEmail();
+      contact.put(BODY_PARAM_IDENTIFIER, email);
+    }
+
+    DbUtils.createContactOtpSendState(
+        tenantId,
+        state,
+        ttlSec,
+        "999999",
+        isOtpMocked,
+        tries,
+        resends,
+        resendAfter,
+        otpResendInterval,
+        5,
+        5,
+        contact,
+        Instant.now().toEpochMilli(),
+        System.currentTimeMillis() / 1000 + expiry);
+  }
+
+  private String generateRandomPhoneNumber() {
+    return "9" + String.format("%09d", (new Random()).nextInt(1000000000));
+  }
+
+  private String generateRandomEmail() {
+    return "test" + System.currentTimeMillis() + "@example.com";
   }
 }

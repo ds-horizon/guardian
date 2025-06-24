@@ -130,8 +130,63 @@ public class DbUtils {
     }
   }
 
+  public static void createContactOtpSendState(
+      String tenantId,
+      String state,
+      int ttl,
+      String otp,
+      boolean isOtpMocked,
+      int tries,
+      int resends,
+      long resendAfter,
+      int resendInterval,
+      int maxTries,
+      int maxResends,
+      Map<String, Object> contact,
+      long createdAtEpoch,
+      long expiry) {
+    String key = "STATE" + "_otp_only_" + tenantId + "_" + state;
+    Map<String, String> headers = Map.of("tenant-id", tenantId);
+    JsonObject value =
+        new JsonObject()
+            .put("state", state)
+            .put("otp", otp)
+            .put("isOtpMocked", isOtpMocked)
+            .put("tries", tries)
+            .put("resends", resends)
+            .put("resendAfter", resendAfter)
+            .put("resendInterval", resendInterval)
+            .put("maxTries", maxTries)
+            .put("maxResends", maxResends)
+            .put("headers", headers)
+            .put("contact", contact)
+            .put("createdAtEpoch", createdAtEpoch)
+            .put("expiry", expiry);
+
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      jedis.setex(key, ttl, value.toString());
+    } catch (Exception e) {
+      log.error("Error setting key in Redis: ", e);
+    }
+  }
+
   public static JsonObject getState(String state, String tenantId) {
     String key = "STATE" + "_" + tenantId + "_" + state;
+
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      String jsonValue = jedis.get(key);
+      if (jsonValue == null) {
+        return null;
+      }
+
+      return new JsonObject(jsonValue);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while fetching or parsing Redis key: " + key, e);
+    }
+  }
+
+  public static JsonObject getContactState(String state, String tenantId) {
+    String key = "STATE" + "_otp_only_" + tenantId + "_" + state;
 
     try (Jedis jedis = redisConnectionPool.getResource()) {
       String jsonValue = jedis.get(key);

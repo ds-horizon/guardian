@@ -65,6 +65,7 @@ public class Constants {
   public static final String ERROR_RETRIES_EXHAUSTED = "retries_exhausted";
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_SMS_SERVICE = "sms_service_error";
+  public static final String INVALID_STATE = "invalid_state";
 
   // Response Body Params
   public static final String RESPONSE_BODY_PARAM_STATE = "state";

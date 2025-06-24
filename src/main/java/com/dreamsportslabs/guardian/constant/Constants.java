@@ -29,6 +29,7 @@ public final class Constants {
   public static final String OIDC_CLAIMS_PICTURE = "picture";
 
   public static final String EXPIRY_OPTION_REDIS = "EX";
+  public static final String EXPIRE_AT_REDIS = "EXAT";
   public static final String STATIC_OTP_NUMBER = "9";
 
   // Application config

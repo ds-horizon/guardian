@@ -1,7 +1,7 @@
 package com.dreamsportslabs.guardian.dao;
 
 import static com.dreamsportslabs.guardian.constant.Constants.CACHE_KEY_STATE;
-import static com.dreamsportslabs.guardian.constant.Constants.EXPIRY_OPTION_REDIS;
+import static com.dreamsportslabs.guardian.constant.Constants.EXPIRE_AT_REDIS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 
 import com.dreamsportslabs.guardian.dao.model.OtpGenerateModel;
@@ -38,7 +38,7 @@ public class ContactVerifyDao {
             Request.cmd(Command.SET)
                 .arg(cacheKey)
                 .arg(objectMapper.writeValueAsString(model))
-                .arg(EXPIRY_OPTION_REDIS)
+                .arg(EXPIRE_AT_REDIS)
                 .arg(model.getExpiry()))
         .onErrorResumeNext(err -> Maybe.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(response -> model)
