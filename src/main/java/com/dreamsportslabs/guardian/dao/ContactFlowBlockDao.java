@@ -20,48 +20,48 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @__({@Inject}))
 public class ContactFlowBlockDao {
-    private final MysqlClient mysqlClient;
+  private final MysqlClient mysqlClient;
 
-    public Completable blockFlows(ContactFlowBlockModel model) {
-        return mysqlClient
-                .getWriterPool()
-                .preparedQuery(UPSERT_CONTACT_FLOW_BLOCK)
-                .rxExecute(
-                        Tuple.tuple(
-                                List.of(
-                                        model.getTenantId(),
-                                        model.getContact(),
-                                        model.getFlowName(),
-                                        model.getReason(),
-                                        model.getOperator(),
-                                        model.getUnblockedAt(),
-                                        model.isActive())))
-                .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
-                .ignoreElement();
-    }
+  public Completable blockFlows(ContactFlowBlockModel model) {
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(UPSERT_CONTACT_FLOW_BLOCK)
+        .rxExecute(
+            Tuple.tuple(
+                List.of(
+                    model.getTenantId(),
+                    model.getContact(),
+                    model.getFlowName(),
+                    model.getReason(),
+                    model.getOperator(),
+                    model.getUnblockedAt(),
+                    model.isActive())))
+        .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
+        .ignoreElement();
+  }
 
-    public Completable unblockFlows(String tenantId, String contact, String flowName) {
-        return mysqlClient
-                .getWriterPool()
-                .preparedQuery(UNBLOCK_CONTACT_FLOW)
-                .rxExecute(Tuple.of(tenantId, contact, flowName))
-                .ignoreElement();
-    }
+  public Completable unblockFlows(String tenantId, String contact, String flowName) {
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(UNBLOCK_CONTACT_FLOW)
+        .rxExecute(Tuple.of(tenantId, contact, flowName))
+        .ignoreElement();
+  }
 
-    public Single<List<ContactFlowBlockModel>> getActiveFlowBlocksByContact(
-            String tenantId, String contact) {
-        return mysqlClient
-                .getReaderPool()
-                .preparedQuery(GET_ACTIVE_FLOW_BLOCKS_BY_CONTACT)
-                .rxExecute(Tuple.of(tenantId, contact))
-                .map(rows -> JsonUtils.rowSetToList(rows, ContactFlowBlockModel.class));
-    }
+  public Single<List<ContactFlowBlockModel>> getActiveFlowBlocksByContact(
+      String tenantId, String contact) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(GET_ACTIVE_FLOW_BLOCKS_BY_CONTACT)
+        .rxExecute(Tuple.of(tenantId, contact))
+        .map(rows -> JsonUtils.rowSetToList(rows, ContactFlowBlockModel.class));
+  }
 
-    public Single<Boolean> isFlowBlocked(String tenantId, String contact, String flowName) {
-        return mysqlClient
-                .getReaderPool()
-                .preparedQuery(CHECK_FLOW_BLOCKED)
-                .rxExecute(Tuple.of(tenantId, contact, flowName))
-                .map(rows -> rows.iterator().next().getInteger("count") > 0);
-    }
-} 
+  public Single<Boolean> isFlowBlocked(String tenantId, String contact, String flowName) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(CHECK_FLOW_BLOCKED)
+        .rxExecute(Tuple.of(tenantId, contact, flowName))
+        .map(rows -> rows.iterator().next().getInteger("count") > 0);
+  }
+}

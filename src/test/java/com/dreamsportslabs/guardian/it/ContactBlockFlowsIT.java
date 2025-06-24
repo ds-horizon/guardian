@@ -172,11 +172,7 @@ public class ContactBlockFlowsIT {
 
     Map<String, Object> requestBody =
         generateBlockRequestBody(
-            "",
-            new String[] {Flow_1},
-            randomAlphanumeric(10),
-            randomAlphanumeric(10),
-            unblockedAt);
+            "", new String[] {Flow_1}, randomAlphanumeric(10), randomAlphanumeric(10), unblockedAt);
 
     // Act
     Response response = blockContactFlows(TENANT_ID, requestBody);

@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContactFlowBlockModel {
-    private String tenantId;
-    private String contact;
-    private String flowName;
-    private String reason;
-    private String operator;
-    private Long unblockedAt;
-    private boolean isActive;
-} 
+  private String tenantId;
+  private String contact;
+  private String flowName;
+  private String reason;
+  private String operator;
+  private Long unblockedAt;
+  private boolean isActive;
+}

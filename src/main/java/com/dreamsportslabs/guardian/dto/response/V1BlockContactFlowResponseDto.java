@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 public class V1BlockContactFlowResponseDto {
-    private String contact;
-    private List<String> blockedFlows;
-    private String message;
-} 
+  private String contact;
+  private List<String> blockedFlows;
+  private String message;
+}

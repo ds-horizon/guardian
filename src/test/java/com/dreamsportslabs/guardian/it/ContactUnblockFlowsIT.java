@@ -53,8 +53,7 @@ public class ContactUnblockFlowsIT {
 
     // Arrange - Prepare unblock request
     Map<String, Object> unblockRequestBody =
-        generateUnblockRequestBody(
-            contactId, new String[] {Flow_1}, randomAlphanumeric(10));
+        generateUnblockRequestBody(contactId, new String[] {Flow_1}, randomAlphanumeric(10));
 
     // Act
     Response response = unblockContactFlows(TENANT_ID, unblockRequestBody);
@@ -64,7 +63,8 @@ public class ContactUnblockFlowsIT {
 
     assertThat(response.getBody().jsonPath().getString("contact"), equalTo(contactId));
     assertThat(
-        response.getBody().jsonPath().getString("message"), equalTo("Flows unblocked successfully"));
+        response.getBody().jsonPath().getString("message"),
+        equalTo("Flows unblocked successfully"));
 
     List<String> unblockedFlows = response.getBody().jsonPath().getList("unblockedFlows");
     assertThat(unblockedFlows.size(), equalTo(1));
@@ -88,8 +88,7 @@ public class ContactUnblockFlowsIT {
 
     // Arrange - Prepare unblock request
     Map<String, Object> unblockRequestBody =
-        generateUnblockRequestBody(
-            EMAIL_CONTACT, new String[] {Flow_1}, randomAlphanumeric(10));
+        generateUnblockRequestBody(EMAIL_CONTACT, new String[] {Flow_1}, randomAlphanumeric(10));
 
     // Act
     Response response = unblockContactFlows(TENANT_ID, unblockRequestBody);
@@ -99,7 +98,8 @@ public class ContactUnblockFlowsIT {
 
     assertThat(response.getBody().jsonPath().getString("contact"), equalTo(EMAIL_CONTACT));
     assertThat(
-        response.getBody().jsonPath().getString("message"), equalTo("Flows unblocked successfully"));
+        response.getBody().jsonPath().getString("message"),
+        equalTo("Flows unblocked successfully"));
 
     List<String> unblockedFlows = response.getBody().jsonPath().getList("unblockedFlows");
     assertThat(unblockedFlows.size(), equalTo(1));
@@ -135,7 +135,8 @@ public class ContactUnblockFlowsIT {
 
     assertThat(response.getBody().jsonPath().getString("contact"), equalTo(contactId));
     assertThat(
-        response.getBody().jsonPath().getString("message"), equalTo("Flows unblocked successfully"));
+        response.getBody().jsonPath().getString("message"),
+        equalTo("Flows unblocked successfully"));
 
     List<String> unblockedFlows = response.getBody().jsonPath().getList("unblockedFlows");
     assertThat(unblockedFlows.size(), equalTo(2));
@@ -149,8 +150,7 @@ public class ContactUnblockFlowsIT {
     // Arrange - Prepare unblock request for Flows that were never blocked
     String contactId = randomNumeric(10);
     Map<String, Object> unblockRequestBody =
-        generateUnblockRequestBody(
-            contactId, new String[] {Flow_1}, randomAlphanumeric(10));
+        generateUnblockRequestBody(contactId, new String[] {Flow_1}, randomAlphanumeric(10));
 
     // Act
     Response response = unblockContactFlows(TENANT_ID, unblockRequestBody);
@@ -160,7 +160,8 @@ public class ContactUnblockFlowsIT {
 
     assertThat(response.getBody().jsonPath().getString("contact"), equalTo(contactId));
     assertThat(
-        response.getBody().jsonPath().getString("message"), equalTo("Flows unblocked successfully"));
+        response.getBody().jsonPath().getString("message"),
+        equalTo("Flows unblocked successfully"));
 
     List<String> unblockedFlows = response.getBody().jsonPath().getList("unblockedFlows");
     assertThat(unblockedFlows.size(), equalTo(1));
@@ -294,8 +295,7 @@ public class ContactUnblockFlowsIT {
     // Arrange
     String contactId = randomNumeric(10);
     Map<String, Object> requestBody =
-        generateUnblockRequestBody(
-            contactId, new String[] {Flow_1}, randomAlphanumeric(10));
+        generateUnblockRequestBody(contactId, new String[] {Flow_1}, randomAlphanumeric(10));
 
     // Act
     Response response = unblockContactFlows(randomAlphanumeric(8), requestBody);
