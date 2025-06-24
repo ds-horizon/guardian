@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class LoginAccept {
 
     return loginAcceptService
         .loginAccept(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
+        .map(ResponseBuilder::build)
         .toCompletionStage();
   }
 }

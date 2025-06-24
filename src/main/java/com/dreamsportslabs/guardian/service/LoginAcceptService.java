@@ -16,7 +16,7 @@ import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -34,15 +34,67 @@ public class LoginAcceptService {
   private final RefreshTokenDao refreshTokenDao;
   private final Registry registry;
 
-  public Single<Response> loginAccept(
+  // Main orchestrator method - functional paradigm
+  public Single<ResponseBuilder> loginAccept(
       LoginAcceptRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
 
     return validateRefreshToken(requestDto.getRefreshToken(), tenantId)
         .flatMap(
             userId ->
-                validateLoginChallengeAndProcess(requestDto.getLoginChallenge(), userId, tenantId));
+                validateLoginChallenge(requestDto.getLoginChallenge(), tenantId)
+                    .flatMap(
+                        session -> {
+                          session.setUserId(userId);
+                          if (Boolean.TRUE.equals(session.getClient().getSkipConsent())) {
+                            return handleSkipConsentFlow(
+                                session, requestDto.getLoginChallenge(), tenantId);
+                          }
+
+                          return getUserConsentedScopes(
+                                  session.getClient().getClientId(), userId, tenantId)
+                              .flatMap(
+                                  consentedScopes -> {
+                                    if (hasAllRequiredConsents(
+                                        session.getAllowedScopes(), consentedScopes)) {
+                                      return handleSkipConsentFlow(
+                                          session, requestDto.getLoginChallenge(), tenantId);
+                                    } else {
+                                      return handleConsentRequiredFlow(session, tenantId);
+                                    }
+                                  });
+                        }));
   }
 
+  // Handle skip consent flow
+  private Single<ResponseBuilder> handleSkipConsentFlow(
+      AuthorizeSessionModel session, String loginChallenge, String tenantId) {
+    session.setConsentedScopes(session.getAllowedScopes());
+    String code = RandomStringUtils.randomAlphanumeric(32);
+    CodeSessionModel codeSession = new CodeSessionModel(session);
+    return codeSessionDao
+        .saveCodeSession(code, codeSession, tenantId, 600)
+        .toSingleDefault(code)
+        .map(
+            c ->
+                new AuthCodeResponseDto(session.getRedirectUri(), session.getState(), c)
+                    .toResponse())
+        .doOnSuccess(response -> deleteLoginChallengeAsync(loginChallenge, tenantId));
+  }
+
+  private Single<ResponseBuilder> handleConsentRequiredFlow(
+      AuthorizeSessionModel session, String tenantId) {
+    String consentChallenge = UUID.randomUUID().toString();
+    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
+    String consentPageUri =
+        tenantConfig.getOidcConfig() != null
+            ? tenantConfig.getOidcConfig().getConsentPageUri()
+            : null;
+    return authorizeSessionDao
+        .saveAuthorizeSession(consentChallenge, session, tenantId, 600)
+        .toSingleDefault(new LoginAcceptResponseDto(consentPageUri, consentChallenge).toResponse());
+  }
+
+  // Validate refresh token and return user ID
   private Single<String> validateRefreshToken(String refreshToken, String tenantId) {
     return refreshTokenDao
         .getRefreshToken(refreshToken, tenantId)
@@ -50,59 +102,28 @@ public class LoginAcceptService {
             Single.error(ErrorEnum.UNAUTHORIZED.getCustomException("Invalid refresh token")));
   }
 
-  private Single<Response> validateLoginChallengeAndProcess(
-      String loginChallenge, String userId, String tenantId) {
+  // Validate login challenge and return session
+  private Single<AuthorizeSessionModel> validateLoginChallenge(
+      String loginChallenge, String tenantId) {
     return authorizeSessionDao
         .getAuthorizeSession(loginChallenge, tenantId)
         .onErrorResumeNext(
             err ->
                 Single.error(
-                    ErrorEnum.INVALID_REQUEST.getCustomException("Invalid login challenge")))
-        .flatMap(session -> processConsentDecision(session, userId, tenantId, loginChallenge));
+                    ErrorEnum.INVALID_REQUEST.getCustomException("Invalid login challenge")));
   }
 
-  private Single<Response> processConsentDecision(
-      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
-    if (Boolean.TRUE.equals(session.getClient().getSkipConsent())) {
-      return handleSkipConsent(session, userId, tenantId, loginChallenge);
-    } else {
-      return checkExistingConsent(session, userId, tenantId, loginChallenge);
-    }
-  }
-
-  private Single<Response> handleSkipConsent(
-      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
-    session.setConsentedScopes(session.getAllowedScopes());
-    return generateAndStoreAuthorizationCode(session, userId, tenantId)
-        .map(code -> createCodeResponse(session, code))
-        .doOnSuccess(response -> deleteLoginChallengeAsync(loginChallenge, tenantId));
-  }
-
-  private Response createCodeResponse(AuthorizeSessionModel session, String code) {
-    return new AuthCodeResponseDto(session.getRedirectUri(), session.getState(), code).toResponse();
-  }
-
-  private Single<Response> checkExistingConsent(
-      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
-
-    return getUserConsentedScopes(session, userId, tenantId)
-        .map(consentedScopes -> hasAllRequiredConsents(session.getAllowedScopes(), consentedScopes))
-        .flatMap(
-            hasAllConsents ->
-                processConsentCheck(session, userId, tenantId, hasAllConsents, loginChallenge));
-  }
-
+  // Get user consented scopes
   private Single<Set<String>> getUserConsentedScopes(
-      AuthorizeSessionModel session, String userId, String tenantId) {
+      String clientId, String userId, String tenantId) {
     return userConsentDao
-        .getUserConsents(tenantId, session.getClient().getClientId(), userId)
+        .getUserConsents(tenantId, clientId, userId)
         .map(
-            existingConsents ->
-                existingConsents.stream()
-                    .map(UserConsentModel::getScope)
-                    .collect(Collectors.toSet()));
+            consents ->
+                consents.stream().map(UserConsentModel::getScope).collect(Collectors.toSet()));
   }
 
+  // Check if user has all required consents
   private boolean hasAllRequiredConsents(List<String> requiredScopes, Set<String> consentedScopes) {
     for (String scope : requiredScopes) {
       if (!consentedScopes.contains(scope.trim())) {
@@ -112,56 +133,7 @@ public class LoginAcceptService {
     return true;
   }
 
-  private Single<Response> processConsentCheck(
-      AuthorizeSessionModel session,
-      String userId,
-      String tenantId,
-      boolean hasAllConsents,
-      String loginChallenge) {
-
-    if (hasAllConsents) {
-      return handleExistingConsent(session, userId, tenantId, loginChallenge);
-    } else {
-      return handleConsentRequired(session, userId, tenantId);
-    }
-  }
-
-  private Single<Response> handleExistingConsent(
-      AuthorizeSessionModel session, String userId, String tenantId, String loginChallenge) {
-    session.setConsentedScopes(session.getAllowedScopes());
-    return generateAndStoreAuthorizationCode(session, userId, tenantId)
-        .map(code -> createCodeResponse(session, code))
-        .doOnSuccess(response -> deleteLoginChallengeAsync(loginChallenge, tenantId));
-  }
-
-  private Single<Response> handleConsentRequired(
-      AuthorizeSessionModel session, String userId, String tenantId) {
-
-    String consentChallenge = UUID.randomUUID().toString();
-    session.setUserId(userId);
-    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-    String consentPageUri =
-        tenantConfig.getOidcConfig() != null
-            ? tenantConfig.getOidcConfig().getConsentPageUri()
-            : null;
-
-    return authorizeSessionDao
-        .saveAuthorizeSession(consentChallenge, session, tenantId, 600)
-        .andThen(
-            Single.just(new LoginAcceptResponseDto(consentPageUri, consentChallenge).toResponse()));
-  }
-
-  private Single<String> generateAndStoreAuthorizationCode(
-      AuthorizeSessionModel session, String userId, String tenantId) {
-    String code = RandomStringUtils.randomAlphanumeric(32);
-    session.setUserId(userId);
-    CodeSessionModel codeSession = new CodeSessionModel(session);
-
-    return codeSessionDao
-        .saveCodeSession(code, codeSession, tenantId, 600)
-        .andThen(Single.just(code));
-  }
-
+  // Delete login challenge asynchronously
   private void deleteLoginChallengeAsync(String loginChallenge, String tenantId) {
     if (loginChallenge != null) {
       authorizeSessionDao

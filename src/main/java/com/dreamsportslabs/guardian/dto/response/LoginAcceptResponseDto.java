@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.dto.response;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.UriBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,16 +9,16 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class LoginAcceptResponseDto {
-  private String redirectUri;
+  private String consentPageUri;
   private String consentChallenge;
 
-  public Response toResponse() {
-    UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
+  public ResponseBuilder toResponse() {
+    UriBuilder uriBuilder = UriBuilder.fromUri(consentPageUri);
 
     if (consentChallenge != null) {
       uriBuilder.queryParam("consent_challenge", consentChallenge);
     }
 
-    return Response.status(Response.Status.FOUND).location(uriBuilder.build()).build();
+    return Response.status(Response.Status.FOUND).location(uriBuilder.build());
   }
 }
