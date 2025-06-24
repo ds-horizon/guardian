@@ -12,6 +12,9 @@ public class OidcConfig {
   private String userinfoEndpoint;
   private String revocationEndpoint;
   private String jwksUri;
+  private String loginPageUri;
+  private String consentPageUri;
+  private Integer authorizeTtl;
   private List<String> grantTypesSupported;
   private List<String> responseTypesSupported;
   private List<String> subjectTypesSupported;

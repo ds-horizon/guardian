@@ -256,6 +256,9 @@ CREATE TABLE `oidc_config` (
                                `userinfo_signing_alg_values_supported` JSON NOT NULL DEFAULT (JSON_ARRAY()),
                                `token_endpoint_auth_methods_supported` JSON NOT NULL DEFAULT (JSON_ARRAY()),
                                `default_resources` JSON NOT NULL DEFAULT (JSON_ARRAY()),
+                               `login_page_uri` VARCHAR(512) DEFAULT NULL,
+                               `consent_page_uri` VARCHAR(512) DEFAULT NULL,
+                               `authorize_ttl` INT DEFAULT NULL,
                                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
