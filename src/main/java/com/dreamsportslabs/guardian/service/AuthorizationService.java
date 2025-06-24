@@ -2,11 +2,11 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.CODE;
+import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
-import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_IS_NEW_USER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
@@ -92,7 +92,7 @@ public class AuthorizationService {
                     idToken,
                     TOKEN_TYPE,
                     config.getTokenConfig().getAccessTokenExpiry(),
-                    user.getBoolean(USER_RESPONSE_IS_NEW_USER, false)))
+                    user.getBoolean(IS_NEW_USER, false)))
         .flatMap(
             dto ->
                 refreshTokenDao

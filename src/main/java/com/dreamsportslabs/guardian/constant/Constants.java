@@ -8,7 +8,7 @@ public final class Constants {
   public static final String TENANT_ID = "tenant-id";
   public static final String USERID = "userId";
   public static final String PROVIDER = "provider";
-  public static final String USER_RESPONSE_IS_NEW_USER = "isNewUser";
+  public static final String IS_NEW_USER = "isNewUser";
 
   public static final String TOKEN = "token";
   public static final String CODE = "code";
