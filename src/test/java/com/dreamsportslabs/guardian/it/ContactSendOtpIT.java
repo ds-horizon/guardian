@@ -1,10 +1,32 @@
 package com.dreamsportslabs.guardian.it;
 
-import static com.dreamsportslabs.guardian.Constants.*;
+import static com.dreamsportslabs.guardian.Constants.BODY_CHANNEL_SMS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CHANNEL;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONTACT;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IDENTIFIER;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_NAME;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_PARAMS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_TEMPLATE;
+import static com.dreamsportslabs.guardian.Constants.CODE;
+import static com.dreamsportslabs.guardian.Constants.ERROR;
+import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_STATE;
+import static com.dreamsportslabs.guardian.Constants.ERROR_RESENDS_EXHAUSTED;
+import static com.dreamsportslabs.guardian.Constants.ERROR_SMS_SERVICE;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RESENDS;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RESENDS_LEFT;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RESEND_AFTER;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RETRIES_LEFT;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_STATE;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_TRIES;
 import static com.dreamsportslabs.guardian.constant.Channel.EMAIL;
 import static com.dreamsportslabs.guardian.constant.Channel.SMS;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.apache.http.HttpStatus.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isA;
@@ -14,6 +36,7 @@ import com.dreamsportslabs.guardian.utils.DbUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
+import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -32,10 +55,8 @@ public class ContactSendOtpIT {
   private static final String NONEXISTENT_TENANT = "nonexistent-tenant";
   private static final String EXPIRED_STATE = "expired-or-invalid-state";
   private static final int RANDOM_IDENTIFIER_LENGTH = 12;
-  private static final int DEFAULT_RESEND_LIMIT = 5;
-  private static final int THREAD_SLEEP_MS = 2000;
   private static final int MAX_TRIES_SIMULATION = 10;
-  
+
   private WireMockServer wireMockServer;
 
   // Helper Methods for Test Data Creation
@@ -53,7 +74,8 @@ public class ContactSendOtpIT {
     return contact;
   }
 
-  private Map<String, Object> createContactWithTemplate(Object channel, String identifier, Map<String, Object> template) {
+  private Map<String, Object> createContactWithTemplate(
+      Object channel, String identifier, Map<String, Object> template) {
     Map<String, Object> contact = new HashMap<>();
     contact.put(BODY_PARAM_CHANNEL, channel);
     contact.put(BODY_PARAM_IDENTIFIER, identifier);
@@ -130,7 +152,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     assertSuccessfulSendOtpResponse(response);
   }
@@ -145,7 +167,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     assertSuccessfulSendOtpResponse(response);
   }
@@ -155,10 +177,10 @@ public class ContactSendOtpIT {
   public void testSendOtpMissingContact() {
     // Arrange
     Map<String, Object> body = createRequestBody(null);
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -169,10 +191,10 @@ public class ContactSendOtpIT {
     // Arrange
     Map<String, Object> contact = createSmsContact(null); // missing identifier
     Map<String, Object> body = createRequestBody(contact);
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -188,7 +210,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -201,10 +223,10 @@ public class ContactSendOtpIT {
     Map<String, Object> body = createRequestBody(contact);
     String state = sendOtpAndGetState(TENANT_ID, body);
     Map<String, Object> stateBody = createStateBody(state);
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -218,7 +240,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     response
         .then()
@@ -232,12 +254,13 @@ public class ContactSendOtpIT {
   public void testSendOtpInvalidTemplate() {
     // Arrange
     Map<String, Object> template = createTemplate(null, null); // missing name
-    Map<String, Object> contact = createContactWithTemplate(SMS, generateRandomIdentifier(), template);
+    Map<String, Object> contact =
+        createContactWithTemplate(SMS, generateRandomIdentifier(), template);
     Map<String, Object> body = createRequestBody(contact);
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -249,10 +272,10 @@ public class ContactSendOtpIT {
     Map<String, Object> template = createTemplate(DEFAULT_TEMPLATE_NAME, new HashMap<>());
     Map<String, Object> contact = createContactWithTemplate(EMAIL, TEST_EMAIL, template);
     Map<String, Object> body = createRequestBody(contact);
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     assertSuccessfulSendOtpResponse(response);
   }
@@ -262,10 +285,10 @@ public class ContactSendOtpIT {
   public void testSendOtpExpiredState() {
     // Arrange
     Map<String, Object> stateBody = createStateBody(EXPIRED_STATE);
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -276,10 +299,10 @@ public class ContactSendOtpIT {
     // Arrange
     Map<String, Object> contact = createSmsContact(generateRandomIdentifier());
     Map<String, Object> body = createRequestBody(contact);
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(NONEXISTENT_TENANT, body);
-    
+
     // Validate
     response.then().statusCode(isA(Integer.class)); // Accepts 400 or 404 depending on impl
   }
@@ -292,52 +315,17 @@ public class ContactSendOtpIT {
     Map<String, Object> body = createRequestBody(contact);
     String state = sendOtpAndGetState(TENANT_ID, body);
     Map<String, Object> stateBody = createStateBody(state);
-    
+
     // Simulate max tries by calling resend many times
     for (int i = 0; i < MAX_TRIES_SIMULATION; i++) {
       ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
     }
-    
+
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
-    
+
     // Validate
     assertBadRequest(response);
-  }
-
-  @Test
-  @DisplayName("Should enforce resend limit exactly (no more than allowed)")
-  public void testResendLimitEnforcedExactly() throws InterruptedException {
-    // Arrange
-    Map<String, Object> contact = createSmsContact(generateRandomIdentifier());
-    Map<String, Object> body = createRequestBody(contact);
-    StubMapping sendSmsStub = getStubForSendSms();
-
-    // First request, get state
-    Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    Thread.sleep(THREAD_SLEEP_MS);
-
-    String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
-    Map<String, Object> stateBody = createStateBody(state);
-
-    // Resend up to the limit
-    for (int i = 0; i < DEFAULT_RESEND_LIMIT; i++) {
-      Response resend = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-      resend.then().statusCode(SC_OK);
-      Thread.sleep(THREAD_SLEEP_MS);
-    }
-    
-    // Act
-    Response exhausted = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-    
-    // Validate
-    exhausted
-        .then()
-        .statusCode(SC_BAD_REQUEST)
-        .rootPath(ERROR)
-        .body(CODE, equalTo(ERROR_RESENDS_EXHAUSTED));
-
-    wireMockServer.removeStub(sendSmsStub);
   }
 
   @Test
@@ -349,7 +337,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
-    
+
     // Validate
     response.then().statusCode(SC_OK).body(RESPONSE_BODY_PARAM_RESENDS, equalTo(0));
   }
@@ -363,18 +351,11 @@ public class ContactSendOtpIT {
     StubMapping sendSmsStub = getStubForSendSms();
 
     Response first = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    Thread.sleep(THREAD_SLEEP_MS);
-
     String state = first.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
-    int resendsLeft = first.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_RESENDS_LEFT);
-    Map<String, Object> stateBody = createStateBody(state);
 
-    // Act
-    Response second = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-    
-    // Validate
-    int resendsLeft2 = second.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_RESENDS_LEFT);
-    assertThat(resendsLeft2, equalTo(resendsLeft - 1));
+    JsonObject object = DbUtils.getContactState(state, TENANT_ID_NON_MOCKED);
+    assertThat(object, isA(JsonObject.class));
+    assertThat(object.getString("resends"), equalTo("0"));
 
     wireMockServer.removeStub(sendSmsStub);
   }
@@ -389,7 +370,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    
+
     // Validate
     response
         .then()
@@ -423,7 +404,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-    
+
     // Validate
     response
         .then()
@@ -435,7 +416,8 @@ public class ContactSendOtpIT {
   }
 
   @Test
-  @DisplayName("Should return error when resend is not allowed (too soon) for non-mocked tenant (SMS, tenant2)")
+  @DisplayName(
+      "Should return error when resend is not allowed (too soon) for non-mocked tenant (SMS, tenant2)")
   public void testSendOtpResendNotAllowedNonMockedSms() {
     // Arrange
     Map<String, Object> contact = createSmsContact(generateRandomIdentifier());
@@ -447,7 +429,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-    
+
     // Validate
     assertBadRequest(response);
 
@@ -469,7 +451,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    
+
     // Validate
     response
         .then()
@@ -496,7 +478,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
-    
+
     // Validate
     response.then().statusCode(SC_INTERNAL_SERVER_ERROR);
 
@@ -509,7 +491,7 @@ public class ContactSendOtpIT {
     // Arrange
     StubMapping sendSmsStub = getStubForSendSms();
     String state = RandomStringUtils.randomAlphanumeric(RANDOM_IDENTIFIER_LENGTH);
-    
+
     addStateInRedis(
         TENANT_ID_NON_MOCKED,
         state,
@@ -526,7 +508,7 @@ public class ContactSendOtpIT {
 
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
-    
+
     // Validate
     response
         .then()

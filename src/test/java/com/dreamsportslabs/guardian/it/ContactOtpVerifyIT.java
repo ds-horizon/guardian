@@ -45,7 +45,7 @@ public class ContactOtpVerifyIT {
   private static final int RANDOM_IDENTIFIER_LENGTH = 12;
   private static final int MAX_RETRY_ATTEMPTS = 5;
   private static final int RANDOM_LONG_LENGTH = 1000;
-  
+
   private WireMockServer wireMockServer;
 
   // Helper Methods for Test Data Creation
@@ -126,8 +126,6 @@ public class ContactOtpVerifyIT {
             .willReturn(aResponse().withStatus(200).withBody("{\"result\":\"ok\"}")));
   }
 
-
-
   @Test
   @DisplayName("Should verify OTP successfully with valid state and OTP (mocked tenant)")
   public void testVerifyOtpSuccessfulMocked() {
@@ -137,7 +135,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertOtpVerificationSuccess(response);
   }
@@ -169,7 +167,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -183,7 +181,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -196,7 +194,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -210,7 +208,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -223,7 +221,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertInvalidStateError(response);
   }
@@ -237,7 +235,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertIncorrectOtpError(response);
   }
@@ -268,7 +266,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertInvalidStateError(response);
   }
@@ -281,7 +279,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(NONEXISTENT_TENANT, verifyBody);
-    
+
     // Validate
     response.then().statusCode(isA(Integer.class)); // Could be 400 or 404
   }
@@ -295,16 +293,18 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response firstAttempt = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    int retriesLeft1 = firstAttempt
-        .getBody()
-        .jsonPath()
-        .getInt(ERROR + "." + METADATA + "." + RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA);
+    int retriesLeft1 =
+        firstAttempt
+            .getBody()
+            .jsonPath()
+            .getInt(ERROR + "." + METADATA + "." + RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA);
 
     Response secondAttempt = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    int retriesLeft2 = secondAttempt
-        .getBody()
-        .jsonPath()
-        .getInt(ERROR + "." + METADATA + "." + RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA);
+    int retriesLeft2 =
+        secondAttempt
+            .getBody()
+            .jsonPath()
+            .getInt(ERROR + "." + METADATA + "." + RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA);
 
     // Validate
     assertThat(retriesLeft2, equalTo(retriesLeft1 - 1));
@@ -319,7 +319,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -340,7 +340,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, correctBody);
-    
+
     // Validate
     assertOtpVerificationSuccess(response);
   }
@@ -359,7 +359,7 @@ public class ContactOtpVerifyIT {
     // Act
     // Second verification with same state - should fail
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertInvalidStateError(response);
   }
@@ -372,7 +372,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertBadRequest(response);
   }
@@ -387,7 +387,7 @@ public class ContactOtpVerifyIT {
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertInvalidStateError(response);
   }
@@ -396,14 +396,12 @@ public class ContactOtpVerifyIT {
   @DisplayName("Should handle special characters in state and OTP")
   public void testVerifyOtpSpecialCharacters() {
     // Arrange
-    Map<String, Object> verifyBody = createVerifyOtpBody(
-        "state-with-special-chars-!@#$%^&*()", 
-        "otp-with-special-chars-!@#$"
-    );
+    Map<String, Object> verifyBody =
+        createVerifyOtpBody("state-with-special-chars-!@#$%^&*()", "otp-with-special-chars-!@#$");
 
     // Act
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    
+
     // Validate
     assertInvalidStateError(response);
   }
