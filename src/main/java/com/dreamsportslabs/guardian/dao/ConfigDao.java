@@ -119,10 +119,6 @@ public class ConfigDao {
         .ignoreElement();
   }
 
-  public Single<OidcConfig> getOidcConfig(String tenantId) {
-    return getConfigFromDb(tenantId, OidcConfig.class, OIDC_CONFIG);
-  }
-
   private <T> Single<T> getConfigFromDb(String tenantId, Class<T> configType, String query) {
     return mysqlClient
         .getReaderPool()

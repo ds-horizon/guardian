@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.execute;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -22,7 +23,7 @@ import org.junit.jupiter.api.Test;
 public class OIDCDiscoveryIT {
 
   public static String tenant1 = "tenant1";
-  public static String invalidTenant = "invalid-tenant";
+  public static String invalidTenant = randomAlphanumeric(10);
 
   private Response sendGetRequestToOIDCDiscovery(
       Map<String, String> headers, Map<String, String> queryParams) {
@@ -126,17 +127,6 @@ public class OIDCDiscoveryIT {
         "token_endpoint_auth_methods_supported array does not contain client_secret_post",
         tokenEndpointAuthMethods.contains("client_secret_post"),
         is(true));
-
-    List<String> userinfoSigningAlgSupported =
-        response.jsonPath().getList("userinfo_signing_alg_values_supported");
-    assertThat(
-        "userinfo_signing_alg_values_supported array size is not 1",
-        userinfoSigningAlgSupported.size(),
-        equalTo(1));
-    assertThat(
-        "userinfo_signing_alg_values_supported array does not contain RS256",
-        userinfoSigningAlgSupported.get(0),
-        equalTo("RS256"));
 
     List<String> scopesSupported = response.jsonPath().getList("scopes_supported");
     List<String> claimsSupported = response.jsonPath().getList("claims_supported");

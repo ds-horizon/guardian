@@ -1,6 +1,8 @@
 package com.dreamsportslabs.guardian.dto.response;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
+import com.dreamsportslabs.guardian.constant.OidcGrantType;
+import com.dreamsportslabs.guardian.constant.OidcResponseType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.Builder;
@@ -28,7 +30,7 @@ public class OIDCDiscoveryResponseDto {
   private String jwksUri;
 
   @JsonProperty("response_types_supported")
-  private List<String> responseTypesSupported;
+  private List<OidcResponseType> responseTypesSupported;
 
   @JsonProperty("subject_types_supported")
   private List<String> subjectTypesSupported;
@@ -40,7 +42,7 @@ public class OIDCDiscoveryResponseDto {
   private List<String> userinfoSigningAlgValuesSupported;
 
   @JsonProperty("grant_types_supported")
-  private List<String> grantTypesSupported;
+  private List<OidcGrantType> grantTypesSupported;
 
   @JsonProperty("scopes_supported")
   private List<String> scopesSupported;
@@ -64,7 +66,6 @@ public class OIDCDiscoveryResponseDto {
         .responseTypesSupported(config.getResponseTypesSupported())
         .subjectTypesSupported(config.getSubjectTypesSupported())
         .idTokenSigningAlgValuesSupported(config.getIdTokenSigningAlgValuesSupported())
-        .userinfoSigningAlgValuesSupported(config.getUserinfoSigningAlgValuesSupported())
         .tokenEndpointAuthMethodsSupported(config.getTokenEndpointAuthMethodsSupported())
         .scopesSupported(scopes)
         .claimsSupported(claims)

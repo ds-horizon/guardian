@@ -253,7 +253,6 @@ CREATE TABLE `oidc_config` (
                                `response_types_supported` JSON NOT NULL DEFAULT (JSON_ARRAY()),
                                `subject_types_supported` JSON NOT NULL DEFAULT (JSON_ARRAY()),
                                `id_token_signing_alg_values_supported` JSON NOT NULL DEFAULT (JSON_ARRAY()),
-                               `userinfo_signing_alg_values_supported` JSON NOT NULL DEFAULT (JSON_ARRAY()),
                                `token_endpoint_auth_methods_supported` JSON NOT NULL DEFAULT (JSON_ARRAY()),
                                `default_resources` JSON NOT NULL DEFAULT (JSON_ARRAY()),
                                `login_page_uri` VARCHAR(512) DEFAULT NULL,
