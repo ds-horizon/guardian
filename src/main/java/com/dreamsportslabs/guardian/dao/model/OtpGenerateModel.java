@@ -1,7 +1,6 @@
 package com.dreamsportslabs.guardian.dao.model;
 
 import com.dreamsportslabs.guardian.constant.Contact;
-import java.time.Instant;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,7 +25,6 @@ public class OtpGenerateModel {
   private Map<String, String> headers;
 
   private Contact contact;
-  @Builder.Default private Long createdAtEpoch = Instant.now().toEpochMilli();
   private Long expiry;
 
   public OtpGenerateModel incRetry() {

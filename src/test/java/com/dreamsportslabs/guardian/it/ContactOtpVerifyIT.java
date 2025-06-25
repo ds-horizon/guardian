@@ -86,14 +86,6 @@ public class ContactOtpVerifyIT {
   }
 
   // Helper Methods for Assertions
-  private void assertBadRequest(Response response) {
-    response.then().statusCode(SC_BAD_REQUEST);
-  }
-
-  private void assertOtpVerificationSuccess(Response response) {
-    response.then().statusCode(SC_NO_CONTENT);
-  }
-
   private void assertInvalidStateError(Response response) {
     response
         .then()
@@ -137,7 +129,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    assertOtpVerificationSuccess(response);
+    response.then().statusCode(SC_NO_CONTENT);
   }
 
   @Test
@@ -169,7 +161,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -183,7 +175,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -196,7 +188,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -210,7 +202,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -321,7 +313,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -342,7 +334,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, correctBody);
 
     // Validate
-    assertOtpVerificationSuccess(response);
+    response.then().statusCode(SC_NO_CONTENT);
   }
 
   @Test
@@ -354,7 +346,7 @@ public class ContactOtpVerifyIT {
 
     // First verification - should succeed
     Response firstVerification = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
-    assertOtpVerificationSuccess(firstVerification);
+    firstVerification.then().statusCode(SC_NO_CONTENT);
 
     // Act
     // Second verification with same state - should fail
@@ -374,7 +366,7 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test

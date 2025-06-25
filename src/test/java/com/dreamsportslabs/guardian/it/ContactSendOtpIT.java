@@ -127,10 +127,6 @@ public class ContactSendOtpIT {
         .body(RESPONSE_BODY_PARAM_STATE, isA(String.class));
   }
 
-  private void assertBadRequest(Response response) {
-    response.then().statusCode(SC_BAD_REQUEST);
-  }
-
   private String sendOtpAndGetState(String tenantId, Map<String, Object> body) {
     Response response = ApplicationIoUtils.sendOtp(tenantId, body);
     return response.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
@@ -168,6 +164,7 @@ public class ContactSendOtpIT {
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
+    // TODO: Figure out how to verify if wiremock function is called
     // Validate
     assertSuccessfulSendOtpResponse(response);
   }
@@ -182,7 +179,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -196,7 +193,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -212,7 +209,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -228,7 +225,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -262,7 +259,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -290,7 +287,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -325,7 +322,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -357,6 +354,7 @@ public class ContactSendOtpIT {
     assertThat(object, isA(JsonObject.class));
     assertThat(object.getString("resends"), equalTo("0"));
 
+    // Todo: Validate if wiremock function is actually called
     wireMockServer.removeStub(sendSmsStub);
   }
 
@@ -378,6 +376,7 @@ public class ContactSendOtpIT {
         .body(RESPONSE_BODY_PARAM_RESENDS, equalTo(0))
         .body(RESPONSE_BODY_PARAM_RESENDS_LEFT, equalTo(5));
 
+    // Todo: Validate if wiremock function is actually called
     wireMockServer.removeStub(sendSmsStub);
   }
 
@@ -431,7 +430,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
 
     // Validate
-    assertBadRequest(response);
+    response.then().statusCode(SC_BAD_REQUEST);
 
     wireMockServer.removeStub(sendSmsStub);
   }
@@ -480,6 +479,7 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, body);
 
     // Validate
+    // Todo: Validate if wiremock function is actually called
     response.then().statusCode(SC_INTERNAL_SERVER_ERROR);
 
     wireMockServer.removeStub(sendSmsStub);
@@ -554,7 +554,6 @@ public class ContactSendOtpIT {
         5,
         5,
         contact,
-        Instant.now().toEpochMilli(),
         System.currentTimeMillis() / 1000 + expiry);
   }
 

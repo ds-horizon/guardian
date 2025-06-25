@@ -106,11 +106,7 @@ public class ApplicationIoUtils {
   }
 
   public static Response sendOtp(String tenantId, Map<String, Object> body) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-    headers.put(CONTENT_TYPE, "application/json");
-
-    return sendOtp(tenantId, body, headers);
+    return sendOtp(tenantId, body, new HashMap<>());
   }
 
   public static Response verifyOtp(String tenantId, Map<String, Object> body) {

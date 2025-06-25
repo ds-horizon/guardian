@@ -143,7 +143,6 @@ public class DbUtils {
       int maxTries,
       int maxResends,
       Map<String, Object> contact,
-      long createdAtEpoch,
       long expiry) {
     String key = "STATE" + "_otp_only_" + tenantId + "_" + state;
     Map<String, String> headers = Map.of("tenant-id", tenantId);
@@ -160,7 +159,6 @@ public class DbUtils {
             .put("maxResends", maxResends)
             .put("headers", headers)
             .put("contact", contact)
-            .put("createdAtEpoch", createdAtEpoch)
             .put("expiry", expiry);
 
     try (Jedis jedis = redisConnectionPool.getResource()) {
