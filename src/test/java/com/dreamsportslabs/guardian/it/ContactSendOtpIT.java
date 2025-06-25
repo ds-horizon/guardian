@@ -11,6 +11,7 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_NAME;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_OTP_MOCKED;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_PARAMS;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESENDS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESENDS_LEFT;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESEND_INTERVAL;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_TEMPLATE;
@@ -189,6 +190,12 @@ public class ContactSendOtpIT {
     assertThat(responseObj.getInteger(BODY_PARAM_MAX_TRIES), equalTo(5));
     assertThat(responseObj.getInteger(BODY_PARAM_MAX_RESENDS), equalTo(5));
     assertThat(responseObj.getLong(BODY_PARAM_EXPIRY), isA(Long.class));
+
+    assertThat(response.getBody().jsonPath().getInt(BODY_PARAM_TRIES), equalTo(0));
+    assertThat(response.getBody().jsonPath().getInt(BODY_PARAM_RESENDS), equalTo(0));
+    assertThat(response.getBody().jsonPath().getInt(BODY_PARAM_RESENDS_LEFT), equalTo(5));
+    assertThat(response.getBody().jsonPath().getString(BODY_PARAM_STATE), equalTo(state));
+    assertThat(response.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_RETRIES_LEFT), equalTo(5));
   }
 
   @Test
@@ -262,6 +269,9 @@ public class ContactSendOtpIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_RESENDS_EXHAUSTED));
+
+    JsonObject responseObj = DbUtils.getContactState(TENANT_ID, state);
+    assertThat(responseObj, equalTo(null));
   }
 
   @Test

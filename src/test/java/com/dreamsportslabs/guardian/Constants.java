@@ -19,7 +19,10 @@ public class Constants {
   public static final String BODY_PARAM_CHANNEL = "channel";
   public static final String BODY_PARAM_TRIES = "tries";
   public static final String BODY_PARAM_RESENDS = "resends";
+  public static final String BODY_PARAM_RESENDS_LEFT = "resendsLeft";
+  public static final String BODY_PARAM_RESEND_AFTER = "resendsAfter";
   public static final String BODY_PARAM_RESEND_INTERVAL = "resendInterval";
+  public static final String BODY_PARAM_RETRIES_LEFT = "retriesLeft";
   public static final String BODY_PARAM_OTP_MOCKED = "isOtpMocked";
   public static final String BODY_PARAM_MAX_TRIES = "maxTries";
   public static final String BODY_PARAM_MAX_RESENDS = "maxResends";
