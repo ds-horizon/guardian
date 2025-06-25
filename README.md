@@ -142,10 +142,22 @@ mysql -h 127.0.0.1 -u root -p -e "CREATE DATABASE IF NOT EXISTS guardian;"
 ```
 
 ### 3. Run Database Migrations with Liquibase
-Guardian uses [Liquibase](https://www.liquibase.org/) to manage database schema. After starting MySQL, run the following command to apply all migrations:
+Guardian uses [Liquibase](https://www.liquibase.org/) to manage database schema and seed data. After starting MySQL, run the following command to apply all migrations and seed data:
 
 ```bash
 mvn liquibase:update
+```
+
+By default, this uses the configuration in `src/main/resources/liquibase.properties`. You can override properties at runtime by passing them as command-line arguments, for example:
+
+```bash
+mvn liquibase:update -Dliquibase.url=jdbc:mysql://localhost:3306/guardian -Dliquibase.username=myuser -Dliquibase.password=mypassword
+```
+
+Or use a different properties file:
+
+```bash
+mvn liquibase:update -Dliquibase.propertyFile=path/to/your/liquibase.properties
 ```
 
 You can modify the database connection details (host, port, database, username, password) by changing the values in the command above, or by setting the following environment variables before running Guardian:
