@@ -10,9 +10,12 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_TEMPLATE;
 import static com.dreamsportslabs.guardian.Constants.CODE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
+import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_STATE;
 import static com.dreamsportslabs.guardian.Constants.ERROR_RESENDS_EXHAUSTED;
+import static com.dreamsportslabs.guardian.Constants.ERROR_RESENDS_NOT_ALLOWED;
 import static com.dreamsportslabs.guardian.Constants.ERROR_SMS_SERVICE;
+import static com.dreamsportslabs.guardian.Constants.MESSAGE;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RESENDS;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RESENDS_LEFT;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RESEND_AFTER;
@@ -164,7 +167,6 @@ public class ContactSendOtpIT {
     // Act
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
-    // TODO: Figure out how to verify if wiremock function is called
     // Validate
     assertSuccessfulSendOtpResponse(response);
   }
@@ -179,7 +181,13 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("contact details are missing or invalid"));
+    ;
   }
 
   @Test
@@ -193,7 +201,12 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("contact details are missing or invalid"));
   }
 
   @Test
@@ -209,7 +222,11 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_RESENDS_EXHAUSTED));
   }
 
   @Test
@@ -225,7 +242,11 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_RESENDS_NOT_ALLOWED));
   }
 
   @Test
@@ -259,7 +280,12 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, body);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("contact details are missing or invalid"));
   }
 
   @Test
@@ -287,7 +313,11 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_STATE));
   }
 
   @Test
@@ -322,7 +352,11 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID, stateBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_RESENDS_NOT_ALLOWED));
   }
 
   @Test
@@ -430,7 +464,11 @@ public class ContactSendOtpIT {
     Response response = ApplicationIoUtils.sendOtp(TENANT_ID_NON_MOCKED, stateBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_RESENDS_NOT_ALLOWED));
 
     wireMockServer.removeStub(sendSmsStub);
   }

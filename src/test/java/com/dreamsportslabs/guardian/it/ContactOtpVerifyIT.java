@@ -8,8 +8,10 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.CODE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INCORRECT_OTP;
+import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_STATE;
 import static com.dreamsportslabs.guardian.Constants.ERROR_RETRIES_EXHAUSTED;
+import static com.dreamsportslabs.guardian.Constants.MESSAGE;
 import static com.dreamsportslabs.guardian.Constants.METADATA;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_STATE;
@@ -133,25 +135,6 @@ public class ContactOtpVerifyIT {
   }
 
   @Test
-  @DisplayName("Should verify OTP successfully with valid state and OTP (non-mocked tenant)")
-  public void testVerifyOtpSuccessfulNonMocked() {
-    // Arrange
-    StubMapping sendSmsStub = getStubForSendSms();
-
-    String state = sendOtpAndGetState(TENANT_ID_NON_MOCKED, generateRandomIdentifier());
-
-    // Act
-    // For non-mocked tenant, we need to get the actual OTP from the model
-    // Since we can't access the generated OTP directly, we'll use a whitelisted number
-    // or test with a known scenario. Let's test with incorrect OTP first to understand the flow.
-
-    // Validate
-    // Note: This test needs actual OTP integration to be fully functional
-
-    wireMockServer.removeStub(sendSmsStub);
-  }
-
-  @Test
   @DisplayName("Should return error when state is missing")
   public void testVerifyOtpMissingState() {
     // Arrange
@@ -161,7 +144,12 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("State is missing"));
   }
 
   @Test
@@ -175,7 +163,12 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("OTP is missing"));
   }
 
   @Test
@@ -188,7 +181,12 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("State is missing"));
   }
 
   @Test
@@ -202,7 +200,12 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("OTP is missing"));
   }
 
   @Test
@@ -313,7 +316,12 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("State is missing"));
   }
 
   @Test
@@ -366,7 +374,11 @@ public class ContactOtpVerifyIT {
     Response response = ApplicationIoUtils.verifyOtp(TENANT_ID, verifyBody);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
   }
 
   @Test

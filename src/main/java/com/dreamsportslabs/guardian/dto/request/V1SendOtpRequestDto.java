@@ -33,7 +33,7 @@ public class V1SendOtpRequestDto {
     }
 
     if (!isValidContact()) {
-      throw INVALID_REQUEST.getCustomException("Invalid contact");
+      throw INVALID_REQUEST.getCustomException("contact details are missing or invalid");
     }
   }
 }
