@@ -301,6 +301,203 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/otp/send:
+    post:
+      tags:
+        - OTP Verification
+      summary: Send OTP for contact verification
+      description: |
+        API to send OTP to a contact (SMS or Email) for verification purposes. This is independent of the authentication flow and can be used for various contact verification scenarios.
+
+        **First Request**: Send contact details to initiate OTP sending. A unique state is returned.
+        
+        **Resend Request**: Use the state from the previous response to resend OTP to the same contact.
+
+        **Rate Limiting**: 
+        - Maximum verification attempts per session (configurable, default: 5)
+        - Maximum resend attempts per session (configurable, default: 5) 
+        - Minimum interval between resends (configurable, default: 30 seconds)
+
+        **Supported Channels**: SMS, Email
+
+        **Error Scenarios**:
+        - `invalid_request`: Missing or invalid contact details, missing required fields
+        - `invalid_state`: State is invalid, expired, or not found
+        - `resends_not_allowed`: Resend attempted before the minimum interval
+        - `resends_exhausted`: Maximum resend attempts reached for this session
+        - `sms_service_error`: External SMS service failure
+        - `email_service_error`: External email service failure
+        - `internal_server_error`: General server error
+
+        **Required Headers**: `tenant-id` header is mandatory for all requests.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1OtpSendRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1OtpSendResponse'
+        '400':
+          description: Bad Request - Various validation and rate limiting errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_request_missing_contact:
+                  summary: Missing contact details
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Invalid contact"
+                invalid_request_missing_channel:
+                  summary: Missing channel in contact
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Invalid contact"
+                invalid_request_missing_identifier:
+                  summary: Missing identifier in contact
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Invalid contact"
+                invalid_state:
+                  summary: Invalid or expired state
+                  value:
+                    error:
+                      code: "invalid_state"
+                      message: "Invalid state"
+                resend_not_allowed:
+                  summary: Resend attempted too soon
+                  value:
+                    error:
+                      code: "resends_not_allowed"
+                      message: "Resend triggered too quick, Try again later"
+                      metadata:
+                        resendAfter: 1640995200
+                resends_exhausted:
+                  summary: Maximum resend attempts reached
+                  value:
+                    error:
+                      code: "resends_exhausted"
+                      message: "Resends exhausted"
+        '500':
+          description: Internal Server Error - Service failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                sms_service_error:
+                  summary: SMS service failure
+                  value:
+                    error:
+                      code: "sms_service_error"
+                      message: "SMS service error"
+                email_service_error:
+                  summary: Email service failure
+                  value:
+                    error:
+                      code: "email_service_error"
+                      message: "Email service error"
+                internal_server_error:
+                  summary: General server error
+                  value:
+                    error:
+                      code: "internal_server_error"
+                      message: "Something went wrong"
+
+  /v1/otp/verify:
+    post:
+      tags:
+        - OTP Verification
+      summary: Verify OTP for contact verification
+      description: |
+        API to verify the OTP sent to a contact. Use the state received from the send OTP API along with the OTP received by the user.
+
+        **Verification Rules**:
+        - OTP must be valid and not expired (configurable validity, default: 15 minutes)
+        - Maximum verification attempts per session (configurable, default: 5)
+        - State must be valid and not expired
+
+        **Success**: Returns 204 No Content on successful verification
+        
+        **Error Scenarios**:
+        - `invalid_request`: Missing state or OTP parameters
+        - `invalid_state`: State is invalid, expired, or not found
+        - `incorrect_otp`: OTP is incorrect (includes remaining retry count in metadata)
+        - `retries_exhausted`: Maximum verification attempts reached for this session
+        - `internal_server_error`: General server error
+
+        **Required Headers**: `tenant-id` header is mandatory for all requests.
+
+        **State Management**: After successful verification or when retries are exhausted, the state is automatically cleaned up and cannot be reused.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1OtpVerifyRequestBody'
+        required: true
+      responses:
+        '204':
+          description: OTP verified successfully
+        '400':
+          description: Bad Request - Validation errors, invalid OTP, invalid state, or retries exhausted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_request_missing_state:
+                  summary: Missing state parameter
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "State is missing"
+                invalid_request_missing_otp:
+                  summary: Missing OTP parameter
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "OTP is missing"
+                invalid_state:
+                  summary: Invalid or expired state
+                  value:
+                    error:
+                      code: "invalid_state"
+                      message: "Invalid state"
+                incorrect_otp:
+                  summary: Incorrect OTP provided
+                  value:
+                    error:
+                      code: "incorrect_otp"
+                      message: "Incorrect otp"
+                      metadata:
+                        retriesLeft: 3
+                retries_exhausted:
+                  summary: Maximum verification attempts reached
+                  value:
+                    error:
+                      code: "retries_exhausted"
+                      message: "Retries exhausted"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   parameters:
     TenantIdHeader:
@@ -319,9 +516,19 @@ components:
           properties:
             code:
               type: string
+              description: Error code identifying the type of error
+              example: "invalid_request"
             message:
               type: string
-              example: Something went wrong.
+              description: Human-readable error message
+              example: "Something went wrong."
+            metadata:
+              type: object
+              description: Additional error-specific data (optional)
+              additionalProperties: true
+              example:
+                retriesLeft: 3
+                resendAfter: 1640995200
     MetaInfo:
       type: object
       properties:
@@ -508,3 +715,70 @@ components:
           type: integer
           example: 3600
           description: expiry of the access token in seconds
+    V1OtpSendRequestBody:
+      type: object
+      description: Request body for sending OTP. Either provide contact details for first request or state for resend.
+      properties:
+        state:
+          type: string
+          description: State from previous OTP send response (used for resending OTP)
+          example: "abc123def456"
+        contact:
+          $ref: "#/components/schemas/Contact"
+      oneOf:
+        - required: ["contact"]
+        - required: ["state"]
+      example:
+        contact:
+          channel: "sms"
+          identifier: "9999999999"
+    V1OtpVerifyRequestBody:
+      type: object
+      required:
+        - state
+        - otp
+      properties:
+        state:
+          type: string
+          description: State received from OTP send response
+          example: "abc123def456"
+        otp:
+          type: string
+          description: OTP received by the user
+          example: "123456"
+          minLength: 4
+          maxLength: 8
+    V1OtpSendResponse:
+      type: object
+      description: Response after sending OTP with rate limiting information
+      properties:
+        state:
+          type: string
+          description: Unique state identifier for this OTP session
+          example: "abc123def456"
+        tries:
+          type: integer
+          description: Number of verification attempts made so far
+          example: 0
+          minimum: 0
+        retriesLeft:
+          type: integer
+          description: Number of verification attempts remaining
+          example: 5
+          minimum: 0
+        resends:
+          type: integer
+          description: Number of resend attempts made so far
+          example: 1
+          minimum: 0
+        resendsLeft:
+          type: integer
+          description: Number of resend attempts remaining
+          example: 4
+          minimum: 0
+        resendAfter:
+          type: integer
+          format: int64
+          description: Seconds to wait before next resend is allowed
+          example: 30
+          minimum: 0

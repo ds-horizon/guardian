@@ -17,6 +17,16 @@ public class Constants {
   public static final String BODY_PARAM_OTP = "otp";
   public static final String BODY_PARAM_STATE = "state";
   public static final String BODY_PARAM_CHANNEL = "channel";
+  public static final String BODY_PARAM_TRIES = "tries";
+  public static final String BODY_PARAM_RESENDS = "resends";
+  public static final String BODY_PARAM_RESENDS_LEFT = "resendsLeft";
+  public static final String BODY_PARAM_RESEND_AFTER = "resendsAfter";
+  public static final String BODY_PARAM_RESEND_INTERVAL = "resendInterval";
+  public static final String BODY_PARAM_RETRIES_LEFT = "retriesLeft";
+  public static final String BODY_PARAM_OTP_MOCKED = "isOtpMocked";
+  public static final String BODY_PARAM_MAX_TRIES = "maxTries";
+  public static final String BODY_PARAM_MAX_RESENDS = "maxResends";
+  public static final String BODY_PARAM_EXPIRY = "expiry";
   public static final String BODY_PARAM_IDENTIFIER = "identifier";
   public static final String BODY_PARAM_TEMPLATE = "template";
   public static final String BODY_PARAM_NAME = "name";
@@ -27,6 +37,7 @@ public class Constants {
   public static final String BODY_PARAM_LOCATION = "location";
   public static final String BODY_PARAM_PARAMS = "params";
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String BODY_PARAM_CONTACT = "contact";
 
   // Request Body Params Values
 
@@ -63,6 +74,8 @@ public class Constants {
   public static final String ERROR_RESENDS_EXHAUSTED = "resends_exhausted";
   public static final String ERROR_RETRIES_EXHAUSTED = "retries_exhausted";
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
+  public static final String ERROR_SMS_SERVICE = "sms_service_error";
+  public static final String INVALID_STATE = "invalid_state";
 
   // Response Body Params
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
@@ -72,6 +85,7 @@ public class Constants {
   public static final String RESPONSE_BODY_PARAM_RESENDS_LEFT = "resendsLeft";
   public static final String RESPONSE_BODY_PARAM_RESEND_AFTER = "resendAfter";
   public static final String RESPONSE_BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA = "retriesLeft";
 
   // Passwordless Model
   public static final String PASSWORDLESS_MODEL_IS_NEW_USER = "isNewUser";
