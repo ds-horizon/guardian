@@ -51,10 +51,31 @@ It provides a comprehensive suite of authentication methods while giving you com
 
 ### Prerequisites
 
-- Docker
-- Maven
+* **Docker**
+* **Maven**
+* **Java 17**
 
 ### Quick Start
+
+#### Prerequisites
+You can verify the installations by running the following commands in your terminal:
+
+```bash
+docker --version
+mvn --version
+java -version
+```
+
+Ensure that **Java 17** is the active version in use.
+
+Additionally, make sure the following ports are free and not in use by other services:
+
+* `3306` – MySQL
+* `6379` – Redis
+* `8080` – Application server
+* `5000` – Auxiliary services/API
+
+These ports are required for the application to run without conflicts.
 
 1. Clone the repository:
 ```bash
@@ -98,6 +119,22 @@ curl --location 'localhost:8080/v1/passwordless/complete' \
   "otp": "999999"
 }'
 ```
+
+### 🛠 Troubleshooting: Port 5000 in Use on macOS
+
+If you're on **macOS** and port `5000` is already in use, it's often due to the **Control Center** system process.
+
+You can free up the port and test its availability using the following single-line command:
+
+```bash
+pkill ControlCenter; nc -l 5000
+```
+
+* This will terminate the Control Center process and immediately try to open a listener on port 5000.
+* If `nc -l 5000` runs without error, the port is now available for use.
+
+> 💡 **Note:** Control Center may restart after a reboot, so you may need to repeat this command if port 5000 is in use again.
+
 
 ## 🤝 Contributing
 
