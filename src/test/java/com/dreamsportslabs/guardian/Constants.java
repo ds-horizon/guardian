@@ -17,6 +17,13 @@ public class Constants {
   public static final String BODY_PARAM_OTP = "otp";
   public static final String BODY_PARAM_STATE = "state";
   public static final String BODY_PARAM_CHANNEL = "channel";
+  public static final String BODY_PARAM_TRIES = "tries";
+  public static final String BODY_PARAM_RESENDS = "resends";
+  public static final String BODY_PARAM_RESEND_INTERVAL = "resendInterval";
+  public static final String BODY_PARAM_OTP_MOCKED = "isOtpMocked";
+  public static final String BODY_PARAM_MAX_TRIES = "maxTries";
+  public static final String BODY_PARAM_MAX_RESENDS = "maxResends";
+  public static final String BODY_PARAM_EXPIRY = "expiry";
   public static final String BODY_PARAM_IDENTIFIER = "identifier";
   public static final String BODY_PARAM_TEMPLATE = "template";
   public static final String BODY_PARAM_NAME = "name";

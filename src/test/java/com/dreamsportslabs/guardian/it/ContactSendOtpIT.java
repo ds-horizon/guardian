@@ -3,11 +3,18 @@ package com.dreamsportslabs.guardian.it;
 import static com.dreamsportslabs.guardian.Constants.BODY_CHANNEL_SMS;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CHANNEL;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONTACT;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_EXPIRY;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IDENTIFIER;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_MAX_RESENDS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_MAX_TRIES;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_NAME;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_OTP_MOCKED;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_PARAMS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESENDS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESEND_INTERVAL;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_TEMPLATE;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_TRIES;
 import static com.dreamsportslabs.guardian.Constants.CODE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
@@ -54,7 +61,7 @@ public class ContactSendOtpIT {
   private static final String TENANT_ID = "tenant1"; // OTP is mocked for this tenant
   private static final String TENANT_ID_NON_MOCKED = "tenant2"; // OTP is NOT mocked for this tenant
   private static final String TEST_EMAIL = "test@example.com";
-  private static final String DEFAULT_TEMPLATE_NAME = "otp-template";
+  private static final String DEFAULT_TEMPLATE_NAME = "default";
   private static final String NONEXISTENT_TENANT = "nonexistent-tenant";
   private static final String EXPIRED_STATE = "expired-or-invalid-state";
   private static final int RANDOM_IDENTIFIER_LENGTH = 12;
@@ -154,6 +161,34 @@ public class ContactSendOtpIT {
 
     // Validate
     assertSuccessfulSendOtpResponse(response);
+    String state = response.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
+
+    JsonObject responseObj = DbUtils.getContactState(state, TENANT_ID);
+
+    assertThat(responseObj, isA(JsonObject.class));
+
+    assertThat(
+        responseObj.getJsonObject(BODY_PARAM_CONTACT).getString(BODY_PARAM_CHANNEL),
+        equalTo(BODY_CHANNEL_SMS));
+
+    assertThat(
+        responseObj.getJsonObject(BODY_PARAM_CONTACT).getString(BODY_PARAM_IDENTIFIER),
+        equalTo(contact.get(BODY_PARAM_IDENTIFIER)));
+
+    assertThat(
+        responseObj
+            .getJsonObject(BODY_PARAM_CONTACT)
+            .getJsonObject(BODY_PARAM_TEMPLATE)
+            .getString(BODY_PARAM_NAME),
+        equalTo(DEFAULT_TEMPLATE_NAME));
+
+    assertThat(responseObj.getInteger(BODY_PARAM_TRIES), equalTo(0));
+    assertThat(responseObj.getInteger(BODY_PARAM_RESENDS), equalTo(0));
+    assertThat(responseObj.getInteger(BODY_PARAM_RESEND_INTERVAL), equalTo(30));
+    assertThat(responseObj.getBoolean(BODY_PARAM_OTP_MOCKED), equalTo(true));
+    assertThat(responseObj.getInteger(BODY_PARAM_MAX_TRIES), equalTo(5));
+    assertThat(responseObj.getInteger(BODY_PARAM_MAX_RESENDS), equalTo(5));
+    assertThat(responseObj.getLong(BODY_PARAM_EXPIRY), isA(Long.class));
   }
 
   @Test
@@ -375,7 +410,7 @@ public class ContactSendOtpIT {
 
   @Test
   @DisplayName("Should decrease resendsLeft with each resend")
-  public void testResendsLeftDecreases() throws InterruptedException {
+  public void testResendsLeftDecreases() {
     // Arrange
     Map<String, Object> contact = createSmsContact(generateRandomIdentifier());
     Map<String, Object> body = createRequestBody(contact);
