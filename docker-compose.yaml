@@ -60,8 +60,7 @@ services:
         wget https://downloads.mysql.com/archives/get/p/3/file/mysql-connector-j-8.0.33.tar.gz -O connector.tar.gz &&
         tar -xvzf connector.tar.gz &&
         cp mysql-connector-j-8.0.33/mysql-connector-j-8.0.33.jar lib/ &&
-        liquibase --url=jdbc:mysql://mysql:3306/guardian --username=root --password=password --changeLogFile=./resources/changelog.xml update &&
-        liquibase --url=jdbc:mysql://mysql:3306/guardian --username=root --password=password --changeLogFile=none execute-sql --sql-file=./resources/seed.sql
+        liquibase --url=jdbc:mysql://mysql:3306/guardian --username=root --password=password --changeLogFile=./resources/changelog.xml update
       "
 
   mock:
@@ -70,4 +69,4 @@ services:
       dockerfile: Dockerfile-mock
     container_name: mock
     ports:
-      - "5000:5000"
+      - "6000:6000"

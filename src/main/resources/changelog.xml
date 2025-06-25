@@ -9,4 +9,8 @@
   <!-- Include all SQL files from the specified folder -->
   <includeAll path="migrations" relativeToChangelogFile="true"/>
 
+  <changeSet id="seed-data" author="guardian">
+    <sqlFile path="seed.sql" relativeToChangelogFile="true"/>
+  </changeSet>
+
 </databaseChangeLog>

@@ -51,7 +51,8 @@ It provides a comprehensive suite of authentication methods while giving you com
 
 ### Prerequisites
 
-* **Docker**
+* **Docker** ([Download Docker Desktop](https://www.docker.com/products/docker-desktop/))
+* **Docker Compose CLI** ([Install instructions](https://docs.docker.com/compose/install/))
 * **Maven**
 * **Java 17**
 
@@ -73,7 +74,7 @@ Additionally, make sure the following ports are free and not in use by other ser
 * `3306` – MySQL
 * `6379` – Redis
 * `8080` – Application server
-* `5000` – Auxiliary services/API
+* `6000` – Auxiliary services/API
 
 These ports are required for the application to run without conflicts.
 
@@ -120,21 +121,65 @@ curl --location 'localhost:8080/v1/passwordless/complete' \
 }'
 ```
 
-### 🛠 Troubleshooting: Port 5000 in Use on macOS
+## 🛠️ Running Locally Without Docker
 
-If you're on **macOS** and port `5000` is already in use, it's often due to the **Control Center** system process.
+If you prefer to run Guardian without Docker, follow these steps:
 
-You can free up the port and test its availability using the following single-line command:
+### 1. Install Prerequisites
+- **Java 17** ([Download](https://adoptium.net/))
+- **Maven** ([Download](https://maven.apache.org/download.cgi))
+- **MySQL** ([Download](https://dev.mysql.com/downloads/mysql/))
+- **Redis** ([Download](https://redis.io/download/))
 
+### 2. Start MySQL and Redis
+- Start a local MySQL server (default port: `3306`).
+- Start a local Redis server (default port: `6379`).
+
+### 2.1 Create the Guardian Database
+Before running migrations, create the database if it does not exist:
 ```bash
-pkill ControlCenter; nc -l 5000
+mysql -h 127.0.0.1 -u root -p -e "CREATE DATABASE IF NOT EXISTS guardian;" 
 ```
 
-* This will terminate the Control Center process and immediately try to open a listener on port 5000.
-* If `nc -l 5000` runs without error, the port is now available for use.
+### 3. Run Database Migrations with Liquibase
+Guardian uses [Liquibase](https://www.liquibase.org/) to manage database schema. After starting MySQL, run the following command to apply all migrations:
 
-> 💡 **Note:** Control Center may restart after a reboot, so you may need to repeat this command if port 5000 is in use again.
+```bash
+mvn liquibase:update
+```
 
+You can modify the database connection details (host, port, database, username, password) by changing the values in the command above, or by setting the following environment variables before running Guardian:
+
+- `GUARDIAN_MYSQL_WRITER_HOST` (default: `localhost`)
+- `GUARDIAN_MYSQL_READER_HOST` (default: `localhost`)
+- `GUARDIAN_MYSQL_DATABASE` (default: `guardian`)
+- `GUARDIAN_MYSQL_USER` (default: `root`)
+- `GUARDIAN_MYSQL_PASSWORD` (default: `password`)
+
+For example, to use a different database name and password:
+```bash
+export GUARDIAN_MYSQL_DATABASE=guardian
+export GUARDIAN_MYSQL_PASSWORD=password
+```
+
+### 4. Configure Guardian
+Guardian uses `src/main/resources/guardian-default.conf` for default config. You can override values using environment variables or by editing `guardian.conf`.
+
+Default MySQL/Redis config:
+- MySQL user: `root`, password: `password`, database: `guardian`, host: `localhost`
+- Redis host: `localhost`, port: `6379`
+
+### 5. Build the Application
+```bash
+mvn clean package
+```
+
+### 6. Run Guardian
+```bash
+java -cp target/guardian/guardian.jar com.dreamsportslabs.guardian.Main
+```
+
+Guardian will start on port `8080` by default. You can test the API as shown in the Quick Start section.
 
 ## 🤝 Contributing
 
