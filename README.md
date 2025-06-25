@@ -167,6 +167,10 @@ You can modify the database connection details (host, port, database, username, 
 - `GUARDIAN_MYSQL_DATABASE` (default: `guardian`)
 - `GUARDIAN_MYSQL_USER` (default: `root`)
 - `GUARDIAN_MYSQL_PASSWORD` (default: `password`)
+- `GUARDIAN_MYSQL_READER_PORT` (default: `3306`)
+- `GUARDIAN_MYSQL_WRITER_PORT` (default: `3306`)
+- `GUARDIAN_REDIS_HOST` (default: `localhost`)
+- `GUARDIAN_REDIS_PORT` (default: `6379`)
 
 For example, to use a different database name and password:
 ```bash
@@ -192,6 +196,11 @@ java -cp target/guardian/guardian.jar com.dreamsportslabs.guardian.Main
 ```
 
 Guardian will start on port `8080` by default. You can test the API as shown in the Quick Start section.
+
+To change the port, set the `GUARDIAN_PORT` environment variable before running the application:
+```bash
+GUARDIAN_PORT=8080 java -cp target/guardian/guardian.jar com.dreamsportslabs.guardian.Main
+```
 
 ## 🤝 Contributing
 
