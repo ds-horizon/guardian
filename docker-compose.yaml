@@ -61,6 +61,7 @@ services:
         tar -xvzf connector.tar.gz &&
         cp mysql-connector-j-8.0.33/mysql-connector-j-8.0.33.jar lib/ &&
         liquibase --url=jdbc:mysql://mysql:3306/guardian --username=root --password=password --changeLogFile=./resources/changelog.xml update
+        liquibase --url=jdbc:mysql://mysql:3306/guardian --username=root --password=password --changeLogFile=none execute-sql --sql-file=./resources/seed.sql
       "
 
   mock:

@@ -67,7 +67,7 @@ mvn --version
 java -version
 ```
 
-Ensure that **Java 17** is the active version in use.
+Ensure that **Java 17** is the active version in use. Maven should also be configured to use Java 17 - you can verify this by checking that `mvn --version` shows Java 17 in its output.
 
 Additionally, make sure the following ports are free and not in use by other services:
 
@@ -130,6 +130,8 @@ If you prefer to run Guardian without Docker, follow these steps:
 - **Maven** ([Download](https://maven.apache.org/download.cgi))
 - **MySQL** ([Download](https://dev.mysql.com/downloads/mysql/))
 - **Redis** ([Download](https://redis.io/download/))
+- **Liquibase** ([Download](https://www.liquibase.com/download-oss))
+- **MySQL Connector/J** ([Download](https://dev.mysql.com/downloads/connector/j/))
 
 ### 2. Start MySQL and Redis
 - Start a local MySQL server (default port: `3306`).
@@ -145,20 +147,15 @@ mysql -h 127.0.0.1 -u root -p -e "CREATE DATABASE IF NOT EXISTS guardian;"
 Guardian uses [Liquibase](https://www.liquibase.org/) to manage database schema and seed data. After starting MySQL, run the following command to apply all migrations and seed data:
 
 ```bash
-mvn liquibase:update
+liquibase --classpath=<path_to_mysql_jar> --url=jdbc:mysql://127.0.0.1:3306/guardian --username=root --password=password --changeLogFile=./resources/changelog.xml update
 ```
 
-By default, this uses the configuration in `src/main/resources/liquibase.properties`. You can override properties at runtime by passing them as command-line arguments, for example:
-
+### 3.1 (Optional) Add seed data to be able to follow the Quick Start
 ```bash
-mvn liquibase:update -Dliquibase.url=jdbc:mysql://localhost:3306/guardian -Dliquibase.username=myuser -Dliquibase.password=mypassword
+liquibase --classpath=<path_to_mysql_jar> --url=jdbc:mysql:///127.0.0.1:3306/guardian --username=root --password=password --changeLogFile=none execute-sql --sql-file=./resources/seed.sql
 ```
 
-Or use a different properties file:
-
-```bash
-mvn liquibase:update -Dliquibase.propertyFile=path/to/your/liquibase.properties
-```
+### 4. Configure Guardian
 
 You can modify the database connection details (host, port, database, username, password) by changing the values in the command above, or by setting the following environment variables before running Guardian:
 
@@ -178,7 +175,6 @@ export GUARDIAN_MYSQL_DATABASE=guardian
 export GUARDIAN_MYSQL_PASSWORD=password
 ```
 
-### 4. Configure Guardian
 Guardian uses `src/main/resources/guardian-default.conf` for default config. You can override values using environment variables or by editing `guardian.conf`.
 
 Default MySQL/Redis config:
