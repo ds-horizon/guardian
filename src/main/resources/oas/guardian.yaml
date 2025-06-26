@@ -302,6 +302,136 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /scopes:
+    get:
+      tags:
+        - Scope Management
+      summary: List scopes
+      description: |
+        Retrieve a paginated list of scopes for a tenant. 
+        Optionally filter by scope name.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: name
+          in: query
+          required: false
+          description: Filter scopes by name (partial match)
+          schema:
+            type: string
+            example: "read"
+        - name: page
+          in: query
+          required: false
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+      responses:
+        '200':
+          description: Successfully retrieved scopes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScopeListResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Scope Management
+      summary: Create a new scope
+      description: |
+        Create a new scope for a tenant. Scopes define permissions and claims 
+        that can be granted to users and applications.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScopeRequest'
+      responses:
+        '201':
+          description: Scope created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScopeResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - Scope with the same name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /scopes/{name}:
+    delete:
+      tags:
+        - Scope Management
+      summary: Delete a scope
+      description: |
+        Delete a specific scope by name. This operation is irreversible and will 
+        remove all associations with this scope.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: name
+          in: path
+          required: true
+          description: Name of the scope to delete
+          schema:
+            type: string
+            example: "read:profile"
+      responses:
+        '204':
+          description: Scope deleted successfully
+        '404':
+          description: Scope not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /v1/otp/send:
     post:
       tags:
@@ -782,3 +912,91 @@ components:
           description: Seconds to wait before next resend is allowed
           example: 30
           minimum: 0
+
+    ScopeResponse:
+      type: object
+      description: Scope information
+      required:
+        - name
+        - isOidc
+      properties:
+        name:
+          type: string
+          description: Unique name of the scope
+          example: "read:profile"
+        displayName:
+          type: string
+          description: Human-readable display name
+          example: "Read Profile"
+        description:
+          type: string
+          description: Detailed description of the scope
+          example: "Allows reading user profile information"
+        iconUrl:
+          type: string
+          format: uri
+          description: URL to the scope's icon
+          example: "https://example.com/icons/profile.png"
+        isOidc:
+          type: boolean
+          description: Whether this is an OpenID Connect standard scope
+          example: true
+        claims:
+          type: array
+          description: List of claims associated with this scope
+          items:
+            type: string
+            example: "name"
+          example: ["name", "email", "profile"]
+
+    ScopeListResponse:
+      type: object
+      description: Paginated list of scopes
+      required:
+        - scopes
+      properties:
+        scopes:
+          type: array
+          description: Array of scope objects
+          items:
+            $ref: '#/components/schemas/ScopeResponse'
+
+    CreateScopeRequest:
+      type: object
+      description: Request payload for creating a new scope
+      required:
+        - name
+        - isOidc
+      properties:
+        name:
+          type: string
+          description: Unique name of the scope
+          example: "read:profile"
+          minLength: 1
+          maxLength: 50
+        displayName:
+          type: string
+          description: Human-readable display name
+          example: "Read Profile"
+          maxLength: 100
+        description:
+          type: string
+          description: Detailed description of the scope
+          example: "Allows reading user profile information"
+          maxLength: 500
+        claims:
+          type: array
+          description: List of claims associated with this scope
+          items:
+            type: string
+            example: "name"
+          example: ["name", "email", "profile"]
+        iconUrl:
+          type: string
+          format: uri
+          description: URL to the scope's icon
+          example: "https://example.com/icons/profile.png"
+        isOidc:
+          type: boolean
+          description: Whether this is an OpenID Connect standard scope
+          example: true

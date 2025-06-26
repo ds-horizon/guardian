@@ -1,6 +1,26 @@
 package com.dreamsportslabs.guardian.it.config;
 
-import static com.dreamsportslabs.guardian.Constants.*;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ICON_URL;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.ERROR;
+import static com.dreamsportslabs.guardian.Constants.ERROR_CODE_SCOPE_ALREADY_EXISTS;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_OIDC_REQUIRED;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_SCOPE_ALREADY_EXISTS;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_SCOPE_REQUIRED;
+import static com.dreamsportslabs.guardian.Constants.MESSAGE;
+import static com.dreamsportslabs.guardian.Constants.TENANT_1;
+import static com.dreamsportslabs.guardian.Constants.TENANT_2;
+import static com.dreamsportslabs.guardian.Constants.TEST_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.TEST_EMAIL_CLAIM;
+import static com.dreamsportslabs.guardian.Constants.TEST_ICON_URL;
+import static com.dreamsportslabs.guardian.Constants.TEST_NAME_CLAIM;
+import static com.dreamsportslabs.guardian.Constants.TEST_PHONE_CLAIM;
+import static com.dreamsportslabs.guardian.Constants.TEST_PICTURE_CLAIM;
+import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopes;
@@ -585,6 +605,7 @@ public class ScopeConfigIT {
     // Validate
     response.then().statusCode(SC_CREATED);
 
+    // Cleanup
     deleteScope(tenant1, requestBody.get(BODY_PARAM_SCOPE).toString());
   }
 
@@ -603,6 +624,7 @@ public class ScopeConfigIT {
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_ICON_URL, equalTo(""));
 
+    // Cleanup
     deleteScope(tenant1, scopeName);
   }
 
@@ -621,6 +643,7 @@ public class ScopeConfigIT {
     // Validate
     response.then().statusCode(SC_CREATED);
 
+    // Cleanup
     deleteScope(tenant1, scopeName);
   }
 
@@ -661,6 +684,7 @@ public class ScopeConfigIT {
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_IS_OIDC, equalTo(false));
 
+    // Cleanup
     deleteScope(tenant1, scopeName);
   }
 
@@ -684,6 +708,7 @@ public class ScopeConfigIT {
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_IS_OIDC, equalTo(true));
 
+    // Cleanup
     deleteScope(tenant1, scopeName);
   }
 
@@ -758,6 +783,7 @@ public class ScopeConfigIT {
         .body(BODY_PARAM_ICON_URL, equalTo(iconUrl))
         .body(BODY_PARAM_IS_OIDC, equalTo(true));
 
+    // Cleanup
     deleteScope(tenant1, scopeName);
   }
 
@@ -783,6 +809,7 @@ public class ScopeConfigIT {
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_ICON_URL, equalTo(longIconUrl));
 
+    // Cleanup
     deleteScope(tenant1, scopeName);
   }
 
@@ -812,6 +839,7 @@ public class ScopeConfigIT {
         .body(BODY_PARAM_ICON_URL, equalTo(iconUrlWithSpecialChars))
         .body(BODY_PARAM_IS_OIDC, equalTo(false));
 
+    // Cleanup
     deleteScope(tenant1, scopeName);
   }
 

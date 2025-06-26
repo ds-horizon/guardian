@@ -5,7 +5,7 @@ public final class ScopeQuery {
     throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
   }
 
-  public static final String GET_ALL_SCOPES =
+  public static final String GET_SCOPES_PAGINATED =
       "SELECT name, display_name, description, claims, is_oidc, icon_url FROM scope WHERE tenant_id = ? LIMIT ? OFFSET ?";
 
   public static final String GET_SCOPE_BY_NAME =

@@ -3,15 +3,10 @@ package com.dreamsportslabs.guardian.dto.request.scope;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class CreateScopeRequestDto {
   private String name;
   private String displayName;
@@ -21,7 +16,7 @@ public class CreateScopeRequestDto {
   private Boolean isOidc;
 
   public void validate() {
-    if (name == null || name.isBlank()) {
+    if (StringUtils.isBlank(name)) {
       throw INVALID_REQUEST.getCustomException("scope name is required");
     }
 

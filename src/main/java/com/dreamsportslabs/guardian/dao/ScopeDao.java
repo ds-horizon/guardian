@@ -1,7 +1,7 @@
 package com.dreamsportslabs.guardian.dao;
 
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.DELETE_SCOPE;
-import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_ALL_SCOPES;
+import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_SCOPES_PAGINATED;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_SCOPE_BY_NAME;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.SAVE_SCOPE;
 
@@ -34,7 +34,7 @@ public class ScopeDao {
   public Single<List<ScopeModel>> getScopesWithPagination(String tenantId, int offset, int limit) {
     return mysqlClient
         .getReaderPool()
-        .preparedQuery(GET_ALL_SCOPES)
+        .preparedQuery(GET_SCOPES_PAGINATED)
         .execute(Tuple.of(tenantId, limit, offset))
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }
