@@ -14,7 +14,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,11 +38,11 @@ public class Logout {
     return authorizationService
         .logout(requestDto, tenantId)
         .andThen(
-            Single.just(Response.noContent())
-                .map(
-                    responseBuilder ->
-                        authorizationService.unsetCookies(responseBuilder, tenantId)))
-        .map(ResponseBuilder::build)
+            Single.just(
+                Response.noContent()
+                    .cookie(authorizationService.getAccessTokenCookie(null, tenantId))
+                    .cookie(authorizationService.getRefreshTokenCookie(null, tenantId))
+                    .build()))
         .toCompletionStage();
   }
 }

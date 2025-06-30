@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.exception;
 
+import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -8,7 +10,7 @@ import lombok.Getter;
 
 public enum ErrorEnum {
   INVALID_REQUEST("invalid_request", "Invalid request params", 400),
-  UNAUTHORIZED("unauthorized", "Unauthorized", 401),
+  UNAUTHORIZED(UNAUTHORIZED_ERROR_CODE, "Unauthorized", 401),
   INTERNAL_SERVER_ERROR("internal_server_error", "Something went wrong", 500),
   USER_SERVICE_ERROR("user_service_error", "User service error", 500),
   SMS_SERVICE_ERROR("sms_service_error", "SMS service error", 500),
@@ -79,7 +81,7 @@ public enum ErrorEnum {
   }
 
   @Getter
-  static class ErrorEntity {
+  public static class ErrorEntity {
     final Error error;
 
     ErrorEntity(String code, String message) {
@@ -92,7 +94,7 @@ public enum ErrorEnum {
 
     @Getter
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    static class Error {
+    public static class Error {
       final String code;
       final String message;
       final Map<String, Object> metadata;
