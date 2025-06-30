@@ -4,8 +4,6 @@ import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.dao.PasswordlessDao;
 import com.dreamsportslabs.guardian.dto.request.V1PasswordlessCompleteRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1PasswordlessInitRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1SignInRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1SignUpRequestDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
@@ -29,28 +27,6 @@ public class ContactExtractionService {
         .map(Contact::getIdentifier)
         .filter(StringUtils::isNotBlank)
         .toList();
-  }
-
-  /**
-   * Extract contact information from sign in request For sign in, the username could be email or
-   * phone number
-   */
-  public List<String> extractContactsFromSignIn(V1SignInRequestDto requestDto) {
-    if (StringUtils.isNotBlank(requestDto.getUsername())) {
-      return List.of(requestDto.getUsername());
-    }
-    return List.of();
-  }
-
-  /**
-   * Extract contact information from sign up request For sign up, the username could be email or
-   * phone number
-   */
-  public List<String> extractContactsFromSignUp(V1SignUpRequestDto requestDto) {
-    if (StringUtils.isNotBlank(requestDto.getUsername())) {
-      return List.of(requestDto.getUsername());
-    }
-    return List.of();
   }
 
   /**
@@ -78,15 +54,5 @@ public class ContactExtractionService {
             })
         .onErrorReturnItem(List.of())
         .toSingle();
-  }
-
-  /** Check if a given string looks like an email */
-  public boolean isEmail(String contact) {
-    return StringUtils.isNotBlank(contact) && contact.contains("@");
-  }
-
-  /** Check if a given string looks like a phone number */
-  public boolean isPhoneNumber(String contact) {
-    return StringUtils.isNotBlank(contact) && contact.matches("^\\d+$");
   }
 }

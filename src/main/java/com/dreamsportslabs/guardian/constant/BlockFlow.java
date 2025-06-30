@@ -9,7 +9,7 @@ public enum BlockFlow {
   PASSWORDLESS("passwordless", Arrays.asList("/v1/passwordless/init", "/v1/passwordless/complete")),
   PASSWORD("password", Arrays.asList("/v1/signin", "/v1/signup")),
   SOCIAL_AUTH("social_auth", Arrays.asList("/v1/auth/fb", "/v1/auth/google")),
-  OTP_VERIFY("otp_verify", Arrays.asList("/v1/passwordless/complete"));
+  OTP_VERIFY("otp_verify", Arrays.asList("/v1/otp/send", "/v1/otp/verify"));
 
   private final String flowName;
   private final List<String> apiPaths;

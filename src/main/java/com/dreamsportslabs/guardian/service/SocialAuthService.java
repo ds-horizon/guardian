@@ -16,6 +16,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
@@ -42,6 +43,7 @@ public class SocialAuthService {
   private final UserService userService;
   private final AuthorizationService authorizationService;
   private final Registry registry;
+  private final ContactFlowBlockService contactFlowBlockService;
 
   private static final String FACEBOOK_FIELDS_EMAIL = "email";
   private static final String FACEBOOK_FIELDS_USER_ID = "id";
@@ -58,6 +60,28 @@ public class SocialAuthService {
     return registry
         .get(tenantId, FacebookIdProvider.class)
         .getUserIdentity(dto.getAccessToken())
+        .flatMap(
+            fbUserData -> {
+              // Extract email from Facebook user data for blocking check
+              String email = fbUserData.getString(FACEBOOK_FIELDS_EMAIL);
+              if (email != null) {
+                return contactFlowBlockService
+                    .isApiBlocked(tenantId, email, "/v1/auth/fb")
+                    .flatMap(
+                        isBlocked -> {
+                          if (isBlocked) {
+                            log.warn(
+                                "Facebook auth API is blocked for email: {} in tenant: {}",
+                                email,
+                                tenantId);
+                            throw FLOW_BLOCKED.getCustomException(
+                                "Social auth flow is blocked for this contact");
+                          }
+                          return Single.just(fbUserData);
+                        });
+              }
+              return Single.just(fbUserData);
+            })
         .flatMap(
             fbUserData ->
                 userService
@@ -133,6 +157,28 @@ public class SocialAuthService {
     return registry
         .get(tenantId, GoogleIdProvider.class)
         .getUserIdentity(dto.getIdToken())
+        .flatMap(
+            googleUserData -> {
+              // Extract email from Google user data for blocking check
+              String email = googleUserData.getString(OIDC_CLAIMS_EMAIL);
+              if (email != null) {
+                return contactFlowBlockService
+                    .isApiBlocked(tenantId, email, "/v1/auth/google")
+                    .flatMap(
+                        isBlocked -> {
+                          if (isBlocked) {
+                            log.warn(
+                                "Google auth API is blocked for email: {} in tenant: {}",
+                                email,
+                                tenantId);
+                            throw FLOW_BLOCKED.getCustomException(
+                                "Social auth flow is blocked for this contact");
+                          }
+                          return Single.just(googleUserData);
+                        });
+              }
+              return Single.just(googleUserData);
+            })
         .flatMap(
             googleUserData ->
                 userService

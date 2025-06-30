@@ -6,6 +6,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
@@ -24,6 +25,7 @@ import com.dreamsportslabs.guardian.dto.request.V1PasswordlessInitRequestDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.OtpUtils;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -44,45 +46,72 @@ public class Passwordless {
   private final PasswordlessDao passwordlessDao;
   private final AuthorizationService authorizationService;
   private final Registry registry;
+  private final ContactFlowBlockService contactFlowBlockService;
+  private final ContactExtractionService contactExtractionService;
 
   public Single<PasswordlessModel> init(
       V1PasswordlessInitRequestDto requestDto,
       MultivaluedMap<String, String> headers,
       String tenantId) {
-    String state = requestDto.getState();
-    Single<PasswordlessModel> passwordlessModel;
-    if (state != null) {
-      passwordlessModel = this.getPasswordlessModel(state, tenantId);
-    } else {
-      updateDefaultTemplate(requestDto, tenantId);
-      passwordlessModel = this.createPasswordlessModel(requestDto, headers, tenantId);
-    }
-    return passwordlessModel
-        .map(
-            model -> {
-              if (model.getResends() >= model.getMaxResends()) {
-                passwordlessDao.deletePasswordlessModel(state, tenantId);
-                throw RESENDS_EXHAUSTED.getException();
-              }
+    // Check if passwordless flow is blocked for any contact
+    List<String> contacts =
+        contactExtractionService.extractContactsFromPasswordlessInit(requestDto);
 
-              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
-                throw RESEND_NOT_ALLOWED.getCustomException(
-                    Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
-              }
-
-              return model;
-            })
+    return Single.merge(
+            contacts.stream()
+                .map(
+                    contact ->
+                        contactFlowBlockService.isApiBlocked(
+                            tenantId, contact, "/v1/passwordless/init"))
+                .toList())
+        .reduce(false, (blocked, isBlocked) -> blocked || isBlocked)
         .flatMap(
-            model -> {
-              if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
-                return Single.just(model);
+            isBlocked -> {
+              if (isBlocked) {
+                log.warn(
+                    "Passwordless init API is blocked for contacts: {} in tenant: {}",
+                    contacts,
+                    tenantId);
+                throw FLOW_BLOCKED.getCustomException(
+                    "Passwordless flow is blocked for this contact");
               }
-              return otpService
-                  .sendOtp(model.getContacts(), model.getOtp(), headers, tenantId)
-                  .andThen(Single.just(model));
-            })
-        .map(PasswordlessModel::updateResend)
-        .flatMap(model -> passwordlessDao.setPasswordlessModel(model, tenantId));
+
+              // Continue with normal flow
+              String state = requestDto.getState();
+              Single<PasswordlessModel> passwordlessModel;
+              if (state != null) {
+                passwordlessModel = this.getPasswordlessModel(state, tenantId);
+              } else {
+                updateDefaultTemplate(requestDto, tenantId);
+                passwordlessModel = this.createPasswordlessModel(requestDto, headers, tenantId);
+              }
+              return passwordlessModel
+                  .map(
+                      model -> {
+                        if (model.getResends() >= model.getMaxResends()) {
+                          passwordlessDao.deletePasswordlessModel(state, tenantId);
+                          throw RESENDS_EXHAUSTED.getException();
+                        }
+
+                        if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
+                          throw RESEND_NOT_ALLOWED.getCustomException(
+                              Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
+                        }
+
+                        return model;
+                      })
+                  .flatMap(
+                      model -> {
+                        if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
+                          return Single.just(model);
+                        }
+                        return otpService
+                            .sendOtp(model.getContacts(), model.getOtp(), headers, tenantId)
+                            .andThen(Single.just(model));
+                      })
+                  .map(PasswordlessModel::updateResend)
+                  .flatMap(model -> passwordlessDao.setPasswordlessModel(model, tenantId));
+            });
   }
 
   private void updateDefaultTemplate(V1PasswordlessInitRequestDto requestDto, String tenantId) {
@@ -166,6 +195,42 @@ public class Passwordless {
   }
 
   public Single<Object> complete(V1PasswordlessCompleteRequestDto dto, String tenantId) {
+    // Check if passwordless complete flow is blocked for any contact
+    return contactExtractionService
+        .extractContactsFromPasswordlessComplete(dto, tenantId)
+        .flatMap(
+            contacts -> {
+              if (contacts.isEmpty()) {
+                // If no contacts found, continue with normal flow
+                return performPasswordlessComplete(dto, tenantId);
+              }
+
+              return Single.merge(
+                      contacts.stream()
+                          .map(
+                              contact ->
+                                  contactFlowBlockService.isApiBlocked(
+                                      tenantId, contact, "/v1/passwordless/complete"))
+                          .toList())
+                  .reduce(false, (blocked, isBlocked) -> blocked || isBlocked)
+                  .flatMap(
+                      isBlocked -> {
+                        if (isBlocked) {
+                          log.warn(
+                              "Passwordless complete API is blocked for contacts: {} in tenant: {}"
+                          );
+                          throw FLOW_BLOCKED.getCustomException(
+                              "Passwordless flow is blocked for this contact");
+                        }
+
+                        // Continue with normal flow
+                        return performPasswordlessComplete(dto, tenantId);
+                      });
+            });
+  }
+
+  private @NonNull Single<Object> performPasswordlessComplete(
+      V1PasswordlessCompleteRequestDto dto, String tenantId) {
     return getPasswordlessModel(dto.getState(), tenantId)
         .flatMap(model -> validateOtp(model, dto.getOtp(), tenantId))
         .flatMap(

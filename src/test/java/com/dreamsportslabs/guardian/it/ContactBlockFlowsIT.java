@@ -1,6 +1,13 @@
 package com.dreamsportslabs.guardian.it;
 
-import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.blockContactFlows;
+import static com.dreamsportslabs.guardian.Constants.BODY_CHANNEL_EMAIL;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CHANNEL;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IDENTIFIER;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE_TOKEN;
+import static com.dreamsportslabs.guardian.Constants.ERROR;
+import static com.dreamsportslabs.guardian.Constants.ERROR_FLOW_BLOCKED;
+import static com.dreamsportslabs.guardian.Constants.PASSWORDLESS_FLOW_SIGNINUP;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.*;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -8,6 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.restassured.response.Response;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +30,7 @@ public class ContactBlockFlowsIT {
       randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
   private static final String Flow_1 = "passwordless";
   private static final String Flow_2 = "social_auth";
+  private static final String MOCK_EMAIL = "test.social.auth@example.com";
 
   /** Common function to generate request body for block Flow */
   private Map<String, Object> generateBlockRequestBody(
@@ -32,6 +41,25 @@ public class ContactBlockFlowsIT {
     requestBody.put("reason", reason);
     requestBody.put("operator", operator);
     requestBody.put("unblockedAt", unblockedAt);
+
+    return requestBody;
+  }
+
+  /** Common function to generate passwordless init request body */
+  private Map<String, Object> generatePasswordlessInitRequestBody(String email) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("flow", PASSWORDLESS_FLOW_SIGNINUP);
+    requestBody.put("responseType", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    List<Map<String, Object>> contacts = new ArrayList<>();
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, BODY_CHANNEL_EMAIL);
+    contact.put(BODY_PARAM_IDENTIFIER, email);
+    contacts.add(contact);
+    requestBody.put("contacts", contacts);
+
+    requestBody.put("metaInfo", new HashMap<>());
+    requestBody.put("additionalInfo", new HashMap<>());
 
     return requestBody;
   }
@@ -527,5 +555,91 @@ public class ContactBlockFlowsIT {
         .rootPath("error")
         .body("code", equalTo("invalid_request"))
         .body("message", equalTo("unblockedAt is required"));
+  }
+
+  @Test
+  @DisplayName("Should verify passwordless flow is blocked after blocking")
+  public void verifyPasswordlessFlowBlocked() {
+    // Arrange
+    String contactId = randomNumeric(10);
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+    Map<String, Object> requestBody =
+        generateBlockRequestBody(
+            contactId,
+            new String[] {Flow_1},
+            randomAlphanumeric(10),
+            randomAlphanumeric(10),
+            unblockedAt);
+
+    // Act - Block the flow
+    Response blockResponse = blockContactFlows(TENANT_ID, requestBody);
+    blockResponse.then().statusCode(HttpStatus.SC_OK);
+
+    // Verify blocking was successful
+    assertThat(blockResponse.getBody().jsonPath().getString("contact"), equalTo(contactId));
+    assertThat(
+        blockResponse.getBody().jsonPath().getString("message"),
+        equalTo("Flows blocked successfully"));
+
+    // Act - Try to hit passwordless init API
+    Map<String, Object> passwordlessInitBody = generatePasswordlessInitRequestBody(contactId);
+    Response passwordlessInitResponse = passwordlessInit(TENANT_ID, passwordlessInitBody);
+
+    // Assert - Should be blocked
+    passwordlessInitResponse
+        .then()
+        .statusCode(HttpStatus.SC_FORBIDDEN)
+        .rootPath(ERROR)
+        .body("code", equalTo(ERROR_FLOW_BLOCKED))
+        .body("message", equalTo("Passwordless flow is blocked for this contact"));
+  }
+
+  @Test
+  @DisplayName("Should verify social auth flow is blocked after blocking")
+  public void verifySocialAuthFlowBlocked() {
+    // Arrange
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+    Map<String, Object> requestBody =
+        generateBlockRequestBody(
+            MOCK_EMAIL,
+            new String[] {Flow_2},
+            randomAlphanumeric(10),
+            randomAlphanumeric(10),
+            unblockedAt);
+
+    // Act - Block the flow
+    Response blockResponse = blockContactFlows(TENANT_ID, requestBody);
+    blockResponse.then().statusCode(HttpStatus.SC_OK);
+
+    // Verify blocking was successful
+    assertThat(blockResponse.getBody().jsonPath().getString("contact"), equalTo(MOCK_EMAIL));
+    assertThat(
+        blockResponse.getBody().jsonPath().getString("message"),
+        equalTo("Flows blocked successfully"));
+
+    // Act - Try to hit Facebook auth API
+    Response fbResponse =
+        authFb(TENANT_ID, "fake_access_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    // Verify - The response should indicate that the flow is blocked
+    fbResponse
+        .then()
+        .statusCode(HttpStatus.SC_FORBIDDEN)
+        .rootPath(ERROR)
+        .body("code", equalTo(ERROR_FLOW_BLOCKED))
+        .body("message", equalTo("Social auth flow is blocked for this contact"));
+
+    // Act - Try to hit Google auth API
+    Response googleResponse =
+        authGoogle(TENANT_ID, "fake_id_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    // Verify - Similar logic for Google auth
+
+    googleResponse
+        .then()
+        .statusCode(HttpStatus.SC_FORBIDDEN)
+        .rootPath(ERROR)
+        .body("code", equalTo(ERROR_FLOW_BLOCKED))
+        .body("message", equalTo("Social auth flow is blocked for this contact"));
   }
 }

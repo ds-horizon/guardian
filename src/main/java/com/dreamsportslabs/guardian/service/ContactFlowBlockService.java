@@ -97,10 +97,6 @@ public class ContactFlowBlockService {
             });
   }
 
-  public Single<Boolean> isFlowBlocked(String tenantId, String contact, String flowName) {
-    return contactFlowBlockDao.isFlowBlocked(tenantId, contact, flowName);
-  }
-
   public Single<Boolean> isApiBlocked(String tenantId, String contact, String apiPath) {
     // Check if any flow that contains this API path is blocked
     List<Single<Boolean>> flowChecks =
