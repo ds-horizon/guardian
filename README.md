@@ -51,10 +51,32 @@ It provides a comprehensive suite of authentication methods while giving you com
 
 ### Prerequisites
 
-- Docker
-- Maven
+* **Docker** ([Download Docker Desktop](https://www.docker.com/products/docker-desktop/))
+* **Docker Compose CLI** ([Install instructions](https://docs.docker.com/compose/install/))
+* **Maven**
+* **Java 17**
 
 ### Quick Start
+
+#### Prerequisites
+You can verify the installations by running the following commands in your terminal:
+
+```bash
+docker --version
+mvn --version
+java -version
+```
+
+Ensure that **Java 17** is the active version in use. Maven should also be configured to use Java 17 - you can verify this by checking that `mvn --version` shows Java 17 in its output.
+
+Additionally, make sure the following ports are free and not in use by other services:
+
+* `3306` – MySQL
+* `6379` – Redis
+* `8080` – Application server
+* `6000` – Auxiliary services/API
+
+These ports are required for the application to run without conflicts.
 
 1. Clone the repository:
 ```bash

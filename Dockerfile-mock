@@ -6,6 +6,6 @@ RUN pip install --no-cache-dir flask
 
 COPY mock.py .
 
-EXPOSE 5000
+EXPOSE 6000
 
 CMD ["python", "mock.py"]

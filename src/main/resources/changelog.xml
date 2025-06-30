@@ -8,5 +8,4 @@
 
   <!-- Include all SQL files from the specified folder -->
   <includeAll path="migrations" relativeToChangelogFile="true"/>
-
 </databaseChangeLog>
