@@ -217,8 +217,7 @@ public class Passwordless {
                       isBlocked -> {
                         if (isBlocked) {
                           log.warn(
-                              "Passwordless complete API is blocked for contacts: {} in tenant: {}"
-                          );
+                              "Passwordless complete API is blocked for contacts: {} in tenant: {}");
                           throw FLOW_BLOCKED.getCustomException(
                               "Passwordless flow is blocked for this contact");
                         }

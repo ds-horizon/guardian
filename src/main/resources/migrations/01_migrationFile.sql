@@ -223,7 +223,7 @@ CREATE TABLE contact_verify_config
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE contact_api_blocks
+CREATE TABLE contact_flow_blocks
 (
     id           BIGINT       NOT NULL AUTO_INCREMENT,
     tenant_id    CHAR(10)     NOT NULL,
