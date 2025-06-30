@@ -13,7 +13,6 @@ import io.reactivex.rxjava3.core.Single;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -25,12 +24,12 @@ public class ScopeService {
 
     Single<List<ScopeModel>> scopesSingle;
 
-    if (StringUtils.isEmpty(getScopeRequestDto.getName())) {
+    if (!getScopeRequestDto.hasSpecificNames()) {
       scopesSingle =
           scopeDao.getScopesWithPagination(
               tenantId, getScopeRequestDto.getPage() - 1, getScopeRequestDto.getPageSize());
     } else {
-      scopesSingle = scopeDao.getScope(tenantId, getScopeRequestDto.getName());
+      scopesSingle = scopeDao.getScopesByNames(tenantId, getScopeRequestDto.getNames());
     }
 
     return scopesSingle

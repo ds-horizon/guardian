@@ -66,9 +66,22 @@ public class Constants {
 
   // Error messages
   public static final String ERROR_MSG_SCOPE_REQUIRED = "scope name is required";
+  public static final String ERROR_MSG_SCOPE_CANNOT_BE_EMPTY = "scope name cannot be empty";
   public static final String ERROR_MSG_OIDC_REQUIRED = "isOidc field is required";
   public static final String ERROR_CODE_SCOPE_ALREADY_EXISTS = "scope_already_exists";
   public static final String ERROR_MSG_SCOPE_ALREADY_EXISTS = "Scope already exists for tenant";
+  public static final String ERROR_MSG_PAGE_VALUE_CANNOT_BE_LESS_THAN_1 =
+      "page value cannot be less than 1";
+  public static final String ERROR_MSG_PAGE_SIZE_VALUE_CANNOT_BE_LESS_THAN_1 =
+      "pageSize must be between 1 and 100";
+
+  // Query Parameters
+  public static final String QUERY_PARAM_PAGE = "page";
+  public static final String QUERY_PARAM_PAGE_SIZE = "pageSize";
+  public static final String QUERY_PARAM_NAME = "name";
+
+  public static final String JSON_PATH_ERROR_CODE = "error.code";
+  public static final String JSON_PATH_ERROR_MESSAGE = "error.message";
 
   // Passwordless Flow
   public static final String PASSWORDLESS_FLOW_SIGNINUP = "SIGNINUP";

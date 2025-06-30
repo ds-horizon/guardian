@@ -1,4 +1,4 @@
-package com.dreamsportslabs.guardian.rest.config;
+package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Path("/scopes")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-public class ScopeConfig {
+public class Scope {
   private final ScopeService scopeService;
 
   @GET

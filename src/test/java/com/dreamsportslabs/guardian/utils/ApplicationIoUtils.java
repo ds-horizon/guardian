@@ -10,6 +10,7 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
 import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
@@ -111,6 +112,19 @@ public class ApplicationIoUtils {
     headers.put("tenant-id", tenantId);
 
     return execute(null, headers, queryParams, spec -> spec.get("/scopes"));
+  }
+
+  public static Response listScopesByNames(String tenantId, List<String> scopeNames) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    RequestSpecification spec = given().headers(headers);
+
+    for (String scopeName : scopeNames) {
+      spec.queryParam(QUERY_PARAM_NAME, scopeName);
+    }
+
+    return spec.get("/scopes");
   }
 
   public static Response deleteScope(String tenantId, String scopeName) {
