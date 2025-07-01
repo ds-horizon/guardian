@@ -10,9 +10,13 @@ import static com.dreamsportslabs.guardian.Constants.PASSWORDLESS_FLOW_SIGNINUP;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.*;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dreamsportslabs.guardian.Setup;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -22,7 +26,13 @@ import java.util.Map;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static com.github.tomakehurst.wiremock.client.WireMock.*; // for stubFor, get, urlPathEqualTo, etc.
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
+import com.github.tomakehurst.wiremock.WireMockServer;
 
+
+@ExtendWith(Setup.class)
 public class ContactBlockFlowsIT {
 
   private static final String TENANT_ID = "tenant1";
@@ -30,7 +40,24 @@ public class ContactBlockFlowsIT {
       randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
   private static final String Flow_1 = "passwordless";
   private static final String Flow_2 = "social_auth";
-  private static final String MOCK_EMAIL = "test.social.auth@example.com";
+  private static final String MOCK_EMAIL = "test@example.com";
+
+
+  private WireMockServer wireMockServer;
+
+  private StubMapping stubFacebookUserProfile(String email) {
+    return wireMockServer.stubFor(
+            get(urlPathEqualTo("/me"))
+                    .withQueryParam("access_token", matching(".*")) // accept any token
+                    .withQueryParam("appsecret_proof", matching(".*")) // accept any hash
+                    .withQueryParam("fields", matching(".*")) // accept fields
+                    .willReturn(
+                            aResponse()
+                                    .withStatus(200)
+                                    .withHeader("Content-Type", "application/json")
+                                    .withBody("{\"email\":\"" + email + "\", \"id\":\"123456789\"}")));
+  }
+
 
   /** Common function to generate request body for block Flow */
   private Map<String, Object> generateBlockRequestBody(
@@ -63,6 +90,27 @@ public class ContactBlockFlowsIT {
 
     return requestBody;
   }
+
+  /** Helper method to create OTP send request body */
+  private Map<String, Object> createSendOtpBody(String email) {
+    Map<String, Object> requestBody = new HashMap<>();
+    Map<String, Object> contact = new HashMap<>();
+    contact.put("channel", "email");
+    contact.put("identifier", email);
+    requestBody.put("contact", contact);
+    requestBody.put("metaInfo", new HashMap<>());
+    return requestBody;
+  }
+
+  /** Helper method to create OTP verify request body */
+  private Map<String, Object> createVerifyOtpBody(String state, String otp) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("state", state);
+    requestBody.put("otp", otp);
+    return requestBody;
+  }
+
+
 
   @Test
   @DisplayName("Should block Flows successfully")
@@ -597,49 +645,116 @@ public class ContactBlockFlowsIT {
   @Test
   @DisplayName("Should verify social auth flow is blocked after blocking")
   public void verifySocialAuthFlowBlocked() {
-    // Arrange
+    // Arrange - Block social auth flow for the mock email
     Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    Map<String, Object> requestBody =
+    Map<String, Object> blockRequestBody =
         generateBlockRequestBody(
             MOCK_EMAIL,
-            new String[] {Flow_2},
+            new String[] {"social_auth"},
             randomAlphanumeric(10),
             randomAlphanumeric(10),
             unblockedAt);
 
-    // Act - Block the flow
-    Response blockResponse = blockContactFlows(TENANT_ID, requestBody);
+    Response blockResponse = blockContactFlows(TENANT_ID, blockRequestBody);
     blockResponse.then().statusCode(HttpStatus.SC_OK);
 
-    // Verify blocking was successful
-    assertThat(blockResponse.getBody().jsonPath().getString("contact"), equalTo(MOCK_EMAIL));
+    assertThat(blockResponse.getBody().jsonPath().getString("message"), equalTo("Flows blocked successfully"));
+
+    StubMapping fbStub = stubFacebookUserProfile(MOCK_EMAIL);
+
+    // Act
+    Response facebookResponse = authFb(TENANT_ID, "valid_access_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    // Verify
+    facebookResponse.then().statusCode(HttpStatus.SC_FORBIDDEN)
+        .rootPath(ERROR)
+        .body("code", equalTo(ERROR_FLOW_BLOCKED))
+        .body("message", containsString("Facebook auth API is blocked"));
+
+    wireMockServer.removeStub(fbStub);
+
+     //Act
+    Response googleResponse =
+        authGoogle(TENANT_ID, "valid_id_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    // Verify - Google auth should be blocked by flow blocking, not by API failure
+    googleResponse.then().statusCode(HttpStatus.SC_FORBIDDEN)
+        .rootPath(ERROR)
+        .body("code", equalTo(ERROR_FLOW_BLOCKED))
+        .body("message", containsString("Google auth API is blocked"));
+  }
+
+  @Test
+  @DisplayName("Should verify OTP verify flow is blocked after blocking")
+  public void verifyOtpVerifyFlowBlocked() {
+    // Arrange - Block OTP verify flow for a test email
+    String testEmail = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+    Map<String, Object> blockRequestBody =
+        generateBlockRequestBody(
+            testEmail,
+            new String[] {"otp_verify"},
+            randomAlphanumeric(10),
+            randomAlphanumeric(10),
+            unblockedAt);
+
+    Response blockResponse = blockContactFlows(TENANT_ID, blockRequestBody);
+    blockResponse.then().statusCode(HttpStatus.SC_OK);
+
+    assertThat(blockResponse.getBody().jsonPath().getString("contact"), equalTo(testEmail));
     assertThat(
         blockResponse.getBody().jsonPath().getString("message"),
         equalTo("Flows blocked successfully"));
 
-    // Act - Try to hit Facebook auth API
-    Response fbResponse =
-        authFb(TENANT_ID, "fake_access_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+    // Act - Try to hit OTP send API
+    Map<String, Object> sendOtpBody = createSendOtpBody(testEmail);
+    Response sendOtpResponse = sendOtp(TENANT_ID, sendOtpBody);
 
     // Verify - The response should indicate that the flow is blocked
-    fbResponse
+    sendOtpResponse
         .then()
         .statusCode(HttpStatus.SC_FORBIDDEN)
         .rootPath(ERROR)
         .body("code", equalTo(ERROR_FLOW_BLOCKED))
-        .body("message", equalTo("Social auth flow is blocked for this contact"));
+        .body("message", equalTo("OTP verify flow is blocked for this contact"));
+  }
 
-    // Act - Try to hit Google auth API
-    Response googleResponse =
-        authGoogle(TENANT_ID, "fake_id_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+  @Test
+  @DisplayName("Should verify OTP verify flow is blocked for existing OTP state")
+  public void verifyOtpVerifyFlowBlockedForExistingState() {
+    // Arrange - First send OTP to get a valid state
+    String testEmail = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
+    Map<String, Object> sendOtpBody = createSendOtpBody(testEmail);
+    Response sendOtpResponse = sendOtp(TENANT_ID, sendOtpBody);
 
-    // Verify - Similar logic for Google auth
+    // Only proceed if send OTP was successful (not blocked)
+    if (sendOtpResponse.getStatusCode() == HttpStatus.SC_OK) {
+      String state = sendOtpResponse.getBody().jsonPath().getString("state");
 
-    googleResponse
-        .then()
-        .statusCode(HttpStatus.SC_FORBIDDEN)
-        .rootPath(ERROR)
-        .body("code", equalTo(ERROR_FLOW_BLOCKED))
-        .body("message", equalTo("Social auth flow is blocked for this contact"));
+      // Now block OTP verify flow for the same email
+      Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+      Map<String, Object> blockRequestBody =
+          generateBlockRequestBody(
+              testEmail,
+              new String[] {"otp_verify"},
+              randomAlphanumeric(10),
+              randomAlphanumeric(10),
+              unblockedAt);
+
+      Response blockResponse = blockContactFlows(TENANT_ID, blockRequestBody);
+      blockResponse.then().statusCode(HttpStatus.SC_OK);
+
+      // Act - Try to verify OTP with the valid state
+      Map<String, Object> verifyOtpBody = createVerifyOtpBody(state, "123456");
+      Response verifyOtpResponse = verifyOtp(TENANT_ID, verifyOtpBody);
+
+      // Verify - The response should indicate that the flow is blocked
+      verifyOtpResponse
+          .then()
+          .statusCode(HttpStatus.SC_FORBIDDEN)
+          .rootPath(ERROR)
+          .body("code", equalTo(ERROR_FLOW_BLOCKED))
+          .body("message", equalTo("OTP verify flow is blocked for this contact"));
+    }
   }
 }

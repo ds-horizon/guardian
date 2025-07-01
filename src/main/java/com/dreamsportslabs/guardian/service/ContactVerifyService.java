@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
@@ -32,50 +33,94 @@ public class ContactVerifyService {
   private final ContactVerifyDao contactVerifyDao;
   private final Registry registry;
   private final OtpService otpService;
+  private final ContactFlowBlockService contactFlowBlockService;
 
   public Single<OtpGenerateModel> initOtp(
       V1SendOtpRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
-    String state = requestDto.getState();
-    Single<OtpGenerateModel> otpGenerateModel;
-
-    if (state != null) {
-      otpGenerateModel = this.getOtpGenerateModel(tenantId, state);
-    } else {
-      state = OtpUtils.generateState();
-      TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-
-      OtpUtils.updateContactTemplate(
-          tenantConfig.getSmsConfig(), tenantConfig.getEmailConfig(), requestDto.getContact());
-
-      otpGenerateModel = this.createOtpGenerateModel(requestDto, headers, tenantId, state);
-    }
-
-    return otpGenerateModel
-        .map(
-            model -> {
-              if (model.getResends() >= model.getMaxResends()) {
-                contactVerifyDao.deleteOtpGenerateModel(tenantId, model.getState());
-                throw RESENDS_EXHAUSTED.getException();
-              }
-
-              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
-                throw RESEND_NOT_ALLOWED.getCustomException(
-                    Map.of("resendAfter", model.getResendAfter()));
-              }
-
-              return model;
-            })
+    // Check if OTP flow is blocked for the contact
+    return getContactIdentifier(requestDto, tenantId)
         .flatMap(
-            model -> {
-              if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
-                return Single.just(model);
-              }
-              return otpService
-                  .sendOtp(List.of(model.getContact()), model.getOtp(), headers, tenantId)
-                  .andThen(Single.just(model));
-            })
-        .map(OtpGenerateModel::updateResend)
-        .flatMap(model -> contactVerifyDao.setOtpGenerateModel(model, tenantId, model.getState()));
+            contactIdentifier ->
+                contactFlowBlockService
+                    .isApiBlocked(tenantId, contactIdentifier, "/v1/otp/send")
+                    .flatMap(
+                        isBlocked -> {
+                          if (isBlocked) {
+                            log.warn(
+                                "OTP send API is blocked for contact: {} in tenant: {}",
+                                contactIdentifier,
+                                tenantId);
+                            return Single.error(
+                                FLOW_BLOCKED.getCustomException(
+                                    "OTP verify flow is blocked for this contact"));
+                          }
+                          return Single.just(requestDto);
+                        })
+                    .flatMap(
+                        dto -> {
+                          String state = dto.getState();
+                          Single<OtpGenerateModel> otpGenerateModel;
+
+                          if (state != null) {
+                            otpGenerateModel = this.getOtpGenerateModel(tenantId, state);
+                          } else {
+                            state = OtpUtils.generateState();
+                            TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
+
+                            OtpUtils.updateContactTemplate(
+                                tenantConfig.getSmsConfig(),
+                                tenantConfig.getEmailConfig(),
+                                dto.getContact());
+
+                            otpGenerateModel =
+                                this.createOtpGenerateModel(dto, headers, tenantId, state);
+                          }
+
+                          return otpGenerateModel
+                              .map(
+                                  model -> {
+                                    if (model.getResends() >= model.getMaxResends()) {
+                                      contactVerifyDao.deleteOtpGenerateModel(
+                                          tenantId, model.getState());
+                                      throw RESENDS_EXHAUSTED.getException();
+                                    }
+
+                                    if ((System.currentTimeMillis() / 1000)
+                                        < model.getResendAfter()) {
+                                      throw RESEND_NOT_ALLOWED.getCustomException(
+                                          Map.of("resendAfter", model.getResendAfter()));
+                                    }
+
+                                    return model;
+                                  })
+                              .flatMap(
+                                  model -> {
+                                    if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
+                                      return Single.just(model);
+                                    }
+                                    return otpService
+                                        .sendOtp(
+                                            List.of(model.getContact()),
+                                            model.getOtp(),
+                                            headers,
+                                            tenantId)
+                                        .andThen(Single.just(model));
+                                  })
+                              .map(OtpGenerateModel::updateResend)
+                              .flatMap(
+                                  model ->
+                                      contactVerifyDao.setOtpGenerateModel(
+                                          model, tenantId, model.getState()));
+                        }));
+  }
+
+  private Single<String> getContactIdentifier(V1SendOtpRequestDto requestDto, String tenantId) {
+    if (requestDto.getContact() != null) {
+      return Single.just(requestDto.getContact().getIdentifier());
+    } else {
+      return getOtpGenerateModel(tenantId, requestDto.getState())
+          .map(model -> model.getContact().getIdentifier());
+    }
   }
 
   private Single<OtpGenerateModel> createOtpGenerateModel(
@@ -113,25 +158,47 @@ public class ContactVerifyService {
     return getOtpGenerateModel(tenantId, state)
         .flatMap(
             model -> {
-              if (model.getOtp().equals(otp)) {
-                contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
-                return Single.just(true);
-              }
-
-              model.incRetry();
-
-              if (model.getTries() >= model.getMaxTries()) {
-                contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
-                return Single.error(RETRIES_EXHAUSTED.getException());
-              }
-
-              return contactVerifyDao
-                  .setOtpGenerateModel(model, tenantId, state)
+              // Check if OTP flow is blocked for the contact
+              String contactIdentifier = model.getContact().getIdentifier();
+              return contactFlowBlockService
+                  .isApiBlocked(tenantId, contactIdentifier, "/v1/otp/verify")
                   .flatMap(
-                      m ->
-                          Single.error(
-                              INCORRECT_OTP.getCustomException(
-                                  Map.of("retriesLeft", model.getMaxTries() - model.getTries()))));
+                      isBlocked -> {
+                        if (isBlocked) {
+                          log.warn(
+                              "OTP verify API is blocked for contact: {} in tenant: {}",
+                              contactIdentifier,
+                              tenantId);
+                          return Single.error(
+                              FLOW_BLOCKED.getCustomException(
+                                  "OTP verify flow is blocked for this contact"));
+                        }
+                        return Single.just(model);
+                      })
+                  .flatMap(
+                      otpModel -> {
+                        if (otpModel.getOtp().equals(otp)) {
+                          contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
+                          return Single.just(true);
+                        }
+
+                        otpModel.incRetry();
+
+                        if (otpModel.getTries() >= otpModel.getMaxTries()) {
+                          contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
+                          return Single.error(RETRIES_EXHAUSTED.getException());
+                        }
+
+                        return contactVerifyDao
+                            .setOtpGenerateModel(otpModel, tenantId, state)
+                            .flatMap(
+                                m ->
+                                    Single.error(
+                                        INCORRECT_OTP.getCustomException(
+                                            Map.of(
+                                                "retriesLeft",
+                                                otpModel.getMaxTries() - otpModel.getTries()))));
+                      });
             });
   }
 
