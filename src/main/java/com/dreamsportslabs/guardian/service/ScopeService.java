@@ -44,7 +44,7 @@ public class ScopeService {
             .description(requestDto.getDescription())
             .claims(requestDto.getClaims())
             .iconUrl(requestDto.getIconUrl())
-            .isOidc(requestDto.isOidc())
+            .isOidc(requestDto.getIsOidc())
             .build();
 
     return scopeDao.saveScope(scopeModel).map(this::toResponseDto);

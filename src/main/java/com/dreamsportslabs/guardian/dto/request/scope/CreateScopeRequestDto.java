@@ -24,7 +24,7 @@ public class CreateScopeRequestDto {
   private String description;
   private List<String> claims = new ArrayList<>();
   private String iconUrl;
-  private boolean isOidc;
+  private Boolean isOidc = Boolean.FALSE;
 
   public void validate() {
     if (StringUtils.isBlank(name)) {

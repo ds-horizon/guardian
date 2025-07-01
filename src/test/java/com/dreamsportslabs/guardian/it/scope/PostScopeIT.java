@@ -79,7 +79,7 @@ public class PostScopeIT {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
     Map<String, Object> requestBody =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scopeName,
             TEST_DISPLAY_NAME,
             TEST_DESCRIPTION,
@@ -95,7 +95,7 @@ public class PostScopeIT {
         .then()
         .statusCode(SC_CREATED)
         .body(BODY_PARAM_SCOPE, equalTo(scopeName))
-        .body(BODY_PARAM_DISPLAY_NAME, equalTo(TEST_SCOPE_NAME))
+        .body(BODY_PARAM_DISPLAY_NAME, equalTo(TEST_DISPLAY_NAME))
         .body(BODY_PARAM_DESCRIPTION, equalTo(TEST_DESCRIPTION))
         .body(BODY_PARAM_CLAIMS, hasItem(TEST_EMAIL_CLAIM))
         .body(BODY_PARAM_CLAIMS, hasItem(TEST_NAME_CLAIM))
@@ -114,7 +114,7 @@ public class PostScopeIT {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scopeName,
             TEST_DUPLICATE_SCOPE_DISPLAY_NAME,
             TEST_DESCRIPTION,
@@ -157,7 +157,7 @@ public class PostScopeIT {
   public void testScopeBlank() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             "", TEST_SCOPE_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
 
     // Act
@@ -194,7 +194,7 @@ public class PostScopeIT {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scope, "", TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
 
     // Act
@@ -231,7 +231,7 @@ public class PostScopeIT {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scope, TEST_SCOPE_NAME, "", List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
 
     // Act
@@ -270,7 +270,7 @@ public class PostScopeIT {
     List<String> claims =
         List.of(TEST_EMAIL_CLAIM, TEST_NAME_CLAIM, TEST_PICTURE_CLAIM, TEST_PHONE_CLAIM);
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scope,
             TEST_MULTIPLE_CLAIMS_SCOPE_DISPLAY_NAME,
             TEST_DESCRIPTION,
@@ -313,7 +313,7 @@ public class PostScopeIT {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scope, TEST_SCOPE_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), iconUrl, true);
     // Act
     Response response = createScope(TENANT_1, body);
@@ -333,7 +333,7 @@ public class PostScopeIT {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scope,
             TEST_SCOPE_NAME,
             TEST_DESCRIPTION,
@@ -363,7 +363,7 @@ public class PostScopeIT {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             scope, TEST_SCOPE_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), iconUrl, true);
 
     // Act
@@ -382,7 +382,7 @@ public class PostScopeIT {
   public void testCreateOpenidScopeWithValidClaim() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_OPENID,
             TEST_OPENID_SCOPE_DISPLAY_NAME,
             TEST_OPENID_SCOPE_DESCRIPTION,
@@ -406,7 +406,7 @@ public class PostScopeIT {
   public void testCreateOpenidScopeWithInvalidClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_OPENID,
             TEST_OPENID_SCOPE_DISPLAY_NAME,
             TEST_OPENID_SCOPE_DESCRIPTION,
@@ -430,7 +430,7 @@ public class PostScopeIT {
   public void testCreatePhoneScopeWithValidClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_PHONE,
             TEST_PHONE_SCOPE_DISPLAY_NAME,
             TEST_PHONE_SCOPE_DESCRIPTION,
@@ -454,7 +454,7 @@ public class PostScopeIT {
   public void testCreatePhoneScopeWithInvalidClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_PHONE,
             TEST_PHONE_SCOPE_DISPLAY_NAME,
             TEST_PHONE_SCOPE_DESCRIPTION,
@@ -478,7 +478,7 @@ public class PostScopeIT {
   public void testCreateEmailScopeWithValidClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_EMAIL,
             TEST_EMAIL_SCOPE_DISPLAY_NAME,
             TEST_EMAIL_SCOPE_DESCRIPTION,
@@ -502,7 +502,7 @@ public class PostScopeIT {
   public void testCreateEmailScopeWithInvalidClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_EMAIL,
             TEST_EMAIL_SCOPE_DISPLAY_NAME,
             TEST_EMAIL_SCOPE_DESCRIPTION,
@@ -526,7 +526,7 @@ public class PostScopeIT {
   public void testCreateAddressScopeWithValidClaim() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_ADDRESS,
             TEST_ADDRESS_SCOPE_DISPLAY_NAME,
             TEST_ADDRESS_SCOPE_DESCRIPTION,
@@ -550,7 +550,7 @@ public class PostScopeIT {
   public void testCreateAddressScopeWithInvalidClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_ADDRESS,
             TEST_ADDRESS_SCOPE_DISPLAY_NAME,
             TEST_ADDRESS_SCOPE_DESCRIPTION,
@@ -574,7 +574,7 @@ public class PostScopeIT {
   public void testCreatePhoneScopeWithTooManyClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_PHONE,
             TEST_PHONE_SCOPE_DISPLAY_NAME,
             TEST_PHONE_SCOPE_DESCRIPTION,
@@ -598,7 +598,7 @@ public class PostScopeIT {
   public void testCreateEmailScopeWithTooManyClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_EMAIL,
             TEST_EMAIL_SCOPE_DISPLAY_NAME,
             TEST_EMAIL_SCOPE_DESCRIPTION,
@@ -622,7 +622,7 @@ public class PostScopeIT {
   public void testCreateOpenidScopeWithTooManyClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_OPENID,
             TEST_OPENID_SCOPE_DISPLAY_NAME,
             TEST_OPENID_SCOPE_DESCRIPTION,
@@ -646,7 +646,7 @@ public class PostScopeIT {
   public void testCreateAddressScopeWithTooManyClaims() {
     // Arrange
     Map<String, Object> body =
-        getValidScopeRequestBodyWithIconAndOidc(
+        getValidScopeRequestBody(
             SCOPE_ADDRESS,
             TEST_ADDRESS_SCOPE_DISPLAY_NAME,
             TEST_ADDRESS_SCOPE_DESCRIPTION,
@@ -665,7 +665,7 @@ public class PostScopeIT {
         .body(MESSAGE, containsString(ERROR_MSG_ADDRESS_SCOPE_INVALID_CLAIMS));
   }
 
-  private Map<String, Object> getValidScopeRequestBodyWithIconAndOidc(
+  private Map<String, Object> getValidScopeRequestBody(
       String scope,
       String displayName,
       String description,
@@ -713,11 +713,7 @@ public class PostScopeIT {
 
     assertThat(dbScope.getString("tenantId"), equalTo(tenant));
 
-    if (body.get(BODY_PARAM_IS_OIDC) != null && (Boolean) body.get(BODY_PARAM_IS_OIDC)) {
-      assertThat(dbScope.getBoolean(BODY_PARAM_IS_OIDC), equalTo(true));
-    } else {
-      assertThat(dbScope.getBoolean(BODY_PARAM_IS_OIDC), equalTo(false));
-    }
+    assertThat(dbScope.getBoolean(BODY_PARAM_IS_OIDC), equalTo(body.get(BODY_PARAM_IS_OIDC)));
 
     if (StringUtils.isNotBlank(dbScope.getString(BODY_PARAM_CLAIMS))
         && body.containsKey(BODY_PARAM_CLAIMS)) {

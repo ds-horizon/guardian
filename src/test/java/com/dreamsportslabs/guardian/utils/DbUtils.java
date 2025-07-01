@@ -3,6 +3,7 @@ package com.dreamsportslabs.guardian.utils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.vertx.core.json.JsonObject;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.time.Instant;
 import java.util.List;
@@ -54,8 +55,8 @@ public class DbUtils {
   }
 
   public static JsonObject getScope(String tenantId, String name) {
-    try (PreparedStatement stmt =
-        mysqlConnectionPool.getConnection().prepareStatement(GET_SCOPE_BY_NAME)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(GET_SCOPE_BY_NAME)) {
       stmt.setString(1, tenantId);
       stmt.setString(2, name);
       var resultSet = stmt.executeQuery();
@@ -88,8 +89,8 @@ public class DbUtils {
       String ip) {
     String refreshToken = RandomStringUtils.randomAlphanumeric(32);
 
-    try (PreparedStatement stmt =
-        mysqlConnectionPool.getConnection().prepareStatement(INSERT_REFRESH_TOKEN)) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(INSERT_REFRESH_TOKEN)) {
       stmt.setString(1, tenantId);
       stmt.setString(2, userId);
       stmt.setString(3, refreshToken);

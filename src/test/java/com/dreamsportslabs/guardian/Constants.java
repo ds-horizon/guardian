@@ -12,6 +12,7 @@ public class Constants {
   public static final String BODY_PARAM_RESPONSE_TYPE_TOKEN = "token";
   public static final String BODY_PARAM_FLOW = "flow";
   public static final String BODY_PARAM_CONTACTS = "contacts";
+  public static final String BODY_PARAM_CONTACT = "contact";
   public static final String BODY_PARAM_META_INFO = "metaInfo";
   public static final String BODY_PARAM_ADDITIONAL_INFO = "additionalInfo";
   public static final String BODY_PARAM_STATE = "state";
@@ -44,6 +45,7 @@ public class Constants {
   public static final String BODY_PARAM_CLAIMS = "claims";
   public static final String BODY_PARAM_ICON_URL = "iconUrl";
   public static final String BODY_PARAM_IS_OIDC = "isOidc";
+  public static final String BODY_PARAM_OTP = "otp";
 
   public static final String BODY_CHANNEL_EMAIL = "EMAIL";
   public static final String BODY_CHANNEL_SMS = "SMS";
@@ -128,6 +130,7 @@ public class Constants {
   public static final String CODE = "code";
   public static final String MESSAGE = "message";
   public static final String METADATA = "metadata";
+  public static final String ERROR_INCORRECT_OTP = "incorrect_otp";
   public static final String ERROR_INVALID_REQUEST = "invalid_request";
   public static final String ERROR_USER_NOT_EXISTS = "user_not_exists";
   public static final String ERROR_USER_EXISTS = "user_exists";

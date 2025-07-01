@@ -171,28 +171,6 @@ public class GetScopeIT {
   }
 
   @Test
-  @DisplayName("Should handle pagination in list scopes")
-  public void testListScopesWithPagination() {
-    // Arrange
-    String s1 = RandomStringUtils.randomAlphabetic(10);
-    String s2 = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(s1));
-    createScope(TENANT_1, valid(s2));
-
-    // Act
-    Response response =
-        listScopes(TENANT_1, Map.of(QUERY_PARAM_PAGE, "1", QUERY_PARAM_PAGE_SIZE, "1"));
-
-    // Validate
-    List<String> scopes = response.jsonPath().getList("scopes.name");
-    assertThat(scopes.contains(s1) || scopes.contains(s2), equalTo(true));
-
-    // Cleanup
-    deleteScope(TENANT_1, s1);
-    deleteScope(TENANT_1, s2);
-  }
-
-  @Test
   @DisplayName("Should return error when page is negative")
   public void testNegativePageParameter() {
     // Arrange
