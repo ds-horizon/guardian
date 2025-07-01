@@ -8,6 +8,7 @@ import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.Constants.PASSWORDLESS_FLOW_SIGNINUP;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -27,10 +28,6 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static com.github.tomakehurst.wiremock.client.WireMock.*; // for stubFor, get, urlPathEqualTo, etc.
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-import com.github.tomakehurst.wiremock.WireMockServer;
-
 
 @ExtendWith(Setup.class)
 public class ContactBlockFlowsIT {
@@ -42,22 +39,20 @@ public class ContactBlockFlowsIT {
   private static final String Flow_2 = "social_auth";
   private static final String MOCK_EMAIL = "test@example.com";
 
-
   private WireMockServer wireMockServer;
 
   private StubMapping stubFacebookUserProfile(String email) {
     return wireMockServer.stubFor(
-            get(urlPathEqualTo("/me"))
-                    .withQueryParam("access_token", matching(".*")) // accept any token
-                    .withQueryParam("appsecret_proof", matching(".*")) // accept any hash
-                    .withQueryParam("fields", matching(".*")) // accept fields
-                    .willReturn(
-                            aResponse()
-                                    .withStatus(200)
-                                    .withHeader("Content-Type", "application/json")
-                                    .withBody("{\"email\":\"" + email + "\", \"id\":\"123456789\"}")));
+        get(urlPathEqualTo("/me"))
+            .withQueryParam("access_token", matching(".*")) // accept any token
+            .withQueryParam("appsecret_proof", matching(".*")) // accept any hash
+            .withQueryParam("fields", matching(".*")) // accept fields
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"email\":\"" + email + "\", \"id\":\"123456789\"}")));
   }
-
 
   /** Common function to generate request body for block Flow */
   private Map<String, Object> generateBlockRequestBody(
@@ -109,8 +104,6 @@ public class ContactBlockFlowsIT {
     requestBody.put("otp", otp);
     return requestBody;
   }
-
-
 
   @Test
   @DisplayName("Should block Flows successfully")
@@ -658,27 +651,34 @@ public class ContactBlockFlowsIT {
     Response blockResponse = blockContactFlows(TENANT_ID, blockRequestBody);
     blockResponse.then().statusCode(HttpStatus.SC_OK);
 
-    assertThat(blockResponse.getBody().jsonPath().getString("message"), equalTo("Flows blocked successfully"));
+    assertThat(
+        blockResponse.getBody().jsonPath().getString("message"),
+        equalTo("Flows blocked successfully"));
 
     StubMapping fbStub = stubFacebookUserProfile(MOCK_EMAIL);
 
     // Act
-    Response facebookResponse = authFb(TENANT_ID, "valid_access_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
+    Response facebookResponse =
+        authFb(TENANT_ID, "valid_access_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
 
     // Verify
-    facebookResponse.then().statusCode(HttpStatus.SC_FORBIDDEN)
+    facebookResponse
+        .then()
+        .statusCode(HttpStatus.SC_FORBIDDEN)
         .rootPath(ERROR)
         .body("code", equalTo(ERROR_FLOW_BLOCKED))
         .body("message", containsString("Facebook auth API is blocked"));
 
     wireMockServer.removeStub(fbStub);
 
-     //Act
+    // Act
     Response googleResponse =
         authGoogle(TENANT_ID, "valid_id_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
 
     // Verify - Google auth should be blocked by flow blocking, not by API failure
-    googleResponse.then().statusCode(HttpStatus.SC_FORBIDDEN)
+    googleResponse
+        .then()
+        .statusCode(HttpStatus.SC_FORBIDDEN)
         .rootPath(ERROR)
         .body("code", equalTo(ERROR_FLOW_BLOCKED))
         .body("message", containsString("Google auth API is blocked"));
