@@ -108,20 +108,30 @@ public class ApplicationIoUtils {
   }
 
   public static Response listScopes(String tenantId, Map<String, String> queryParams) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put("tenant-id", tenantId);
-
-    return execute(null, headers, queryParams, spec -> spec.get("/scopes"));
+    return listScopes(tenantId, queryParams, null);
   }
 
   public static Response listScopesByNames(String tenantId, List<String> scopeNames) {
+    return listScopes(tenantId, null, scopeNames);
+  }
+
+  public static Response listScopes(
+      String tenantId, Map<String, String> queryParams, List<String> scopeNames) {
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_TENANT_ID, tenantId);
 
     RequestSpecification spec = given().headers(headers);
 
-    for (String scopeName : scopeNames) {
-      spec.queryParam(QUERY_PARAM_NAME, scopeName);
+    // Add regular query parameters
+    if (queryParams != null) {
+      queryParams.forEach(spec::queryParam);
+    }
+
+    // Add multiple scope names if provided (each as separate query param with same key)
+    if (scopeNames != null && !scopeNames.isEmpty()) {
+      for (String scopeName : scopeNames) {
+        spec.queryParam(QUERY_PARAM_NAME, scopeName);
+      }
     }
 
     return spec.get("/scopes");

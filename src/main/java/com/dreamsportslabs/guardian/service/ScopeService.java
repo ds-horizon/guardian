@@ -1,7 +1,5 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.SCOPE_ALREADY_EXISTS;
-
 import com.dreamsportslabs.guardian.dao.ScopeDao;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.dto.request.scope.CreateScopeRequestDto;
@@ -29,7 +27,7 @@ public class ScopeService {
           scopeDao.getScopesWithPagination(
               tenantId, getScopeRequestDto.getPage() - 1, getScopeRequestDto.getPageSize());
     } else {
-      scopesSingle = scopeDao.getScopesByNames(tenantId, getScopeRequestDto.getNames());
+      scopesSingle = scopeDao.getScopes(tenantId, getScopeRequestDto.getNames());
     }
 
     return scopesSingle
@@ -38,29 +36,18 @@ public class ScopeService {
   }
 
   public Single<ScopeResponseDto> createScope(String tenantId, CreateScopeRequestDto requestDto) {
-    return scopeDao
-        .getScope(tenantId, requestDto.getName())
-        .flatMap(
-            scopeModels -> {
-              if (!scopeModels.isEmpty()) {
-                return Single.error(
-                    SCOPE_ALREADY_EXISTS.getCustomException("Scope already exists for tenant"));
-              }
+    ScopeModel scopeModel =
+        ScopeModel.builder()
+            .tenantId(tenantId)
+            .name(requestDto.getName())
+            .displayName(requestDto.getDisplayName())
+            .description(requestDto.getDescription())
+            .claims(requestDto.getClaims())
+            .iconUrl(requestDto.getIconUrl())
+            .isOidc(requestDto.isOidc())
+            .build();
 
-              ScopeModel scopeModel =
-                  ScopeModel.builder()
-                      .tenantId(tenantId)
-                      .name(requestDto.getName())
-                      .displayName(requestDto.getDisplayName())
-                      .description(requestDto.getDescription())
-                      .claims(requestDto.getClaims())
-                      .iconUrl(requestDto.getIconUrl())
-                      .isOidc(requestDto.getIsOidc())
-                      .build();
-
-              return scopeDao.saveScopes(scopeModel);
-            })
-        .map(this::toResponseDto);
+    return scopeDao.saveScope(scopeModel).map(this::toResponseDto);
   }
 
   public Single<Boolean> deleteScope(String tenantId, String name) {
@@ -68,13 +55,12 @@ public class ScopeService {
   }
 
   private ScopeResponseDto toResponseDto(ScopeModel model) {
-    return ScopeResponseDto.builder()
-        .name(model.getName())
-        .displayName(model.getDisplayName())
-        .description(model.getDescription())
-        .claims(model.getClaims())
-        .iconUrl(model.getIconUrl())
-        .isOidc(model.getIsOidc())
-        .build();
+    return new ScopeResponseDto(
+        model.getName(),
+        model.getDisplayName(),
+        model.getDescription(),
+        model.getIconUrl(),
+        model.getIsOidc(),
+        model.getClaims());
   }
 }

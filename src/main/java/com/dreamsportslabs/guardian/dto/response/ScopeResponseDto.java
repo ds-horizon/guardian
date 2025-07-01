@@ -2,13 +2,9 @@ package com.dreamsportslabs.guardian.dto.response;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
-@Data
-@Builder
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
 public class ScopeResponseDto {
   private String name;

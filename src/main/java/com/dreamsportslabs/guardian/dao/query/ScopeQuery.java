@@ -8,9 +8,6 @@ public final class ScopeQuery {
   public static final String GET_SCOPES_PAGINATED =
       "SELECT name, display_name, description, claims, is_oidc, icon_url FROM scope WHERE tenant_id = ? LIMIT ? OFFSET ?";
 
-  public static final String GET_SCOPE_BY_NAME =
-      "SELECT name, display_name, description, claims, is_oidc, icon_url FROM scope WHERE tenant_id = ? and name = ?";
-
   public static final String GET_SCOPES_BY_NAMES_TEMPLATE =
       "SELECT name, display_name, description, claims, is_oidc, icon_url FROM scope WHERE tenant_id = ? AND name IN (%s)";
 

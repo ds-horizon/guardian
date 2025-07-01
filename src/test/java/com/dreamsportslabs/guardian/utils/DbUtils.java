@@ -20,6 +20,9 @@ public class DbUtils {
   private static final String INSERT_REFRESH_TOKEN =
       "INSERT INTO refresh_tokens (tenant_id, user_id, refresh_token, refresh_token_exp, source, device_name, location, ip) VALUES (?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
 
+  private static final String GET_SCOPE_BY_NAME =
+      "SELECT name, display_name, description, claims, tenant_id, icon_url, is_oidc FROM scope WHERE tenant_id = ? AND name = ?";
+
   public static void initializeRedisConnectionPool(String host, int port) {
     if (redisConnectionPool != null) {
       return;
@@ -44,10 +47,35 @@ public class DbUtils {
     conf.setJdbcUrl(jdbcUrl);
     conf.setUsername(username);
     conf.setPassword(password);
-    conf.setMaximumPoolSize(10);
+    conf.setMaximumPoolSize(20);
     conf.setConnectionTimeout(1000);
 
     mysqlConnectionPool = new HikariDataSource(conf);
+  }
+
+  public static JsonObject getScope(String tenantId, String name) {
+    try (PreparedStatement stmt =
+        mysqlConnectionPool.getConnection().prepareStatement(GET_SCOPE_BY_NAME)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, name);
+      var resultSet = stmt.executeQuery();
+      if (resultSet.next()) {
+        JsonObject scope = new JsonObject();
+        scope.put("name", resultSet.getString("name"));
+        scope.put("displayName", resultSet.getString("display_name"));
+        scope.put("description", resultSet.getString("description"));
+        scope.put("claims", resultSet.getString("claims"));
+        scope.put("tenantId", resultSet.getString("tenant_id"));
+        scope.put("iconUrl", resultSet.getString("icon_url"));
+        scope.put("isOidc", resultSet.getBoolean("is_oidc"));
+        return scope;
+      } else {
+        return null;
+      }
+    } catch (Exception e) {
+      log.error("Error while fetching scopes", e);
+      return null;
+    }
   }
 
   public static String insertRefreshToken(

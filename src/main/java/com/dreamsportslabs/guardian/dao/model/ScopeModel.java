@@ -1,15 +1,13 @@
 package com.dreamsportslabs.guardian.dao.model;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Jacksonized
+@Getter
 public class ScopeModel {
   private String name;
   private String displayName;

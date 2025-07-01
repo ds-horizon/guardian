@@ -22,12 +22,12 @@ public class Scope {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> listScopes(
-      @HeaderParam(TENANT_ID) String tenantId, @BeanParam GetScopeRequestDto getScopeRequestDto) {
+      @HeaderParam(TENANT_ID) String tenantId, @BeanParam GetScopeRequestDto requestDto) {
 
-    getScopeRequestDto.validate();
+    requestDto.validate();
 
     return scopeService
-        .getScopes(tenantId, getScopeRequestDto)
+        .getScopes(tenantId, requestDto)
         .map(dto -> Response.ok(dto).build())
         .toCompletionStage();
   }
@@ -36,10 +36,10 @@ public class Scope {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> createScope(
-      @HeaderParam(TENANT_ID) String tenantId, CreateScopeRequestDto request) {
-    request.validate();
+      @HeaderParam(TENANT_ID) String tenantId, CreateScopeRequestDto requestDto) {
+    requestDto.validate();
     return scopeService
-        .createScope(tenantId, request)
+        .createScope(tenantId, requestDto)
         .map(dto -> Response.status(Response.Status.CREATED).entity(dto).build())
         .toCompletionStage();
   }

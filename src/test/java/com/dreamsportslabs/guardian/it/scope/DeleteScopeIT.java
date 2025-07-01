@@ -1,4 +1,4 @@
-package com.dreamsportslabs.guardian.it.config;
+package com.dreamsportslabs.guardian.it.scope;
 
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
@@ -6,6 +6,7 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ICON_URL;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
 import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TEST_DESCRIPTION;
@@ -15,13 +16,18 @@ import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopes;
+import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpStatus.SC_CREATED;
+import static org.apache.http.HttpStatus.SC_METHOD_NOT_ALLOWED;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dreamsportslabs.guardian.utils.DbUtils;
 import io.restassured.response.Response;
+import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +50,9 @@ public class DeleteScopeIT {
     // Validate
     Response response = listScopes(TENANT_1, Map.of(QUERY_PARAM_NAME, scope));
     response.then().statusCode(SC_OK).body("scopes.size()", equalTo(0));
+
+    JsonObject obj = DbUtils.getScope(TENANT_1, scope);
+    assertThat(obj == null || obj.isEmpty(), equalTo(true));
   }
 
   @Test
@@ -54,6 +63,50 @@ public class DeleteScopeIT {
 
     // Validate
     response.then().statusCode(SC_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("Should return error when path parameter is null")
+  public void testDeleteScopeWithNullPathParam() {
+    // Act
+    Response response = deleteScope(TENANT_1, null);
+
+    // Validate
+    response.then().statusCode(SC_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("Should return error when path parameter is empty string")
+  public void testDeleteScopeWithEmptyPathParam() {
+    // Act
+    Response response = deleteScope(TENANT_1, "");
+
+    // Validate
+    response.then().statusCode(SC_METHOD_NOT_ALLOWED);
+  }
+
+  @Test
+  @DisplayName("Should return error when path parameter is blank string")
+  public void testDeleteScopeWithBlankPathParam() {
+    // Act
+    Response response = deleteScope(TENANT_1, "   ");
+
+    // Validate
+    response.then().statusCode(SC_METHOD_NOT_ALLOWED);
+  }
+
+  @Test
+  @DisplayName("Should return error when trying to delete without path parameter")
+  public void testDeleteScopeWithoutPathParam() {
+    // Arrange
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, TENANT_1);
+
+    // Act
+    Response response = given().headers(headers).when().delete("/scopes");
+
+    // Validate
+    response.then().statusCode(SC_METHOD_NOT_ALLOWED);
   }
 
   private Map<String, Object> valid(String scope) {

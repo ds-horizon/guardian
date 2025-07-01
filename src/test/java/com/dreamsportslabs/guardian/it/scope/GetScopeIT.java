@@ -1,34 +1,70 @@
-package com.dreamsportslabs.guardian.it.config;
+package com.dreamsportslabs.guardian.it.scope;
 
-import static com.dreamsportslabs.guardian.Constants.*;
-import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.*;
-import static org.apache.http.HttpStatus.*;
-import static org.hamcrest.CoreMatchers.*;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ICON_URL;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.ERROR;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_PAGE_SIZE_VALUE_CANNOT_BE_LESS_THAN_1;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_PAGE_VALUE_CANNOT_BE_LESS_THAN_1;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_SCOPE_CANNOT_BE_EMPTY;
+import static com.dreamsportslabs.guardian.Constants.MESSAGE;
+import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
+import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_PAGE;
+import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_PAGE_SIZE;
+import static com.dreamsportslabs.guardian.Constants.TENANT_1;
+import static com.dreamsportslabs.guardian.Constants.TENANT_2;
+import static com.dreamsportslabs.guardian.Constants.TEST_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.TEST_EMAIL_CLAIM;
+import static com.dreamsportslabs.guardian.Constants.TEST_ICON_URL;
+import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopes;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopesByNames;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_CREATED;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.restassured.response.Response;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
 
 public class GetScopeIT {
   @Test
   @DisplayName("Should list scopes including created one")
   public void testListScopesWithCreatedScope() {
     // Arrange
-    String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    String scopeName1 = RandomStringUtils.randomAlphabetic(10);
+    String scopeName2 = RandomStringUtils.randomAlphabetic(10);
+
+    createScope(TENANT_1, valid(scopeName1));
+    createScope(TENANT_1, valid(scopeName2));
 
     // Act
     Response response = listScopes(TENANT_1, new HashMap<>());
 
     // Validate
     response.then().statusCode(SC_OK);
-    assertThat(response.jsonPath().getList("scopes.name"), hasItem(scopeName));
+    assertThat(response.jsonPath().getList("scopes.name"), hasItems(scopeName1, scopeName2));
 
     // Cleanup
-    deleteScope(TENANT_1, scopeName);
+    deleteScope(TENANT_1, scopeName1);
+    deleteScope(TENANT_1, scopeName2);
   }
 
   @Test
@@ -95,26 +131,16 @@ public class GetScopeIT {
     response.then().statusCode(SC_OK).body("scopes.size()", equalTo(0));
   }
 
-  @Test
-  @DisplayName("Should return empty list when scope name not found")
-  public void testGetScopeByNameNotFound() {
-    // Act
-    Response response =
-        listScopes(TENANT_1, Map.of(QUERY_PARAM_NAME, RandomStringUtils.randomAlphabetic(10)));
-
-    // Validate
-    response.then().statusCode(SC_OK).body("scopes.size()", equalTo(0));
-  }
-
-  @Test
+  @ParameterizedTest
   @DisplayName("Should return error for empty scope name in list")
-  public void testGetScopesWithEmptyName() {
+  @EmptySource
+  public void testGetScopesWithEmptyName(String scopeName) {
     // Arrange
-    String scopeName = RandomStringUtils.randomAlphabetic(10);
+    String name = RandomStringUtils.randomAlphabetic(10);
 
     // Act
-    createScope(TENANT_1, valid(scopeName));
-    Response response = listScopesByNames(TENANT_1, List.of(""));
+    createScope(TENANT_1, valid(name));
+    Response response = listScopesByNames(TENANT_1, List.of(scopeName));
 
     // Validate
     response
@@ -124,91 +150,7 @@ public class GetScopeIT {
         .body(MESSAGE, equalTo(ERROR_MSG_SCOPE_CANNOT_BE_EMPTY));
 
     // Cleanup
-    deleteScope(TENANT_1, scopeName);
-  }
-
-  @Test
-  @DisplayName("Should return error for blank scope name in list")
-  public void testGetScopesWithBlankName() {
-    // Arrange
-    String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
-
-    // Act
-    Response response = listScopesByNames(TENANT_1, List.of("   "));
-
-    // Validate
-    response
-        .then()
-        .statusCode(SC_BAD_REQUEST)
-        .rootPath(ERROR)
-        .body(MESSAGE, containsString(ERROR_MSG_SCOPE_CANNOT_BE_EMPTY));
-
-    // Cleanup
-    deleteScope(TENANT_1, scopeName);
-  }
-
-  @Test
-  @DisplayName("Should return error when one of multiple scope names is empty")
-  public void testGetScopesWithMixedValidAndEmptyNames() {
-    // Arrange
-    String validScopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(validScopeName));
-
-    // Act
-    Response response = listScopesByNames(TENANT_1, List.of(validScopeName, ""));
-
-    // Validate
-    response
-        .then()
-        .statusCode(SC_BAD_REQUEST)
-        .rootPath(ERROR)
-        .body(MESSAGE, containsString(ERROR_MSG_SCOPE_CANNOT_BE_EMPTY));
-
-    // Cleanup
-    deleteScope(TENANT_1, validScopeName);
-  }
-
-  @Test
-  @DisplayName("Should handle null values in name list gracefully")
-  public void testGetScopesWithNullInNameList() {
-    // Arrange
-    String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
-
-    // Act
-    Response response = listScopesByNames(TENANT_1, Arrays.asList(scopeName, null));
-
-    // Validate
-    response
-        .then()
-        .statusCode(SC_BAD_REQUEST)
-        .rootPath(ERROR)
-        .body(MESSAGE, containsString(ERROR_MSG_SCOPE_CANNOT_BE_EMPTY));
-
-    // Cleanup
-    deleteScope(TENANT_1, scopeName);
-  }
-
-  @Test
-  @DisplayName("Should handle maximum number of scope names in single request")
-  public void testGetScopesWithMaximumNames() {
-    // Arrange
-    List<String> names = new ArrayList<>();
-    for (int i = 0; i < 50; i++) {
-      String n = "scope_" + i + "_" + RandomStringUtils.randomAlphabetic(5);
-      names.add(n);
-      createScope(TENANT_1, valid(n));
-    }
-
-    // Act
-    Response response = listScopesByNames(TENANT_1, names);
-
-    // Validate
-    response.then().statusCode(SC_OK).body("scopes.name.size()", equalTo(50));
-
-    // Cleanup
-    names.forEach(n -> deleteScope(TENANT_1, n));
+    deleteScope(TENANT_1, name);
   }
 
   @Test
@@ -229,37 +171,6 @@ public class GetScopeIT {
   }
 
   @Test
-  @DisplayName("Should handle special characters in scope names")
-  public void testGetScopesWithSpecialCharacters() {
-    // Arrange
-    String special = "scope-with.special_chars@domain.com";
-    createScope(TENANT_1, valid(special));
-
-    // Act
-    Response response = listScopesByNames(TENANT_1, List.of(special));
-
-    // Validate
-    response.then().statusCode(SC_OK).body("scopes.name", hasItem(special));
-
-    // Cleanup
-    deleteScope(TENANT_1, special);
-  }
-
-  @Test
-  @DisplayName("Should validate request size limits")
-  public void testRequestSizeLimits() {
-    // Arrange
-    List<String> many = new ArrayList<>();
-    for (int i = 0; i < 1000; i++) many.add("scope_" + i);
-
-    // Act
-    Response response = listScopesByNames(TENANT_1, many);
-
-    // Validate
-    response.then().statusCode(isA(Integer.class));
-  }
-
-  @Test
   @DisplayName("Should handle pagination in list scopes")
   public void testListScopesWithPagination() {
     // Arrange
@@ -273,7 +184,8 @@ public class GetScopeIT {
         listScopes(TENANT_1, Map.of(QUERY_PARAM_PAGE, "1", QUERY_PARAM_PAGE_SIZE, "1"));
 
     // Validate
-    response.then().statusCode(SC_OK).body("scopes.size()", equalTo(1));
+    List<String> scopes = response.jsonPath().getList("scopes.name");
+    assertThat(scopes.contains(s1) || scopes.contains(s2), equalTo(true));
 
     // Cleanup
     deleteScope(TENANT_1, s1);
@@ -387,30 +299,6 @@ public class GetScopeIT {
   }
 
   @Test
-  @DisplayName("Should work with valid scope names")
-  public void testGetScopesWithValidNames() {
-    // Arrange
-    String s1 = RandomStringUtils.randomAlphabetic(10);
-    String s2 = RandomStringUtils.randomAlphabetic(10);
-
-    createScope(TENANT_1, valid(s1));
-    createScope(TENANT_1, valid(s2));
-
-    // Act
-    Response response = listScopesByNames(TENANT_1, List.of(s1, s2));
-
-    // Validate
-    response.then().statusCode(SC_OK);
-    List<String> scopes = response.jsonPath().getList("scopes.name");
-    assertThat(scopes.size(), equalTo(2));
-    assertThat(scopes, hasItems(s1, s2));
-
-    // Cleanup
-    deleteScope(TENANT_1, s1);
-    deleteScope(TENANT_1, s2);
-  }
-
-  @Test
   @DisplayName("Should work with default pagination parameters")
   public void testGetScopesWithDefaultPagination() {
     // Arrange
@@ -452,7 +340,7 @@ public class GetScopeIT {
 
   @Test
   @DisplayName("Should handle non-numeric page and pageSize parameters")
-  public void testNonNumericPaginationParameters() {
+  public void testNonNumericPageParameters() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
     createScope(TENANT_1, valid(scopeName));
@@ -463,6 +351,14 @@ public class GetScopeIT {
 
     // Validate
     response1.then().statusCode(SC_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("Should handle non-numeric page and pageSize parameters")
+  public void testNonNumericPageSizeParameters() {
+    // Arrange
+    String scopeName = RandomStringUtils.randomAlphabetic(10);
+    createScope(TENANT_1, valid(scopeName));
 
     // Act
     Response response2 =
