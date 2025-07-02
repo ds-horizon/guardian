@@ -1268,22 +1268,15 @@ components:
           description: List of supported subject types
           items:
             type: string
-            enum: ["public"]
+            enum: ["public", "pairwise"]
           example: ["public"]
         id_token_signing_alg_values_supported:
           type: array
           description: List of supported ID token signing algorithms
           items:
             type: string
-            enum: ["RS256", "RS512"]
-          example: ["RS256", "RS512"]
-        userinfo_signing_alg_values_supported:
-          type: array
-          description: List of supported userinfo signing algorithms
-          items:
-            type: string
-            enum: ["RS256", "RS512"]
-          example: ["RS256", "RS512"]
+            enum: ["RS256", "none"]
+          example: ["RS256"]
         grant_types_supported:
           type: array
           description: List of supported grant types
@@ -1302,7 +1295,7 @@ components:
           description: List of supported token endpoint authentication methods
           items:
             type: string
-            enum: ["client_secret_basic", "client_secret_post"]
+            enum: ["client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt"]
           example: ["client_secret_basic", "client_secret_post"]
         claims_supported:
           type: array

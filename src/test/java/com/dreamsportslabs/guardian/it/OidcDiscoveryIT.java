@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class OIDCDiscoveryIT {
+public class OidcDiscoveryIT {
 
   public static String tenant1 = "tenant1";
   public static String invalidTenant = randomAlphanumeric(10);

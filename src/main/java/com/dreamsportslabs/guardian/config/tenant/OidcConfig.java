@@ -1,7 +1,10 @@
 package com.dreamsportslabs.guardian.config.tenant;
 
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
+import com.dreamsportslabs.guardian.constant.OidcIdTokenSigningAlgValue;
 import com.dreamsportslabs.guardian.constant.OidcResponseType;
+import com.dreamsportslabs.guardian.constant.OidcSubjectType;
+import com.dreamsportslabs.guardian.constant.OidcTokenEndpointAuthMethod;
 import java.util.List;
 import lombok.Data;
 
@@ -19,7 +22,7 @@ public class OidcConfig {
   private Integer authorizeTtl;
   private List<OidcGrantType> grantTypesSupported;
   private List<OidcResponseType> responseTypesSupported;
-  private List<String> subjectTypesSupported;
-  private List<String> idTokenSigningAlgValuesSupported;
-  private List<String> tokenEndpointAuthMethodsSupported;
+  private List<OidcSubjectType> subjectTypesSupported;
+  private List<OidcIdTokenSigningAlgValue> idTokenSigningAlgValuesSupported;
+  private List<OidcTokenEndpointAuthMethod> tokenEndpointAuthMethodsSupported;
 }
