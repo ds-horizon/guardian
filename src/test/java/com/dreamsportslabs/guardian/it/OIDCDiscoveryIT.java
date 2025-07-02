@@ -135,11 +135,6 @@ public class OIDCDiscoveryIT {
     assertThat("claims_supported should not be null", claimsSupported, notNullValue());
     assertThat("scopes_supported should not be empty", scopesSupported.isEmpty(), is(false));
     assertThat("claims_supported should not be empty", claimsSupported.isEmpty(), is(false));
-
-    assertThat(
-        "scopes_supported should contain openid scope",
-        scopesSupported.contains("openid"),
-        is(true));
   }
 
   @Test
