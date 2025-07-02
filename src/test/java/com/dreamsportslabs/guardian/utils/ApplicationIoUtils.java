@@ -10,6 +10,7 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
 import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
@@ -96,6 +97,51 @@ public class ApplicationIoUtils {
     headers.put(CONTENT_TYPE, "application/json");
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/passwordless/init"));
+  }
+
+  // Scope Config API methods
+  public static Response createScope(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/scopes"));
+  }
+
+  public static Response listScopes(String tenantId, Map<String, String> queryParams) {
+    return listScopes(tenantId, queryParams, null);
+  }
+
+  public static Response listScopesByNames(String tenantId, List<String> scopeNames) {
+    return listScopes(tenantId, null, scopeNames);
+  }
+
+  public static Response listScopes(
+      String tenantId, Map<String, String> queryParams, List<String> scopeNames) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    RequestSpecification spec = given().headers(headers);
+
+    // Add regular query parameters
+    if (queryParams != null) {
+      queryParams.forEach(spec::queryParam);
+    }
+
+    // Add multiple scope names if provided (each as separate query param with same key)
+    if (scopeNames != null && !scopeNames.isEmpty()) {
+      for (String scopeName : scopeNames) {
+        spec.queryParam(QUERY_PARAM_NAME, scopeName);
+      }
+    }
+
+    return spec.get("/scopes");
+  }
+
+  public static Response deleteScope(String tenantId, String scopeName) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(null, headers, new HashMap<>(), spec -> spec.delete("/scopes/" + scopeName));
   }
 
   public static Response sendOtp(
