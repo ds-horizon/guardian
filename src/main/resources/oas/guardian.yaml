@@ -302,6 +302,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /v1/certs:
+    get:
+      tags:
+        - Public Keys
+      summary: Get JWKS public keys for the tenant
+      description: |
+        Returns the list of public keys (in JWKS format) associated with the tenant.
+        These keys are used for verifying tokens issued by the Guardian service.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: JSON Web Key Set (JWKS) retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      description: A single JWK key object
+                      additionalProperties: true
+        '400':
+          description: Bad Request - Invalid tenant-id header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /v1/otp/send:
     post:
       tags:
