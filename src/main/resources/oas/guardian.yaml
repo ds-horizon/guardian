@@ -302,6 +302,283 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /scopes:
+    get:
+      tags:
+        - Scope Management
+      summary: List scopes
+      description: |
+        Retrieve a paginated list of scopes for a tenant. 
+        Optionally filter by scope name using partial matching.
+        
+        **Query Parameters:**
+        - `name`: Filter scopes by name (case-insensitive partial match)
+        - `page`: Page number for pagination (starts from 1)
+        - `pageSize`: Number of items per page (1-100, default: 10)
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: name
+          in: query
+          required: false
+          description: Filter scopes by name (partial match, case-insensitive)
+          schema:
+            type: string
+            example: "read"
+        - name: page
+          in: query
+          required: false
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+      responses:
+        '200':
+          description: Successfully retrieved scopes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScopeListResponse'
+              examples:
+                scope_list:
+                  summary: List of scopes
+                  value:
+                    scopes:
+                      - name: "openid"
+                        displayName: "OpenID"
+                        description: "OpenID Connect scope"
+                        claims: ["sub"]
+                        iconUrl: "https://example.com/icons/openid.png"
+                        isOidc: true
+                      - name: "read:profile"
+                        displayName: "Read Profile"
+                        description: "Allows reading user profile information"
+                        claims: ["name", "email", "profile"]
+                        iconUrl: "https://example.com/icons/profile.png"
+                        isOidc: false
+        '400':
+          description: Bad Request due to invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_page:
+                  summary: Invalid page parameter
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "page value cannot be less than 1"
+                invalid_page_size:
+                  summary: Invalid pageSize parameter
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "pageSize must be between 1 and 100"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Scope Management
+      summary: Create a new scope
+      description: |
+        Create a new scope for a tenant. Scopes define permissions and claims 
+        that can be granted to users and applications.
+        
+        **Predefined OIDC Scope Validation:**
+        - `openid`: Must contain only the 'sub' claim
+        - `phone`: Must contain 'phone_number' and/or 'phone_number_verified' claims (maximum 2 claims)
+        - `email`: Must contain 'email' and/or 'email_verified' claims (maximum 2 claims)
+        - `address`: Must contain only the 'address' claim
+        
+        Custom scopes can have any combination of claims.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScopeRequest'
+            examples:
+              custom_scope:
+                summary: Custom scope example
+                value:
+                  name: "read:profile"
+                  displayName: "Read Profile"
+                  description: "Allows reading user profile information"
+                  claims: ["name", "email", "profile"]
+                  iconUrl: "https://example.com/icons/profile.png"
+                  isOidc: false
+              openid_scope:
+                summary: OpenID scope example
+                value:
+                  name: "openid"
+                  displayName: "OpenID"
+                  description: "OpenID Connect scope"
+                  claims: ["sub"]
+                  iconUrl: "https://example.com/icons/openid.png"
+                  isOidc: true
+              phone_scope:
+                summary: Phone scope example
+                value:
+                  name: "phone"
+                  displayName: "Phone"
+                  description: "Phone number access"
+                  claims: ["phone_number", "phone_number_verified"]
+                  iconUrl: "https://example.com/icons/phone.png"
+                  isOidc: true
+              email_scope:
+                summary: Email scope example
+                value:
+                  name: "email"
+                  displayName: "Email"
+                  description: "Email access"
+                  claims: ["email", "email_verified"]
+                  iconUrl: "https://example.com/icons/email.png"
+                  isOidc: true
+              address_scope:
+                summary: Address scope example
+                value:
+                  name: "address"
+                  displayName: "Address"
+                  description: "Address information access"
+                  claims: ["address"]
+                  iconUrl: "https://example.com/icons/address.png"
+                  isOidc: true
+      responses:
+        '201':
+          description: Scope created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScopeResponse'
+              examples:
+                created_scope:
+                  summary: Successfully created scope
+                  value:
+                    name: "read:profile"
+                    displayName: "Read Profile"
+                    description: "Allows reading user profile information"
+                    claims: ["name", "email", "profile"]
+                    iconUrl: "https://example.com/icons/profile.png"
+                    isOidc: false
+        '400':
+          description: Bad Request due to missing parameters, invalid data, or validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_name:
+                  summary: Missing scope name
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "scope name is required"
+                invalid_openid_claims:
+                  summary: Invalid claims for openid scope
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "openid scope must include 'sub' claim"
+                invalid_phone_claims:
+                  summary: Invalid claims for phone scope
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "phone scope must include 'phone_number' or 'phone_number_verified' claim"
+                invalid_email_claims:
+                  summary: Invalid claims for email scope
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "email scope must include 'email' or 'email_verified' claim"
+                invalid_address_claims:
+                  summary: Invalid claims for address scope
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "address scope must include 'address' claim"
+        '409':
+          description: Conflict - Scope with the same name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                scope_exists:
+                  summary: Scope already exists
+                  value:
+                    error:
+                      code: "scope_already_exists"
+                      message: "scope already exists for tenant"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /scopes/{name}:
+    delete:
+      tags:
+        - Scope Management
+      summary: Delete a scope
+      description: |
+        Delete a specific scope by name. This operation is irreversible and will 
+        remove all associations with this scope.
+        
+        **Important:** Deleting a scope that is currently in use by applications 
+        or users may cause authentication and authorization issues.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: name
+          in: path
+          required: true
+          description: Name of the scope to delete
+          schema:
+            type: string
+            example: "read:profile"
+      responses:
+        '204':
+          description: Scope deleted successfully
+        '404':
+          description: Scope not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                scope_not_found:
+                  summary: Scope not found
+                  value:
+                    error:
+                      code: "not_found"
+                      message: "Scope not found"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /v1/otp/send:
     post:
       tags:
@@ -782,3 +1059,103 @@ components:
           description: Seconds to wait before next resend is allowed
           example: 30
           minimum: 0
+
+    ScopeResponse:
+      type: object
+      description: Scope information
+      required:
+        - name
+        - isOidc
+      properties:
+        name:
+          type: string
+          description: Unique name of the scope
+          example: "read:profile"
+        displayName:
+          type: string
+          description: Human-readable display name
+          example: "Read Profile"
+        description:
+          type: string
+          description: Detailed description of the scope
+          example: "Allows reading user profile information"
+        iconUrl:
+          type: string
+          format: uri
+          description: URL to the scope's icon
+          example: "https://example.com/icons/profile.png"
+        isOidc:
+          type: boolean
+          description: Whether this is an OpenID Connect standard scope
+          example: true
+        claims:
+          type: array
+          description: List of claims associated with this scope
+          items:
+            type: string
+            example: "name"
+          example: ["name", "email", "profile"]
+
+    ScopeListResponse:
+      type: object
+      description: Paginated list of scopes
+      required:
+        - scopes
+      properties:
+        scopes:
+          type: array
+          description: Array of scope objects
+          items:
+            $ref: '#/components/schemas/ScopeResponse'
+
+    CreateScopeRequest:
+      type: object
+      description: Request payload for creating a new scope
+      required:
+        - name
+        - isOidc
+      properties:
+        name:
+          type: string
+          description: |
+            Unique name of the scope. For predefined OIDC scopes (openid, phone, email, address), 
+            specific claim validation rules apply:
+            - 'openid': Must contain only 'sub' claim
+            - 'phone': Must contain 'phone_number' and/or 'phone_number_verified' claims (max 2)
+            - 'email': Must contain 'email' and/or 'email_verified' claims (max 2)
+            - 'address': Must contain only 'address' claim
+          example: "read:profile"
+          minLength: 1
+          maxLength: 50
+        displayName:
+          type: string
+          description: Human-readable display name
+          example: "Read Profile"
+          maxLength: 100
+        description:
+          type: string
+          description: Detailed description of the scope
+          example: "Allows reading user profile information"
+          maxLength: 500
+        claims:
+          type: array
+          description: |
+            List of claims associated with this scope. For predefined OIDC scopes, 
+            specific claims are required and validated:
+            - openid: ['sub']
+            - phone: ['phone_number', 'phone_number_verified'] (one or both)
+            - email: ['email', 'email_verified'] (one or both)  
+            - address: ['address']
+          items:
+            type: string
+            example: "name"
+          example: ["name", "email", "profile"]
+        iconUrl:
+          type: string
+          format: uri
+          description: URL to the scope's icon
+          example: "https://example.com/icons/profile.png"
+        isOidc:
+          type: boolean
+          description: Whether this is an OpenID Connect standard scope
+          example: true
