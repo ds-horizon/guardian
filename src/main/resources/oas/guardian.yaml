@@ -323,9 +323,7 @@ paths:
                   keys:
                     type: array
                     items:
-                      type: object
-                      description: A single JWK key object
-                      additionalProperties: true
+                      $ref: '#/components/schemas/JsonWebKey'
         '400':
           description: Bad Request - Invalid tenant-id header
           content:
@@ -819,3 +817,33 @@ components:
           description: Seconds to wait before next resend is allowed
           example: 30
           minimum: 0
+    JsonWebKey:
+      type: object
+      required: [kty, kid, alg, n, e]
+      properties:
+        kty:
+          type: string
+          description: Key type
+          example: "RSA"
+        use:
+          type: string
+          description: Key usage
+          example: "sig"
+        kid:
+          type: string
+          description: Key ID for identifying the key
+          example: "1234567890abcdef"
+        alg:
+          type: string
+          description: Algorithm used with the key
+          example: "RS256"
+        n:
+          type: string
+          format: base64url
+          description: Modulus of the RSA public key
+          example: "sXchD_VNjp6WbGLOqK2IcmhA9xyPK..."
+        e:
+          type: string
+          format: base64url
+          description: Exponent of the RSA public key
+          example: "AQAB"
