@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.OTP_RESEND_AFTER;
 import static com.dreamsportslabs.guardian.constant.Constants.OTP_RETRIES_LEFT;
+import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
@@ -73,7 +74,8 @@ public class Passwordless {
                                 throw RESENDS_EXHAUSTED.getException();
                               }
 
-                              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
+                              if ((System.currentTimeMillis() / SECONDS_TO_MILLISECONDS)
+                                  < model.getResendAfter()) {
                                 throw RESEND_NOT_ALLOWED.getCustomException(
                                     Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
                               }
@@ -107,7 +109,7 @@ public class Passwordless {
         .switchIfEmpty(Single.error(INVALID_STATE.getException()))
         .map(
             model -> {
-              if (System.currentTimeMillis() / 1000 > model.getExpiry()) {
+              if (System.currentTimeMillis() / SECONDS_TO_MILLISECONDS > model.getExpiry()) {
                 passwordlessDao.deletePasswordlessModel(state, tenantId);
                 throw INVALID_STATE.getException();
               }
@@ -150,7 +152,9 @@ public class Passwordless {
                   .responseType(dto.getResponseType())
                   .metaInfo(dto.getMetaInfo())
                   .additionalInfo(dto.getAdditionalInfo())
-                  .expiry(System.currentTimeMillis() / 1000 + config.getOtpValidity())
+                  .expiry(
+                      System.currentTimeMillis() / SECONDS_TO_MILLISECONDS
+                          + config.getOtpValidity())
                   .build();
             });
   }
