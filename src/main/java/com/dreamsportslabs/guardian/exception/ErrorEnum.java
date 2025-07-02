@@ -39,7 +39,8 @@ public enum ErrorEnum {
       "No valid user identifier found from the identifier provided",
       400),
   INVALID_IDENTIFIER_TYPE("invalid_identifier_type", "Invalid identifier type", 400),
-  FLOW_BLOCKED("flow_blocked", "API is blocked for this userIdentifier", 403);
+  FLOW_BLOCKED("flow_blocked", "API is blocked for this userIdentifier", 403),
+  SCOPE_ALREADY_EXISTS("scope_already_exists", "scope already exists", 400);
 
   private final String code;
   private final String message;
