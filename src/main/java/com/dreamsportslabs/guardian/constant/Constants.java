@@ -102,6 +102,17 @@ public final class Constants {
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
 
+  public static final String SCOPE_EMAIL = "email";
+  public static final String CLAIM_EMAIL = "email";
+  public static final String SCOPE_PHONE = "phone";
+  public static final String SCOPE_ADDRESS = "address";
+  public static final String CLAIM_ADDRESS = "address";
+  public static final String SCOPE_OPENID = "openid";
+  public static final String CLAIM_EMAIL_VERIFIED = "email_verified";
+  public static final String CLAIM_PHONE_VERIFIED = "phone_number_verified";
+  public static final String CLAIM_PHONE_NUMBER = "phone_number";
+  public static final String CLAIM_SUB = "sub";
+
   public static final String UNAUTHORIZED_ERROR_CODE = "unauthorized";
   public static final String OTP_RESEND_AFTER = "resendAfter";
   public static final String OTP_RETRIES_LEFT = "retriesLeft";

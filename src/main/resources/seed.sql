@@ -9,3 +9,5 @@ insert into token_config (tenant_id, algorithm, issuer, rsa_keys, access_token_e
 insert into user_config (tenant_id, host, port, is_ssl_enabled, get_user_path, create_user_path, authenticate_user_path, add_provider_path) values ('tenant1', 'mock', 6000, 0, '/user', '/user', '/authenticateUser', '/provider');
 insert into contact_verify_config (tenant_id, is_otp_mocked, whitelisted_inputs) values ('tenant1', 1, '{}');
 insert into admin_config (tenant_id, username, password) values ('tenant1', 'admin', 'admin123');
+
+insert into scope (tenant_id, name, display_name, description, icon_url, claims, is_oidc) values ('tenant1', 'profile', 'Profile', 'Profile scope for user information', "", json_array("name", "family_name", "given_name"), 1);
