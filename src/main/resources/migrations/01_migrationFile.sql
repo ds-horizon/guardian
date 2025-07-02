@@ -283,3 +283,19 @@ CREATE TABLE admin_config
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE scope (
+    tenant_id           CHAR(10) NOT NULL,
+    name                VARCHAR(100) NOT NULL,
+    display_name        VARCHAR(100),
+    description         VARCHAR(1000),
+    icon_url            VARCHAR(2083),
+    claims              JSON NOT NULL,
+    is_oidc             BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `name`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
