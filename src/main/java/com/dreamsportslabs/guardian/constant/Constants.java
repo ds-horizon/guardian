@@ -3,7 +3,6 @@ package com.dreamsportslabs.guardian.constant;
 import com.google.common.collect.ImmutableList;
 import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
-import java.util.Set;
 
 public final class Constants {
   public static final String TENANT_ID = "tenant-id";
@@ -112,5 +111,5 @@ public final class Constants {
 
   public static final String FORMAT_PEM = "PEM";
   public static final String FORMAT_JWKS = "JWKS";
-  public static final Set<Integer> VALID_KEY_SIZES = Set.of(2048, 3072, 4096);
+  public static final ImmutableList<Integer> VALID_KEY_SIZES = ImmutableList.of(2048, 3072, 4096);
 }

@@ -15,10 +15,7 @@ public class GenerateRsaKeyRequestDto {
   private String format = FORMAT_PEM;
 
   public void validate() {
-    // Validate key size
-    if (keySize == null) {
-      keySize = 2048;
-    } else if (!VALID_KEY_SIZES.contains(keySize)) {
+    if (!VALID_KEY_SIZES.contains(keySize)) {
       throw INVALID_REQUEST.getCustomException(
           "Invalid RSA key length. Allowed values are [2048, 3072, 4096]");
     }
