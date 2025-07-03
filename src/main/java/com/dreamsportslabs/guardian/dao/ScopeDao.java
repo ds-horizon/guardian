@@ -1,9 +1,9 @@
 package com.dreamsportslabs.guardian.dao;
 
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.DELETE_SCOPE;
+import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_OIDC_SCOPES;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_SCOPES_BY_NAMES_TEMPLATE;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_SCOPES_PAGINATED;
-import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.OIDC_SCOPES;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.SAVE_SCOPE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.SCOPE_ALREADY_EXISTS;
 
@@ -93,7 +93,7 @@ public class ScopeDao {
   public Single<List<ScopeModel>> oidcScopes(String tenantId) {
     return mysqlClient
         .getReaderPool()
-        .preparedQuery(OIDC_SCOPES)
+        .preparedQuery(GET_OIDC_SCOPES)
         .execute(Tuple.of(tenantId))
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, ScopeModel.class));
   }

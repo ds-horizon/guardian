@@ -16,6 +16,6 @@ public final class ScopeQuery {
 
   public static final String DELETE_SCOPE = "DELETE FROM scope WHERE tenant_id = ? AND name = ?";
 
-  public static final String OIDC_SCOPES =
+  public static final String GET_OIDC_SCOPES =
       "SELECT name, display_name, description, claims, is_oidc, icon_url FROM scope WHERE tenant_id = ? AND is_oidc = true";
 }
