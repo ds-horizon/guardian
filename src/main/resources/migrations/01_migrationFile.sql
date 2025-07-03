@@ -234,7 +234,8 @@ CREATE TABLE scope (
     updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `name`)
+    UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `name`),
+    KEY `idx_tenant_oidc` (`tenant_id`, `is_oidc`)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;

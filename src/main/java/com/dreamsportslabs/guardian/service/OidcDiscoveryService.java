@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.OIDC_CONFIG_NOT_EXISTS;
+
 import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.dao.ScopeDao;
@@ -21,15 +23,17 @@ public class OidcDiscoveryService {
   public Single<OidcDiscoveryResponseDto> getOidcDiscovery(String tenantId) {
     OidcConfig oidcConfig = registry.get(tenantId, TenantConfig.class).getOidcConfig();
     if (oidcConfig == null) {
-      throw new IllegalStateException("OIDC config not found for tenant: " + tenantId);
+      return Single.error(
+          OIDC_CONFIG_NOT_EXISTS.getCustomException(
+              "oidc Config not found for the tenant: " + tenantId));
     }
 
-    Single<List<ScopeModel>> scopeModels = scopeDao.oidcScopes(tenantId);
+    Single<List<ScopeModel>> scopeModels = scopeDao.oidcScopes(tenantId).cache();
 
     Single<List<String>> scopeNames =
         scopeModels.map(
-            scopeModel ->
-                scopeModel.stream().map(ScopeModel::getName).collect(Collectors.toList()));
+            scopeModelList ->
+                scopeModelList.stream().map(ScopeModel::getName).collect(Collectors.toList()));
     Single<List<String>> claims =
         scopeModels.map(
             scopeModel ->

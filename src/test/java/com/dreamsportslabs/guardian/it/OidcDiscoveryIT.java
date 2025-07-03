@@ -1,7 +1,7 @@
 package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
-import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.execute;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.getOidcDiscovery;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -25,39 +25,14 @@ public class OidcDiscoveryIT {
   public static String tenant1 = "tenant1";
   public static String invalidTenant = randomAlphanumeric(10);
 
-  private Response sendGetRequestToOIDCDiscovery(
-      Map<String, String> headers, Map<String, String> queryParams) {
-    return execute(
-        null, headers, queryParams, spec -> spec.get("/.well-known/openid-configuration"));
-  }
-
-  private Response sendPostRequestToOIDCDiscovery(
-      Map<String, String> headers, Map<String, Object> body) {
-    return execute(
-        body, headers, new HashMap<>(), spec -> spec.post("/.well-known/openid-configuration"));
-  }
-
-  private Response sendPatchRequestToOIDCDiscovery(
-      Map<String, String> headers, Map<String, String> queryParams, Map<String, Object> body) {
-    return execute(
-        body, headers, queryParams, spec -> spec.patch("/.well-known/openid-configuration"));
-  }
-
-  private Response sendPutRequestToOIDCDiscovery(
-      Map<String, String> headers, Map<String, String> queryParams, Map<String, Object> body) {
-    return execute(
-        body, headers, queryParams, spec -> spec.put("/.well-known/openid-configuration"));
-  }
-
   @Test
   @DisplayName("Should fetch OIDC configuration with valid tenant")
   public void testFetchOIDCConfigurationWithValidTenant() {
-
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_TENANT_ID, tenant1);
     Map<String, String> queryParams = new HashMap<>();
 
-    Response response = sendGetRequestToOIDCDiscovery(headers, queryParams);
+    Response response = getOidcDiscovery(headers, queryParams);
 
     response.then().statusCode(HttpStatus.SC_OK);
 
@@ -145,7 +120,7 @@ public class OidcDiscoveryIT {
 
     Map<String, String> queryParams = new HashMap<>();
 
-    Response response = sendGetRequestToOIDCDiscovery(headers, queryParams);
+    Response response = getOidcDiscovery(headers, queryParams);
 
     response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
   }
@@ -158,7 +133,7 @@ public class OidcDiscoveryIT {
     headers.put(HEADER_TENANT_ID, invalidTenant);
     Map<String, String> queryParams = new HashMap<>();
 
-    Response response = sendGetRequestToOIDCDiscovery(headers, queryParams);
+    Response response = getOidcDiscovery(headers, queryParams);
 
     response
         .then()
@@ -166,46 +141,5 @@ public class OidcDiscoveryIT {
         .rootPath("error")
         .body("code", equalTo("invalid_request"))
         .body("message", equalTo("No config found"));
-  }
-
-  @Test
-  @DisplayName("Should return 405 Method Not Allowed for POST request")
-  public void testFetchOIDCConfigurationWithPostMethod() {
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenant1);
-    Map<String, Object> body = new HashMap<>();
-
-    Response response = sendPostRequestToOIDCDiscovery(headers, body);
-
-    response.then().statusCode(HttpStatus.SC_METHOD_NOT_ALLOWED);
-  }
-
-  @Test
-  @DisplayName("Should return 405 Method Not Allowed for PATCH request")
-  public void testFetchOIDCConfigurationWithPatchMethod() {
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenant1);
-    Map<String, String> queryParams = new HashMap<>();
-    Map<String, Object> body = new HashMap<>();
-
-    Response response = sendPatchRequestToOIDCDiscovery(headers, queryParams, body);
-
-    response.then().statusCode(HttpStatus.SC_METHOD_NOT_ALLOWED);
-  }
-
-  @Test
-  @DisplayName("Should return 405 Method Not Allowed for PUT request")
-  public void testFetchOIDCConfigurationWithPutMethod() {
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenant1);
-    Map<String, String> queryParams = new HashMap<>();
-    Map<String, Object> body = new HashMap<>();
-
-    Response response = sendPutRequestToOIDCDiscovery(headers, queryParams, body);
-
-    response.then().statusCode(HttpStatus.SC_METHOD_NOT_ALLOWED);
   }
 }

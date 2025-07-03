@@ -5,8 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum OidcSubjectType {
-  PUBLIC("public"),
-  PAIRWISE("pairwise");
+  PUBLIC("public");
 
   private final String type;
 

@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 public class ApplicationIoUtils {
 
-  public static Response execute(
+  private static Response execute(
       Map<String, Object> body,
       Map<String, String> headers,
       Map<String, String> queryParams,
@@ -167,5 +167,11 @@ public class ApplicationIoUtils {
     headers.put(HEADER_TENANT_ID, tenantId);
 
     return execute(null, headers, new HashMap<>(), spec -> spec.get("/v1/certs"));
+  }
+
+  public static Response getOidcDiscovery(
+      Map<String, String> headers, Map<String, String> queryParams) {
+    return execute(
+        null, headers, queryParams, spec -> spec.get("/.well-known/openid-configuration"));
   }
 }
