@@ -122,4 +122,11 @@ public class ApplicationIoUtils {
 
     return execute(null, headers, new HashMap<>(), spec -> spec.get("/v1/certs"));
   }
+
+  public static Response generateRsaKey(Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(CONTENT_TYPE, "application/json");
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/keys/generate"));
+  }
 }

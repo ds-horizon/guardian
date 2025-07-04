@@ -102,4 +102,47 @@ public class Constants {
   public static final String PASSWORDLESS_MODEL_CONTACTS = "contacts";
   public static final String PASSWORDLESS_MODEL_CONTACTS_TEMPLATE = "template";
   public static final String PASSWORDLESS_MODEL_CONTACTS_TEMPLATE_NAME = "name";
+
+  // RSA Key Generation
+  public static final String TENANT_VALID = "tenant1";
+  public static final String RSA_KEY_KID = "kid";
+  public static final String RSA_KEY_PUBLIC_KEY = "publicKey";
+  public static final String RSA_KEY_PRIVATE_KEY = "privateKey";
+  public static final String RSA_KEY_SIZE = "keySize";
+  public static final String RSA_KEY_FORMAT = "format";
+  public static final String RSA_KEY_TYPE = "kty";
+  public static final String RSA_KEY_USE = "use";
+  public static final String RSA_KEY_MODULUS = "n";
+  public static final String RSA_KEY_EXPONENT = "e";
+  public static final int RSA_KEY_SIZE_2048 = 2048;
+  public static final int RSA_KEY_SIZE_3072 = 3072;
+  public static final int RSA_KEY_SIZE_4096 = 4096;
+  public static final int RSA_KEY_SIZE_INVALID = 1024;
+  public static final int RSA_PUBLIC_EXPONENT = 65537;
+  public static final int RSA_4096_MIN_LENGTH = 3000;
+  public static final int RSA_KID_MIN_LENGTH = 10;
+  public static final String RSA_FORMAT_PEM = "PEM";
+  public static final String RSA_FORMAT_JWKS = "JWKS";
+  public static final String RSA_FORMAT_INVALID = "INVALID";
+  public static final String RSA_FORMAT_EMPTY = "";
+  public static final String RSA_KEY_TYPE_RSA = "RSA";
+  public static final String RSA_KEY_USE_SIG = "sig";
+  public static final String RSA_KEY_EXPONENT_AQAB = "AQAB";
+  public static final String RSA_ALGORITHM = "RSA";
+  public static final String PEM_PUBLIC_KEY_HEADER = "-----BEGIN PUBLIC KEY-----";
+  public static final String PEM_PUBLIC_KEY_FOOTER = "-----END PUBLIC KEY-----";
+  public static final String PEM_PRIVATE_KEY_HEADER = "-----BEGIN PRIVATE KEY-----";
+  public static final String PEM_PRIVATE_KEY_FOOTER = "-----END PRIVATE KEY-----";
+  public static final String ERROR_MSG_INVALID_RSA_KEY_LENGTH =
+      "Invalid RSA key length. Allowed values are [2048, 3072, 4096]";
+  public static final String ERROR_MSG_INVALID_KEY_FORMAT =
+      "Invalid key format. Allowed values are PEM or JWKS";
+
+  public static final String ASSERT_PUBLIC_KEY_MODULUS_2048 =
+      "Public key modulus should be 2048 bits";
+  public static final String ASSERT_PRIVATE_KEY_MODULUS_2048 =
+      "Private key modulus should be 2048 bits";
+  public static final String ASSERT_KEYS_SAME_MODULUS =
+      "Public and private keys should have same modulus";
+  public static final String ASSERT_PUBLIC_EXPONENT_65537 = "Public exponent should be 65537";
 }
