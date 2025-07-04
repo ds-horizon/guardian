@@ -1,6 +1,9 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNPROCESSABLE_ENTITIES;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,5 +60,13 @@ public final class JsonUtils {
       list.add(snakeCaseObjectMapper.readValue(row.toJson().toString(), clazz));
     }
     return list;
+  }
+
+  public static String serializeToJsonString(Object obj, ObjectMapper objectMapper) {
+    try {
+      return objectMapper.writeValueAsString(obj);
+    } catch (JsonProcessingException e) {
+      throw UNPROCESSABLE_ENTITIES.getException(e);
+    }
   }
 }

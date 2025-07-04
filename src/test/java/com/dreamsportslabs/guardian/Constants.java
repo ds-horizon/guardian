@@ -126,6 +126,10 @@ public class Constants {
   public static final String JWT_CLAIM_SUB = "sub";
   public static final String JWT_CLAIM_RFT_ID = "rft_id";
 
+  // Test Constants for OIDC Client Management
+  public static final String TENANT_ID_HEADER = "tenant-id";
+
+  // Error Response
   public static final String ERROR = "error";
   public static final String CODE = "code";
   public static final String MESSAGE = "message";
@@ -209,4 +213,74 @@ public class Constants {
   public static final String ASSERT_KEYS_SAME_MODULUS =
       "Public and private keys should have same modulus";
   public static final String ASSERT_PUBLIC_EXPONENT_65537 = "Public exponent should be 65537";
+
+  // Constants for OIDC Client Management
+  public static final String CLIENT_ID = "client_id";
+  public static final String CLIENT_NAME = "client_name";
+  public static final String CLIENT_URI = "client_uri";
+  public static final String CLIENT_SECRET = "client_secret";
+  public static final String REDIRECT_URIS = "redirect_uris";
+  public static final String CONTACTS = "contacts";
+  public static final String GRANT_TYPES = "grant_types";
+  public static final String RESPONSE_TYPES = "response_types";
+  public static final String LOGO_URI = "logo_uri";
+  public static final String POLICY_URI = "policy_uri";
+  public static final String SKIP_CONSENT = "skip_consent";
+  public static final String PAGE = "page";
+  public static final String PAGE_SIZE = "pageSize";
+  public static final String CLIENTS = "clients";
+  public static final String EXAMPLE_COM = "https://example.com";
+  public static final String EXAMPLE_CALLBACK = "https://example.com/callback";
+  public static final String EXAMPLE_LOGO = "https://example.com/logo.png";
+  public static final String EXAMPLE_POLICY = "https://example.com/policy";
+  public static final String ADMIN_EMAIL = "admin@example.com";
+  public static final String SUPPORT_EMAIL = "support@example.com";
+  public static final String DEV_EMAIL = "dev@example.com";
+  public static final String UPDATED_EXAMPLE_COM = "https://updated-example.com";
+  public static final String NEW_URI_EXAMPLE = "https://new-uri.example.com";
+  public static final String CALLBACK_1 = "https://example.com/callback1";
+  public static final String CALLBACK_2 = "https://example.com/callback2";
+  public static final String CALLBACK_3 = "https://example.com/callback3";
+  public static final String AUTHORIZATION_CODE = "authorization_code";
+  public static final String REFRESH_TOKEN = "refresh_token";
+  public static final String CLIENT_CREDENTIALS = "client_credentials";
+  public static final String CLIENT_NAME_REQUIRED = "Client name is required";
+  public static final String CLIENT_ALREADY_EXISTS = "client_already_exists";
+  public static final String CLIENT_NOT_FOUND = "client_not_found";
+  public static final String INVALID_REQUEST = "invalid_request";
+  public static final String NO_FIELDS_TO_UPDATE = "no_fields_to_update";
+  public static final String ERROR_MSG_NO_FIELDS_TO_UPDATE = "No fields for update";
+
+  public static final String CLIENT_NOT_FOUND_MSG = "Client not found";
+  public static final String GRANT_TYPES_REQUIRED = "Grant types are required";
+  public static final String REDIRECT_URIS_REQUIRED = "Redirect URIs are required";
+  public static final String RESPONSE_TYPES_REQUIRED = "Response types are required";
+  public static final String CLIENT_NAME_BLANK = "Client name cannot be blank";
+  public static final String PAGE_VALUE_ERROR = "page value cannot be less than 1";
+  public static final String PAGE_SIZE_ERROR = "pageSize must be between 1 and 100";
+  public static final String INVALID_GRANT_TYPES_MSG =
+      "The value provided for the field is invalid or does not exist: grant_types";
+  public static final String INVALID_RESPONSE_TYPES_MSG =
+      "The value provided for the field is invalid or does not exist: response_types";
+  public static final String TEST_CLIENT_PREFIX = "Test Client ";
+  public static final String MINIMAL_CLIENT_PREFIX = "Minimal Client ";
+  public static final String UPDATED_CLIENT_NAME = "Updated Client Name";
+  public static final String UPDATED_NAME_ONLY = "Updated Name Only";
+  public static final String HACKED_NAME = "Hacked Name";
+  public static final String INVALID_GRANT_TYPE = "invalid_grant_type";
+  public static final String INVALID_RESPONSE_TYPE = "invalid_response_type";
+  public static final String INVALID_TENANT = "invalid";
+  public static final String BLANK_STRING = "   ";
+  public static final int MIN_SECRET_LENGTH = 32;
+  public static final int MIN_CLIENT_ID_LENGTH = 20;
+  public static final int LONG_NAME_LENGTH = 99;
+  public static final int VERY_LONG_TENANT_LENGTH = 100;
+
+  // Constants for OIDC Client Scope Management
+  public static final String SCOPES = "scopes";
+  public static final String SCOPE_ALREADY_EXISTS = "scope_already_exists";
+  public static final String SCOPE_REQUIRED = "Scope is required";
+  public static final String NO_VALID_SCOPES = "No valid scopes found";
+  public static final String SOME_SCOPES_NOT_EXIST = "Some scopes do not exist";
+  public static final String SCOPE_ALREADY_EXISTS_MSG = "Scope already exists for client";
 }

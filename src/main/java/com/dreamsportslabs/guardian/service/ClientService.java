@@ -1,0 +1,88 @@
+package com.dreamsportslabs.guardian.service;
+
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
+
+import com.dreamsportslabs.guardian.dao.ClientDao;
+import com.dreamsportslabs.guardian.dao.model.ClientModel;
+import com.dreamsportslabs.guardian.dto.request.CreateClientRequestDto;
+import com.dreamsportslabs.guardian.dto.request.UpdateClientRequestDto;
+import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Single;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
+
+@Slf4j
+@RequiredArgsConstructor(onConstructor = @__({@Inject}))
+public class ClientService {
+  private static final int CLIENT_ID_LENGTH = 20;
+  private static final int CLIENT_SECRET_LENGTH = 32;
+
+  private final ClientDao clientDao;
+
+  public Single<ClientModel> createClient(CreateClientRequestDto requestDto, String tenantId) {
+    String clientId = RandomStringUtils.randomAlphanumeric(CLIENT_ID_LENGTH);
+    String clientSecret = RandomStringUtils.randomAlphanumeric(CLIENT_SECRET_LENGTH);
+
+    ClientModel clientModel =
+        ClientModel.builder()
+            .tenantId(tenantId)
+            .clientId(clientId)
+            .clientName(requestDto.getClientName())
+            .clientSecret(clientSecret)
+            .clientUri(requestDto.getClientUri())
+            .contacts(requestDto.getContacts())
+            .grantTypes(requestDto.getGrantTypes())
+            .logoUri(requestDto.getLogoUri())
+            .policyUri(requestDto.getPolicyUri())
+            .redirectUris(requestDto.getRedirectUris())
+            .responseTypes(requestDto.getResponseTypes())
+            .skipConsent(requestDto.getSkipConsent())
+            .build();
+
+    return clientDao.createClient(clientModel);
+  }
+
+  public Single<ClientModel> getClient(String clientId, String tenantId) {
+    return clientDao
+        .getClient(clientId, tenantId)
+        .switchIfEmpty(Single.error(CLIENT_NOT_FOUND.getException()));
+  }
+
+  public Single<List<ClientModel>> getClients(String tenantId, int page, int limit) {
+    int offset = (page - 1) * limit;
+    return clientDao.getClients(tenantId, limit, offset);
+  }
+
+  public Single<ClientModel> updateClient(
+      String clientId, UpdateClientRequestDto requestDto, String tenantId) {
+    return clientDao
+        .updateClient(requestDto, clientId, tenantId)
+        .andThen(getClient(clientId, tenantId));
+  }
+
+  public Completable deleteClient(String clientId, String tenantId) {
+    return clientDao
+        .deleteClient(clientId, tenantId)
+        .filter(deleted -> deleted)
+        .switchIfEmpty(Single.error(INVALID_REQUEST.getCustomException("Client not found")))
+        .ignoreElement();
+  }
+
+  public Single<String> regenerateClientSecret(String clientId, String tenantId) {
+    return clientDao
+        .getClient(clientId, tenantId)
+        .switchIfEmpty(Single.error(INVALID_REQUEST.getCustomException("Client not found")))
+        .flatMap(
+            existingClient -> {
+              String newSecret = RandomStringUtils.randomAlphanumeric(CLIENT_SECRET_LENGTH);
+              existingClient.setClientSecret(newSecret);
+              return clientDao
+                  .updateClientSecret(newSecret, clientId, tenantId)
+                  .andThen(Single.just(newSecret));
+            });
+  }
+}
