@@ -28,21 +28,15 @@ public class OidcDiscoveryService {
               "oidc Config not found for the tenant: " + tenantId));
     }
 
-    Single<List<ScopeModel>> scopeModels = scopeDao.oidcScopes(tenantId).cache();
-
-    Single<List<String>> scopeNames =
-        scopeModels.map(
-            scopeModelList ->
-                scopeModelList.stream().map(ScopeModel::getName).collect(Collectors.toList()));
-    Single<List<String>> claims =
-        scopeModels.map(
-            scopeModel ->
-                scopeModel.stream()
-                    .map(ScopeModel::getClaims)
-                    .flatMap(List::stream)
-                    .distinct()
-                    .collect(Collectors.toList()));
-
-    return Single.zip(Single.just(oidcConfig), scopeNames, claims, OidcDiscoveryResponseDto::from);
+    return scopeDao
+        .oidcScopes(tenantId)
+        .map(
+            list -> {
+              List<String> scopeNames =
+                  list.stream().map(ScopeModel::getName).collect(Collectors.toList());
+              List<String> claims =
+                  list.stream().map(ScopeModel::getClaims).flatMap(List::stream).toList();
+              return OidcDiscoveryResponseDto.from(oidcConfig, scopeNames, claims);
+            });
   }
 }
