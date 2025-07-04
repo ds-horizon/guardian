@@ -15,4 +15,7 @@ public final class ScopeQuery {
       "INSERT INTO scope (tenant_id, name, display_name, description, claims, is_oidc, icon_url) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
   public static final String DELETE_SCOPE = "DELETE FROM scope WHERE tenant_id = ? AND name = ?";
+
+  public static final String GET_OIDC_SCOPES =
+      "SELECT name, display_name, description, claims, is_oidc, icon_url FROM scope WHERE tenant_id = ? AND is_oidc = true";
 }

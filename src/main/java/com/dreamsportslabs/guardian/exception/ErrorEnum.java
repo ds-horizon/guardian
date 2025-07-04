@@ -40,6 +40,9 @@ public enum ErrorEnum {
       400),
   INVALID_IDENTIFIER_TYPE("invalid_identifier_type", "Invalid identifier type", 400),
   FLOW_BLOCKED("flow_blocked", "API is blocked for this userIdentifier", 403),
+  OIDC_CONFIG_NOT_EXISTS(
+      "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400),
+
   SCOPE_ALREADY_EXISTS("scope_already_exists", "scope already exists", 400);
 
   private final String code;
