@@ -18,6 +18,7 @@ public class TenantConfig {
   private OtpConfig otpConfig;
   private UserConfig userConfig;
   private TokenConfig tokenConfig;
+  private OidcConfig oidcConfig;
   private ContactVerifyConfig contactVerifyConfig;
   private Map<String, OidcProviderConfig> oidcProviderConfig;
   private AdminConfig adminConfig;

@@ -302,6 +302,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /.well-known/openid-configuration:
+    get:
+      tags:
+        - OIDC Discovery
+      summary: Get OpenID Connect Discovery Configuration
+      description: |
+        Returns the OpenID Connect discovery configuration for the tenant.
+        
+        This endpoint provides metadata about the OpenID Connect implementation,
+        including supported endpoints, grant types, response types, scopes, and claims.
+        
+        The configuration follows the OpenID Connect Discovery 1.0 specification
+        (https://openid.net/specs/openid-connect-discovery-1_0.html).
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: OpenID Connect discovery configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OIDCDiscoveryResponse'
+              examples:
+                oidc_config:
+                  summary: Sample OIDC Discovery Configuration
+                  value:
+                    issuer: "https://auth.example.com"
+                    authorization_endpoint: "https://auth.example.com/v1/authorize"
+                    token_endpoint: "https://auth.example.com/v1/token"
+                    userinfo_endpoint: "https://auth.example.com/v1/userinfo"
+                    revocation_endpoint: "https://auth.example.com/v1/revoke"
+                    jwks_uri: "https://auth.example.com/.well-known/jwks.json"
+                    response_types_supported: ["code"]
+                    subject_types_supported: ["public"]
+                    id_token_signing_alg_values_supported: ["RS256", "RS512"]
+                    grant_types_supported: ["authorization_code", "client_credentials", "refresh_token"]
+                    scopes_supported: ["openid", "profile", "email", "phone"]
+                    token_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post"]
+                    claims_supported: ["sub", "name", "email", "email_verified", "phone_number", "phone_number_verified"]
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /scopes:
     get:
       tags:
@@ -1411,3 +1457,99 @@ components:
           type: boolean
           description: Whether this is an OpenID Connect standard scope
           example: true
+
+    OIDCDiscoveryResponse:
+      type: object
+      description: OpenID Connect Discovery Configuration Response
+      required:
+        - issuer
+        - authorization_endpoint
+        - token_endpoint
+        - userinfo_endpoint
+        - revocation_endpoint
+        - jwks_uri
+        - response_types_supported
+        - subject_types_supported
+        - id_token_signing_alg_values_supported
+        - grant_types_supported
+        - scopes_supported
+        - token_endpoint_auth_methods_supported
+        - claims_supported
+      properties:
+        issuer:
+          type: string
+          format: uri
+          description: The issuer identifier for the OpenID Provider
+          example: "https://auth.example.com"
+        authorization_endpoint:
+          type: string
+          format: uri
+          description: URL of the authorization endpoint
+          example: "https://auth.example.com/v1/authorize"
+        token_endpoint:
+          type: string
+          format: uri
+          description: URL of the token endpoint
+          example: "https://auth.example.com/v1/token"
+        userinfo_endpoint:
+          type: string
+          format: uri
+          description: URL of the userinfo endpoint
+          example: "https://auth.example.com/v1/userinfo"
+        revocation_endpoint:
+          type: string
+          format: uri
+          description: URL of the revocation endpoint
+          example: "https://auth.example.com/v1/revoke"
+        jwks_uri:
+          type: string
+          format: uri
+          description: URL of the JSON Web Key Set endpoint
+          example: "https://auth.example.com/.well-known/jwks.json"
+        response_types_supported:
+          type: array
+          description: List of supported response types
+          items:
+            type: string
+            enum: ["code"]
+          example: ["code"]
+        subject_types_supported:
+          type: array
+          description: List of supported subject types
+          items:
+            type: string
+            enum: ["public", "pairwise"]
+          example: ["public"]
+        id_token_signing_alg_values_supported:
+          type: array
+          description: List of supported ID token signing algorithms
+          items:
+            type: string
+            enum: ["RS256", "none"]
+          example: ["RS256"]
+        grant_types_supported:
+          type: array
+          description: List of supported grant types
+          items:
+            type: string
+            enum: ["authorization_code", "client_credentials", "refresh_token"]
+          example: ["authorization_code", "client_credentials", "refresh_token"]
+        scopes_supported:
+          type: array
+          description: List of supported scopes
+          items:
+            type: string
+          example: ["openid", "profile", "email", "phone"]
+        token_endpoint_auth_methods_supported:
+          type: array
+          description: List of supported token endpoint authentication methods
+          items:
+            type: string
+            enum: ["client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt"]
+          example: ["client_secret_basic", "client_secret_post"]
+        claims_supported:
+          type: array
+          description: List of supported claims
+          items:
+            type: string
+          example: ["sub", "name", "email", "email_verified", "phone_number", "phone_number_verified"]
