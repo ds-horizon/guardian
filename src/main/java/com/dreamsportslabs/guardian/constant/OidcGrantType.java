@@ -1,6 +1,5 @@
 package com.dreamsportslabs.guardian.constant;
 
-import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 @Getter
@@ -13,10 +12,5 @@ public enum OidcGrantType {
 
   OidcGrantType(String type) {
     this.type = type;
-  }
-
-  @JsonValue
-  public String getValue() {
-    return type;
   }
 }

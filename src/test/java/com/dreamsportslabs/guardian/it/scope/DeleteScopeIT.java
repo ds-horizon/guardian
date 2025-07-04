@@ -13,6 +13,8 @@ import static com.dreamsportslabs.guardian.Constants.TEST_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.TEST_EMAIL_CLAIM;
 import static com.dreamsportslabs.guardian.Constants.TEST_ICON_URL;
 import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClientScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopes;
@@ -28,6 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.dreamsportslabs.guardian.utils.DbUtils;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +112,33 @@ public class DeleteScopeIT {
     response.then().statusCode(SC_METHOD_NOT_ALLOWED);
   }
 
+  @Test
+  @DisplayName("Delete scope where the scope is mapped to a client")
+  public void testDeleteScopeWithClientMapping() {
+    // Arrange
+    String scope = RandomStringUtils.randomAlphabetic(10);
+    Map<String, Object> scopeData = valid(scope);
+    createScope(TENANT_1, scopeData).then().statusCode(SC_CREATED);
+    String clientId = createTestClient(TENANT_1);
+    addScopeToClient(TENANT_1, clientId, scope);
+
+    // Verify the client-scope relationship exists before deletion
+    assertThat(DbUtils.clientScopeExists(TENANT_1, clientId, scope), equalTo(true));
+
+    // Act
+    deleteScope(TENANT_1, scope).then().statusCode(SC_NO_CONTENT);
+
+    // Validate - scope should be deleted from scope table
+    JsonObject scopeObj = DbUtils.getScope(TENANT_1, scope);
+    assertThat(scopeObj == null || scopeObj.isEmpty(), equalTo(true));
+
+    // Validate - client-scope relationship should also be deleted (cascade delete)
+    assertThat(DbUtils.clientScopeExists(TENANT_1, clientId, scope), equalTo(false));
+
+    // Validate - client should still exist
+    assertThat(DbUtils.clientExists(TENANT_1, clientId), equalTo(true));
+  }
+
   private Map<String, Object> valid(String scope) {
     Map<String, Object> m = new HashMap<>();
     m.put(BODY_PARAM_SCOPE, scope);
@@ -118,5 +148,30 @@ public class DeleteScopeIT {
     m.put(BODY_PARAM_ICON_URL, TEST_ICON_URL);
     m.put(BODY_PARAM_IS_OIDC, true);
     return m;
+  }
+
+  private static String createTestClient(String tenantId) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("client_name", "Test Client " + RandomStringUtils.randomAlphanumeric(8));
+    requestBody.put("client_uri", "https://example.com");
+    requestBody.put("contacts", Arrays.asList("admin@example.com"));
+    requestBody.put("grant_types", Arrays.asList("authorization_code", "refresh_token"));
+    requestBody.put("response_types", Arrays.asList("code"));
+    requestBody.put("redirect_uris", Arrays.asList("https://example.com/callback"));
+    requestBody.put("logo_uri", "https://example.com/logo.png");
+    requestBody.put("policy_uri", "https://example.com/policy");
+    requestBody.put("skip_consent", false);
+
+    Response response = createClient(tenantId, requestBody);
+    response.then().statusCode(SC_CREATED);
+    return response.jsonPath().getString("client_id");
+  }
+
+  private void addScopeToClient(String tenantId, String clientId, String... scopes) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("scopes", List.of(scopes));
+
+    Response response = createClientScope(tenantId, clientId, requestBody);
+    response.then().statusCode(SC_NO_CONTENT);
   }
 }
