@@ -27,7 +27,7 @@ public class RsaKeyGeneration {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> generateRsaKey(GenerateRsaKeyRequestDto request) {
-
+    request.validate();
     return CompletableFuture.supplyAsync(
         () -> {
           RsaKeyResponseDto response = rsaKeyService.generateKey(request);

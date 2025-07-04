@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 public class RsaKeyPairGeneratorService {
 
   public RsaKeyResponseDto generateKey(GenerateRsaKeyRequestDto request) {
-    request.validate();
     KeyPair keyPair = getRsaKeyPair(request.getKeySize());
 
     JSONWebKey publicJsonWebKey = JSONWebKey.build(keyPair.publicKey);
