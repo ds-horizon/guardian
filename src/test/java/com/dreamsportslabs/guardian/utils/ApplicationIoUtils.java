@@ -168,4 +168,10 @@ public class ApplicationIoUtils {
 
     return execute(null, headers, new HashMap<>(), spec -> spec.get("/v1/certs"));
   }
+
+  public static Response getOidcDiscovery(
+      Map<String, String> headers, Map<String, String> queryParams) {
+    return execute(
+        null, headers, queryParams, spec -> spec.get("/.well-known/openid-configuration"));
+  }
 }
