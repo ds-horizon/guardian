@@ -208,6 +208,91 @@ public class ApplicationIoUtils {
     return execute(null, headers, new HashMap<>(), spec -> spec.get("/v1/certs"));
   }
 
+  // Client API methods
+  public static Response createClient(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/admin/client"));
+  }
+
+  public static Response getClient(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null, headers, new HashMap<>(), spec -> spec.get("/v1/admin/client/" + clientId));
+  }
+
+  public static Response listClients(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(null, headers, queryParams, spec -> spec.get("/v1/admin/client"));
+  }
+
+  public static Response updateClient(String tenantId, String clientId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        body, headers, new HashMap<>(), spec -> spec.patch("/v1/admin/client/" + clientId));
+  }
+
+  public static Response deleteClient(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null, headers, new HashMap<>(), spec -> spec.delete("/v1/admin/client/" + clientId));
+  }
+
+  public static Response regenerateClientSecret(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null,
+        headers,
+        new HashMap<>(),
+        spec -> spec.post("/v1/admin/client/" + clientId + "/regenerate-secret"));
+  }
+
+  // Client Scope API methods
+  public static Response createClientScope(
+      String tenantId, String clientId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> spec.post("/v1/admin/client/" + clientId + "/scope"));
+  }
+
+  public static Response getClientScopes(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null,
+        headers,
+        new HashMap<>(),
+        spec -> spec.get("/v1/admin/client/" + clientId + "/scope"));
+  }
+
+  public static Response deleteClientScope(String tenantId, String clientId, String scope) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put("scope", scope);
+
+    return execute(
+        null, headers, queryParams, spec -> spec.delete("/v1/admin/client/" + clientId + "/scope"));
+  }
+
   public static Response getOidcDiscovery(
       Map<String, String> headers, Map<String, String> queryParams) {
     return execute(

@@ -18,6 +18,7 @@ public enum ErrorEnum {
   INVALID_QUERY_PARAM("invalid_query_param", "Invalid query param", 400),
 
   INVALID_CODE("invalid_code", "Invalid code", 400),
+  NO_FIELDS_TO_UPDATE("no_fields_to_update", "No fields for update", 400),
 
   INVALID_STATE("invalid_state", "Invalid state", 400),
   RESENDS_EXHAUSTED("resends_exhausted", "Resends exhausted", 400),
@@ -40,10 +41,14 @@ public enum ErrorEnum {
       400),
   INVALID_IDENTIFIER_TYPE("invalid_identifier_type", "Invalid identifier type", 400),
   FLOW_BLOCKED("flow_blocked", "API is blocked for this userIdentifier", 403),
-  OIDC_CONFIG_NOT_EXISTS(
-      "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400),
+  SCOPE_ALREADY_EXISTS("scope_already_exists", "scope already exists", 400),
 
-  SCOPE_ALREADY_EXISTS("scope_already_exists", "scope already exists", 400);
+  CLIENT_NOT_FOUND("client_not_found", "Client not found", 404),
+  CLIENT_ALREADY_EXISTS("client_already_exists", "Client already exists", 400),
+  UNPROCESSABLE_ENTITIES("unprocessable_entities", "Unprocessable entities", 422),
+
+  OIDC_CONFIG_NOT_EXISTS(
+      "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400);
 
   private final String code;
   private final String message;

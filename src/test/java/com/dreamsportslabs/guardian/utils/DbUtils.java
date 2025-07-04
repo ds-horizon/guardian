@@ -49,7 +49,7 @@ public class DbUtils {
     conf.setJdbcUrl(jdbcUrl);
     conf.setUsername(username);
     conf.setPassword(password);
-    conf.setMaximumPoolSize(20);
+    conf.setMaximumPoolSize(45);
     conf.setConnectionTimeout(1000);
 
     mysqlConnectionPool = new HikariDataSource(conf);
@@ -291,5 +291,136 @@ public class DbUtils {
       log.error("Error getting TTL for Redis key: {}", key, e);
       throw new RuntimeException("Error getting TTL for Redis key: " + key, e);
     }
+  }
+  // Client management utilities
+  public static void cleanupClients(String tenantId) {
+    String deleteClientScopes = "DELETE FROM client_scope WHERE tenant_id = ?";
+    String deleteClients = "DELETE FROM client WHERE tenant_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(deleteClientScopes);
+        PreparedStatement stmt2 = conn.prepareStatement(deleteClients)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.executeUpdate();
+      stmt1.close();
+
+      stmt2.setString(1, tenantId);
+      stmt2.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up clients", e);
+    }
+  }
+
+  public static boolean clientExists(String tenantId, String clientId) {
+    String query = "SELECT COUNT(*) FROM client WHERE tenant_id = ? AND client_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+
+      var rs = stmt.executeQuery();
+      if (rs.next()) {
+        return rs.getInt(1) > 0;
+      }
+      stmt.close();
+    } catch (Exception e) {
+      log.error("Error while checking client existence", e);
+    }
+    return false;
+  }
+
+  public static JsonObject getClient(String tenantId, String clientId) {
+    String query = "SELECT * FROM client WHERE tenant_id = ? AND client_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+
+      var rs = stmt.executeQuery();
+      rs.next();
+      JsonObject response = new JsonObject();
+      response.put("client_name", rs.getString("client_name"));
+      response.put("client_uri", rs.getString("client_uri"));
+      response.put("client_id", rs.getString("client_id"));
+      response.put("client_secret", rs.getString("client_secret"));
+      response.put("redirect_uris", rs.getString("redirect_uris"));
+      response.put("contacts", rs.getString("contacts"));
+      response.put("grant_types", rs.getString("grant_types"));
+      response.put("response_types", rs.getString("response_types"));
+      response.put("logo_uri", rs.getString("logo_uri"));
+      response.put("policy_uri", rs.getString("policy_uri"));
+      response.put("skip_consent", rs.getBoolean("skip_consent"));
+      stmt.close();
+      return response;
+    } catch (Exception e) {
+      log.error("Error while checking client existence", e);
+    }
+    return null;
+  }
+
+  // Scope management utilities
+  public static void cleanupScopes(String tenantId) {
+    String deleteScopes = "DELETE FROM scopes WHERE tenant_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(deleteScopes)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up scopes", e);
+    }
+  }
+
+  // Scope management utilities
+  public static void addScope(String tenantId, String scope) {
+    String addScopeQuery = "INSERT INTO scope (tenant_id, name, claims) VALUES (?, ?, ?)";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(addScopeQuery)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.setString(2, scope);
+      stmt1.setString(3, "[]");
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up scopes", e);
+    }
+  }
+
+  // Client-Scope relationship utilities
+  public static void cleanupClientScopes(String tenantId) {
+    String deleteQuery = "DELETE FROM client_scope WHERE tenant_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
+      stmt.setString(1, tenantId);
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up client scopes", e);
+    }
+  }
+
+  public static boolean clientScopeExists(String tenantId, String clientId, String scope) {
+    String query =
+        "SELECT COUNT(*) FROM client_scope WHERE tenant_id = ? AND client_id = ? AND scope = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, scope);
+
+      var rs = stmt.executeQuery();
+      if (rs.next()) {
+        return rs.getInt(1) > 0;
+      }
+    } catch (Exception e) {
+      log.error("Error while checking client scope existence", e);
+    }
+    return false;
   }
 }
