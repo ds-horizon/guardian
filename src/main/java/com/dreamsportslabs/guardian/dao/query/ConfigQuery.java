@@ -106,4 +106,25 @@ public class ConfigQuery {
        FROM contact_verify_config
        WHERE tenant_id = ?
     """;
+
+  public static final String OIDC_CONFIG =
+      """
+    SELECT tenant_id,
+           issuer,
+           authorization_endpoint,
+           token_endpoint,
+           userinfo_endpoint,
+           revocation_endpoint,
+           jwks_uri,
+           login_page_uri,
+           consent_page_uri,
+           authorize_ttl,
+           grant_types_supported,
+           response_types_supported,
+           subject_types_supported,
+           id_token_signing_alg_values_supported,
+           token_endpoint_auth_methods_supported
+    FROM oidc_config
+    WHERE tenant_id = ?
+    """;
 }

@@ -27,6 +27,9 @@ public enum ErrorEnum {
   USER_EXISTS("user_exists", "User already exists", 400),
   USER_NOT_EXISTS("user_not_exists", "User does not exist", 400),
 
+  OIDC_CONFIG_NOT_EXISTS(
+      "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400),
+
   SCOPE_ALREADY_EXISTS("scope_already_exists", "scope already exists", 400);
 
   private final String code;
