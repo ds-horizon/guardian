@@ -16,8 +16,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.dreamsportslabs.guardian.Setup;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,22 +35,6 @@ public class ContactBlockFlowsIT {
       randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
   private static final String Flow_1 = "passwordless";
   private static final String Flow_2 = "social_auth";
-  private static final String MOCK_EMAIL = "test@example.com";
-
-  private WireMockServer wireMockServer;
-
-  private StubMapping stubFacebookUserProfile(String email) {
-    return wireMockServer.stubFor(
-        get(urlPathEqualTo("/me"))
-            .withQueryParam("access_token", matching(".*")) // accept any token
-            .withQueryParam("appsecret_proof", matching(".*")) // accept any hash
-            .withQueryParam("fields", matching(".*")) // accept fields
-            .willReturn(
-                aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody("{\"email\":\"" + email + "\", \"id\":\"123456789\"}")));
-  }
 
   /** Common function to generate request body for block Flow */
   private Map<String, Object> generateBlockRequestBody(
