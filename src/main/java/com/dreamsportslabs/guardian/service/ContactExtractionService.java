@@ -4,6 +4,8 @@ import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.dao.PasswordlessDao;
 import com.dreamsportslabs.guardian.dto.request.V1PasswordlessCompleteRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1PasswordlessInitRequestDto;
+import com.dreamsportslabs.guardian.dto.request.V1SignInRequestDto;
+import com.dreamsportslabs.guardian.dto.request.V1SignUpRequestDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
@@ -54,5 +56,25 @@ public class ContactExtractionService {
             })
         .onErrorReturnItem(List.of())
         .toSingle();
+  }
+
+  /** Extract contact information from signin request */
+  public List<String> extractContactsFromSignIn(V1SignInRequestDto requestDto) {
+    if (StringUtils.isBlank(requestDto.getUsername())) {
+      return List.of();
+    }
+
+    String username = requestDto.getUsername().trim();
+    return List.of(username);
+  }
+
+  /** Extract contact information from signup request */
+  public List<String> extractContactsFromSignUp(V1SignUpRequestDto requestDto) {
+    if (StringUtils.isBlank(requestDto.getUsername())) {
+      return List.of();
+    }
+
+    String username = requestDto.getUsername().trim();
+    return List.of(username);
   }
 }

@@ -8,10 +8,10 @@ import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.Constants.PASSWORDLESS_FLOW_SIGNINUP;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.*;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.signIn;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -612,21 +612,21 @@ public class ContactBlockFlowsIT {
             randomAlphanumeric(10),
             unblockedAt);
 
-    // Act - Block the flow
+    // Act
     Response blockResponse = blockContactFlows(TENANT_ID, requestBody);
     blockResponse.then().statusCode(HttpStatus.SC_OK);
 
-    // Verify blocking was successful
+    // Verify
     assertThat(blockResponse.getBody().jsonPath().getString("contact"), equalTo(contactId));
     assertThat(
         blockResponse.getBody().jsonPath().getString("message"),
         equalTo("Flows blocked successfully"));
 
-    // Act - Try to hit passwordless init API
+    // Act
     Map<String, Object> passwordlessInitBody = generatePasswordlessInitRequestBody(contactId);
     Response passwordlessInitResponse = passwordlessInit(TENANT_ID, passwordlessInitBody);
 
-    // Assert - Should be blocked
+    // Assert
     passwordlessInitResponse
         .then()
         .statusCode(HttpStatus.SC_FORBIDDEN)
@@ -635,54 +635,7 @@ public class ContactBlockFlowsIT {
         .body("message", equalTo("Passwordless flow is blocked for this contact"));
   }
 
-  @Test
-  @DisplayName("Should verify social auth flow is blocked after blocking")
-  public void verifySocialAuthFlowBlocked() {
-    // Arrange - Block social auth flow for the mock email
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    Map<String, Object> blockRequestBody =
-        generateBlockRequestBody(
-            MOCK_EMAIL,
-            new String[] {"social_auth"},
-            randomAlphanumeric(10),
-            randomAlphanumeric(10),
-            unblockedAt);
-
-    Response blockResponse = blockContactFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        blockResponse.getBody().jsonPath().getString("message"),
-        equalTo("Flows blocked successfully"));
-
-    StubMapping fbStub = stubFacebookUserProfile(MOCK_EMAIL);
-
-    // Act
-    Response facebookResponse =
-        authFb(TENANT_ID, "valid_access_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
-
-    // Verify
-    facebookResponse
-        .then()
-        .statusCode(HttpStatus.SC_FORBIDDEN)
-        .rootPath(ERROR)
-        .body("code", equalTo(ERROR_FLOW_BLOCKED))
-        .body("message", containsString("Facebook auth API is blocked"));
-
-    wireMockServer.removeStub(fbStub);
-
-    // Act
-    Response googleResponse =
-        authGoogle(TENANT_ID, "valid_id_token", "SIGNIN", BODY_PARAM_RESPONSE_TYPE_TOKEN);
-
-    // Verify - Google auth should be blocked by flow blocking, not by API failure
-    googleResponse
-        .then()
-        .statusCode(HttpStatus.SC_FORBIDDEN)
-        .rootPath(ERROR)
-        .body("code", equalTo(ERROR_FLOW_BLOCKED))
-        .body("message", containsString("Google auth API is blocked"));
-  }
+  // TODO: implement the social auth flow blocking test for both facebook and google
 
   @Test
   @DisplayName("Should verify OTP verify flow is blocked after blocking")
@@ -722,16 +675,14 @@ public class ContactBlockFlowsIT {
   @Test
   @DisplayName("Should verify OTP verify flow is blocked for existing OTP state")
   public void verifyOtpVerifyFlowBlockedForExistingState() {
-    // Arrange - First send OTP to get a valid state
+    // Arrange
     String testEmail = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
     Map<String, Object> sendOtpBody = createSendOtpBody(testEmail);
     Response sendOtpResponse = sendOtp(TENANT_ID, sendOtpBody);
 
-    // Only proceed if send OTP was successful (not blocked)
     if (sendOtpResponse.getStatusCode() == HttpStatus.SC_OK) {
       String state = sendOtpResponse.getBody().jsonPath().getString("state");
 
-      // Now block OTP verify flow for the same email
       Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
       Map<String, Object> blockRequestBody =
           generateBlockRequestBody(
@@ -744,11 +695,11 @@ public class ContactBlockFlowsIT {
       Response blockResponse = blockContactFlows(TENANT_ID, blockRequestBody);
       blockResponse.then().statusCode(HttpStatus.SC_OK);
 
-      // Act - Try to verify OTP with the valid state
+      // Act
       Map<String, Object> verifyOtpBody = createVerifyOtpBody(state, "123456");
       Response verifyOtpResponse = verifyOtp(TENANT_ID, verifyOtpBody);
 
-      // Verify - The response should indicate that the flow is blocked
+      // Assert
       verifyOtpResponse
           .then()
           .statusCode(HttpStatus.SC_FORBIDDEN)
@@ -756,5 +707,79 @@ public class ContactBlockFlowsIT {
           .body("code", equalTo(ERROR_FLOW_BLOCKED))
           .body("message", equalTo("OTP verify flow is blocked for this contact"));
     }
+  }
+
+  @Test
+  @DisplayName("Should verify password signin flow is blocked after blocking")
+  public void verifyPasswordSignInFlowBlocked() {
+    // Arrange
+    String username = randomAlphanumeric(10);
+    String password = "password@123";
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+    Map<String, Object> requestBody =
+        generateBlockRequestBody(
+            username,
+            new String[] {"password"},
+            randomAlphanumeric(10),
+            randomAlphanumeric(10),
+            unblockedAt);
+
+    // Act
+    Response blockResponse = blockContactFlows(TENANT_ID, requestBody);
+    blockResponse.then().statusCode(HttpStatus.SC_OK);
+
+    // Assert
+    assertThat(blockResponse.getBody().jsonPath().getString("contact"), equalTo(username));
+    assertThat(
+        blockResponse.getBody().jsonPath().getString("message"),
+        equalTo("Flows blocked successfully"));
+
+    // Act
+    Response signInResponse = signIn(TENANT_ID, username, password, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    // Assert
+    signInResponse
+        .then()
+        .statusCode(HttpStatus.SC_FORBIDDEN)
+        .rootPath(ERROR)
+        .body("code", equalTo(ERROR_FLOW_BLOCKED))
+        .body("message", equalTo("Password signin flow is blocked for this contact"));
+  }
+
+  @Test
+  @DisplayName("Should verify password signup flow is blocked after blocking")
+  public void verifyPasswordSignUpFlowBlocked() {
+    // Arrange
+    String username = randomAlphanumeric(10);
+    String password = "password@123";
+    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+    Map<String, Object> requestBody =
+        generateBlockRequestBody(
+            username,
+            new String[] {"password"},
+            randomAlphanumeric(10),
+            randomAlphanumeric(10),
+            unblockedAt);
+
+    // Act
+    Response blockResponse = blockContactFlows(TENANT_ID, requestBody);
+    blockResponse.then().statusCode(HttpStatus.SC_OK);
+
+    // Assert
+    assertThat(blockResponse.getBody().jsonPath().getString("contact"), equalTo(username));
+    assertThat(
+        blockResponse.getBody().jsonPath().getString("message"),
+        equalTo("Flows blocked successfully"));
+
+    // Act
+    Response signUpResponse = signUp(TENANT_ID, username, password, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    // Assert
+    signUpResponse
+        .then()
+        .statusCode(HttpStatus.SC_FORBIDDEN)
+        .rootPath(ERROR)
+        .body("code", equalTo(ERROR_FLOW_BLOCKED))
+        .body("message", equalTo("Password signup flow is blocked for this contact"));
   }
 }

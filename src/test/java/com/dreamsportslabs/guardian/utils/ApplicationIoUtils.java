@@ -56,6 +56,19 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/signin"));
   }
 
+  public static Response signUp(
+      String tenantId, String username, String password, String responseType) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put(BODY_PARAM_USERNAME, username);
+    body.put(BODY_PARAM_PASSWORD, password);
+    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/signup"));
+  }
+
   public static Response refreshToken(String tenantId, String refreshToken) {
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_TENANT_ID, tenantId);

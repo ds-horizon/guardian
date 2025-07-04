@@ -72,8 +72,9 @@ public class Passwordless {
                     "Passwordless init API is blocked for contacts: {} in tenant: {}",
                     contacts,
                     tenantId);
-                throw FLOW_BLOCKED.getCustomException(
-                    "Passwordless flow is blocked for this contact");
+                return Single.error(
+                    FLOW_BLOCKED.getCustomException(
+                        "Passwordless flow is blocked for this contact"));
               }
 
               // Continue with normal flow
@@ -217,9 +218,12 @@ public class Passwordless {
                       isBlocked -> {
                         if (isBlocked) {
                           log.warn(
-                              "Passwordless complete API is blocked for contacts: {} in tenant: {}");
-                          throw FLOW_BLOCKED.getCustomException(
-                              "Passwordless flow is blocked for this contact");
+                              "Passwordless complete API is blocked for contacts: {} in tenant: {}",
+                              contacts,
+                              tenantId);
+                          return Single.error(
+                              FLOW_BLOCKED.getCustomException(
+                                  "Passwordless flow is blocked for this contact"));
                         }
 
                         // Continue with normal flow

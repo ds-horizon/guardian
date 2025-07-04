@@ -74,8 +74,9 @@ public class SocialAuthService {
                                 "Facebook auth API is blocked for email: {} in tenant: {}",
                                 email,
                                 tenantId);
-                            throw FLOW_BLOCKED.getCustomException(
-                                "Social auth flow is blocked for this contact");
+                            return Single.error(
+                                FLOW_BLOCKED.getCustomException(
+                                    "Social auth flow is blocked for this contact"));
                           }
                           return Single.just(fbUserData);
                         });
@@ -171,8 +172,9 @@ public class SocialAuthService {
                                 "Google auth API is blocked for email: {} in tenant: {}",
                                 email,
                                 tenantId);
-                            throw FLOW_BLOCKED.getCustomException(
-                                "Social auth flow is blocked for this contact");
+                            return Single.error(
+                                FLOW_BLOCKED.getCustomException(
+                                    "Social auth flow is blocked for this contact"));
                           }
                           return Single.just(googleUserData);
                         });
