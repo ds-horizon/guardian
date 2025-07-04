@@ -41,9 +41,6 @@ public class OidcDiscoveryResponseDto {
   @JsonProperty("id_token_signing_alg_values_supported")
   private List<OidcIdTokenSigningAlgValue> idTokenSigningAlgValuesSupported;
 
-  @JsonProperty("userinfo_signing_alg_values_supported")
-  private List<String> userinfoSigningAlgValuesSupported;
-
   @JsonProperty("grant_types_supported")
   private List<OidcGrantType> grantTypesSupported;
 
