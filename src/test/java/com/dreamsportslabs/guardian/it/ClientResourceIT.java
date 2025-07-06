@@ -127,7 +127,7 @@ public class ClientResourceIT {
         .body("grant_types[0]", equalTo("AUTHORIZATION_CODE"))
         .body("grant_types[1]", equalTo("REFRESH_TOKEN"))
         .body(RESPONSE_TYPES, hasSize(1))
-        .body("response_types[0]", equalTo("CODE"))
+        .body("response_types[0]", equalTo("code"))
         .body(LOGO_URI, equalTo(EXAMPLE_LOGO))
         .body(POLICY_URI, equalTo(EXAMPLE_POLICY))
         .body(SKIP_CONSENT, equalTo(false));
@@ -154,7 +154,7 @@ public class ClientResourceIT {
     assertThat(resultSet.getString(CONTACTS), equalTo("[\"" + ADMIN_EMAIL + "\"]"));
     assertThat(
         resultSet.getString(GRANT_TYPES), equalTo("[\"AUTHORIZATION_CODE\", \"REFRESH_TOKEN\"]"));
-    assertThat(resultSet.getString(RESPONSE_TYPES), equalTo("[\"CODE\"]"));
+    assertThat(resultSet.getString(RESPONSE_TYPES), equalTo("[\"code\"]"));
     assertThat(resultSet.getString(LOGO_URI), equalTo(EXAMPLE_LOGO));
     assertThat(resultSet.getString(POLICY_URI), equalTo(EXAMPLE_POLICY));
     assertThat(resultSet.getBoolean(SKIP_CONSENT), equalTo(false));
