@@ -47,25 +47,19 @@ import static com.dreamsportslabs.guardian.Constants.TEST_PICTURE_CLAIM;
 import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
+import static com.dreamsportslabs.guardian.utils.ScopeUtils.getValidScopeRequestBody;
+import static com.dreamsportslabs.guardian.utils.ScopeUtils.validateInDb;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.dreamsportslabs.guardian.utils.DbUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;
-import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -102,7 +96,7 @@ public class PostScopeIT {
         .body(BODY_PARAM_ICON_URL, equalTo(TEST_ICON_URL))
         .body(BODY_PARAM_IS_OIDC, equalTo(true));
 
-    validateInDb(TENANT_1, scopeName, requestBody);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, scopeName);
@@ -113,7 +107,7 @@ public class PostScopeIT {
   public void testScopeAlreadyExists() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             scopeName,
             TEST_DUPLICATE_SCOPE_DISPLAY_NAME,
@@ -123,8 +117,8 @@ public class PostScopeIT {
             true);
 
     // Act
-    createScope(TENANT_1, body);
-    Response response = createScope(TENANT_1, body);
+    createScope(TENANT_1, requestBody);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -156,12 +150,12 @@ public class PostScopeIT {
   @DisplayName("Should return error when scope is blank")
   public void testScopeBlank() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             "", TEST_SCOPE_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -175,54 +169,74 @@ public class PostScopeIT {
   @DisplayName("Should return success when displayName is missing")
   public void testDisplayNameMissing() {
     // Arrange
-    Map<String, Object> body = getScopeRequestBodyWithoutField(BODY_PARAM_DISPLAY_NAME);
+    Map<String, Object> requestBody = getScopeRequestBodyWithoutField(BODY_PARAM_DISPLAY_NAME);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
-    deleteScope(TENANT_1, body.get(BODY_PARAM_SCOPE).toString());
+    deleteScope(TENANT_1, requestBody.get(BODY_PARAM_SCOPE).toString());
   }
 
   @Test
-  @DisplayName("Should return success when displayName is blank")
+  @DisplayName("Should return error when displayName is blank")
   public void testDisplayNameBlank() {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             scope, "", TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
-    response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(MESSAGE, containsString("Display name cannot be empty"));
+  }
 
-    // Cleanup
-    deleteScope(TENANT_1, scope);
+  @Test
+  @DisplayName("Should return error when displayName is spaces only")
+  public void testDisplayNameSpacesOnly() {
+    // Arrange
+    String scope = RandomStringUtils.randomAlphabetic(10);
+    Map<String, Object> requestBody =
+        getValidScopeRequestBody(
+            scope, "   ", TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
+
+    // Act
+    Response response = createScope(TENANT_1, requestBody);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(MESSAGE, containsString("Display name cannot be empty"));
   }
 
   @Test
   @DisplayName("Should return success when description is missing")
   public void testDescriptionMissing() {
     // Arrange
-    Map<String, Object> body = getScopeRequestBodyWithoutField(BODY_PARAM_DESCRIPTION);
+    Map<String, Object> requestBody = getScopeRequestBodyWithoutField(BODY_PARAM_DESCRIPTION);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
-    deleteScope(TENANT_1, body.get(BODY_PARAM_SCOPE).toString());
+    deleteScope(TENANT_1, requestBody.get(BODY_PARAM_SCOPE).toString());
   }
 
   @Test
@@ -230,16 +244,16 @@ public class PostScopeIT {
   public void testDescriptionBlank() {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             scope, TEST_SCOPE_NAME, "", List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, scope);
@@ -249,17 +263,17 @@ public class PostScopeIT {
   @DisplayName("Should return success when claims is missing")
   public void testClaimsMissing() {
     // Arrange
-    Map<String, Object> body = getScopeRequestBodyWithoutField(BODY_PARAM_CLAIMS);
+    Map<String, Object> requestBody = getScopeRequestBodyWithoutField(BODY_PARAM_CLAIMS);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
-    deleteScope(TENANT_1, body.get(BODY_PARAM_SCOPE).toString());
+    deleteScope(TENANT_1, requestBody.get(BODY_PARAM_SCOPE).toString());
   }
 
   @Test
@@ -269,7 +283,7 @@ public class PostScopeIT {
     String scope = RandomStringUtils.randomAlphabetic(10);
     List<String> claims =
         List.of(TEST_EMAIL_CLAIM, TEST_NAME_CLAIM, TEST_PICTURE_CLAIM, TEST_PHONE_CLAIM);
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             scope,
             TEST_MULTIPLE_CLAIMS_SCOPE_DISPLAY_NAME,
@@ -279,11 +293,11 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_CLAIMS + ".size()", equalTo(4));
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, scope);
@@ -293,17 +307,17 @@ public class PostScopeIT {
   @DisplayName("Should return success when iconurl is missing")
   public void testIconUrlMissing() {
     // Arrange
-    Map<String, Object> body = getScopeRequestBodyWithoutField(BODY_PARAM_ICON_URL);
+    Map<String, Object> requestBody = getScopeRequestBodyWithoutField(BODY_PARAM_ICON_URL);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
-    deleteScope(TENANT_1, body.get(BODY_PARAM_SCOPE).toString());
+    deleteScope(TENANT_1, requestBody.get(BODY_PARAM_SCOPE).toString());
   }
 
   @ParameterizedTest
@@ -312,15 +326,15 @@ public class PostScopeIT {
   public void testIconUrlBlank(String iconUrl) {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             scope, TEST_SCOPE_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), iconUrl, true);
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_ICON_URL, equalTo(iconUrl));
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, scope);
@@ -332,7 +346,7 @@ public class PostScopeIT {
   public void testIsOidcFalse(Boolean isOidc) {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             scope,
             TEST_SCOPE_NAME,
@@ -342,11 +356,11 @@ public class PostScopeIT {
             isOidc);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_IS_OIDC, equalTo(isOidc));
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, scope);
@@ -362,16 +376,16 @@ public class PostScopeIT {
   public void testValidIconUrl(String iconUrl) {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             scope, TEST_SCOPE_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), iconUrl, true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED).body(BODY_PARAM_ICON_URL, equalTo(iconUrl));
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, scope);
@@ -381,7 +395,7 @@ public class PostScopeIT {
   @DisplayName("Should create openid scope with valid sub claim")
   public void testCreateOpenidScopeWithValidClaim() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_OPENID,
             TEST_OPENID_SCOPE_DISPLAY_NAME,
@@ -391,11 +405,11 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, SCOPE_OPENID);
@@ -405,7 +419,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when openid scope has invalid claims")
   public void testCreateOpenidScopeWithInvalidClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_OPENID,
             TEST_OPENID_SCOPE_DISPLAY_NAME,
@@ -415,7 +429,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -429,7 +443,7 @@ public class PostScopeIT {
   @DisplayName("Should create phone scope with valid claims")
   public void testCreatePhoneScopeWithValidClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_PHONE,
             TEST_PHONE_SCOPE_DISPLAY_NAME,
@@ -439,11 +453,11 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, SCOPE_PHONE);
@@ -453,7 +467,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when phone scope has invalid claims")
   public void testCreatePhoneScopeWithInvalidClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_PHONE,
             TEST_PHONE_SCOPE_DISPLAY_NAME,
@@ -463,7 +477,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -477,7 +491,7 @@ public class PostScopeIT {
   @DisplayName("Should create email scope with valid claims")
   public void testCreateEmailScopeWithValidClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_EMAIL,
             TEST_EMAIL_SCOPE_DISPLAY_NAME,
@@ -487,11 +501,11 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, SCOPE_EMAIL);
@@ -501,7 +515,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when email scope has invalid claims")
   public void testCreateEmailScopeWithInvalidClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_EMAIL,
             TEST_EMAIL_SCOPE_DISPLAY_NAME,
@@ -511,7 +525,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -525,7 +539,7 @@ public class PostScopeIT {
   @DisplayName("Should create address scope with valid claim")
   public void testCreateAddressScopeWithValidClaim() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_ADDRESS,
             TEST_ADDRESS_SCOPE_DISPLAY_NAME,
@@ -535,11 +549,11 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response.then().statusCode(SC_CREATED);
-    validateInDb(TENANT_1, body.get(BODY_PARAM_SCOPE).toString(), body);
+    validateInDb(TENANT_1, requestBody);
 
     // Cleanup
     deleteScope(TENANT_1, SCOPE_ADDRESS);
@@ -549,7 +563,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when address scope has invalid claims")
   public void testCreateAddressScopeWithInvalidClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_ADDRESS,
             TEST_ADDRESS_SCOPE_DISPLAY_NAME,
@@ -559,7 +573,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -573,7 +587,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when phone scope has too many claims")
   public void testCreatePhoneScopeWithTooManyClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_PHONE,
             TEST_PHONE_SCOPE_DISPLAY_NAME,
@@ -583,7 +597,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -597,7 +611,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when email scope has too many claims")
   public void testCreateEmailScopeWithTooManyClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_EMAIL,
             TEST_EMAIL_SCOPE_DISPLAY_NAME,
@@ -607,7 +621,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -621,7 +635,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when openid scope has too many claims")
   public void testCreateOpenidScopeWithTooManyClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_OPENID,
             TEST_OPENID_SCOPE_DISPLAY_NAME,
@@ -631,7 +645,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -645,7 +659,7 @@ public class PostScopeIT {
   @DisplayName("Should return error when address scope has too many claims")
   public void testCreateAddressScopeWithTooManyClaims() {
     // Arrange
-    Map<String, Object> body =
+    Map<String, Object> requestBody =
         getValidScopeRequestBody(
             SCOPE_ADDRESS,
             TEST_ADDRESS_SCOPE_DISPLAY_NAME,
@@ -655,7 +669,7 @@ public class PostScopeIT {
             true);
 
     // Act
-    Response response = createScope(TENANT_1, body);
+    Response response = createScope(TENANT_1, requestBody);
 
     // Validate
     response
@@ -663,24 +677,6 @@ public class PostScopeIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(MESSAGE, containsString(ERROR_MSG_ADDRESS_SCOPE_INVALID_CLAIMS));
-  }
-
-  private Map<String, Object> getValidScopeRequestBody(
-      String scope,
-      String displayName,
-      String description,
-      List<String> claims,
-      String iconUrl,
-      Boolean isOidc) {
-
-    Map<String, Object> body = new HashMap<>();
-    body.put(BODY_PARAM_SCOPE, scope);
-    body.put(BODY_PARAM_DISPLAY_NAME, displayName);
-    body.put(BODY_PARAM_DESCRIPTION, description);
-    body.put(BODY_PARAM_CLAIMS, claims);
-    body.put(BODY_PARAM_ICON_URL, iconUrl);
-    body.put(BODY_PARAM_IS_OIDC, isOidc);
-    return body;
   }
 
   private Map<String, Object> getScopeRequestBodyWithoutField(String exclude) {
@@ -694,35 +690,5 @@ public class PostScopeIT {
     if (!BODY_PARAM_ICON_URL.equals(exclude)) body.put(BODY_PARAM_ICON_URL, TEST_ICON_URL);
     if (!BODY_PARAM_IS_OIDC.equals(exclude)) body.put(BODY_PARAM_IS_OIDC, true);
     return body;
-  }
-
-  @SneakyThrows
-  private void validateInDb(String tenant, String scope, Map<String, Object> body) {
-    JsonObject dbScope = DbUtils.getScope(tenant, scope);
-    Assertions.assertNotNull(dbScope);
-
-    assertThat(dbScope.getString("name"), equalTo(scope));
-
-    assertThat(
-        dbScope.getString(BODY_PARAM_DISPLAY_NAME), equalTo(body.get(BODY_PARAM_DISPLAY_NAME)));
-
-    assertThat(
-        dbScope.getString(BODY_PARAM_DESCRIPTION), equalTo(body.get(BODY_PARAM_DESCRIPTION)));
-
-    assertThat(dbScope.getString(BODY_PARAM_ICON_URL), equalTo(body.get(BODY_PARAM_ICON_URL)));
-
-    assertThat(dbScope.getString("tenantId"), equalTo(tenant));
-
-    assertThat(dbScope.getBoolean(BODY_PARAM_IS_OIDC), equalTo(body.get(BODY_PARAM_IS_OIDC)));
-
-    if (StringUtils.isNotBlank(dbScope.getString(BODY_PARAM_CLAIMS))
-        && body.containsKey(BODY_PARAM_CLAIMS)) {
-      List<String> claims =
-          (new ObjectMapper())
-              .readValue(dbScope.getString(BODY_PARAM_CLAIMS), new TypeReference<>() {});
-      for (String claim : (List<String>) body.get(BODY_PARAM_CLAIMS)) {
-        assertThat(claims, hasItem(claim));
-      }
-    }
   }
 }

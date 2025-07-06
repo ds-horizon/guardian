@@ -543,7 +543,7 @@ paths:
                   value:
                     error:
                       code: "invalid_request"
-                      message: "openid scope must include 'sub' claim"
+                      message: "openid scope must only include 'sub' claim"
                 invalid_phone_claims:
                   summary: Invalid claims for phone scope
                   value:
@@ -583,6 +583,152 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /scopes/{name}:
+    put:
+      tags:
+        - Scope Management
+      summary: Update an existing scope
+      description: |
+        Update an existing scope by name. All fields except the scope name can be updated.
+        Partial updates are supported - only provided fields will be updated.
+        
+        **Predefined OIDC Scope Validation:**
+        - `openid`: Must contain only the 'sub' claim
+        - `phone`: Must contain 'phone_number' and 'phone_number_verified' claims (exactly 2 claims)
+        - `email`: Must contain 'email' and 'email_verified' claims (exactly 2 claims)
+        - `address`: Must contain only the 'address' claim
+        
+        **Note:** The scope name cannot be changed. To rename a scope, delete the old one and create a new one.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: name
+          in: path
+          required: true
+          description: Name of the scope to update
+          schema:
+            type: string
+            example: "read:profile"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScopeRequest'
+            examples:
+              full_update:
+                summary: Update all fields
+                value:
+                  displayName: "Updated Profile Reader"
+                  description: "Updated description for profile reading permissions"
+                  claims: ["name", "email", "profile", "picture"]
+                  iconUrl: "https://example.com/icons/updated-profile.png"
+                  isOidc: false
+              partial_update:
+                summary: Update only display name
+                value:
+                  displayName: "New Display Name"
+              claims_update:
+                summary: Update only claims
+                value:
+                  claims: ["name", "email"]
+              openid_update:
+                summary: Update OpenID scope
+                value:
+                  displayName: "Updated OpenID"
+                  description: "Updated OpenID Connect scope"
+                  claims: ["sub"]
+                  isOidc: true
+              phone_update:
+                summary: Update Phone scope
+                value:
+                  displayName: "Updated Phone Access"
+                  claims: ["phone_number", "phone_number_verified"]
+              email_update:
+                summary: Update Email scope
+                value:
+                  displayName: "Updated Email Access"
+                  claims: ["email", "email_verified"]
+              address_update:
+                summary: Update Address scope
+                value:
+                  displayName: "Updated Address Access"
+                  claims: ["address"]
+      responses:
+        '200':
+          description: Scope updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScopeResponse'
+              examples:
+                updated_scope:
+                  summary: Successfully updated scope
+                  value:
+                    name: "read:profile"
+                    displayName: "Updated Profile Reader"
+                    description: "Updated description for profile reading permissions"
+                    claims: ["name", "email", "profile", "picture"]
+                    iconUrl: "https://example.com/icons/updated-profile.png"
+                    isOidc: false
+                updated_openid:
+                  summary: Updated OpenID scope
+                  value:
+                    name: "openid"
+                    displayName: "Updated OpenID"
+                    description: "Updated OpenID Connect scope"
+                    claims: ["sub"]
+                    iconUrl: "https://example.com/icons/openid.png"
+                    isOidc: true
+        '400':
+          description: Bad Request due to invalid data or validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_openid_claims:
+                  summary: Invalid OpenID scope claims
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "openid scope must only include 'sub' claim"
+                invalid_phone_claims:
+                  summary: Invalid Phone scope claims
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "phone scope must include 'phone_number' and 'phone_number_verified' claim"
+                invalid_email_claims:
+                  summary: Invalid Email scope claims
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "email scope must include 'email' and 'email_verified' claim"
+                invalid_address_claims:
+                  summary: Invalid Address scope claims
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "address scope must include 'address' claim"
+        '404':
+          description: Scope not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                scope_not_found:
+                  summary: Scope not found
+                  value:
+                    error:
+                      code: "scope_not_found"
+                      message: "Scope not found"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     delete:
       tags:
         - Scope Management
@@ -1140,9 +1286,10 @@ components:
           description: Seconds to wait before next resend is allowed
           example: 30
           minimum: 0
+
     JsonWebKey:
       type: object
-      required: [kty, kid, alg, n, e]
+      required: [ kty, kid, alg, n, e ]
       properties:
         kty:
           type: string
@@ -1270,6 +1417,48 @@ components:
           type: boolean
           description: Whether this is an OpenID Connect standard scope
           example: true
+
+    UpdateScopeRequest:
+      type: object
+      description: |
+        Request payload for updating an existing scope. All fields are optional for partial updates.
+        The scope name cannot be changed through this endpoint.
+      properties:
+        displayName:
+          type: string
+          description: Human-readable display name
+          example: "Updated Profile Reader"
+          maxLength: 100
+        description:
+          type: string
+          description: Detailed description of the scope
+          example: "Updated description for profile reading permissions"
+          maxLength: 500
+        claims:
+          type: array
+          description: |
+            List of claims associated with this scope. For predefined OIDC scopes, 
+            specific claims are required and validated:
+            - openid: ['sub'] (exactly 1 claim)
+            - phone: ['phone_number', 'phone_number_verified'] (exactly 2 claims)
+            - email: ['email', 'email_verified'] (exactly 2 claims)
+            - address: ['address'] (exactly 1 claim)
+            
+            Custom scopes can have any combination of claims.
+          items:
+            type: string
+            example: "name"
+          example: ["name", "email", "profile", "picture"]
+        iconUrl:
+          type: string
+          format: uri
+          description: URL to the scope's icon
+          example: "https://example.com/icons/updated-profile.png"
+          nullable: true
+        isOidc:
+          type: boolean
+          description: Whether this is an OpenID Connect standard scope
+          example: false
 
     OIDCDiscoveryResponse:
       type: object

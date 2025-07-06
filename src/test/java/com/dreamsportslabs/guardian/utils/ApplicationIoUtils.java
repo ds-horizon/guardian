@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
 public class ApplicationIoUtils {
 
@@ -140,8 +141,20 @@ public class ApplicationIoUtils {
   public static Response deleteScope(String tenantId, String scopeName) {
     Map<String, String> headers = new HashMap<>();
     headers.put("tenant-id", tenantId);
+    headers.put(CONTENT_TYPE, "application/json");
+
+    if (StringUtils.isBlank(scopeName)) {
+      return execute(null, headers, new HashMap<>(), spec -> spec.delete("/scopes/"));
+    }
 
     return execute(null, headers, new HashMap<>(), spec -> spec.delete("/scopes/" + scopeName));
+  }
+
+  public static Response updateScope(String tenantId, String scopeName, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.patch("/scopes/" + scopeName));
   }
 
   public static Response sendOtp(
