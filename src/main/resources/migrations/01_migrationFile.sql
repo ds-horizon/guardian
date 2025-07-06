@@ -201,3 +201,61 @@ CREATE TABLE refresh_tokens
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE `scope`
+(
+    `id`           INT          NOT NULL AUTO_INCREMENT,
+    `tenant_id`    VARCHAR(100) NOT NULL,
+    `scope`        VARCHAR(100) NOT NULL,
+    `display_name` VARCHAR(100),
+    `description`  VARCHAR(1000),
+    `icon_url`     VARCHAR(2083),
+    `claims`       JSON         NOT NULL DEFAULT (JSON_ARRAY()),
+    `is_oidc`      BOOLEAN               DEFAULT FALSE,
+    `updated_at`   TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at`   TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `scope`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE client
+(
+    tenant_id      CHAR(10)     NOT NULL,
+    client_id      VARCHAR(100) NOT NULL,
+    client_name    VARCHAR(100) NOT NULL,
+    client_secret  VARCHAR(100) NOT NULL,
+    client_uri     VARCHAR(2083),
+    contacts       JSON,
+    grant_types    JSON         NOT NULL,
+    logo_uri       VARCHAR(2083),
+    policy_uri     VARCHAR(2083),
+    redirect_uris  JSON         NOT NULL,
+    response_types JSON         NOT NULL,
+    skip_consent   BOOLEAN   DEFAULT FALSE,
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (client_id),
+    UNIQUE KEY unique_tenant_client_name (tenant_id, client_name)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE client_scope
+(
+    id         INT AUTO_INCREMENT,
+    tenant_id  CHAR(10)     NOT NULL,
+    scope      VARCHAR(100) NOT NULL,
+    client_id  VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY unique_tenant_client_scope (tenant_id, client_id, scope),
+    FOREIGN KEY (client_id) REFERENCES client (client_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;

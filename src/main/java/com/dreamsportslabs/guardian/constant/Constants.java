@@ -16,6 +16,7 @@ public final class Constants {
   public static final String IS_NEW_USER = "isNewUser";
 
   public static final String EXPIRY_OPTION_REDIS = "EX";
+  public static final String KEEP_TTL = "KEEPTTL";
   public static final String STATIC_OTP_NUMBER = "9";
 
   // Application config
@@ -65,6 +66,7 @@ public final class Constants {
 
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
+  public static final String CACHE_KEY_AUTH_SESSION = "AUTH_SESSION";
 
   public static final String TOKEN_TYPE = "Bearer";
 
@@ -82,4 +84,14 @@ public final class Constants {
 
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
+
+  public static final String LOGIN_PAGE_URI = "login_page_uri";
+  public static final String AUTHORIZE_TTL = "authorize_ttl";
+
+  public static final String OIDC_PARAM_ERROR = "error";
+  public static final String OIDC_PARAM_ERROR_DESCRIPTION = "error_description";
+  public static final String OIDC_PARAM_STATE = "state";
+  public static final String OIDC_PARAM_LOGIN_CHALLENGE = "login_challenge";
+  public static final String OIDC_PARAM_LOGIN_HINT = "login_hint";
+  public static final String OIDC_PARAM_PROMPT = "prompt";
 }

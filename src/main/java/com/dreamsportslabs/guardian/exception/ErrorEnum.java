@@ -23,7 +23,12 @@ public enum ErrorEnum {
   RETRIES_EXHAUSTED("retries_exhausted", "Retries exhausted", 400),
 
   USER_EXISTS("user_exists", "User already exists", 400),
-  USER_NOT_EXISTS("user_not_exists", "User does not exist", 400);
+  USER_NOT_EXISTS("user_not_exists", "User does not exist", 400),
+
+  SCOPE_ALREADY_EXISTS("scope_already_exists", "Scope already exists for the user", 400),
+
+  CLIENT_NOT_FOUND("client_not_found", "Client not found", 404),
+  CLIENT_ALREADY_EXISTS("client_already_exists", "Client already exists", 400);
 
   private final String code;
   private final String message;

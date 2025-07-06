@@ -93,4 +93,12 @@ public class ConfigQuery {
     FROM otp_config
     WHERE tenant_id = ?
     """;
+
+  public static final String OIDC_CONFIG =
+      """
+    SELECT login_page_uri,
+           authorize_ttl
+    FROM oidc_config
+    WHERE tenant_id = ?
+    """;
 }
