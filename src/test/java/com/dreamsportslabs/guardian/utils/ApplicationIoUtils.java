@@ -28,7 +28,7 @@ public class ApplicationIoUtils {
       Map<String, String> headers,
       Map<String, String> queryParams,
       Function<RequestSpecification, Response> fn) {
-    RequestSpecification spec = given();
+    RequestSpecification spec = given().redirects().follow(false);
     if (body != null) {
       spec.header(CONTENT_TYPE, "application/json").and().body(body);
     }
@@ -265,5 +265,14 @@ public class ApplicationIoUtils {
     headers.put(CONTENT_TYPE, "application/json");
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/keys/generate"));
+  }
+
+  public static Response authorize(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(null, headers, queryParams, spec -> spec.get("/authorize"));
   }
 }

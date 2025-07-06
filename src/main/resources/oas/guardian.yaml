@@ -302,6 +302,171 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /authorize:
+    get:
+      tags:
+        - OIDC Authorize
+      summary: OAuth 2.0 Authorization Endpoint
+      description: |
+        OAuth 2.0 Authorization endpoint that initiates the authorization flow.
+        
+        This endpoint follows the OAuth 2.0 Authorization Code flow as specified in
+        RFC 6749 (https://tools.ietf.org/html/rfc6749) and OpenID Connect Core 1.0
+        (https://openid.net/specs/openid-connect-core-1_0.html).
+        
+        **Flow:**
+        1. Client redirects user to this endpoint with authorization parameters
+        2. Server validates the request and creates an authorization session
+        3. User is redirected to the login page with a login challenge
+        4. After authentication, user is redirected back to client with authorization code
+        
+        **Required Parameters:**
+        - `response_type`: Must be "code" for authorization code flow
+        - `client_id`: The registered client identifier
+        - `scope`: Space-separated list of scopes (must include "openid")
+        - `redirect_uri`: The registered redirect URI
+        
+        **Optional Parameters:**
+        - `state`: Opaque value to maintain state between request and callback
+        - `nonce`: String value to associate client session with ID token
+        - `code_challenge`: PKCE code challenge (RFC 7636)
+        - `code_challenge_method`: PKCE code challenge method ("S256" or "plain")
+        - `prompt`: Space-separated list of prompts ("login", "consent", "select_account")
+        - `login_hint`: Hint about the login identifier
+        
+        **Security:**
+        - All redirect URIs must be pre-registered with the client
+        - Scope validation ensures only authorized scopes are requested
+        - PKCE support for public clients (RFC 7636)
+        - Multi-tenant isolation via tenant-id header
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: response_type
+          in: query
+          required: true
+          description: OAuth 2.0 response type
+          schema:
+            type: string
+            enum: ["code"]
+            example: "code"
+        - name: client_id
+          in: query
+          required: true
+          description: OAuth 2.0 client identifier
+          schema:
+            type: string
+            minLength: 1
+            example: "my-client-id"
+        - name: scope
+          in: query
+          required: true
+          description: Space-separated list of scopes (must include "openid")
+          schema:
+            type: string
+            pattern: "^.*\\bopenid\\b.*$"
+            example: "openid email profile"
+        - name: redirect_uri
+          in: query
+          required: true
+          description: Registered redirect URI
+          schema:
+            type: string
+            format: uri
+            example: "https://myapp.com/callback"
+        - name: state
+          in: query
+          required: false
+          description: Opaque value to maintain state between request and callback
+          schema:
+            type: string
+            example: "xyz123"
+        - name: nonce
+          in: query
+          required: false
+          description: String value to associate client session with ID token
+          schema:
+            type: string
+            example: "abc456"
+        - name: code_challenge
+          in: query
+          required: false
+          description: PKCE code challenge (RFC 7636)
+          schema:
+            type: string
+            minLength: 43
+            maxLength: 128
+            example: "E9Melhoa2OwvFrEMTJguCHaBkNVHYeP552O7hfQYVWU"
+        - name: code_challenge_method
+          in: query
+          required: false
+          description: PKCE code challenge method
+          schema:
+            type: string
+            enum: ["S256", "plain"]
+            example: "S256"
+        - name: prompt
+          in: query
+          required: false
+          description: Space-separated list of prompts
+          schema:
+            type: string
+            enum: ["login", "consent", "select_account"]
+            example: "login"
+        - name: login_hint
+          in: query
+          required: false
+          description: Hint about the login identifier
+          schema:
+            type: string
+            example: "user@example.com"
+      responses:
+        '302':
+          description: Redirect to login page with authorization session
+          headers:
+            Location:
+              description: Redirect URL with login challenge and state
+              schema:
+                type: string
+                example: "https://login.example.com?login_challenge=abc123&state=xyz123"
+        '400':
+          description: Bad Request - Invalid authorization request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_client:
+                  summary: Invalid Client ID
+                  value:
+                    error: "invalid_request"
+                    message: "Invalid clientId"
+                invalid_redirect_uri:
+                  summary: Invalid Redirect URI
+                  value:
+                    error: "invalid_request"
+                    message: "Invalid redirect_uri"
+                missing_openid_scope:
+                  summary: Missing OpenID Scope
+                  value:
+                    error: "invalid_scope"
+                    message: "scope must contain 'openid'"
+                unsupported_response_type:
+                  summary: Unsupported Response Type
+                  value:
+                    error: "unsupported_response_type"
+                    message: "Unsupported response_type"
+                invalid_pkce:
+                  summary: Invalid PKCE Parameters
+                  value:
+                    error: "invalid_request"
+                    message: "code_challenge and code_challenge_method must be provided together"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /.well-known/openid-configuration:
     get:
       tags:

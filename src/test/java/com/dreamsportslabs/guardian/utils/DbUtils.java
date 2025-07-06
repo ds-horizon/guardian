@@ -358,4 +358,28 @@ public class DbUtils {
     }
     return false;
   }
+
+  public static boolean authorizeSessionExists(String tenantId, String loginChallenge) {
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      String key = "AUTH_SESSION_" + tenantId + "_" + loginChallenge;
+      return jedis.exists(key);
+    } catch (Exception e) {
+      log.error("Error while checking authorize session exists", e);
+      return false;
+    }
+  }
+
+  public static JsonObject getAuthorizeSession(String tenantId, String loginChallenge) {
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      String key = "AUTH_SESSION_" + tenantId + "_" + loginChallenge;
+      String value = jedis.get(key);
+      if (value != null) {
+        return new JsonObject(value);
+      }
+      return null;
+    } catch (Exception e) {
+      log.error("Error while getting authorize session", e);
+      return null;
+    }
+  }
 }

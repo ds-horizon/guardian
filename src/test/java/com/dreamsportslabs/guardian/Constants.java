@@ -283,4 +283,90 @@ public class Constants {
   public static final String NO_VALID_SCOPES = "No valid scopes found";
   public static final String SOME_SCOPES_NOT_EXIST = "Some scopes do not exist";
   public static final String SCOPE_ALREADY_EXISTS_MSG = "Scope already exists for client";
+
+  // Authorization Test Constants
+  public static final String TEST_STATE = "test_state_123";
+  public static final String TEST_LOGIN_HINT = "user@example.com";
+  public static final String TEST_CODE_CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaBkNVHYeP552O7hfQYVWU";
+  public static final String TEST_NONCE = "test_nonce_123";
+
+  // Authorization Parameter Names
+  public static final String PARAM_STATE = "state";
+  public static final String PARAM_CLIENT_ID = "client_id";
+  public static final String PARAM_SCOPE = "scope";
+  public static final String PARAM_REDIRECT_URI = "redirect_uri";
+  public static final String PARAM_RESPONSE_TYPE = "response_type";
+  public static final String PARAM_CODE_CHALLENGE = "code_challenge";
+  public static final String PARAM_CODE_CHALLENGE_METHOD = "code_challenge_method";
+  public static final String PARAM_PROMPT = "prompt";
+  public static final String PARAM_LOGIN_HINT = "login_hint";
+  public static final String PARAM_NONCE = "nonce";
+
+  // Authorization Headers
+  public static final String HEADER_LOCATION = "Location";
+
+  // Authorization URLs
+  public static final String LOGIN_PAGE_URL = "https://auth.example.com/login";
+  public static final String LOGIN_CHALLENGE = "login_challenge";
+
+  // Authorization Error Types
+  public static final String ERROR_INVALID_SCOPE = "invalid_scope";
+  public static final String ERROR_UNSUPPORTED_RESPONSE_TYPE = "unsupported_response_type";
+  public static final String ERROR_INVALID_CLIENT = "invalid_client";
+  public static final String ERROR_INVALID_REDIRECT_URI = "invalid_redirect_uri";
+  public static final String ERROR_CLIENT_AUTHENTICATION_FAILED = "Client authentication failed";
+  public static final String ERROR_REDIRECT_URI_INVALID = "Redirect uri is invalid";
+  public static final String ERROR_SCOPE_MUST_CONTAIN_OPENID = "scope must contain 'openid'";
+  public static final String ERROR_RESPONSE_TYPE_REQUIRED = "response_type is required";
+  public static final String ERROR_CLIENT_ID_REQUIRED = "client_id is required";
+  public static final String ERROR_SCOPE_REQUIRED = "scope is required";
+  public static final String ERROR_REDIRECT_URI_REQUIRED = "redirect_uri is required";
+  public static final String ERROR_CODE_CHALLENGE_TOGETHER =
+      "code_challenge and code_challenge_method must be provided together";
+
+  // Authorization Test Values
+  public static final String AUTH_RESPONSE_TYPE_CODE = "code";
+  public static final String AUTH_PROMPT_LOGIN = "login";
+  public static final String AUTH_PROMPT_CONSENT = "consent";
+  public static final String AUTH_PROMPT_NONE = "none";
+  public static final String AUTH_PROMPT_SELECT_ACCOUNT = "select_account";
+  public static final String AUTH_PROMPT_INVALID = "invalid_prompt";
+  public static final String AUTH_CODE_CHALLENGE_METHOD_INVALID = "invalid_method";
+  public static final String AUTH_RESPONSE_TYPE_TOKEN = "token";
+  public static final String AUTH_TEST_CLIENT_NAME = "Test OIDC Client";
+
+  // Authorization Code Challenge Methods
+  public static final String AUTH_CODE_CHALLENGE_METHOD_S256 = "S256";
+  public static final String AUTH_CODE_CHALLENGE_METHOD_PLAIN = "plain";
+
+  // Authorization Test URLs
+  public static final String MALICIOUS_CALLBACK_URL = "https://malicious.com/callback";
+  public static final String INVALID_CLIENT_ID = "invalid_client_id";
+
+  // Authorization Test Boolean Values
+  public static final boolean AUTH_SKIP_CONSENT_FALSE = false;
+
+  // Authorization Test Special Values
+  public static final String AUTH_STATE_SPECIAL_CHARS = "state_with_special_chars_!@#$%^&*()";
+
+  // Authorization Test Constants
+  public static final String PARAM_SEPARATOR = "&";
+  public static final String QUERY_SEPARATOR = "\\?";
+  public static final String EQUALS_SIGN = "=";
+
+  // Authorization Test Header Formats
+  public static final String LOGIN_CHALLENGE_PARAM = LOGIN_CHALLENGE + EQUALS_SIGN;
+  public static final String STATE_PARAM_FORMAT = PARAM_STATE + EQUALS_SIGN + "%s";
+  public static final String PROMPT_PARAM_FORMAT = PARAM_PROMPT + EQUALS_SIGN + "%s";
+  public static final String LOGIN_HINT_PARAM_FORMAT = PARAM_LOGIN_HINT + EQUALS_SIGN + "%s";
+
+  // Authorization Error Parameters
+  public static final String PARAM_ERROR = "error";
+  public static final String PARAM_ERROR_DESCRIPTION = "error_description";
+
+  // Authorization Error Parameter Formats
+  public static final String ERROR_PARAM_FORMAT = PARAM_ERROR + EQUALS_SIGN + "%s";
+  public static final String ERROR_DESC_PARAM_FORMAT = PARAM_ERROR_DESCRIPTION + EQUALS_SIGN + "%s";
+  public static final String ERROR_DESCRIPTION = "error_description";
+  public static final String ERROR_FIELD = "error";
 }
