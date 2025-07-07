@@ -856,6 +856,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/userinfo:
+    get:
+      tags:
+        - OpenID Connect
+      summary: Get User Information
+      description: |
+        Returns claims about the authenticated end-user based on the scopes granted.
+        
+        The response format depends on the Accept header:
+        - application/json: Returns claims as a JSON object
+        - application/jwt: Returns claims as a signed JWT
+        
+        This endpoint implements the OpenID Connect UserInfo specification.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: Authorization
+          in: header
+          description: Bearer access token
+          required: true
+          schema:
+            type: string
+            pattern: '^Bearer [A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
+      responses:
+        '200':
+          description: User information based on granted scopes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+            application/jwt:
+              schema:
+                type: string
+                format: jwt
+                description: Signed JWT containing user claims
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    post:
+      tags:
+        - OpenID Connect
+      summary: Get User Information
+      description: |
+        Alternative endpoint for getting user information that accepts POST requests.
+        Functionally identical to the GET endpoint.
+        
+        The response format depends on the Accept header:
+        - application/json: Returns claims as a JSON object
+        - application/jwt: Returns claims as a signed JWT
+        
+        This endpoint implements the OpenID Connect UserInfo specification.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: Authorization
+          in: header
+          description: Bearer access token
+          required: true
+          schema:
+            type: string
+            pattern: '^Bearer [A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
+      responses:
+        '200':
+          description: User information based on granted scopes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+            application/jwt:
+              schema:
+                type: string
+                format: jwt
+                description: Signed JWT containing user claims
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   parameters:
     TenantIdHeader:
@@ -982,7 +1061,6 @@ components:
           type: string
         responseType:
           type: string
-          example: token
         flow:
           type: string
         metaInfo:
@@ -1366,3 +1444,94 @@ components:
           items:
             type: string
           example: ["sub", "name", "email", "email_verified", "phone_number", "phone_number_verified"]
+
+    UserInfo:
+      type: object
+      description: OpenID Connect UserInfo Claims
+      required:
+        - sub
+      properties:
+        sub:
+          type: string
+          description: Subject identifier. A locally unique and never reassigned identifier.
+        name:
+          type: string
+          description: End-User's full name
+        given_name:
+          type: string
+          description: End-User's given name(s) or first name(s)
+        family_name:
+          type: string
+          description: End-User's surname(s) or last name(s)
+        middle_name:
+          type: string
+          description: End-User's middle name(s)
+        nickname:
+          type: string
+          description: Casual name of the End-User
+        preferred_username:
+          type: string
+          description: Shorthand name by which the End-User wishes to be referred to
+        profile:
+          type: string
+          format: uri
+          description: URL of the End-User's profile page
+        picture:
+          type: string
+          format: uri
+          description: URL of the End-User's profile picture
+        website:
+          type: string
+          format: uri
+          description: URL of the End-User's Web page or blog
+        email:
+          type: string
+          format: email
+          description: End-User's preferred e-mail address
+        email_verified:
+          type: boolean
+          description: True if the End-User's e-mail address has been verified
+        gender:
+          type: string
+          description: End-User's gender
+        birthdate:
+          type: string
+          format: date
+          description: End-User's birthday, represented as an ISO 8601:2004 YYYY-MM-DD format
+        zoneinfo:
+          type: string
+          description: String from zoneinfo time zone database representing End-User's time zone
+        locale:
+          type: string
+          description: End-User's locale, represented as a BCP47 language tag
+        phone_number:
+          type: string
+          description: End-User's preferred telephone number
+        phone_number_verified:
+          type: boolean
+          description: True if the End-User's phone number has been verified
+        address:
+          type: object
+          description: End-User's preferred postal address
+          properties:
+            formatted:
+              type: string
+              description: Full mailing address, formatted for display
+            street_address:
+              type: string
+              description: Full street address component
+            locality:
+              type: string
+              description: City or locality component
+            region:
+              type: string
+              description: State, province, prefecture, or region component
+            postal_code:
+              type: string
+              description: Zip code or postal code component
+            country:
+              type: string
+              description: Country name component
+        updated_at:
+          type: integer
+          description: Time the End-User's information was last updated, represented as seconds since Unix epoch

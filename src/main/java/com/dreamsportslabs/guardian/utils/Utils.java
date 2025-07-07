@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -36,5 +37,18 @@ public final class Utils {
 
   public static String getMd5Hash(String input) {
     return DigestUtils.md5Hex(input).toUpperCase();
+  }
+
+  public static String getAccessTokenFromAuthHeader(String authorizationHeader) {
+    try {
+      String prefix = authorizationHeader.substring(0, 7);
+      String token = authorizationHeader.substring(7).strip();
+      if (!prefix.equals("Bearer ")) {
+        throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
+      }
+      return token;
+    } catch (Exception e) {
+      throw UNAUTHORIZED.getCustomException("Invalid authorization header");
+    }
   }
 }
