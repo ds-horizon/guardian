@@ -37,6 +37,7 @@ public class Constants {
   public static final String BODY_PARAM_LOCATION = "location";
   public static final String BODY_PARAM_PARAMS = "params";
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String BODY_PARAM_LOGIN_CHALLENGE = "login_challenge";
 
   // Scope Configuration Params
   public static final String BODY_PARAM_SCOPE = "name";
@@ -321,6 +322,8 @@ public class Constants {
   public static final String ERROR_CLIENT_ID_REQUIRED = "client_id is required";
   public static final String ERROR_SCOPE_REQUIRED = "scope is required";
   public static final String ERROR_REDIRECT_URI_REQUIRED = "redirect_uri is required";
+  public static final String ERROR_LOGIN_CHALLENGE_REQUIRED = "login_challenge is required";
+  public static final String ERROR_REFRESH_TOKEN_REQUIRED = "refresh_token is required";
   public static final String ERROR_CODE_CHALLENGE_TOGETHER =
       "code_challenge and code_challenge_method must be provided together";
 
