@@ -20,4 +20,5 @@ public class TenantConfig {
   private TokenConfig tokenConfig;
   private ContactVerifyConfig contactVerifyConfig;
   private Map<String, OidcProviderConfig> oidcProviderConfig;
+  private AdminConfig adminConfig;
 }

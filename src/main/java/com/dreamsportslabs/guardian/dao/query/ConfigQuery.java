@@ -124,4 +124,12 @@ public class ConfigQuery {
     FROM oidc_provider_config
     WHERE tenant_id = ?
     """;
+
+  public static final String ADMIN_CONFIG =
+      """
+    SELECT username,
+           password
+    FROM admin_config
+    WHERE tenant_id = ?
+    """;
 }

@@ -194,4 +194,20 @@ public class ApplicationIoUtils {
 
     return execute(null, headers, queryParams, spec -> spec.get("/v1/user/flow/blocked"));
   }
+
+  public static Response adminLogout(String tenantId, String authHeader, String userId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+    if (authHeader != null) {
+      headers.put("Authorization", authHeader);
+    }
+    headers.put(CONTENT_TYPE, "application/json");
+
+    Map<String, Object> body = new HashMap<>();
+    if (userId != null) {
+      body.put("userId", userId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/admin/logout"));
+  }
 }
