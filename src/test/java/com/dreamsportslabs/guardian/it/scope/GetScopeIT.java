@@ -21,7 +21,6 @@ import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopesBy
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_CREATED;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -333,7 +332,7 @@ public class GetScopeIT {
         listScopes(TENANT_1, Map.of(QUERY_PARAM_PAGE, "abc", QUERY_PARAM_PAGE_SIZE, "10"));
 
     // Validate
-    response1.then().statusCode(SC_NOT_FOUND);
+    response1.then().statusCode(SC_BAD_REQUEST);
   }
 
   @Test
@@ -348,7 +347,7 @@ public class GetScopeIT {
         listScopes(TENANT_1, Map.of(QUERY_PARAM_PAGE, "1", QUERY_PARAM_PAGE_SIZE, "xyz"));
 
     // Validate
-    response2.then().statusCode(SC_NOT_FOUND);
+    response2.then().statusCode(SC_BAD_REQUEST);
 
     // Cleanup
     deleteScope(TENANT_1, scopeName);
