@@ -35,14 +35,14 @@ public class ClientScopeService {
               return scopeService
                   .getScopes(tenantId, getScopeRequestDto)
                   .flatMap(
-                      scopeListResponseDto -> {
-                        if (scopeListResponseDto.getScopes().isEmpty()) {
+                      scopeModelList -> {
+                        if (scopeModelList.isEmpty()) {
                           return Single.error(
                               INVALID_REQUEST.getCustomException("No valid scopes found"));
                         }
                         HashSet<String> inputScopes = new HashSet<>(requestDto.getScopes());
 
-                        if (inputScopes.size() != scopeListResponseDto.getScopes().size()) {
+                        if (inputScopes.size() != scopeModelList.size()) {
                           return Single.error(
                               INVALID_REQUEST.getCustomException("Some scopes do not exist"));
                         }
