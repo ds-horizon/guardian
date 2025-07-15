@@ -4,18 +4,19 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 
 @Getter
-public enum OidcResponseType {
-  CODE("code");
+public enum OidcCodeChallengeMethod {
+  PLAIN("plain"),
+  S256("S256");
 
   private final String value;
 
-  OidcResponseType(String value) {
+  OidcCodeChallengeMethod(String value) {
     this.value = value;
   }
 
   @JsonCreator
-  public static OidcResponseType fromString(String value) {
+  public static OidcCodeChallengeMethod fromString(String value) {
     if (value == null) return null;
-    return OidcResponseType.valueOf(value.toUpperCase());
+    return OidcCodeChallengeMethod.valueOf(value.toUpperCase());
   }
 }
