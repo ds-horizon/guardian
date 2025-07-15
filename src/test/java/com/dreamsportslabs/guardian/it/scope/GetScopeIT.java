@@ -1,11 +1,5 @@
 package com.dreamsportslabs.guardian.it.scope;
 
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ICON_URL;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_PAGE_SIZE_VALUE_CANNOT_BE_LESS_THAN_1;
 import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_PAGE_VALUE_CANNOT_BE_LESS_THAN_1;
@@ -17,13 +11,14 @@ import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_PAGE_SIZE;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.TEST_DISPLAY_NAME;
 import static com.dreamsportslabs.guardian.Constants.TEST_EMAIL_CLAIM;
 import static com.dreamsportslabs.guardian.Constants.TEST_ICON_URL;
-import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopes;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.listScopesByNames;
+import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_CREATED;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -34,17 +29,27 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dreamsportslabs.guardian.utils.ScopeUtils;
 import io.restassured.response.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EmptySource;
 
 public class GetScopeIT {
+
+  @BeforeAll
+  public static void setup() {
+    // Ensure the test environment is clean before each test
+    cleanUpScopes(TENANT_1);
+    cleanUpScopes(TENANT_2);
+  }
+
   @Test
   @DisplayName("Should list scopes including created one")
   public void testListScopesWithCreatedScope() {
@@ -52,8 +57,8 @@ public class GetScopeIT {
     String scopeName1 = RandomStringUtils.randomAlphabetic(10);
     String scopeName2 = RandomStringUtils.randomAlphabetic(10);
 
-    createScope(TENANT_1, valid(scopeName1));
-    createScope(TENANT_1, valid(scopeName2));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName1));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName2));
 
     // Act
     Response response = listScopes(TENANT_1, new HashMap<>());
@@ -72,7 +77,7 @@ public class GetScopeIT {
   public void testGetScopeByName() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response = listScopes(TENANT_1, Map.of(QUERY_PARAM_NAME, scopeName));
@@ -97,9 +102,9 @@ public class GetScopeIT {
     String s2 = RandomStringUtils.randomAlphabetic(10);
     String s3 = RandomStringUtils.randomAlphabetic(10);
 
-    createScope(TENANT_1, valid(s1));
-    createScope(TENANT_1, valid(s2));
-    createScope(TENANT_1, valid(s3));
+    createScope(TENANT_1, getValidScopeRequestBody(s1));
+    createScope(TENANT_1, getValidScopeRequestBody(s2));
+    createScope(TENANT_1, getValidScopeRequestBody(s3));
 
     // Act
     Response response = listScopesByNames(TENANT_1, List.of(s1, s2));
@@ -139,7 +144,7 @@ public class GetScopeIT {
     String name = RandomStringUtils.randomAlphabetic(10);
 
     // Act
-    createScope(TENANT_1, valid(name));
+    createScope(TENANT_1, getValidScopeRequestBody(name));
     Response response = listScopesByNames(TENANT_1, List.of(scopeName));
 
     // Validate
@@ -158,7 +163,7 @@ public class GetScopeIT {
   public void testGetScopesWithDuplicateNames() {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scope));
+    createScope(TENANT_1, getValidScopeRequestBody(scope));
 
     // Act
     Response response = listScopesByNames(TENANT_1, List.of(scope, scope, scope));
@@ -175,7 +180,7 @@ public class GetScopeIT {
   public void testNegativePageParameter() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response =
@@ -197,7 +202,7 @@ public class GetScopeIT {
   public void testNegativePageSizeParameter() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response =
@@ -219,7 +224,7 @@ public class GetScopeIT {
   public void testZeroPageParameter() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(6);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response =
@@ -241,7 +246,7 @@ public class GetScopeIT {
   public void testZeroPageSizeParameter() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response =
@@ -263,7 +268,7 @@ public class GetScopeIT {
   public void testPageSizeExceedsMaximum() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response =
@@ -281,7 +286,7 @@ public class GetScopeIT {
   public void testGetScopesWithDefaultPagination() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response = listScopes(TENANT_1, new HashMap<>());
@@ -299,9 +304,9 @@ public class GetScopeIT {
     String s2 = RandomStringUtils.randomAlphabetic(10);
     String s3 = RandomStringUtils.randomAlphabetic(10);
 
-    createScope(TENANT_1, valid(s1));
-    createScope(TENANT_1, valid(s2));
-    createScope(TENANT_1, valid(s3));
+    createScope(TENANT_1, getValidScopeRequestBody(s1));
+    createScope(TENANT_1, getValidScopeRequestBody(s2));
+    createScope(TENANT_1, getValidScopeRequestBody(s3));
 
     // Act
     Response response =
@@ -321,7 +326,7 @@ public class GetScopeIT {
   public void testNonNumericPageParameters() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response1 =
@@ -336,7 +341,7 @@ public class GetScopeIT {
   public void testNonNumericPageSizeParameters() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response2 =
@@ -354,7 +359,7 @@ public class GetScopeIT {
   public void testTenantIsolation() {
     // Arrange
     String scopeName = RandomStringUtils.randomAlphabetic(10);
-    createScope(TENANT_1, valid(scopeName));
+    createScope(TENANT_1, getValidScopeRequestBody(scopeName));
 
     // Act
     Response response = listScopes(TENANT_2, Map.of(QUERY_PARAM_NAME, scopeName));
@@ -373,8 +378,8 @@ public class GetScopeIT {
     String scopeName = RandomStringUtils.randomAlphabetic(10);
 
     // Act
-    Response response1 = createScope(TENANT_1, valid(scopeName));
-    Response response2 = createScope(TENANT_2, valid(scopeName));
+    Response response1 = createScope(TENANT_1, getValidScopeRequestBody(scopeName));
+    Response response2 = createScope(TENANT_2, getValidScopeRequestBody(scopeName));
 
     // Validate
     response1.then().statusCode(SC_CREATED);
@@ -385,14 +390,76 @@ public class GetScopeIT {
     deleteScope(TENANT_2, scopeName);
   }
 
-  private Map<String, Object> valid(String scope) {
-    Map<String, Object> m = new HashMap<>();
-    m.put(BODY_PARAM_SCOPE, scope);
-    m.put(BODY_PARAM_DISPLAY_NAME, TEST_SCOPE_NAME);
-    m.put(BODY_PARAM_DESCRIPTION, TEST_DESCRIPTION);
-    m.put(BODY_PARAM_CLAIMS, List.of(TEST_EMAIL_CLAIM));
-    m.put(BODY_PARAM_ICON_URL, TEST_ICON_URL);
-    m.put(BODY_PARAM_IS_OIDC, true);
-    return m;
+  @Test
+  @DisplayName("Should correctly calculate pagination offset for multiple pages")
+  public void testPaginationOffsetCalculation() {
+    // Arrange - Create 7 scopes to test pagination across multiple pages
+    String scope1 = "scope-" + RandomStringUtils.randomAlphabetic(5) + "-1";
+    String scope2 = "scope-" + RandomStringUtils.randomAlphabetic(5) + "-2";
+    String scope3 = "scope-" + RandomStringUtils.randomAlphabetic(5) + "-3";
+    String scope4 = "scope-" + RandomStringUtils.randomAlphabetic(5) + "-4";
+    String scope5 = "scope-" + RandomStringUtils.randomAlphabetic(5) + "-5";
+    String scope6 = "scope-" + RandomStringUtils.randomAlphabetic(5) + "-6";
+    String scope7 = "scope-" + RandomStringUtils.randomAlphabetic(5) + "-7";
+
+    createScope(TENANT_1, getValidScopeRequestBody(scope1));
+    createScope(TENANT_1, getValidScopeRequestBody(scope2));
+    createScope(TENANT_1, getValidScopeRequestBody(scope3));
+    createScope(TENANT_1, getValidScopeRequestBody(scope4));
+    createScope(TENANT_1, getValidScopeRequestBody(scope5));
+    createScope(TENANT_1, getValidScopeRequestBody(scope6));
+    createScope(TENANT_1, getValidScopeRequestBody(scope7));
+
+    // Act & Validate - Test Page 1 (pageSize=3 should get first 3 scopes)
+    Response page1Response =
+        listScopes(TENANT_1, Map.of(QUERY_PARAM_PAGE, "1", QUERY_PARAM_PAGE_SIZE, "3"));
+    page1Response.then().statusCode(SC_OK).body("scopes.size()", equalTo(3));
+
+    List<String> page1Scopes = page1Response.jsonPath().getList("scopes.name", String.class);
+
+    // Act & Validate - Test Page 2 (pageSize=3 should get next 3 scopes with correct offset)
+    Response page2Response =
+        listScopes(TENANT_1, Map.of(QUERY_PARAM_PAGE, "2", QUERY_PARAM_PAGE_SIZE, "3"));
+    page2Response.then().statusCode(SC_OK).body("scopes.size()", equalTo(3));
+
+    List<String> page2Scopes = page2Response.jsonPath().getList("scopes.name", String.class);
+
+    // Act & Validate - Test Page 3 (pageSize=3, should get remaining scope(s))
+    Response page3Response =
+        listScopes(TENANT_1, Map.of(QUERY_PARAM_PAGE, "3", QUERY_PARAM_PAGE_SIZE, "3"));
+    page3Response.then().statusCode(SC_OK).body("scopes.size()", equalTo(1));
+
+    List<String> page3Scopes = page3Response.jsonPath().getList("scopes.name", String.class);
+
+    // Validate that pages don't overlap (no duplicate scopes across pages)
+    assertThat(
+        "Page 1 and Page 2 should not have overlapping scopes",
+        page1Scopes.stream().noneMatch(page2Scopes::contains),
+        equalTo(true));
+
+    if (!page3Scopes.isEmpty()) {
+      assertThat(
+          "Page 1 and Page 3 should not have overlapping scopes",
+          page1Scopes.stream().noneMatch(page3Scopes::contains),
+          equalTo(true));
+      assertThat(
+          "Page 2 and Page 3 should not have overlapping scopes",
+          page2Scopes.stream().noneMatch(page3Scopes::contains),
+          equalTo(true));
+    }
+
+    // Cleanup
+    deleteScope(TENANT_1, scope1);
+    deleteScope(TENANT_1, scope2);
+    deleteScope(TENANT_1, scope3);
+    deleteScope(TENANT_1, scope4);
+    deleteScope(TENANT_1, scope5);
+    deleteScope(TENANT_1, scope6);
+    deleteScope(TENANT_1, scope7);
+  }
+
+  private Map<String, Object> getValidScopeRequestBody(String scope) {
+    return ScopeUtils.getValidScopeRequestBody(
+        scope, TEST_DISPLAY_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
   }
 }
