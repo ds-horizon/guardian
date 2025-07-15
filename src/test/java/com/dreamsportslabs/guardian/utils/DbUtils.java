@@ -66,7 +66,9 @@ public class DbUtils {
         scope.put("name", resultSet.getString("name"));
         scope.put("displayName", resultSet.getString("display_name"));
         scope.put("description", resultSet.getString("description"));
-        scope.put("claims", resultSet.getString("claims"));
+        scope.put(
+            "claims",
+            resultSet.getString("claims").equals("[]") ? null : resultSet.getString("claims"));
         scope.put("tenantId", resultSet.getString("tenant_id"));
         scope.put("iconUrl", resultSet.getString("icon_url"));
         scope.put("isOidc", resultSet.getBoolean("is_oidc"));
@@ -292,6 +294,20 @@ public class DbUtils {
       throw new RuntimeException("Error getting TTL for Redis key: " + key, e);
     }
   }
+
+  public static void cleanUpScopes(String tenantId) {
+    String deleteScopes = "DELETE FROM scope WHERE tenant_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(deleteScopes)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up clients", e);
+    }
+  }
+
   // Client management utilities
   public static void cleanupClients(String tenantId) {
     String deleteClientScopes = "DELETE FROM client_scope WHERE tenant_id = ?";

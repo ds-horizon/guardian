@@ -48,7 +48,8 @@ public enum ErrorEnum {
   UNPROCESSABLE_ENTITIES("unprocessable_entities", "Unprocessable entities", 422),
 
   OIDC_CONFIG_NOT_EXISTS(
-      "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400);
+      "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400),
+  SCOPE_NOT_FOUND("scope_not_found", "Scope not found", 400);
 
   private final String code;
   private final String message;

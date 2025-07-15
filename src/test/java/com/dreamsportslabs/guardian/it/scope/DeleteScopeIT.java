@@ -1,18 +1,12 @@
 package com.dreamsportslabs.guardian.it.scope;
 
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ICON_URL;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
 import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TEST_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.TEST_DISPLAY_NAME;
 import static com.dreamsportslabs.guardian.Constants.TEST_EMAIL_CLAIM;
 import static com.dreamsportslabs.guardian.Constants.TEST_ICON_URL;
-import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClientScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
@@ -28,6 +22,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.dreamsportslabs.guardian.utils.DbUtils;
+import com.dreamsportslabs.guardian.utils.ScopeUtils;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
 import java.util.Arrays;
@@ -47,7 +42,7 @@ public class DeleteScopeIT {
     String scope = RandomStringUtils.randomAlphabetic(10);
 
     // Act
-    createScope(TENANT_1, valid(scope)).then().statusCode(SC_CREATED);
+    createScope(TENANT_1, getValidScopeRequestBody(scope)).then().statusCode(SC_CREATED);
     deleteScope(TENANT_1, scope).then().statusCode(SC_NO_CONTENT);
 
     // Validate
@@ -75,7 +70,7 @@ public class DeleteScopeIT {
     Response response = deleteScope(TENANT_1, null);
 
     // Validate
-    response.then().statusCode(SC_NOT_FOUND);
+    response.then().statusCode(SC_METHOD_NOT_ALLOWED);
   }
 
   @Test
@@ -117,7 +112,7 @@ public class DeleteScopeIT {
   public void testDeleteScopeWithClientMapping() {
     // Arrange
     String scope = RandomStringUtils.randomAlphabetic(10);
-    Map<String, Object> scopeData = valid(scope);
+    Map<String, Object> scopeData = getValidScopeRequestBody(scope);
     createScope(TENANT_1, scopeData).then().statusCode(SC_CREATED);
     String clientId = createTestClient(TENANT_1);
     addScopeToClient(TENANT_1, clientId, scope);
@@ -139,15 +134,9 @@ public class DeleteScopeIT {
     assertThat(DbUtils.clientExists(TENANT_1, clientId), equalTo(true));
   }
 
-  private Map<String, Object> valid(String scope) {
-    Map<String, Object> m = new HashMap<>();
-    m.put(BODY_PARAM_SCOPE, scope);
-    m.put(BODY_PARAM_DISPLAY_NAME, TEST_SCOPE_NAME);
-    m.put(BODY_PARAM_DESCRIPTION, TEST_DESCRIPTION);
-    m.put(BODY_PARAM_CLAIMS, List.of(TEST_EMAIL_CLAIM));
-    m.put(BODY_PARAM_ICON_URL, TEST_ICON_URL);
-    m.put(BODY_PARAM_IS_OIDC, true);
-    return m;
+  private Map<String, Object> getValidScopeRequestBody(String scope) {
+    return ScopeUtils.getValidScopeRequestBody(
+        scope, TEST_DISPLAY_NAME, TEST_DESCRIPTION, List.of(TEST_EMAIL_CLAIM), TEST_ICON_URL, true);
   }
 
   private static String createTestClient(String tenantId) {
