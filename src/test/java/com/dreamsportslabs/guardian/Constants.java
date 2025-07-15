@@ -101,6 +101,17 @@ public class Constants {
   public static final String TEST_MULTIPLE_CLAIMS_SCOPE_DISPLAY_NAME = "Multiple Claims Scope";
   public static final String TEST_EXTRA_CLAIM = "extra_claim";
 
+  // Update scope test constants
+  public static final String TEST_UPDATED_DISPLAY_NAME = "Updated Display Name";
+  public static final String TEST_UPDATED_DESCRIPTION = "Updated description for testing";
+  public static final String TEST_UPDATED_ICON_URL = "https://example.com/updated-icon.png";
+  public static final String TEST_UPDATED_CLAIM = "updated_claim";
+  public static final String TEST_PARTIAL_UPDATE_DISPLAY_NAME = "Partially Updated Scope";
+
+  public static final String ERROR_CODE_SCOPE_NOT_FOUND = "scope_not_found";
+  public static final String ERROR_MSG_SCOPE_NOT_FOUND = "Scope not found";
+  public static final String ERROR_MSG_NO_UPDATES_PROVIDED = "No updates provided for scope";
+
   public static final String TENANT_1 = "tenant1";
   public static final String TENANT_2 = "tenant2";
 
@@ -109,13 +120,13 @@ public class Constants {
   public static final String ERROR_CODE_SCOPE_ALREADY_EXISTS = "scope_already_exists";
   public static final String ERROR_MSG_SCOPE_ALREADY_EXISTS = "scope already exists for tenant";
   public static final String ERROR_MSG_OPENID_SCOPE_INVALID_CLAIMS =
-      "openid scope must include 'sub' claim";
+      "openid scope must only include 'sub' claim";
   public static final String ERROR_MSG_PHONE_SCOPE_INVALID_CLAIMS =
       "phone scope must include 'phone_number' and 'phone_number_verified' claim";
   public static final String ERROR_MSG_EMAIL_SCOPE_INVALID_CLAIMS =
-      "email scope must include 'email' and 'email_verified' claim";
+      "email scope must include 'email' or 'email_verified' claim";
   public static final String ERROR_MSG_ADDRESS_SCOPE_INVALID_CLAIMS =
-      "address scope must include 'address' claim";
+      "address scope must only include 'address' claim";
   public static final String ERROR_MSG_PAGE_VALUE_CANNOT_BE_LESS_THAN_1 =
       "page value cannot be less than 1";
   public static final String ERROR_MSG_PAGE_SIZE_VALUE_CANNOT_BE_LESS_THAN_1 =
@@ -154,7 +165,6 @@ public class Constants {
   public static final String ERROR_INVALID_STATE = "invalid_state";
   public static final String ERROR_RESENDS_EXHAUSTED = "resends_exhausted";
   public static final String ERROR_RETRIES_EXHAUSTED = "retries_exhausted";
-  public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_SMS_SERVICE = "sms_service_error";
   public static final String INVALID_STATE = "invalid_state";
   public static final String ERROR_FLOW_BLOCKED = "flow_blocked";
@@ -286,6 +296,7 @@ public class Constants {
   public static final String BLANK_STRING = "   ";
   public static final int MIN_SECRET_LENGTH = 32;
   public static final int MIN_CLIENT_ID_LENGTH = 20;
+
   public static final int LONG_NAME_LENGTH = 99;
   public static final int VERY_LONG_TENANT_LENGTH = 100;
 

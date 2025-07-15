@@ -1,11 +1,13 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.SCOPE_NOT_FOUND;
+
 import com.dreamsportslabs.guardian.dao.ScopeDao;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.dto.request.scope.CreateScopeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.scope.GetScopeRequestDto;
-import com.dreamsportslabs.guardian.dto.response.ScopeListResponseDto;
-import com.dreamsportslabs.guardian.dto.response.ScopeResponseDto;
+import com.dreamsportslabs.guardian.dto.request.scope.UpdateScopeRequestDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
@@ -17,25 +19,20 @@ import lombok.extern.slf4j.Slf4j;
 public class ScopeService {
   private final ScopeDao scopeDao;
 
-  public Single<ScopeListResponseDto> getScopes(
+  public Single<List<ScopeModel>> getScopes(
       String tenantId, GetScopeRequestDto getScopeRequestDto) {
 
-    Single<List<ScopeModel>> scopesSingle;
-
     if (!getScopeRequestDto.hasSpecificNames()) {
-      scopesSingle =
-          scopeDao.getScopesWithPagination(
-              tenantId, getScopeRequestDto.getPage() - 1, getScopeRequestDto.getPageSize());
+      return scopeDao.getScopesWithPagination(
+          tenantId,
+          (getScopeRequestDto.getPage() - 1) * getScopeRequestDto.getPageSize(),
+          getScopeRequestDto.getPageSize());
     } else {
-      scopesSingle = scopeDao.getScopes(tenantId, getScopeRequestDto.getNames());
+      return scopeDao.getScopes(tenantId, getScopeRequestDto.getNames());
     }
-
-    return scopesSingle
-        .map(scopesList -> scopesList.stream().map(this::toResponseDto).toList())
-        .map(ScopeListResponseDto::new);
   }
 
-  public Single<ScopeResponseDto> createScope(String tenantId, CreateScopeRequestDto requestDto) {
+  public Single<ScopeModel> createScope(String tenantId, CreateScopeRequestDto requestDto) {
     ScopeModel scopeModel =
         ScopeModel.builder()
             .tenantId(tenantId)
@@ -47,20 +44,48 @@ public class ScopeService {
             .isOidc(requestDto.getIsOidc())
             .build();
 
-    return scopeDao.saveScope(scopeModel).map(this::toResponseDto);
+    return scopeDao.saveScope(scopeModel);
   }
 
   public Single<Boolean> deleteScope(String tenantId, String name) {
     return scopeDao.deleteScope(tenantId, name);
   }
 
-  private ScopeResponseDto toResponseDto(ScopeModel model) {
-    return new ScopeResponseDto(
-        model.getName(),
-        model.getDisplayName(),
-        model.getDescription(),
-        model.getIconUrl(),
-        model.getIsOidc(),
-        model.getClaims());
+  public Single<ScopeModel> updateScope(
+      String tenantId, String name, UpdateScopeRequestDto requestDto) {
+    return scopeDao
+        .getScopes(tenantId, List.of(name))
+        .filter(existingScopes -> !existingScopes.isEmpty())
+        .switchIfEmpty(Single.error(SCOPE_NOT_FOUND.getException()))
+        .flatMap(
+            scopeModels ->
+                scopeDao
+                    .updateScope(tenantId, name, requestDto)
+                    .map(
+                        updated -> {
+                          if (!updated) {
+                            throw INTERNAL_SERVER_ERROR.getCustomException(
+                                "internal error while updating scope");
+                          }
+                          return buildUpdatedScopeModel(
+                              scopeModels.get(0), requestDto, tenantId, name);
+                        }));
+  }
+
+  private ScopeModel buildUpdatedScopeModel(
+      ScopeModel existing, UpdateScopeRequestDto requestDto, String tenantId, String name) {
+    return ScopeModel.builder()
+        .tenantId(tenantId)
+        .name(name)
+        .displayName(getValueOrDefault(requestDto.getDisplayName(), existing.getDisplayName()))
+        .description(getValueOrDefault(requestDto.getDescription(), existing.getDescription()))
+        .claims(getValueOrDefault(requestDto.getClaims(), existing.getClaims()))
+        .iconUrl(getValueOrDefault(requestDto.getIconUrl(), existing.getIconUrl()))
+        .isOidc(getValueOrDefault(requestDto.getIsOidc(), existing.getIsOidc()))
+        .build();
+  }
+
+  private <T> T getValueOrDefault(T newValue, T defaultValue) {
+    return newValue != null ? newValue : defaultValue;
   }
 }

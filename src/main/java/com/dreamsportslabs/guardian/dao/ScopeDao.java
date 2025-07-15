@@ -5,11 +5,13 @@ import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_OIDC_SCOPES;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_SCOPES_BY_NAMES_TEMPLATE;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.GET_SCOPES_PAGINATED;
 import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.SAVE_SCOPE;
+import static com.dreamsportslabs.guardian.dao.query.ScopeQuery.UPDATE_SCOPE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.SCOPE_ALREADY_EXISTS;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.utils.JsonUtils;
+import com.dreamsportslabs.guardian.utils.SqlUtils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonArray;
@@ -20,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -87,6 +90,18 @@ public class ScopeDao {
         .getWriterPool()
         .preparedQuery(DELETE_SCOPE)
         .execute(Tuple.of(tenantId, name))
+        .map(result -> result.rowCount() > 0);
+  }
+
+  public Single<Boolean> updateScope(String tenantId, String name, Object model) {
+    Pair<String, Tuple> queryAndParams = SqlUtils.prepareUpdateQuery(model);
+    Tuple tuple = queryAndParams.getRight().addString(tenantId).addString(name);
+    String query = UPDATE_SCOPE.replace("<<update_attributes>>", queryAndParams.getLeft());
+
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(query)
+        .rxExecute(tuple)
         .map(result -> result.rowCount() > 0);
   }
 
