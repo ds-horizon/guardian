@@ -28,6 +28,21 @@ def get_user():
 
     return jsonify({"error": {"message": "Invalid request"}}), 400
 
+@app.route('/oidc/user', methods=['GET'])
+def get_oidc_user():
+    logger.info("GET %s", request.path)
+    logger.info("Headers: %s", request.headers)
+    logger.info("Query Params: %s", request.args)
+
+    for key in ["phoneNumber", "email", "username"]:
+        if key in request.args:
+            value = request.args.get(key)
+            user = users.get(value) if key == "userId" else get_user_by_field(key, value)
+            return jsonify(user), 200
+
+    return jsonify({"error": {"message": "Invalid request"}}), 400
+
+
 @app.route('/user', methods=['POST'])
 def create_user():
     data = request.json

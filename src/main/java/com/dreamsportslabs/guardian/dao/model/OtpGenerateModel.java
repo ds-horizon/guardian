@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.dao.model;
 
+import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
+
 import com.dreamsportslabs.guardian.constant.Contact;
 import java.util.Map;
 import lombok.Builder;
@@ -33,7 +35,7 @@ public class OtpGenerateModel {
   }
 
   public OtpGenerateModel updateResend() {
-    this.resendAfter = System.currentTimeMillis() / 1000 + resendInterval;
+    this.resendAfter = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS + resendInterval;
     this.resends += 1;
     return this;
   }

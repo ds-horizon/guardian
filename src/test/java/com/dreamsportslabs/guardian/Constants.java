@@ -136,6 +136,9 @@ public class Constants {
   public static final String JWT_HEADER_ALG = "alg";
 
   public static final String JWT_CLAIM_IAT = "iat";
+  public static final String JWT_CLAIM_CLIENT_ID = "client_id";
+  public static final String JWT_CLAIM_JTI = "jti";
+  public static final String JWT_CLAIM_SCOPE = "scope";
   public static final String JWT_CLAIM_EXP = "exp";
   public static final String JWT_CLAIM_ISS = "iss";
   public static final String JWT_CLAIM_SUB = "sub";
@@ -358,6 +361,7 @@ public class Constants {
   // Authorization Test URLs
   public static final String MALICIOUS_CALLBACK_URL = "https://malicious.com/callback";
   public static final String INVALID_CLIENT_ID = "invalid_client_id";
+  public static final String INVALID_CLIENT_SECRET = "invalid_client_secret";
 
   // Authorization Test Boolean Values
   public static final boolean AUTH_SKIP_CONSENT_FALSE = false;
@@ -398,4 +402,66 @@ public class Constants {
   public static final String DEVICE_VALUE = "device1";
   public static final String LOCATION_VALUE = "location";
   public static final String IP_ADDRESS = "1.2.3.4";
+
+  // Token Test
+  public static final String INVALID_REFRESH_TOKEN = "invalid_refresh_token";
+
+  // Token Endpoint Parameter Names
+  public static final String TOKEN_PARAM_GRANT_TYPE = "grant_type";
+  public static final String TOKEN_PARAM_SCOPE = "scope";
+  public static final String TOKEN_PARAM_CODE = "code";
+  public static final String TOKEN_PARAM_REDIRECT_URI = "redirect_uri";
+  public static final String TOKEN_PARAM_ID_TOKEN = "id_token";
+  public static final String TOKEN_PARAM_REFRESH_TOKEN = "refresh_token";
+  public static final String TOKEN_PARAM_ACCESS_TOKEN = "access_token";
+  public static final String TOKEN_PARAM_TOKEN_TYPE = "token_type";
+  public static final String TOKEN_PARAM_EXPIRES_IN = "expires_in";
+
+  // Token Endpoint Error Types
+  public static final String TOKEN_ERROR_INVALID_REQUEST = "invalid_request";
+  public static final String TOKEN_ERROR_UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type";
+  public static final String TOKEN_ERROR_INVALID_CLIENT = "invalid_client";
+  public static final String TOKEN_ERROR_UNAUTHORIZED_CLIENT = "unauthorized_client";
+  public static final String TOKEN_ERROR_INVALID_SCOPE = "invalid_scope";
+  public static final String TOKEN_ERROR_INVALID_GRANT = "invalid_grant";
+
+  // Token Endpoint Error Messages
+  public static final String TOKEN_ERROR_MSG_UNSUPPORTED_GRANT_TYPE =
+      "The grant type '%s' is not supported";
+  public static final String TOKEN_ERROR_MSG_CLIENT_AUTH_FAILED = "Client authentication failed";
+  public static final String TOKEN_ERROR_MSG_UNAUTHORIZED_CLIENT =
+      "The authenticated client is not authorized to use this authorization grant type";
+  public static final String TOKEN_ERROR_MSG_INVALID_SCOPE =
+      "The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner";
+  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_INVALID = "The refresh_token is invalid";
+  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_EXPIRED = "The refresh_token is expired";
+  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_INACTIVE =
+      "The refresh_token is inactive";
+
+  // Token Response Values
+  public static final String TOKEN_TYPE_BEARER = "Bearer";
+
+  // HTTP Headers for Token Requests
+  public static final String HEADER_AUTHORIZATION = "Authorization";
+  public static final String HEADER_CONTENT_TYPE = "Content-Type";
+  public static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
+  public static final String CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded";
+  public static final String AUTH_BASIC_PREFIX = "Basic ";
+  public static final String WWW_AUTHENTICATE_BASIC_REALM_FORMAT = "Basic realm=\"%s\"";
+
+  // JWT Token Constants
+  public static final String JWT_ALGORITHM_RS256 = "RS256";
+  public static final String JWT_TYPE_ACCESS_TOKEN = "at+jwt";
+  public static final String TEST_KID = "test-kid";
+  public static final String TEST_ISSUER = "https://auth.example.com";
+  public static final String TEST_PUBLIC_KEY_PATH =
+      "src/test/resources/test-data/tenant1-public-key.pem";
+
+  // Token Test Data
+  public static final String TEST_DEVICE_NAME = "device1";
+  public static final String TEST_IP_ADDRESS = "1.2.3.4";
+  public static final long ACCESS_TOKEN_EXPIRY_SECONDS = 900L;
+  public static final long ID_TOKEN_EXPIRY_SECONDS = 3600L;
+  public static final long REFRESH_TOKEN_EXPIRY_SECONDS = 1800L;
+  public static final long EXPIRED_TOKEN_OFFSET_SECONDS = -1800L;
 }

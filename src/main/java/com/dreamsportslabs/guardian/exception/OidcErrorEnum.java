@@ -7,6 +7,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
@@ -21,9 +22,9 @@ public enum OidcErrorEnum {
   UNAUTHORIZED(UNAUTHORIZED_ERROR_CODE, "Unauthorized", 401),
   UNAUTHORIZED_CLIENT(
       "unauthorized_client",
-      "The client is not authorized to request an authorization code using this method",
-      302),
-  INVALID_CLIENT("invalid_client", "Client authentication failed", 400),
+      "The authenticated client is not authorized to use this authorization grant type",
+      401),
+  INVALID_CLIENT("invalid_client", "Client authentication failed", 401),
   INVALID_REDIRECT_URI("invalid_redirect_uri", "Redirect uri is invalid", 400),
   ACCESS_DENIED(
       "access_denied", "The resource owner or authorization server denied the request", 302),
@@ -31,7 +32,10 @@ public enum OidcErrorEnum {
       "unsupported_response_type",
       "The authorization server does not support obtaining an authorization code using this method",
       302),
-  INVALID_SCOPE("invalid_scope", "The requested scope is invalid, unknown, or malformed", 302),
+  INVALID_SCOPE(
+      "invalid_scope",
+      "The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner",
+      400),
   SERVER_ERROR(
       "server_error",
       "The authorization server encountered an unexpected condition that prevented it from fulfilling the request",
@@ -40,11 +44,17 @@ public enum OidcErrorEnum {
       "temporarily_unavailable",
       "The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server",
       302),
+  UNSUPPORTED_GRANT_TYPE(
+      "unsupported_grant_type",
+      "The authorization grant type is not supported by the authorization server",
+      400),
+  INVALID_GRANT("invalid_grant", "The authorization grant is invalid", 400),
   INTERNAL_SERVER_ERROR("internal_server_error", "Something went wrong", 500);
 
   private final String error;
   private final String errorDescription;
   private final int httpStatus;
+  private MultivaluedMap<String, Object> additionalHeaders;
   @Getter private final WebApplicationException exception;
 
   OidcErrorEnum(String error, String errorDescription, int httpStatus) {
@@ -54,7 +64,7 @@ public enum OidcErrorEnum {
     Response response =
         Response.status(httpStatus)
             .header("Content-Type", "application/json")
-            .entity(new ErrorEnum.ErrorEntity(this.error, this.errorDescription))
+            .entity(new OidcErrorEntity(this.error, this.errorDescription))
             .build();
     this.exception = new WebApplicationException(response);
   }
@@ -97,6 +107,7 @@ public enum OidcErrorEnum {
 
     Response response =
         Response.status(this.httpStatus)
+            .replaceAll(this.additionalHeaders)
             .header("Content-Type", "application/json")
             .entity(new OidcErrorEntity(this.error, message))
             .build();
@@ -107,6 +118,7 @@ public enum OidcErrorEnum {
 
     Response response =
         Response.status(this.httpStatus)
+            .replaceAll(this.additionalHeaders)
             .header("Content-Type", "application/json")
             .entity(new OidcErrorEntity(this.error, this.errorDescription))
             .build();
@@ -123,5 +135,10 @@ public enum OidcErrorEnum {
       this.error = error;
       this.error_description = errorDescription;
     }
+  }
+
+  public OidcErrorEnum setHeaders(MultivaluedMap<String, Object> additionalHeaders) {
+    this.additionalHeaders = additionalHeaders;
+    return this;
   }
 }

@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
@@ -58,7 +59,7 @@ public class ContactVerifyService {
                 throw RESENDS_EXHAUSTED.getException();
               }
 
-              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
+              if ((System.currentTimeMillis() / SECONDS_TO_MILLISECONDS) < model.getResendAfter()) {
                 throw RESEND_NOT_ALLOWED.getCustomException(
                     Map.of("resendAfter", model.getResendAfter()));
               }
@@ -105,7 +106,7 @@ public class ContactVerifyService {
             .maxResends(config.getResendLimit())
             .headers(h)
             .contact(dto.getContact())
-            .expiry(System.currentTimeMillis() / 1000 + config.getOtpValidity())
+            .expiry(System.currentTimeMillis() / SECONDS_TO_MILLISECONDS + config.getOtpValidity())
             .build());
   }
 
@@ -141,7 +142,7 @@ public class ContactVerifyService {
         .switchIfEmpty(Single.error(INVALID_STATE.getException()))
         .map(
             model -> {
-              if (System.currentTimeMillis() / 1000 > model.getExpiry()) {
+              if (System.currentTimeMillis() / SECONDS_TO_MILLISECONDS > model.getExpiry()) {
                 contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 throw INVALID_STATE.getException();
               }

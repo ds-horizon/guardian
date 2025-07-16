@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.dao.model;
 
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
+import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
@@ -103,7 +104,7 @@ public class PasswordlessModel {
   }
 
   public PasswordlessModel updateResend() {
-    this.resendAfter = System.currentTimeMillis() / 1000 + resendInterval;
+    this.resendAfter = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS + resendInterval;
     this.resends += 1;
     return this;
   }

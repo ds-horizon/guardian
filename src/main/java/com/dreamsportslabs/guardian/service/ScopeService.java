@@ -72,6 +72,12 @@ public class ScopeService {
                         }));
   }
 
+  public Single<List<String>> getOidcScopes(String tenantId) {
+    return scopeDao
+        .oidcScopes(tenantId)
+        .map(scopeModels -> scopeModels.stream().map(ScopeModel::getName).toList());
+  }
+
   private ScopeModel buildUpdatedScopeModel(
       ScopeModel existing, UpdateScopeRequestDto requestDto, String tenantId, String name) {
     return ScopeModel.builder()
