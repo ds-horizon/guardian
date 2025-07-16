@@ -7,6 +7,7 @@ import com.dream11.rest.provider.impl.JacksonProvider;
 import com.dreamsportslabs.guardian.injection.GuiceInjector;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.jackson.DatabindCodec;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class RestVerticle extends AbstractRestVerticle {
     return new JacksonProvider(
         DatabindCodec.mapper()
             .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false));
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false));
   }
 }

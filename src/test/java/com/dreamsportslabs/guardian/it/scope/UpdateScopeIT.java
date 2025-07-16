@@ -51,6 +51,7 @@ import static com.dreamsportslabs.guardian.Constants.TEST_UPDATED_ICON_URL;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.updateScope;
+import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
 import static com.dreamsportslabs.guardian.utils.ScopeUtils.getValidScopeRequestBody;
 import static com.dreamsportslabs.guardian.utils.ScopeUtils.validateInDb;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -64,6 +65,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -71,6 +73,14 @@ import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class UpdateScopeIT {
+
+  @BeforeEach
+  void setUp() {
+    // Clean up any existing test data
+    cleanUpScopes(TENANT_1);
+    cleanUpScopes(TENANT_2);
+  }
+
   private Map<String, Object> getValidUpdateRequestBody(
       String displayName, String description, List<String> claims, String iconUrl, Boolean isOidc) {
     Map<String, Object> body = new HashMap<>();
