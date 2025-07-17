@@ -246,3 +246,25 @@ CREATE TABLE oidc_provider_config
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE user_flow_block_config
+(
+    tenant_id           CHAR(10)        NOT NULL,
+    user_identifier     VARCHAR(64)     NOT NULL,
+    flow_name           CHAR(20)        NOT NULL,
+    reason              VARCHAR(500),
+    unblocked_at        BIGINT,
+    is_active           BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_tenant_user_flow_block_config FOREIGN KEY (tenant_id)
+        REFERENCES tenant (id) ON DELETE CASCADE,
+
+    CONSTRAINT uk_tenant_user_flow UNIQUE (tenant_id, user_identifier, flow_name),
+
+    KEY idx_user_flow_block_tenant_user_flow (tenant_id, user_identifier, flow_name, unblocked_at)
+
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;

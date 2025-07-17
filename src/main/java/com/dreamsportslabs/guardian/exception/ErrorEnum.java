@@ -15,6 +15,7 @@ public enum ErrorEnum {
   USER_SERVICE_ERROR("user_service_error", "User service error", 500),
   SMS_SERVICE_ERROR("sms_service_error", "SMS service error", 500),
   EMAIL_SERVICE_ERROR("email_service_error", "Email service error", 500),
+  INVALID_QUERY_PARAM("invalid_query_param", "Invalid query param", 400),
 
   INVALID_CODE("invalid_code", "Invalid code", 400),
 
@@ -36,9 +37,11 @@ public enum ErrorEnum {
   INVALID_USER_IDENTIFIER(
       "invalid_user_identifier",
       "No valid user identifier found from the identifier provided",
-      400);
+      400),
+    FLOW_BLOCKED("flow_blocked", "API is blocked for this userIdentifier", 403);
 
-  private final String code;
+
+    private final String code;
   private final String message;
   private final int httpStatusCode;
 

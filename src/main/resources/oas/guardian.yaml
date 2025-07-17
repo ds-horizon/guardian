@@ -533,6 +533,121 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/user/flow/block:
+    post:
+      tags:
+        - User Flow Block
+      summary: Block user flows
+      description: |
+        API to block specific authentication flows for a user identifier (email/phone/username). 
+        This prevents the user from using the specified authentication methods.
+        
+        Supported flow types:
+        - passwordless: Blocks passwordless authentication flows
+        - password: Blocks username/password authentication flows  
+        - social_auth: Blocks social authentication flows (Facebook, Google)
+        - otp_verify: Blocks OTP verification flows
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1BlockUserFlowRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User flows blocked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1BlockUserFlowResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/user/flow/unblock:
+    post:
+      tags:
+        - User Flow Block
+      summary: Unblock user flows
+      description: |
+        API to unblock previously blocked authentication flows for a user identifier.
+        This allows the user to use the specified authentication methods again.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1UnblockUserFlowRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User flows unblocked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1UnblockUserFlowResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/user/flow/blocked:
+    get:
+      tags:
+        - User Flow Block
+      summary: Get blocked flows for a user
+      description: |
+        API to retrieve all currently blocked authentication flows for a specific user identifier.
+        Returns the list of flow types that are currently blocked for the user.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: userIdentifier
+          in: query
+          description: User identifier (email, phone number, username)
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Blocked flows retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1UserBlockedFlowsResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   parameters:
     TenantIdHeader:
@@ -659,7 +774,6 @@ components:
           type: string
         responseType:
           type: string
-          example: token
         flow:
           type: string
         metaInfo:
@@ -847,3 +961,124 @@ components:
           format: base64url
           description: Exponent of the RSA public key
           example: "AQAB"
+    V1BlockUserFlowRequestBody:
+      type: object
+      required:
+        - userIdentifier
+        - blockFlows
+        - reason
+        - unblockedAt
+      properties:
+        userIdentifier:
+          type: string
+          description: User identifier (email, phone number, username)
+          example: "user@example.com"
+        blockFlows:
+          type: array
+          items:
+            type: string
+            enum: [passwordless, password, social_auth, otp_verify]
+          description: List of flow types to block
+          example: ["passwordless", "social_auth"]
+        reason:
+          type: string
+          description: Reason for blocking the flows
+          example: "Suspicious activity detected"
+        unblockedAt:
+          type: integer
+          format: int64
+          description: Unix timestamp when the block should automatically expire(epoch)
+          example: 1704067200
+      example:
+        userIdentifier: "user@example.com"
+        blockFlows: ["passwordless", "social_auth"]
+        reason: "Suspicious activity detected"
+        unblockedAt: 1704067200
+
+    V1BlockUserFlowResponse:
+      type: object
+      properties:
+        userIdentifier:
+          type: string
+          description: User identifier that was blocked
+          example: "user@example.com"
+        blockedFlows:
+          type: array
+          items:
+            type: string
+          description: List of flow types that were successfully blocked
+          example: ["passwordless", "social_auth"]
+        message:
+          type: string
+          description: Success message
+          example: "Flows blocked successfully"
+      example:
+        userIdentifier: "user@example.com"
+        blockedFlows: ["passwordless", "social_auth"]
+        message: "Flows blocked successfully"
+
+    V1UnblockUserFlowRequestBody:
+      type: object
+      required:
+        - userIdentifier
+        - unblockFlows
+      properties:
+        userIdentifier:
+          type: string
+          description: User identifier (email, phone number, username)
+          example: "user@example.com"
+        unblockFlows:
+          type: array
+          items:
+            type: string
+            enum: [passwordless, password, social_auth, otp_verify]
+          description: List of flow types to unblock
+          example: ["passwordless", "social_auth"]
+      example:
+        userIdentifier: "user@example.com"
+        unblockFlows: ["passwordless", "social_auth"]
+
+    V1UnblockUserFlowResponse:
+      type: object
+      properties:
+        userIdentifier:
+          type: string
+          description: User identifier that was unblocked
+          example: "user@example.com"
+        unblockedFlows:
+          type: array
+          items:
+            type: string
+          description: List of flow types that were successfully unblocked
+          example: ["passwordless", "social_auth"]
+        message:
+          type: string
+          description: Success message
+          example: "Flows unblocked successfully"
+      example:
+        userIdentifier: "user@example.com"
+        unblockedFlows: ["passwordless", "social_auth"]
+        message: "Flows unblocked successfully"
+
+    V1UserBlockedFlowsResponse:
+      type: object
+      properties:
+        userIdentifier:
+          type: string
+          description: User identifier
+          example: "user@example.com"
+        blockedFlows:
+          type: array
+          items:
+            type: string
+            enum: [passwordless, password, social_auth, otp_verify]
+          description: List of currently blocked flow types
+          example: ["passwordless", "social_auth"]
+        totalCount:
+          type: integer
+          description: Total number of blocked flows
+          example: 2
+      example:
+        userIdentifier: "user@example.com"
+        blockedFlows: ["passwordless", "social_auth"]
+        totalCount: 2

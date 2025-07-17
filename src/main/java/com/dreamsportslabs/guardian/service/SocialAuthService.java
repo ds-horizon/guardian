@@ -16,9 +16,11 @@ import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
+import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.dto.Provider;
 import com.dreamsportslabs.guardian.dto.UserDto;
@@ -31,6 +33,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +45,7 @@ public class SocialAuthService {
   private final UserService userService;
   private final AuthorizationService authorizationService;
   private final Registry registry;
+  private final UserFlowBlockService userFlowBlockService;
 
   private static final String FACEBOOK_FIELDS_EMAIL = "email";
   private static final String FACEBOOK_FIELDS_USER_ID = "id";
@@ -58,6 +62,22 @@ public class SocialAuthService {
     return registry
         .get(tenantId, FacebookIdProvider.class)
         .getUserIdentity(dto.getAccessToken())
+        .flatMap(
+            fbUserData -> {
+              String email = fbUserData.getString(FACEBOOK_FIELDS_EMAIL);
+              if (email != null) {
+                return userFlowBlockService
+                    .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
+                    .map(
+                        blockedResult -> {
+                          if (blockedResult.isBlocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          }
+                          return fbUserData;
+                        });
+              }
+              return Single.just(fbUserData);
+            })
         .flatMap(
             fbUserData ->
                 userService
@@ -133,6 +153,22 @@ public class SocialAuthService {
     return registry
         .get(tenantId, GoogleIdProvider.class)
         .getUserIdentity(dto.getIdToken())
+        .flatMap(
+            googleUserData -> {
+              String email = googleUserData.getString(OIDC_CLAIMS_EMAIL);
+              if (email != null) {
+                return userFlowBlockService
+                    .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
+                    .map(
+                        result -> {
+                          if (result.isBlocked()) {
+                            throw FLOW_BLOCKED.getCustomException(result.getReason());
+                          }
+                          return googleUserData;
+                        });
+              }
+              return Single.just(googleUserData);
+            })
         .flatMap(
             googleUserData ->
                 userService

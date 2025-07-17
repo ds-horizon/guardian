@@ -6,6 +6,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
@@ -44,6 +45,7 @@ public class Passwordless {
   private final PasswordlessDao passwordlessDao;
   private final AuthorizationService authorizationService;
   private final Registry registry;
+  private final UserFlowBlockService userFlowBlockService;
 
   public Single<PasswordlessModel> init(
       V1PasswordlessInitRequestDto requestDto,
@@ -51,27 +53,37 @@ public class Passwordless {
       String tenantId) {
     String state = requestDto.getState();
     Single<PasswordlessModel> passwordlessModel;
+
     if (state != null) {
       passwordlessModel = this.getPasswordlessModel(state, tenantId);
     } else {
       updateDefaultTemplate(requestDto, tenantId);
       passwordlessModel = this.createPasswordlessModel(requestDto, headers, tenantId);
     }
+
     return passwordlessModel
-        .map(
-            model -> {
-              if (model.getResends() >= model.getMaxResends()) {
-                passwordlessDao.deletePasswordlessModel(state, tenantId);
-                throw RESENDS_EXHAUSTED.getException();
-              }
+        .flatMap(
+            model ->
+                userFlowBlockService
+                    .isUserBlocked(model, tenantId)
+                    .map(
+                        blockedResult -> {
+                          if (blockedResult.isBlocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          }
 
-              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
-                throw RESEND_NOT_ALLOWED.getCustomException(
-                    Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
-              }
+                          if (model.getResends() >= model.getMaxResends()) {
+                            passwordlessDao.deletePasswordlessModel(state, tenantId);
+                            throw RESENDS_EXHAUSTED.getException();
+                          }
 
-              return model;
-            })
+                          if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
+                            throw RESEND_NOT_ALLOWED.getCustomException(
+                                Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
+                          }
+
+                          return model;
+                        }))
         .flatMap(
             model -> {
               if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
@@ -166,13 +178,26 @@ public class Passwordless {
   }
 
   public Single<Object> complete(V1PasswordlessCompleteRequestDto dto, String tenantId) {
+
     return getPasswordlessModel(dto.getState(), tenantId)
+        .flatMap(
+            model ->
+                userFlowBlockService
+                    .isUserBlocked(model, tenantId)
+                    .map(
+                        blockedResult -> {
+                          if (blockedResult.isBlocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          }
+                          return model;
+                        }))
         .flatMap(model -> validateOtp(model, dto.getOtp(), tenantId))
         .flatMap(
             model -> {
               if (model.getUser().get(USERID) != null) {
                 return Single.just(model);
               }
+
               UserDto.UserDtoBuilder builder = UserDto.builder();
               Contact contact = model.getContacts().get(0);
               if (contact.getChannel() == Channel.EMAIL) {
@@ -181,8 +206,10 @@ public class Passwordless {
                 builder.phoneNumber(contact.getIdentifier());
               }
               builder.additionalInfo(model.getAdditionalInfo());
+
               MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
               model.getHeaders().forEach(headers::add);
+
               return userService
                   .createUser(builder.build(), headers, tenantId)
                   .map(
