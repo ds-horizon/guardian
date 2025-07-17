@@ -25,7 +25,18 @@ public enum ErrorEnum {
   RETRIES_EXHAUSTED("retries_exhausted", "Retries exhausted", 400),
 
   USER_EXISTS("user_exists", "User already exists", 400),
-  USER_NOT_EXISTS("user_not_exists", "User does not exist", 400);
+  USER_NOT_EXISTS("user_not_exists", "User does not exist", 400),
+
+  INVALID_IDP_TOKEN("invalid_idp_token", "Invalid identity provider token", 400),
+  INVALID_IDP_CODE("invalid_idp_code", "Missing ID token in provider response", 400),
+  PROVIDER_TOKENS_EXCHANGE_FAILED(
+      "token_exchange_failed",
+      "Error occurred while exchanging authorization_code for provider tokens",
+      400),
+  INVALID_USER_IDENTIFIER(
+      "invalid_user_identifier",
+      "No valid user identifier found from the identifier provided",
+      400);
 
   private final String code;
   private final String message;
@@ -76,6 +87,15 @@ public enum ErrorEnum {
         Response.status(this.httpStatusCode)
             .header("Content-Type", "application/json")
             .entity(new ErrorEntity(this.code, message, data))
+            .build();
+    return new WebApplicationException(response);
+  }
+
+  public WebApplicationException getCustomException(String code, String message) {
+    Response response =
+        Response.status(this.httpStatusCode)
+            .header("Content-Type", "application/json")
+            .entity(new ErrorEntity(code, message))
             .build();
     return new WebApplicationException(response);
   }

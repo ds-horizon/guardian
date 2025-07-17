@@ -5,6 +5,7 @@ import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.CONTACT_VERIFY_
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.EMAIL_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.FB_AUTH_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.GOOGLE_AUTH_CONFIG;
+import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OIDC_PROVIDER_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OTP_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.SMS_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.TOKEN_CONFIG;
@@ -17,6 +18,7 @@ import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
 import com.dreamsportslabs.guardian.config.tenant.FbConfig;
 import com.dreamsportslabs.guardian.config.tenant.GoogleConfig;
+import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.SmsConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -28,6 +30,7 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.sqlclient.Tuple;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +51,8 @@ public class ConfigDao {
             appendGoogleConfig(tenantId, builder),
             appendSmsConfig(tenantId, builder),
             appendOtpConfig(tenantId, builder),
-            appendContactVerifyConfig(tenantId, builder));
+            appendContactVerifyConfig(tenantId, builder),
+            appendOidcProviderConfig(tenantId, builder));
     return Completable.merge(configSources)
         .andThen(Single.defer(() -> Single.just(builder.build())));
   }
@@ -108,6 +112,27 @@ public class ConfigDao {
     return getConfigFromDb(tenantId, SmsConfig.class, SMS_CONFIG)
         .map(builder::smsConfig)
         .ignoreElement();
+  }
+
+  private Completable appendOidcProviderConfig(
+      String tenantId, TenantConfig.TenantConfigBuilder builder) {
+    return getMultipleConfigFromDb(tenantId, OidcProviderConfig.class, OIDC_PROVIDER_CONFIG)
+        .map(
+            configs ->
+                configs.stream()
+                    .collect(
+                        Collectors.toMap(OidcProviderConfig::getProviderName, config -> config)))
+        .map(builder::oidcProviderConfig)
+        .ignoreElement();
+  }
+
+  private <T> Single<List<T>> getMultipleConfigFromDb(
+      String tenantId, Class<T> configType, String query) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(query)
+        .execute(Tuple.of(tenantId))
+        .map(rows -> JsonUtils.rowSetToList(rows, configType));
   }
 
   private <T> Single<T> getConfigFromDb(String tenantId, Class<T> configType, String query) {
