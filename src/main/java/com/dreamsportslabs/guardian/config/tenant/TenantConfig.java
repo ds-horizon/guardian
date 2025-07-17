@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.config.tenant;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -18,4 +19,5 @@ public class TenantConfig {
   private UserConfig userConfig;
   private TokenConfig tokenConfig;
   private ContactVerifyConfig contactVerifyConfig;
+  private Map<String, OidcProviderConfig> oidcProviderConfig;
 }

@@ -27,6 +27,7 @@ public final class Constants {
   public static final String OIDC_CLAIMS_FAMILY_NAME = "family_name";
   public static final String OIDC_CLAIMS_MIDDLE_NAME = "middle_name";
   public static final String OIDC_CLAIMS_PICTURE = "picture";
+  public static final String OIDC_CLAIMS_PHONE = "phone_number";
 
   public static final String EXPIRY_OPTION_REDIS = "EX";
   public static final String EXPIRE_AT_REDIS = "EXAT";
@@ -55,6 +56,7 @@ public final class Constants {
   public static final String JWT_CLAIMS_IAT = "iat";
   public static final String JWT_CLAIMS_EXP = "exp";
   public static final String JWT_CLAIMS_RFT_ID = "rft_id";
+  public static final String JWT_CLAIMS_AUD = "aud";
 
   public static final ImmutableList<String> fbAuthResponseTypes = ImmutableList.of(CODE, TOKEN);
   public static final ImmutableList<String> passwordlessAuthResponseTypes =
@@ -77,7 +79,7 @@ public final class Constants {
   public static final String USER_FILTERS_EMAIL = "email";
   public static final String USER_FILTERS_PHONE = "phoneNumber";
   public static final String USER_FILTERS_PROVIDER_NAME = "providerName";
-  public static final String USER_FILTERS_PROVIDER_USER_ID = "providerId";
+  public static final String USER_FILTERS_PROVIDER_USER_ID = "providerUserId";
 
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
@@ -102,6 +104,8 @@ public final class Constants {
   public static final String UNAUTHORIZED_ERROR_CODE = "unauthorized";
   public static final String OTP_RESEND_AFTER = "resendAfter";
   public static final String OTP_RETRIES_LEFT = "retriesLeft";
+  public static final String ERROR = "error";
+  public static final String ERROR_DESCRIPTION = "error_description";
 
   public static final String MESSAGE_CHANNEL = "channel";
   public static final String MESSAGE_TO = "to";
@@ -112,4 +116,25 @@ public final class Constants {
   public static final String FORMAT_PEM = "PEM";
   public static final String FORMAT_JWKS = "JWKS";
   public static final ImmutableList<Integer> VALID_KEY_SIZES = ImmutableList.of(2048, 3072, 4096);
+
+  // OIDC Token Constants
+  public static final String OIDC_REFRESH_TOKEN = "refresh_token";
+  public static final String AUTHORIZATION = "Authorization";
+  public static final String OIDC_GRANT_TYPE = "grant_type";
+  public static final String OIDC_AUTHORIZATION_CODE = "authorization_code";
+  public static final String OIDC_REDIRECT_URI = "redirect_uri";
+  public static final String OIDC_CODE_VERIFIER = "code_verifier";
+  public static final String OIDC_CODE = "code";
+  public static final String OIDC_CLIENT_ID = "client_id";
+  public static final String OIDC_CLIENT_SECRET = "client_secret";
+  public static final String OIDC_CLIENT_AUTH_METHOD_POST = "client_secret_post";
+  public static final String OIDC_CLIENT_AUTH_METHOD_BASIC = "client_secret_basic";
+  public static final String FLOW_SIGNINUP = "SIGNINUP";
+
+  public static final String APP_CODE = "code";
+  public static final String APP_ACCESS_TOKEN = "accessToken";
+  public static final String APP_REFRESH_TOKEN = "refreshToken";
+  public static final String APP_ID_TOKEN = "idToken";
+  public static final String APP_TOKEN_TYPE = "tokenType";
+  public static final String APP_TOKEN_CODE_EXPIRY = "expiresIn";
 }

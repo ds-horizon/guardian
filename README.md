@@ -69,7 +69,7 @@ java -version
 
 Ensure that **Java 17** is the active version in use. Maven should also be configured to use Java 17 - you can verify this by checking that `mvn --version` shows Java 17 in its output.
 
-Additionally, make sure the following ports are free and not in use by other services:
+Additionally, make sure the following ports are free and not in use by other services :
 
 * `3306` – MySQL
 * `6379` – Redis

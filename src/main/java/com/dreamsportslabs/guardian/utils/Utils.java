@@ -4,6 +4,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardi
 
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.util.Base64;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -36,5 +37,10 @@ public final class Utils {
 
   public static String getMd5Hash(String input) {
     return DigestUtils.md5Hex(input).toUpperCase();
+  }
+
+  public static String generateBasicAuthHeader(String clientId, String clientSecret) {
+    return "Basic "
+        + new String(Base64.getEncoder().encode((clientId + ":" + clientSecret).getBytes()));
   }
 }

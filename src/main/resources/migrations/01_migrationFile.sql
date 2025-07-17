@@ -222,3 +222,27 @@ CREATE TABLE contact_verify_config
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE oidc_provider_config
+(
+    tenant_id          CHAR(10)      NOT NULL,
+    provider_name      VARCHAR(50)   NOT NULL,
+    issuer             VARCHAR(2083) NOT NULL,
+    jwks_url           VARCHAR(2083) NOT NULL,
+    token_url          VARCHAR(2083) NOT NULL,
+    client_id          VARCHAR(256)  NOT NULL,
+    client_secret      TEXT          NOT NULL,
+    redirect_uri       VARCHAR(2083) NOT NULL,
+    client_auth_method VARCHAR(256)  NOT NULL,
+    is_ssl_enabled     BOOLEAN       NOT NULL DEFAULT TRUE,
+    user_identifier    VARCHAR(20)   NOT NULL DEFAULT 'email',
+    audience_claims    JSON          NOT NULL,
+    created_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_tenant_oidc_provider_config FOREIGN KEY (tenant_id)
+        REFERENCES tenant (id) ON DELETE CASCADE,
+    PRIMARY KEY `idx_tenant_provider` (`tenant_id`, `provider_name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;

@@ -24,6 +24,7 @@ import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
+import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
 import com.dreamsportslabs.guardian.dto.response.RefreshTokenResponseDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.dreamsportslabs.guardian.registry.Registry;
@@ -60,6 +61,12 @@ public class AuthorizationService {
   }
 
   public NewCookie[] getCookies(TokenResponseDto responseDto, String tenantId) {
+    NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
+    NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
+    return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
+  }
+
+  public NewCookie[] getIDPConnectCookies(IdpConnectResponseDto responseDto, String tenantId) {
     NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
     NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
     return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
