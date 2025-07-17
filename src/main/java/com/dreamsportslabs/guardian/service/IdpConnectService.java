@@ -297,8 +297,8 @@ public class IdpConnectService {
                   throw INVALID_IDP_CODE.getException();
                 }
               } else if (res.statusCode() >= 400 && res.statusCode() < 500) {
-                String errorDescription = res.bodyAsJsonObject().getString(ERROR);
-                String error = res.bodyAsJsonObject().getString(ERROR_DESCRIPTION);
+                String error = res.bodyAsJsonObject().getString(ERROR);
+                String errorDescription = res.bodyAsJsonObject().getString(ERROR_DESCRIPTION);
                 throw PROVIDER_TOKENS_EXCHANGE_FAILED.getCustomException(error, errorDescription);
               } else {
                 throw INTERNAL_SERVER_ERROR.getCustomException("Token exchange failed");
