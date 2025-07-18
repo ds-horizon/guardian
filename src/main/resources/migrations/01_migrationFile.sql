@@ -261,9 +261,9 @@ CREATE TABLE user_flow_block
     CONSTRAINT fk_tenant_user_flow_block FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
 
-    CONSTRAINT uk_tenant_user_flow UNIQUE (tenant_id, user_identifier, flow_name),
+    CONSTRAINT pk_tenant_user_flow PRIMARY KEY (tenant_id, flow_name, user_identifier),
 
-    KEY idx_user_flow_block_tenant_user_flow (tenant_id, user_identifier, flow_name, unblocked_at)
+        KEY idx_user_flow_block_tenant_user_flow (tenant_id, flow_name, user_identifier, unblocked_at)
 
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
