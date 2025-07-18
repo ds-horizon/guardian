@@ -26,6 +26,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_TOKEN;
@@ -35,6 +36,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.constant.IdpUserIdentifier;
 import com.dreamsportslabs.guardian.dao.model.IdpCredentials;
@@ -55,6 +57,7 @@ import io.vertx.rxjava3.ext.web.client.WebClient;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +70,7 @@ public class IdpConnectService {
   private final AuthorizationService authorizationService;
   private final WebClient webClient;
   private final Registry registry;
+  private final UserFlowBlockService userFlowBlockService;
 
   public Single<IdpConnectResponseDto> connect(
       IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
@@ -88,6 +92,32 @@ public class IdpConnectService {
             idpTokens -> {
               Provider provider = createProviderFromTokens(idpTokens, providerName);
               UserDto userDto = createUserDtoFromTokens(provider);
+              return Single.just(new Object[] {idpTokens, userDto});
+            })
+        .flatMap(
+            data -> {
+              IdpCredentials idpTokens = (IdpCredentials) data[0];
+              UserDto userDto = (UserDto) data[1];
+
+              String email = userDto.getEmail();
+              if (email != null) {
+                return userFlowBlockService
+                    .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
+                    .map(
+                        blockedResult -> {
+                          if (blockedResult.isBlocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          }
+                          return new Object[] {idpTokens, userDto};
+                        });
+              }
+              return Single.just(new Object[] {idpTokens, userDto});
+            })
+        .flatMap(
+            data -> {
+              IdpCredentials idpTokens = (IdpCredentials) data[0];
+              UserDto userDto = (UserDto) data[1];
+
               Map<String, String> queryParams =
                   getUserIdentifierDetails(userIdentifier, userDto, requestDto.getIdProvider());
               return processUserBasedOnFlow(

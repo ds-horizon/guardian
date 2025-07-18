@@ -8,7 +8,7 @@ import lombok.Getter;
 public enum BlockFlow {
   PASSWORDLESS("passwordless", List.of("/v1/passwordless/init", "/v1/passwordless/complete")),
   PASSWORD("password", List.of("/v1/signin", "/v1/signup")),
-  SOCIAL_AUTH("social_auth", List.of("/v1/auth/fb", "/v1/auth/google")),
+  SOCIAL_AUTH("social_auth", List.of("/v1/auth/fb", "/v1/auth/google", "/v1/idp/connect")),
   OTP_VERIFY("otp_verify", List.of("/v1/otp/send", "/v1/otp/verify"));
 
   private final String flowName;

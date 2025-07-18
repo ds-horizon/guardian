@@ -9,15 +9,13 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_E
 import com.dreamsportslabs.guardian.client.MysqlClient;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.dao.model.UserFlowBlockModel;
+import com.dreamsportslabs.guardian.utils.JsonUtils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
-import io.vertx.rxjava3.sqlclient.Row;
 import io.vertx.rxjava3.sqlclient.Tuple;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,21 +69,11 @@ public class UserFlowBlockDao {
         .getReaderPool()
         .preparedQuery(GET_ACTIVE_FLOW_BLOCKS_BY_USER_IDENTIFIER)
         .rxExecute(Tuple.of(tenantId, userIdentifier))
-        .map(
-            rowSet -> {
-              List<String> flowNames = new ArrayList<>();
-              for (Row row : rowSet) {
-                flowNames.add(row.getString("flowName"));
-              }
-              return flowNames;
-            });
+        .map(rowSet -> JsonUtils.rowSetToList(rowSet, String.class));
   }
 
-  public Single<BlockCheckResult> checkFlowBlockedWithReasonBatch(
+  public Single<List<String>> checkFlowBlockedWithReasonBatch(
       String tenantId, List<String> userIdentifiers, BlockFlow flowName) {
-    if (userIdentifiers.isEmpty()) {
-      return Single.just(new BlockCheckResult(false, null));
-    }
 
     String placeholders = String.join(",", userIdentifiers.stream().map(c -> "?").toList());
     String query = String.format(GET_FLOW_BLOCK_REASON_BATCH, placeholders);
@@ -99,24 +87,6 @@ public class UserFlowBlockDao {
         .getReaderPool()
         .preparedQuery(query)
         .rxExecute(params)
-        .map(
-            rows -> {
-              if (rows.size() > 0) {
-                String reason = rows.iterator().next().getString("reason");
-                return new BlockCheckResult(true, reason);
-              }
-              return new BlockCheckResult(false, null);
-            });
-  }
-
-  @Getter
-  public static class BlockCheckResult {
-    private final boolean blocked;
-    private final String reason;
-
-    public BlockCheckResult(boolean blocked, String reason) {
-      this.blocked = blocked;
-      this.reason = reason;
-    }
+        .map(rowSet -> JsonUtils.rowSetToList(rowSet, String.class));
   }
 }

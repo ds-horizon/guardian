@@ -60,9 +60,21 @@ public class UserFlowBlockService {
 
   public Single<FlowBlockCheckResult> checkFlowBlockedWithReasonBatch(
       String tenantId, List<String> userIdentifiers, BlockFlow flowName) {
+    if (userIdentifiers.isEmpty()) {
+      return Single.just(new FlowBlockCheckResult(false, null));
+    }
+
     return userFlowBlockDao
         .checkFlowBlockedWithReasonBatch(tenantId, userIdentifiers, flowName)
-        .map(result -> new FlowBlockCheckResult(result.isBlocked(), result.getReason()));
+        .map(
+            reasonList -> {
+              if (reasonList.isEmpty()) {
+                return new FlowBlockCheckResult(false, null);
+              }
+
+              String reason = reasonList.get(0);
+              return new FlowBlockCheckResult(true, reason);
+            });
   }
 
   @Getter
