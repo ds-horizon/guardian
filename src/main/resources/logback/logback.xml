@@ -30,8 +30,7 @@
     <neverBlock>true</neverBlock>
   </appender>
 
-  <logger name="com.dream11" level="info"/>
-  <logger name="com.dream11.rest.filter.LoggerFilter" level="info"/>
+  <logger name="com.dreamsportslabs" level="info"/>
 
   <root level="info">
     <appender-ref ref="ASYNC_FILE"/>
