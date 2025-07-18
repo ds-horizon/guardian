@@ -261,7 +261,7 @@ CREATE TABLE user_flow_block
     CONSTRAINT fk_tenant_user_flow_block FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
 
-    CONSTRAINT pk_tenant_user_flow PRIMARY KEY (tenant_id, flow_name, user_identifier),
+    PRIMARY KEY pk_tenant_user_flow (tenant_id, flow_name, user_identifier),
 
         KEY idx_user_flow_block_tenant_user_flow (tenant_id, flow_name, user_identifier, unblocked_at)
 
