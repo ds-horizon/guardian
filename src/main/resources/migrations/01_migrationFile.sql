@@ -247,7 +247,7 @@ CREATE TABLE oidc_provider_config
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE user_flow_block_config
+CREATE TABLE user_flow_block
 (
     tenant_id           CHAR(10)        NOT NULL,
     user_identifier     VARCHAR(64)     NOT NULL,
@@ -258,7 +258,7 @@ CREATE TABLE user_flow_block_config
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_tenant_user_flow_block_config FOREIGN KEY (tenant_id)
+    CONSTRAINT fk_tenant_user_flow_block FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
 
     CONSTRAINT uk_tenant_user_flow UNIQUE (tenant_id, user_identifier, flow_name),

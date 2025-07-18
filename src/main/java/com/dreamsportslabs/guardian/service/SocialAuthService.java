@@ -70,8 +70,8 @@ public class SocialAuthService {
                     .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
                     .map(
                         blockedResult -> {
-                          if (blockedResult.isBlocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          if (blockedResult.blocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
                           }
                           return fbUserData;
                         });
@@ -161,8 +161,8 @@ public class SocialAuthService {
                     .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
                     .map(
                         result -> {
-                          if (result.isBlocked()) {
-                            throw FLOW_BLOCKED.getCustomException(result.getReason());
+                          if (result.blocked()) {
+                            throw FLOW_BLOCKED.getCustomException(result.reason());
                           }
                           return googleUserData;
                         });

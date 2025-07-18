@@ -62,6 +62,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -88,35 +89,37 @@ public class IdpConnectService {
     String userIdentifier = oidcProviderConfig.getUserIdentifier();
 
     return exchangeCodeForTokens(requestDto, oidcProviderConfig)
-        .flatMap(
+        .map(
             idpTokens -> {
               Provider provider = createProviderFromTokens(idpTokens, providerName);
               UserDto userDto = createUserDtoFromTokens(provider);
-              return Single.just(new Object[] {idpTokens, userDto});
+              return Pair.of(idpTokens, userDto);
             })
         .flatMap(
-            data -> {
-              IdpCredentials idpTokens = (IdpCredentials) data[0];
-              UserDto userDto = (UserDto) data[1];
+            pair -> {
+              IdpCredentials idpTokens = pair.getLeft();
+              UserDto userDto = pair.getRight();
 
+              // TODO: Implement block for phone Number and provider UserId. Need to think how
+              // tenant will get provider userId.
               String email = userDto.getEmail();
               if (email != null) {
                 return userFlowBlockService
                     .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
                     .map(
                         blockedResult -> {
-                          if (blockedResult.isBlocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          if (blockedResult.blocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
                           }
-                          return new Object[] {idpTokens, userDto};
+                          return Pair.of(idpTokens, userDto);
                         });
               }
-              return Single.just(new Object[] {idpTokens, userDto});
+              return Single.just(Pair.of(idpTokens, userDto));
             })
         .flatMap(
-            data -> {
-              IdpCredentials idpTokens = (IdpCredentials) data[0];
-              UserDto userDto = (UserDto) data[1];
+            pair -> {
+              IdpCredentials idpTokens = pair.getLeft();
+              UserDto userDto = pair.getRight();
 
               Map<String, String> queryParams =
                   getUserIdentifierDetails(userIdentifier, userDto, requestDto.getIdProvider());

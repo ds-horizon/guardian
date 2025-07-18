@@ -61,8 +61,8 @@ public class ContactVerifyService {
                   .isFlowBlocked(tenantId, List.of(contactIdentifier), BlockFlow.OTP_VERIFY)
                   .map(
                       blockedResult -> {
-                        if (blockedResult.isBlocked()) {
-                          throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                        if (blockedResult.blocked()) {
+                          throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
                         }
                         return model;
                       });
@@ -135,8 +135,8 @@ public class ContactVerifyService {
                   .isFlowBlocked(tenantId, List.of(contactIdentifier), BlockFlow.OTP_VERIFY)
                   .map(
                       blockedResult -> {
-                        if (blockedResult.isBlocked()) {
-                          throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                        if (blockedResult.blocked()) {
+                          throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
                         }
                         return model;
                       });

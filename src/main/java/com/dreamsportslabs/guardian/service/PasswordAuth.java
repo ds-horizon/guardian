@@ -27,8 +27,8 @@ public class PasswordAuth {
         .isFlowBlocked(tenantId, List.of(dto.getUsername()), BlockFlow.PASSWORD)
         .map(
             blockedResult -> {
-              if (blockedResult.isBlocked()) {
-                throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+              if (blockedResult.blocked()) {
+                throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
               }
               return blockedResult;
             })
@@ -54,8 +54,8 @@ public class PasswordAuth {
         .isFlowBlocked(tenantId, List.of(dto.getUsername()), BlockFlow.PASSWORD)
         .map(
             blockedResult -> {
-              if (blockedResult.isBlocked()) {
-                throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+              if (blockedResult.blocked()) {
+                throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
               }
               return blockedResult;
             })

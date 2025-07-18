@@ -68,8 +68,8 @@ public class Passwordless {
                     .isUserBlocked(model, tenantId)
                     .map(
                         blockedResult -> {
-                          if (blockedResult.isBlocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          if (blockedResult.blocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
                           }
 
                           if (model.getResends() >= model.getMaxResends()) {
@@ -186,8 +186,8 @@ public class Passwordless {
                     .isUserBlocked(model, tenantId)
                     .map(
                         blockedResult -> {
-                          if (blockedResult.isBlocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.getReason());
+                          if (blockedResult.blocked()) {
+                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
                           }
                           return model;
                         }))

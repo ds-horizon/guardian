@@ -10,7 +10,6 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -77,16 +76,7 @@ public class UserFlowBlockService {
             });
   }
 
-  @Getter
-  public static class FlowBlockCheckResult {
-    private final boolean blocked;
-    private final String reason;
-
-    public FlowBlockCheckResult(boolean blocked, String reason) {
-      this.blocked = blocked;
-      this.reason = reason;
-    }
-  }
+  public record FlowBlockCheckResult(boolean blocked, String reason) {}
 
   public Single<FlowBlockCheckResult> isUserBlocked(PasswordlessModel model, String tenantId) {
     if (model.getContacts() == null || model.getContacts().isEmpty()) {
@@ -107,13 +97,13 @@ public class UserFlowBlockService {
     return checkFlowBlockedWithReasonBatch(tenantId, userIdentifiers, flow)
         .doOnSuccess(
             result -> {
-              if (result.isBlocked()) {
+              if (result.blocked()) {
                 log.info(
                     "{} flow is blocked for userIdentifiers: {} in tenant: {} with reason: {}",
                     flow,
                     userIdentifiers,
                     tenantId,
-                    result.getReason());
+                    result.reason());
               }
             });
   }
