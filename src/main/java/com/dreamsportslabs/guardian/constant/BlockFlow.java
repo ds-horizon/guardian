@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.constant;
 
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
+
 import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
@@ -19,13 +21,14 @@ public enum BlockFlow {
     this.apiPaths = apiPaths;
   }
 
-  public static BlockFlow fromString(String flowName) {
+  public static BlockFlow fromFlowName(String flowName) {
     for (BlockFlow flow : values()) {
       if (flow.getFlowName().equalsIgnoreCase(flowName)) {
         return flow;
       }
     }
-    throw new IllegalArgumentException("Unknown flow: " + flowName);
+    throw INVALID_REQUEST.getCustomException(
+        "Invalid flow: " + flowName + ". Valid flows are: " + BlockFlow.getAllFlowNames());
   }
 
   public static List<String> getAllFlowNames() {

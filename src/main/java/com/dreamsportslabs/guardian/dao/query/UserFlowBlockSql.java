@@ -16,7 +16,7 @@ public class UserFlowBlockSql {
 
   // TODO: We can also add reason for blocked flows in the response to the tenant
   public static final String GET_ACTIVE_FLOW_BLOCKS_BY_USER_IDENTIFIER =
-      "SELECT flow_name AS flowName FROM user_flow_block_config WHERE tenant_id = ? AND user_identifier = ? AND is_active = 1 AND (unblocked_at > UNIX_TIMESTAMP())";
+      "SELECT flow_name FROM user_flow_block_config WHERE tenant_id = ? AND user_identifier = ? AND is_active = 1 AND (unblocked_at > UNIX_TIMESTAMP())";
 
   public static final String GET_FLOW_BLOCK_REASON_BATCH =
       "SELECT reason FROM user_flow_block_config WHERE tenant_id = ? AND flow_name = ? AND user_identifier IN (%s) AND is_active = 1 AND (unblocked_at > UNIX_TIMESTAMP())";

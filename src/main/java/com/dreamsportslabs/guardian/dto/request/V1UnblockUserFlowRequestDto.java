@@ -22,12 +22,7 @@ public class V1UnblockUserFlowRequestDto {
     }
 
     for (String flow : unblockFlows) {
-      try {
-        BlockFlow.fromString(flow);
-      } catch (IllegalArgumentException e) {
-        throw INVALID_REQUEST.getCustomException(
-            "Invalid flow: " + flow + ". Valid flows are: " + BlockFlow.getAllFlowNames());
-      }
+      BlockFlow.fromFlowName(flow);
     }
   }
 }

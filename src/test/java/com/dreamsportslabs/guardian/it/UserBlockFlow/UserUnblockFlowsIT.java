@@ -1,4 +1,4 @@
-package com.dreamsportslabs.guardian.it;
+package com.dreamsportslabs.guardian.it.UserBlockFlow;
 
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.blockUserFlows;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.unblockUserFlows;

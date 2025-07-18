@@ -25,12 +25,7 @@ public class V1BlockUserFlowRequestDto {
     }
 
     for (String flow : blockFlows) {
-      try {
-        BlockFlow.fromString(flow);
-      } catch (IllegalArgumentException e) {
-        throw INVALID_REQUEST.getCustomException(
-            "Invalid flow: " + flow + ". Valid flows are: " + BlockFlow.getAllFlowNames());
-      }
+      BlockFlow.fromFlowName(flow);
     }
 
     if (StringUtils.isBlank(reason)) {
