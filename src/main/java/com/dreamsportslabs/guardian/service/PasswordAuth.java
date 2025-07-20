@@ -1,7 +1,5 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
-
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.dto.request.V1SignInRequestDto;
@@ -25,23 +23,15 @@ public class PasswordAuth {
 
     return userFlowBlockService
         .isFlowBlocked(tenantId, List.of(dto.getUsername()), BlockFlow.PASSWORD)
-        .map(
-            blockedResult -> {
-              if (blockedResult.blocked()) {
-                throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-              }
-              return blockedResult;
-            })
-        .flatMap(
-            blockedResult ->
-                userService.authenticate(
-                    UserDto.builder()
-                        .username(dto.getUsername())
-                        .password(dto.getPassword())
-                        .additionalInfo(dto.getAdditionalInfo())
-                        .build(),
-                    headers,
-                    tenantId))
+        .andThen(
+            userService.authenticate(
+                UserDto.builder()
+                    .username(dto.getUsername())
+                    .password(dto.getPassword())
+                    .additionalInfo(dto.getAdditionalInfo())
+                    .build(),
+                headers,
+                tenantId))
         .flatMap(
             user ->
                 authorizationService.generate(
@@ -52,23 +42,15 @@ public class PasswordAuth {
       V1SignUpRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return userFlowBlockService
         .isFlowBlocked(tenantId, List.of(dto.getUsername()), BlockFlow.PASSWORD)
-        .map(
-            blockedResult -> {
-              if (blockedResult.blocked()) {
-                throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-              }
-              return blockedResult;
-            })
-        .flatMap(
-            blockedResult ->
-                userService.createUser(
-                    UserDto.builder()
-                        .username(dto.getUsername())
-                        .password(dto.getPassword())
-                        .additionalInfo(dto.getAdditionalInfo())
-                        .build(),
-                    headers,
-                    tenantId))
+        .andThen(
+            userService.createUser(
+                UserDto.builder()
+                    .username(dto.getUsername())
+                    .password(dto.getPassword())
+                    .additionalInfo(dto.getAdditionalInfo())
+                    .build(),
+                headers,
+                tenantId))
         .flatMap(
             user ->
                 authorizationService.generate(

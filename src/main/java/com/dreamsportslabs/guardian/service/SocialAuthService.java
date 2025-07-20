@@ -16,7 +16,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
@@ -68,13 +67,7 @@ public class SocialAuthService {
               if (email != null) {
                 return userFlowBlockService
                     .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
-                    .map(
-                        blockedResult -> {
-                          if (blockedResult.blocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-                          }
-                          return fbUserData;
-                        });
+                    .andThen(Single.just(fbUserData));
               }
               return Single.just(fbUserData);
             })
@@ -159,13 +152,7 @@ public class SocialAuthService {
               if (email != null) {
                 return userFlowBlockService
                     .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
-                    .map(
-                        result -> {
-                          if (result.blocked()) {
-                            throw FLOW_BLOCKED.getCustomException(result.reason());
-                          }
-                          return googleUserData;
-                        });
+                    .andThen(Single.just(googleUserData));
               }
               return Single.just(googleUserData);
             })

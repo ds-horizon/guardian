@@ -1,7 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
@@ -59,13 +58,7 @@ public class ContactVerifyService {
               String contactIdentifier = model.getContact().getIdentifier();
               return userFlowBlockService
                   .isFlowBlocked(tenantId, List.of(contactIdentifier), BlockFlow.OTP_VERIFY)
-                  .map(
-                      blockedResult -> {
-                        if (blockedResult.blocked()) {
-                          throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-                        }
-                        return model;
-                      });
+                  .andThen(Single.just(model));
             })
         .map(
             model -> {
@@ -133,13 +126,7 @@ public class ContactVerifyService {
               String contactIdentifier = model.getContact().getIdentifier();
               return userFlowBlockService
                   .isFlowBlocked(tenantId, List.of(contactIdentifier), BlockFlow.OTP_VERIFY)
-                  .map(
-                      blockedResult -> {
-                        if (blockedResult.blocked()) {
-                          throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-                        }
-                        return model;
-                      });
+                  .andThen(Single.just(model));
             })
         .flatMap(
             otpModel -> {

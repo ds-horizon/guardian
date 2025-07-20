@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
+
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.dao.UserFlowBlockDao;
@@ -37,20 +39,14 @@ public class UserFlowBlockService {
                         .build())
             .toList();
 
-    return userFlowBlockDao
-        .blockFlows(models)
-        .doOnComplete(() -> log.info("Blocked flows saved successfully"))
-        .doOnError(err -> log.error("Error while saving blocked flows: {}", err.getMessage(), err));
+    return userFlowBlockDao.blockFlows(models);
   }
 
   public Completable unblockUserFlows(V1UnblockUserFlowRequestDto dto, String tenantId) {
     log.info(
         "Unblocking flows for userIdentifier: {} of tenant: {}", dto.getUserIdentifier(), tenantId);
 
-    return userFlowBlockDao
-        .unblockFlows(tenantId, dto.getUserIdentifier(), dto.getUnblockFlows())
-        .doOnComplete(() -> log.info("Flows unblocked successfully"))
-        .doOnError(error -> log.error("Error during unblock: {}", error.getMessage(), error));
+    return userFlowBlockDao.unblockFlows(tenantId, dto.getUserIdentifier(), dto.getUnblockFlows());
   }
 
   public Single<List<String>> getActiveFlowsBlockedForUser(String tenantId, String userIdentifier) {
@@ -78,9 +74,9 @@ public class UserFlowBlockService {
 
   public record FlowBlockCheckResult(boolean blocked, String reason) {}
 
-  public Single<FlowBlockCheckResult> isUserBlocked(PasswordlessModel model, String tenantId) {
+  public Completable isUserBlocked(PasswordlessModel model, String tenantId) {
     if (model.getContacts() == null || model.getContacts().isEmpty()) {
-      return Single.just(new FlowBlockCheckResult(false, null));
+      return Completable.complete();
     }
 
     List<String> contacts =
@@ -92,8 +88,7 @@ public class UserFlowBlockService {
     return isFlowBlocked(tenantId, contacts, BlockFlow.PASSWORDLESS);
   }
 
-  public Single<FlowBlockCheckResult> isFlowBlocked(
-      String tenantId, List<String> userIdentifiers, BlockFlow flow) {
+  public Completable isFlowBlocked(String tenantId, List<String> userIdentifiers, BlockFlow flow) {
     return checkFlowBlockedWithReasonBatch(tenantId, userIdentifiers, flow)
         .doOnSuccess(
             result -> {
@@ -104,7 +99,9 @@ public class UserFlowBlockService {
                     userIdentifiers,
                     tenantId,
                     result.reason());
+                throw FLOW_BLOCKED.getCustomException(result.reason());
               }
-            });
+            })
+        .ignoreElement();
   }
 }

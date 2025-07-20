@@ -6,7 +6,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
@@ -66,24 +65,21 @@ public class Passwordless {
             model ->
                 userFlowBlockService
                     .isUserBlocked(model, tenantId)
-                    .map(
-                        blockedResult -> {
-                          if (blockedResult.blocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-                          }
+                    .andThen(
+                        Single.fromCallable(
+                            () -> {
+                              if (model.getResends() >= model.getMaxResends()) {
+                                passwordlessDao.deletePasswordlessModel(state, tenantId);
+                                throw RESENDS_EXHAUSTED.getException();
+                              }
 
-                          if (model.getResends() >= model.getMaxResends()) {
-                            passwordlessDao.deletePasswordlessModel(state, tenantId);
-                            throw RESENDS_EXHAUSTED.getException();
-                          }
+                              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
+                                throw RESEND_NOT_ALLOWED.getCustomException(
+                                    Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
+                              }
 
-                          if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
-                            throw RESEND_NOT_ALLOWED.getCustomException(
-                                Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
-                          }
-
-                          return model;
-                        }))
+                              return model;
+                            })))
         .flatMap(
             model -> {
               if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
@@ -182,15 +178,7 @@ public class Passwordless {
     return getPasswordlessModel(dto.getState(), tenantId)
         .flatMap(
             model ->
-                userFlowBlockService
-                    .isUserBlocked(model, tenantId)
-                    .map(
-                        blockedResult -> {
-                          if (blockedResult.blocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-                          }
-                          return model;
-                        }))
+                userFlowBlockService.isUserBlocked(model, tenantId).andThen(Single.just(model)))
         .flatMap(model -> validateOtp(model, dto.getOtp(), tenantId))
         .flatMap(
             model -> {

@@ -26,7 +26,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_TOKEN;
@@ -106,13 +105,7 @@ public class IdpConnectService {
               if (email != null) {
                 return userFlowBlockService
                     .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
-                    .map(
-                        blockedResult -> {
-                          if (blockedResult.blocked()) {
-                            throw FLOW_BLOCKED.getCustomException(blockedResult.reason());
-                          }
-                          return Pair.of(idpTokens, userDto);
-                        });
+                    .andThen(Single.just(Pair.of(idpTokens, userDto)));
               }
               return Single.just(Pair.of(idpTokens, userDto));
             })
