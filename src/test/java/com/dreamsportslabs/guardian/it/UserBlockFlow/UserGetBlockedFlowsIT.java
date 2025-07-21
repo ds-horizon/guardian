@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dreamsportslabs.guardian.utils.DbUtils;
 import io.restassured.response.Response;
 import java.time.Instant;
 import java.util.HashMap;
@@ -242,21 +243,13 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should return empty list for expired blocks")
-  public void getBlockedFlows_expiredBlocks() throws InterruptedException {
+  public void getBlockedFlows_expiredBlocks() {
     // Arrange
     String contact = randomNumeric(10);
+    String reason = randomAlphanumeric(10);
 
-    Long unblockedAt = Instant.now().plusSeconds(2).toEpochMilli() / 1000;
-    Map<String, Object> blockRequestBody = new HashMap<>();
-    blockRequestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    blockRequestBody.put(BODY_PARAM_BLOCK_FLOWS, new String[] {PASSWORDLESS, SOCIAL_AUTH});
-    blockRequestBody.put(BODY_PARAM_REASON, randomAlphanumeric(10));
-    blockRequestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
-
-    Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    Thread.sleep(3000);
+    DbUtils.createUserFlowBlockWithImmediateExpiry(TENANT_ID, contact, PASSWORDLESS, reason);
+    DbUtils.createUserFlowBlockWithImmediateExpiry(TENANT_ID, contact, SOCIAL_AUTH, reason);
 
     // Act
     Response response = getBlockedFlows(TENANT_ID, contact);

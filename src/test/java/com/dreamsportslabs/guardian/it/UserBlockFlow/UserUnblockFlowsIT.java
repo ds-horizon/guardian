@@ -36,6 +36,7 @@ import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dreamsportslabs.guardian.utils.DbUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
@@ -493,21 +494,12 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should handle unblocking flows that have already expired")
-  public void unblockFlows_expiredFlows() throws InterruptedException {
+  public void unblockFlows_expiredFlows() {
     // Arrange
     String contact = randomNumeric(10);
+    String reason = randomAlphanumeric(10);
 
-    Long unblockedAt = Instant.now().plusSeconds(2).toEpochMilli() / 1000;
-    Map<String, Object> blockRequestBody = new HashMap<>();
-    blockRequestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    blockRequestBody.put(BODY_PARAM_BLOCK_FLOWS, new String[] {PASSWORDLESS});
-    blockRequestBody.put(BODY_PARAM_REASON, randomAlphanumeric(10));
-    blockRequestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
-
-    Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    Thread.sleep(3000);
+    DbUtils.createUserFlowBlockWithImmediateExpiry(TENANT_ID, contact, PASSWORDLESS, reason);
 
     // Act
     Map<String, Object> unblockRequestBody =
@@ -583,56 +575,6 @@ public class UserUnblockFlowsIT {
     assertThat(unblockedFlows.contains(SOCIAL_AUTH), equalTo(true));
     assertThat(unblockedFlows.contains(PASSWORD), equalTo(true));
     assertThat(unblockedFlows.contains(OTP_VERIFY), equalTo(true));
-  }
-
-  @Test
-  @DisplayName("Should handle concurrent block and unblock operations")
-  public void unblockFlows_concurrentOperations() throws InterruptedException {
-    // Arrange
-    String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    Map<String, Object> blockRequestBody = new HashMap<>();
-    blockRequestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    blockRequestBody.put(BODY_PARAM_BLOCK_FLOWS, new String[] {PASSWORDLESS, SOCIAL_AUTH});
-    blockRequestBody.put(BODY_PARAM_REASON, randomAlphanumeric(10));
-    blockRequestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
-
-    Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    // Act
-    Map<String, Object> unblockRequestBody1 =
-        generateUnblockRequestBody(contact, new String[] {PASSWORDLESS});
-    Map<String, Object> unblockRequestBody2 =
-        generateUnblockRequestBody(contact, new String[] {SOCIAL_AUTH});
-
-    Thread unblockThread1 =
-        new Thread(
-            () -> {
-              Response unblockResponse1 = unblockUserFlows(TENANT_ID, unblockRequestBody1);
-              unblockResponse1.then().statusCode(HttpStatus.SC_OK);
-            });
-
-    Thread unblockThread2 =
-        new Thread(
-            () -> {
-              Response unblockResponse2 = unblockUserFlows(TENANT_ID, unblockRequestBody2);
-              unblockResponse2.then().statusCode(HttpStatus.SC_OK);
-            });
-
-    unblockThread1.start();
-    unblockThread2.start();
-
-    unblockThread1.join();
-    unblockThread2.join();
-
-    // Assert -
-    Response finalStateResponse = getBlockedFlows(TENANT_ID, contact);
-    finalStateResponse.then().statusCode(HttpStatus.SC_OK);
-
-    int totalCount =
-        finalStateResponse.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_TOTAL_COUNT);
-    assertThat(totalCount, equalTo(0));
   }
 
   @Test

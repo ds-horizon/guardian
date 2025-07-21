@@ -12,6 +12,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -53,26 +54,18 @@ public class UserFlowBlockService {
     return userFlowBlockDao.getActiveFlowBlocksByUser(tenantId, userIdentifier);
   }
 
-  public Single<FlowBlockCheckResult> checkFlowBlockedWithReasonBatch(
+  public Single<Optional<String>> checkFlowBlockedWithReasonBatch(
       String tenantId, List<String> userIdentifiers, BlockFlow flowName) {
+
     if (userIdentifiers.isEmpty()) {
-      return Single.just(new FlowBlockCheckResult(false, null));
+      return Single.just(Optional.empty());
     }
 
     return userFlowBlockDao
         .checkFlowBlockedWithReasonBatch(tenantId, userIdentifiers, flowName)
         .map(
-            reasonList -> {
-              if (reasonList.isEmpty()) {
-                return new FlowBlockCheckResult(false, null);
-              }
-
-              String reason = reasonList.get(0);
-              return new FlowBlockCheckResult(true, reason);
-            });
+            reasonList -> reasonList.isEmpty() ? Optional.empty() : Optional.of(reasonList.get(0)));
   }
-
-  public record FlowBlockCheckResult(boolean blocked, String reason) {}
 
   public Completable isUserBlocked(PasswordlessModel model, String tenantId) {
     if (model.getContacts() == null || model.getContacts().isEmpty()) {
@@ -90,18 +83,19 @@ public class UserFlowBlockService {
 
   public Completable isFlowBlocked(String tenantId, List<String> userIdentifiers, BlockFlow flow) {
     return checkFlowBlockedWithReasonBatch(tenantId, userIdentifiers, flow)
-        .doOnSuccess(
-            result -> {
-              if (result.blocked()) {
+        .flatMapCompletable(
+            optionalReason -> {
+              if (optionalReason.isPresent()) {
+                String reason = optionalReason.get();
                 log.info(
                     "{} flow is blocked for userIdentifiers: {} in tenant: {} with reason: {}",
                     flow,
                     userIdentifiers,
                     tenantId,
-                    result.reason());
-                throw FLOW_BLOCKED.getCustomException(result.reason());
+                    reason);
+                return Completable.error(FLOW_BLOCKED.getCustomException(reason));
               }
-            })
-        .ignoreElement();
+              return Completable.complete();
+            });
   }
 }

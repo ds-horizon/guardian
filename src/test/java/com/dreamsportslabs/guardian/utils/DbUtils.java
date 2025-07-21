@@ -197,4 +197,39 @@ public class DbUtils {
       throw new RuntimeException("Error while fetching or parsing Redis key: " + key, e);
     }
   }
+
+  public static void createUserFlowBlockWithImmediateExpiry(
+      String tenantId, String userIdentifier, String flowName, String reason) {
+    String sql =
+        "INSERT INTO user_flow_block (tenant_id, user_identifier, flow_name, reason, unblocked_at, is_active) "
+            + "VALUES (?, ?, ?, ?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE "
+            + "reason = VALUES(reason), "
+            + "unblocked_at = VALUES(unblocked_at), "
+            + "is_active = VALUES(is_active), "
+            + "updated_at = CURRENT_TIMESTAMP";
+
+    try (var connection = mysqlConnectionPool.getConnection();
+        var statement = connection.prepareStatement(sql)) {
+
+      long currentTimestamp = Instant.now().getEpochSecond();
+
+      statement.setString(1, tenantId);
+      statement.setString(2, userIdentifier);
+      statement.setString(3, flowName);
+      statement.setString(4, reason);
+      statement.setLong(5, currentTimestamp);
+      statement.setBoolean(6, true);
+
+      statement.executeUpdate();
+      log.info(
+          "Created user flow block with immediate expiry for tenant: {}, user: {}, flow: {}",
+          tenantId,
+          userIdentifier,
+          flowName);
+    } catch (Exception e) {
+      log.error("Error creating user flow block with immediate expiry: ", e);
+      throw new RuntimeException("Error creating user flow block", e);
+    }
+  }
 }

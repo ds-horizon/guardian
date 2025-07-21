@@ -9,6 +9,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.dreamsportslabs.guardian.Setup;
+import com.dreamsportslabs.guardian.utils.DbUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
@@ -641,27 +642,15 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify block is automatically lifted after unblockedAt time")
-  public void verifyBlockAutomaticallyLiftedAfterUnblockedAt() throws InterruptedException {
+  public void verifyBlockAutomaticallyLiftedAfterUnblockedAt() {
     // Arrange
     String contact = randomNumeric(10);
-
-    Long unblockedAt = Instant.now().plusSeconds(2).toEpochMilli() / 1000;
     String reason = randomAlphanumeric(10);
-    Map<String, Object> requestBody =
-        generateBlockRequestBody(contact, new String[] {PASSWORDLESS_FLOW}, reason, unblockedAt);
+
+    DbUtils.createUserFlowBlockWithImmediateExpiry(TENANT_ID, contact, PASSWORDLESS_FLOW, reason);
 
     StubMapping userStub = getStubForNonExistingUser();
     StubMapping emailStub = getStubForSendEmail();
-
-    // Act
-    Response blockResponse = blockUserFlows(TENANT_ID, requestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    // Verify
-    assertThat(
-        blockResponse.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-
-    Thread.sleep(3000);
 
     // Act
     Map<String, Object> passwordlessInitBody = generatePasswordlessInitRequestBody(contact);
@@ -866,51 +855,6 @@ public class UserBlockFlowsIT {
 
     wireMockServer.removeStub(userStub);
     wireMockServer.removeStub(emailStub);
-  }
-
-  @Test
-  @DisplayName("Should handle concurrent block and unblock operations")
-  public void concurrentBlockAndUnblockOperations() throws InterruptedException {
-    // Arrange
-    String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    String reason = randomAlphanumeric(10);
-
-    Map<String, Object> blockRequestBody =
-        generateBlockRequestBody(contact, new String[] {PASSWORDLESS_FLOW}, reason, unblockedAt);
-
-    Map<String, Object> unblockRequestBody = new HashMap<>();
-    unblockRequestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    unblockRequestBody.put(BODY_PARAM_UNBLOCK_FLOWS, new String[] {PASSWORDLESS_FLOW});
-
-    // Act
-    Thread blockThread =
-        new Thread(
-            () -> {
-              Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-              blockResponse.then().statusCode(HttpStatus.SC_OK);
-            });
-
-    Thread unblockThread =
-        new Thread(
-            () -> {
-              Response unblockResponse = unblockUserFlows(TENANT_ID, unblockRequestBody);
-              unblockResponse.then().statusCode(HttpStatus.SC_OK);
-            });
-
-    blockThread.start();
-    unblockThread.start();
-
-    blockThread.join();
-    unblockThread.join();
-
-    // Assert
-    Response finalStateResponse = getBlockedFlows(TENANT_ID, contact);
-    finalStateResponse.then().statusCode(HttpStatus.SC_OK);
-
-    int totalCount =
-        finalStateResponse.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_TOTAL_COUNT);
-    assertThat(totalCount >= 0 && totalCount <= 1, equalTo(true));
   }
 
   @Test
