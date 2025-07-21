@@ -288,4 +288,27 @@ public class ApplicationIoUtils {
 
     return execute(null, headers, queryParams, spec -> spec.get("/authorize"));
   }
+
+  public static Response loginAccept(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/login-accept"));
+  }
+
+  public static Response loginAccept(
+      String tenantId, Map<String, Object> body, String refreshTokenCookie) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> spec.cookie("RT", refreshTokenCookie).post("/login-accept"));
+  }
 }
