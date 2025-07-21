@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 public final class Constants {
   public static final String TENANT_ID = "tenant-id";
-  public static final String AUTHORIZATION = "Authorization";
   public static final String USERID = "userId";
   public static final String PROVIDER = "provider";
   public static final String IS_NEW_USER = "isNewUser";

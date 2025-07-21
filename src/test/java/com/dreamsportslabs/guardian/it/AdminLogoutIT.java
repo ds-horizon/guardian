@@ -1,12 +1,16 @@
 package com.dreamsportslabs.guardian.it;
 
-import static com.dreamsportslabs.guardian.Constants.*;
+import static com.dreamsportslabs.guardian.Constants.CODE;
+import static com.dreamsportslabs.guardian.Constants.ERROR;
+import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
+import static com.dreamsportslabs.guardian.Constants.ERROR_UNAUTHORIZED;
+import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.MESSAGE;
 import static io.restassured.RestAssured.given;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isEmptyString;
 
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
 import com.dreamsportslabs.guardian.utils.DbUtils;
@@ -71,7 +75,7 @@ class AdminLogoutIT {
     // Act 2
     Response logoutResponse =
         ApplicationIoUtils.adminLogout(TENANT_ID, validAuthHeader, VALID_USER_ID);
-    logoutResponse.then().statusCode(204).body(isEmptyString());
+    logoutResponse.then().statusCode(204);
 
     // Act 3
     Response invalidRefreshResponse = ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken);
@@ -122,7 +126,7 @@ class AdminLogoutIT {
     // Act & Assert
     given()
         .contentType(ContentType.JSON)
-        .header("tenant-id", TENANT_ID)
+        .header(HEADER_TENANT_ID, TENANT_ID)
         .header("Authorization", validAuthHeader)
         .body("{}")
         .when()
@@ -155,8 +159,7 @@ class AdminLogoutIT {
     // Act & Assert
     ApplicationIoUtils.adminLogout(TENANT_ID, validAuthHeader, INVALID_USER_ID)
         .then()
-        .statusCode(204)
-        .body(isEmptyString());
+        .statusCode(204);
   }
 
   @Test

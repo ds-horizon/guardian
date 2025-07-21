@@ -41,12 +41,7 @@ public class AdminLogout {
 
     return authorizationService
         .adminLogout(requestDto.getUserId(), tenantId)
-        .andThen(
-            Single.just(
-                Response.noContent()
-                    .cookie(authorizationService.getAccessTokenCookie(null, tenantId))
-                    .cookie(authorizationService.getRefreshTokenCookie(null, tenantId))
-                    .build()))
+        .andThen(Single.just(Response.noContent().build()))
         .toCompletionStage();
   }
 }

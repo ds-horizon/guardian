@@ -1,11 +1,11 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 
 import com.dreamsportslabs.guardian.config.tenant.AdminConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.registry.Registry;
-import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -18,7 +18,7 @@ public class AdminUtils {
       throw UNAUTHORIZED.getCustomException("Missing authorization header");
     }
 
-    String[] credentials = extractCredentialsFromAuthHeader(authorizationHeader);
+    String[] credentials = Utils.extractCredentialsFromAuthHeader(authorizationHeader);
     if (credentials.length != 2) {
       throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
     }
@@ -33,27 +33,13 @@ public class AdminUtils {
         || StringUtils.isBlank(adminConfig.getUsername())
         || StringUtils.isBlank(adminConfig.getPassword())) {
       log.error("Admin configuration not found for tenant: {}", tenantId);
-      throw UNAUTHORIZED.getCustomException("Admin configuration not available");
+      throw INTERNAL_SERVER_ERROR.getCustomException("Admin configuration not available");
     }
 
     if (!username.equals(adminConfig.getUsername())
         || !password.equals(adminConfig.getPassword())) {
       log.warn("Invalid admin credentials for tenant: {}", tenantId);
       throw UNAUTHORIZED.getCustomException("Invalid admin credentials");
-    }
-  }
-
-  private static String[] extractCredentialsFromAuthHeader(String authorizationHeader) {
-    try {
-      if (!authorizationHeader.startsWith("Basic ")) {
-        throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
-      }
-
-      String encodedCredentials = authorizationHeader.substring(6).trim();
-      String decodedCredentials = new String(Base64.getDecoder().decode(encodedCredentials));
-      return decodedCredentials.split(":", 2);
-    } catch (Exception e) {
-      throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
     }
   }
 }

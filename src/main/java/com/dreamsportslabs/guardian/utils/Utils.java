@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -42,5 +43,19 @@ public final class Utils {
   public static String generateBasicAuthHeader(String clientId, String clientSecret) {
     return "Basic "
         + new String(Base64.getEncoder().encode((clientId + ":" + clientSecret).getBytes()));
+  }
+
+  public static String[] extractCredentialsFromAuthHeader(String authorizationHeader) {
+    try {
+      if (!authorizationHeader.startsWith("Basic ")) {
+        throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
+      }
+
+      String encodedCredentials = authorizationHeader.substring(6).trim();
+      String decodedCredentials = new String(Base64.getDecoder().decode(encodedCredentials));
+      return decodedCredentials.split(":", 2);
+    } catch (Exception e) {
+      throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
+    }
   }
 }
