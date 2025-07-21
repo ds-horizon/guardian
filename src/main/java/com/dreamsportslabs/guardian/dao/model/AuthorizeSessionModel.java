@@ -6,11 +6,13 @@ import com.dreamsportslabs.guardian.constant.OidcResponseType;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.jackson.Jacksonized;
 
 @Builder
 @Getter
 @Jacksonized
+@Setter
 public class AuthorizeSessionModel {
   private OidcResponseType responseType;
   private List<String> allowedScopes;

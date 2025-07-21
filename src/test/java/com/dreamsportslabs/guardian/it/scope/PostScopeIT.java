@@ -47,6 +47,7 @@ import static com.dreamsportslabs.guardian.Constants.TEST_PICTURE_CLAIM;
 import static com.dreamsportslabs.guardian.Constants.TEST_SCOPE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.deleteScope;
+import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
 import static com.dreamsportslabs.guardian.utils.ScopeUtils.getValidScopeRequestBody;
 import static com.dreamsportslabs.guardian.utils.ScopeUtils.validateInDb;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -60,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,6 +69,13 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class PostScopeIT {
+
+  @BeforeEach
+  void setUp() {
+    // Clean up any existing test data
+    cleanUpScopes(TENANT_1);
+  }
+
   @Test
   @DisplayName("Should create a new scope successfully")
   public void testCreateScopeSuccess() {

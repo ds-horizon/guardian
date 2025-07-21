@@ -37,6 +37,7 @@ public class Constants {
   public static final String BODY_PARAM_LOCATION = "location";
   public static final String BODY_PARAM_PARAMS = "params";
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String BODY_PARAM_LOGIN_CHALLENGE = "loginChallenge";
 
   // User Block Flow Constants
   public static final String BODY_PARAM_USER_IDENTIFIER = "userIdentifier";
@@ -83,6 +84,7 @@ public class Constants {
   public static final String CLAIM_PHONE_NUMBER_VERIFIED = "phone_number_verified";
   public static final String CLAIM_EMAIL_VERIFIED = "email_verified";
   public static final String CLAIM_ADDRESS = "address";
+  public static final String CLAIM_EMAIL = "email";
 
   // Test scope display names
   public static final String TEST_OPENID_SCOPE_DISPLAY_NAME = "OpenID Scope";
@@ -345,6 +347,9 @@ public class Constants {
   public static final String ERROR_CLIENT_ID_REQUIRED = "client_id is required";
   public static final String ERROR_SCOPE_REQUIRED = "scope is required";
   public static final String ERROR_REDIRECT_URI_REQUIRED = "redirect_uri is required";
+  public static final String ERROR_LOGIN_CHALLENGE_REQUIRED = "login_challenge is required";
+  public static final String ERROR_REFRESH_TOKEN_REQUIRED = "refresh_token is required";
+  public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_CODE_CHALLENGE_TOGETHER =
       "code_challenge and code_challenge_method must be provided together";
 
@@ -393,4 +398,17 @@ public class Constants {
   public static final String ERROR_DESC_PARAM_FORMAT = PARAM_ERROR_DESCRIPTION + EQUALS_SIGN + "%s";
   public static final String ERROR_DESCRIPTION = "error_description";
   public static final String ERROR_FIELD = "error";
+
+  // Login Accept Test Constants
+  public static final String ERROR_INVALID_CHALLENGE = "Invalid challenge";
+  public static final String ERROR_INVALID_REFRESH_TOKEN = "Invalid refresh token";
+  public static final String TEST_USER_ID = "testuser";
+  public static final String PARTIAL_CONSENT_USER_ID = "partial_consent_user";
+  public static final String FULL_CONSENT_USER_ID = "full_consent_user";
+  public static final String DETAILED_VALIDATION_USER_ID = "detailed_validation_user";
+  public static final String SKIP_CONSENT_CLIENT_NAME = "Skip Consent Client";
+  public static final String SOURCE_VALUE = "source";
+  public static final String DEVICE_VALUE = "device1";
+  public static final String LOCATION_VALUE = "location";
+  public static final String IP_ADDRESS = "1.2.3.4";
 }

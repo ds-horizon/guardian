@@ -3,6 +3,8 @@ package com.dreamsportslabs.guardian.dao;
 import static com.dreamsportslabs.guardian.constant.Constants.CACHE_KEY_AUTH_SESSION;
 import static com.dreamsportslabs.guardian.constant.Constants.EXPIRY_OPTION_REDIS;
 import static com.dreamsportslabs.guardian.constant.Constants.KEEP_TTL;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +52,9 @@ public class AuthorizeSessionDao {
 
     return redisClient
         .rxSend(Request.cmd(Command.GET).arg(cacheKey))
-        .switchIfEmpty(Maybe.empty())
+        .onErrorResumeNext(
+            err -> Maybe.error(SERVER_ERROR.getJsonCustomException(err.getMessage())))
+        .switchIfEmpty(Maybe.error(UNAUTHORIZED.getJsonCustomException("Invalid challenge")))
         .map(response -> objectMapper.readValue(response.toString(), AuthorizeSessionModel.class))
         .toSingle();
   }

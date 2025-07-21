@@ -69,7 +69,14 @@ public enum ErrorEnum {
   }
 
   public WebApplicationException getException(Throwable t) {
-    return new WebApplicationException(t, this.exception.getResponse());
+    String message = t.getMessage() != null ? t.getMessage() : this.message;
+
+    Response response =
+        Response.status(this.httpStatusCode)
+            .header("Content-Type", "application/json")
+            .entity(new ErrorEntity(this.code, message))
+            .build();
+    return new WebApplicationException(t, response);
   }
 
   public WebApplicationException getCustomException(String message) {
