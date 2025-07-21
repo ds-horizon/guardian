@@ -557,12 +557,8 @@ paths:
               $ref: '#/components/schemas/V1BlockUserFlowRequestBody'
         required: true
       responses:
-        '200':
+        '204':
           description: User flows blocked successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/V1BlockUserFlowResponse'
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -593,12 +589,8 @@ paths:
               $ref: '#/components/schemas/V1UnblockUserFlowRequestBody'
         required: true
       responses:
-        '200':
+        '204':
           description: User flows unblocked successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/V1UnblockUserFlowResponse'
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -995,27 +987,7 @@ components:
         reason: "Suspicious activity detected"
         unblockedAt: 1704067200
 
-    V1BlockUserFlowResponse:
-      type: object
-      properties:
-        userIdentifier:
-          type: string
-          description: User identifier that was blocked
-          example: "user@example.com"
-        blockedFlows:
-          type: array
-          items:
-            type: string
-          description: List of flow types that were successfully blocked
-          example: ["passwordless", "social_auth"]
-        message:
-          type: string
-          description: Success message
-          example: "Flows blocked successfully"
-      example:
-        userIdentifier: "user@example.com"
-        blockedFlows: ["passwordless", "social_auth"]
-        message: "Flows blocked successfully"
+
 
     V1UnblockUserFlowRequestBody:
       type: object
@@ -1038,27 +1010,7 @@ components:
         userIdentifier: "user@example.com"
         unblockFlows: ["passwordless", "social_auth"]
 
-    V1UnblockUserFlowResponse:
-      type: object
-      properties:
-        userIdentifier:
-          type: string
-          description: User identifier that was unblocked
-          example: "user@example.com"
-        unblockedFlows:
-          type: array
-          items:
-            type: string
-          description: List of flow types that were successfully unblocked
-          example: ["passwordless", "social_auth"]
-        message:
-          type: string
-          description: Success message
-          example: "Flows unblocked successfully"
-      example:
-        userIdentifier: "user@example.com"
-        unblockedFlows: ["passwordless", "social_auth"]
-        message: "Flows unblocked successfully"
+
 
     V1UserBlockedFlowsResponse:
       type: object

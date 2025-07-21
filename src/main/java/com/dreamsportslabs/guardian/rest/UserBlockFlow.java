@@ -5,8 +5,6 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_QUERY_PAR
 
 import com.dreamsportslabs.guardian.dto.request.V1BlockUserFlowRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1UnblockUserFlowRequestDto;
-import com.dreamsportslabs.guardian.dto.response.V1BlockUserFlowResponseDto;
-import com.dreamsportslabs.guardian.dto.response.V1UnblockUserFlowResponseDto;
 import com.dreamsportslabs.guardian.dto.response.V1UserBlockedFlowsResponseDto;
 import com.dreamsportslabs.guardian.service.UserFlowBlockService;
 import com.google.inject.Inject;
@@ -42,14 +40,7 @@ public class UserBlockFlow {
 
     return userFlowBlockService
         .blockUserFlows(requestDto, tenantId)
-        .andThen(
-            Single.fromCallable(
-                () ->
-                    V1BlockUserFlowResponseDto.builder()
-                        .userIdentifier(requestDto.getUserIdentifier())
-                        .blockedFlows(requestDto.getBlockFlows())
-                        .build()))
-        .map(response -> Response.ok(response).build())
+        .andThen(Single.just(Response.noContent().build()))
         .toCompletionStage();
   }
 
@@ -64,14 +55,7 @@ public class UserBlockFlow {
 
     return userFlowBlockService
         .unblockUserFlows(requestDto, tenantId)
-        .andThen(
-            Single.fromCallable(
-                () ->
-                    V1UnblockUserFlowResponseDto.builder()
-                        .userIdentifier(requestDto.getUserIdentifier())
-                        .unblockedFlows(requestDto.getUnblockFlows())
-                        .build()))
-        .map(response -> Response.ok(response).build())
+        .andThen(Single.just(Response.noContent().build()))
         .toCompletionStage();
   }
 

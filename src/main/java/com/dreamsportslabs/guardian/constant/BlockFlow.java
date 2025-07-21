@@ -23,7 +23,7 @@ public enum BlockFlow {
 
   public static BlockFlow fromFlowName(String flowName) {
     for (BlockFlow flow : values()) {
-      if (flow.getFlowName().equalsIgnoreCase(flowName)) {
+      if (flow.getFlowName().equals(flowName)) {
         return flow;
       }
     }

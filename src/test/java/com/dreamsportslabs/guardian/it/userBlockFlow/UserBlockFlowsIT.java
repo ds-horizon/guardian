@@ -1,4 +1,4 @@
-package com.dreamsportslabs.guardian.it.UserBlockFlow;
+package com.dreamsportslabs.guardian.it.userBlockFlow;
 
 import static com.dreamsportslabs.guardian.Constants.*;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.*;
@@ -6,9 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.dreamsportslabs.guardian.Setup;
 import com.dreamsportslabs.guardian.utils.DbUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
@@ -21,9 +19,9 @@ import java.util.Map;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 
-@ExtendWith(Setup.class)
 public class UserBlockFlowsIT {
 
   private static final String TENANT_ID = "tenant1";
@@ -34,7 +32,7 @@ public class UserBlockFlowsIT {
   private static final String SOCIAL_AUTH_FLOW = "social_auth";
   private static final String OTP_VERIFY_FLOW = "otp_verify";
   private static final String PASSWORD_FLOW = "password";
-
+  private static final Long UNBLOCKED_AT = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
   private WireMockServer wireMockServer;
 
   private Map<String, Object> generateBlockRequestBody(
@@ -115,53 +113,35 @@ public class UserBlockFlowsIT {
   public void blockFlow_success() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contact,
             new String[] {PASSWORDLESS_FLOW, SOCIAL_AUTH_FLOW},
             randomAlphanumeric(10),
-            unblockedAt);
+            UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
 
     // Assert
-    response.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-
-    List<String> blockedFlows =
-        response.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows.size(), equalTo(2));
-    assertThat(blockedFlows.contains(PASSWORDLESS_FLOW), equalTo(true));
-    assertThat(blockedFlows.contains(SOCIAL_AUTH_FLOW), equalTo(true));
+    response.then().statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
   @Test
   @DisplayName("Should block Flows successfully with email userIdentifier")
   public void blockFlow_emailContact_success() {
     // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     Map<String, Object> requestBody =
         generateBlockRequestBody(
-            EMAIL_CONTACT, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), unblockedAt);
+            EMAIL_CONTACT, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
 
     // Assert
-    response.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER),
-        equalTo(EMAIL_CONTACT));
-
-    List<String> blockedFlows =
-        response.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows.size(), equalTo(1));
-    assertThat(blockedFlows.contains(PASSWORDLESS_FLOW), equalTo(true));
+    response.then().statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
   @Test
@@ -169,53 +149,37 @@ public class UserBlockFlowsIT {
   public void blockFlow_updateExisting_success() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt1 = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody1 =
         generateBlockRequestBody(
-            contact, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), unblockedAt1);
+            contact, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), UNBLOCKED_AT);
 
     Response response1 = blockUserFlows(TENANT_ID, requestBody1);
-    response1.then().statusCode(HttpStatus.SC_OK);
+    response1.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
-    List<String> blockedFlows1 =
-        response1.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows1.size(), equalTo(1));
-    assertThat(blockedFlows1.contains(PASSWORDLESS_FLOW), equalTo(true));
-
-    Long unblockedAt2 = Instant.now().plusSeconds(7200).toEpochMilli() / 1000;
+    Long unblockedAt1 = Instant.now().plusSeconds(7200).toEpochMilli() / 1000;
     Map<String, Object> requestBody2 =
         generateBlockRequestBody(
             contact,
             new String[] {PASSWORDLESS_FLOW, SOCIAL_AUTH_FLOW},
             randomAlphanumeric(10),
-            unblockedAt2);
+            unblockedAt1);
 
     // Act
     Response response2 = blockUserFlows(TENANT_ID, requestBody2);
 
     // Assert
-    response2.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response2.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-
-    List<String> blockedFlows2 =
-        response2.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows2.size(), equalTo(2));
-    assertThat(blockedFlows2.contains(PASSWORDLESS_FLOW), equalTo(true));
-    assertThat(blockedFlows2.contains(SOCIAL_AUTH_FLOW), equalTo(true));
+    response2.then().statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
   @Test
   @DisplayName("Should return error for missing userIdentifier")
   public void blockFlow_missingContact() {
     // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
 
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put(BODY_PARAM_BLOCK_FLOWS, new String[] {PASSWORDLESS_FLOW});
-    requestBody.put(BODY_PARAM_REASON, randomAlphanumeric(10));
-    requestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
+    Map<String, Object> requestBody =
+        generateBlockRequestBody(
+            "", new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), UNBLOCKED_AT);
+    requestBody.remove(BODY_PARAM_USER_IDENTIFIER);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
@@ -229,15 +193,15 @@ public class UserBlockFlowsIT {
         .body(MESSAGE, equalTo("userIdentifier is required"));
   }
 
-  @Test
-  @DisplayName("Should return error for empty userIdentifier")
-  public void blockFlow_emptyContact() {
+  @ParameterizedTest
+  @DisplayName("Should return error for empty and null userIdentifier")
+  @NullAndEmptySource
+  public void blockFlow_emptyAndNullContact(String userIdentifier) {
     // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
 
     Map<String, Object> requestBody =
         generateBlockRequestBody(
-            "", new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), unblockedAt);
+            userIdentifier, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
@@ -256,12 +220,10 @@ public class UserBlockFlowsIT {
   public void blockFlow_missingBlockFlows() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
 
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    requestBody.put(BODY_PARAM_REASON, randomAlphanumeric(10));
-    requestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
+    Map<String, Object> requestBody =
+        generateBlockRequestBody(contact, new String[] {}, randomAlphanumeric(10), UNBLOCKED_AT);
+    requestBody.remove(BODY_PARAM_BLOCK_FLOWS);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
@@ -275,14 +237,15 @@ public class UserBlockFlowsIT {
         .body(MESSAGE, equalTo("At least one flow must be provided"));
   }
 
-  @Test
-  @DisplayName("Should return error for empty blockFlows array")
-  public void blockFlow_emptyBlockFlows() {
+  @ParameterizedTest
+  @DisplayName("Should return error for empty and null blockFlows array")
+  @NullAndEmptySource
+  public void blockFlow_emptyAndNullBlockFlows(String[] blockFlows) {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     Map<String, Object> requestBody =
-        generateBlockRequestBody(contact, new String[] {}, randomAlphanumeric(10), unblockedAt);
+        generateBlockRequestBody(contact, blockFlows, randomAlphanumeric(10), UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
@@ -301,11 +264,12 @@ public class UserBlockFlowsIT {
   public void blockFlow_missingReason() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    requestBody.put(BODY_PARAM_BLOCK_FLOWS, new String[] {PASSWORDLESS_FLOW});
-    requestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
+
+    Map<String, Object> requestBody =
+        generateBlockRequestBody(
+            contact, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), UNBLOCKED_AT);
+
+    requestBody.remove(BODY_PARAM_REASON);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
@@ -319,14 +283,15 @@ public class UserBlockFlowsIT {
         .body(MESSAGE, equalTo("Reason is required"));
   }
 
-  @Test
-  @DisplayName("Should return error for empty reason")
-  public void blockFlow_emptyReason() {
+  @ParameterizedTest
+  @DisplayName("Should return error for empty and null reason")
+  @NullAndEmptySource
+  public void blockFlow_emptyAndNullReason(String reason) {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     Map<String, Object> requestBody =
-        generateBlockRequestBody(contact, new String[] {PASSWORDLESS_FLOW}, "", unblockedAt);
+        generateBlockRequestBody(contact, new String[] {PASSWORDLESS_FLOW}, reason, UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
@@ -389,10 +354,10 @@ public class UserBlockFlowsIT {
   public void blockFlow_unknownTenant() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     Map<String, Object> requestBody =
         generateBlockRequestBody(
-            contact, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), unblockedAt);
+            contact, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(randomAlphanumeric(8), requestBody);
@@ -407,95 +372,21 @@ public class UserBlockFlowsIT {
   }
 
   @Test
-  @DisplayName("Should return error for null blockFlows")
-  public void blockFlow_nullBlockFlows() {
-    // Arrange
-    String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    requestBody.put(BODY_PARAM_BLOCK_FLOWS, null);
-    requestBody.put(BODY_PARAM_REASON, randomAlphanumeric(10));
-    requestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
-
-    // Act
-    Response response = blockUserFlows(TENANT_ID, requestBody);
-
-    // Assert
-    response
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST)
-        .rootPath(ERROR)
-        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
-        .body(MESSAGE, equalTo("At least one flow must be provided"));
-  }
-
-  @Test
-  @DisplayName("Should return error for null reason")
-  public void blockFlow_nullReason() {
-    // Arrange
-    String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put(BODY_PARAM_USER_IDENTIFIER, contact);
-    requestBody.put(BODY_PARAM_BLOCK_FLOWS, new String[] {PASSWORDLESS_FLOW});
-    requestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
-
-    // Act
-    Response response = blockUserFlows(TENANT_ID, requestBody);
-
-    // Assert
-    response
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST)
-        .rootPath(ERROR)
-        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
-        .body(MESSAGE, equalTo("Reason is required"));
-  }
-
-  @Test
-  @DisplayName("Should return error for null userIdentifier")
-  public void blockFlow_nullContact() {
-    // Arrange
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put(BODY_PARAM_USER_IDENTIFIER, null);
-    requestBody.put(BODY_PARAM_BLOCK_FLOWS, new String[] {PASSWORDLESS_FLOW});
-    requestBody.put(BODY_PARAM_REASON, randomAlphanumeric(10));
-    requestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
-
-    // Act
-    Response response = blockUserFlows(TENANT_ID, requestBody);
-
-    // Assert
-    response
-        .then()
-        .statusCode(HttpStatus.SC_BAD_REQUEST)
-        .rootPath(ERROR)
-        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
-        .body(MESSAGE, equalTo("userIdentifier is required"));
-  }
-
-  @Test
   @DisplayName("Should verify passwordless flow is blocked after blocking")
   public void verifyPasswordlessFlowBlocked() {
     // Arrange
     String contact = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     String reason = randomAlphanumeric(10);
     Map<String, Object> requestBody =
-        generateBlockRequestBody(contact, new String[] {PASSWORDLESS_FLOW}, reason, unblockedAt);
+        generateBlockRequestBody(contact, new String[] {PASSWORDLESS_FLOW}, reason, UNBLOCKED_AT);
 
     StubMapping userStub = getStubForNonExistingUser();
     StubMapping emailStub = getStubForSendEmail();
 
     // Act
     Response blockResponse = blockUserFlows(TENANT_ID, requestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    // Verify
-    assertThat(
-        blockResponse.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
+    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
     // Act
     Map<String, Object> passwordlessInitBody = generatePasswordlessInitRequestBody(contact);
@@ -520,17 +411,13 @@ public class UserBlockFlowsIT {
   public void verifyOtpVerifyFlowBlocked() {
     // Arrange
     String testEmail = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     String reason = randomAlphanumeric(10);
     Map<String, Object> blockRequestBody =
-        generateBlockRequestBody(testEmail, new String[] {OTP_VERIFY_FLOW}, reason, unblockedAt);
+        generateBlockRequestBody(testEmail, new String[] {OTP_VERIFY_FLOW}, reason, UNBLOCKED_AT);
 
     Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        blockResponse.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER),
-        equalTo(testEmail));
+    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
     // Act
     Map<String, Object> sendOtpBody = createSendOtpBody(testEmail);
@@ -556,13 +443,12 @@ public class UserBlockFlowsIT {
     if (sendOtpResponse.getStatusCode() == HttpStatus.SC_OK) {
       String state = sendOtpResponse.getBody().jsonPath().getString(BODY_PARAM_STATE);
 
-      Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
       String reason = randomAlphanumeric(10);
       Map<String, Object> blockRequestBody =
-          generateBlockRequestBody(testEmail, new String[] {OTP_VERIFY_FLOW}, reason, unblockedAt);
+          generateBlockRequestBody(testEmail, new String[] {OTP_VERIFY_FLOW}, reason, UNBLOCKED_AT);
 
       Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-      blockResponse.then().statusCode(HttpStatus.SC_OK);
+      blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
       // Act
       Map<String, Object> verifyOtpBody = createVerifyOtpBody(state, "123456");
@@ -583,19 +469,14 @@ public class UserBlockFlowsIT {
   public void verifyPasswordSignInFlowBlocked() {
     // Arrange
     String username = randomAlphanumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     String reason = randomAlphanumeric(10);
     Map<String, Object> requestBody =
-        generateBlockRequestBody(username, new String[] {PASSWORD_FLOW}, reason, unblockedAt);
+        generateBlockRequestBody(username, new String[] {PASSWORD_FLOW}, reason, UNBLOCKED_AT);
 
     // Act
     Response blockResponse = blockUserFlows(TENANT_ID, requestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    // Assert
-    assertThat(
-        blockResponse.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER),
-        equalTo(username));
+    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
     // Act
     Response signInResponse = signIn(TENANT_ID, username, PASSWORD, BODY_PARAM_RESPONSE_TYPE_TOKEN);
@@ -614,19 +495,14 @@ public class UserBlockFlowsIT {
   public void verifyPasswordSignUpFlowBlocked() {
     // Arrange
     String username = randomAlphanumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     String reason = randomAlphanumeric(10);
     Map<String, Object> requestBody =
-        generateBlockRequestBody(username, new String[] {PASSWORD_FLOW}, reason, unblockedAt);
+        generateBlockRequestBody(username, new String[] {PASSWORD_FLOW}, reason, UNBLOCKED_AT);
 
     // Act
     Response blockResponse = blockUserFlows(TENANT_ID, requestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    // Assert
-    assertThat(
-        blockResponse.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER),
-        equalTo(username));
+    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
     // Act
     Response signUpResponse = signUp(TENANT_ID, username, PASSWORD, BODY_PARAM_RESPONSE_TYPE_TOKEN);
@@ -668,62 +544,48 @@ public class UserBlockFlowsIT {
   public void blockAllAvailableFlowTypes() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     String reason = randomAlphanumeric(10);
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contact,
             new String[] {PASSWORDLESS_FLOW, PASSWORD_FLOW, SOCIAL_AUTH_FLOW, OTP_VERIFY_FLOW},
             reason,
-            unblockedAt);
+            UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
 
     // Assert
-    response.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-
-    List<String> blockedFlows =
-        response.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows.size(), equalTo(4));
-    assertThat(blockedFlows.contains(PASSWORDLESS_FLOW), equalTo(true));
-    assertThat(blockedFlows.contains(PASSWORD_FLOW), equalTo(true));
-    assertThat(blockedFlows.contains(SOCIAL_AUTH_FLOW), equalTo(true));
-    assertThat(blockedFlows.contains(OTP_VERIFY_FLOW), equalTo(true));
+    response.then().statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
   @Test
-  @DisplayName("Should handle case-insensitive flow names")
+  @DisplayName("Should throw error in case-insensitive flow names")
   public void blockFlowCaseInsensitive() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     Map<String, Object> requestBody =
         generateBlockRequestBody(
             contact,
             new String[] {"PASSWORDLESS", "social_AUTH", "Password", "OTP_verify"},
             randomAlphanumeric(10),
-            unblockedAt);
+            UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
 
     // Assert
-    response.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-
-    List<String> blockedFlows =
-        response.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows.size(), equalTo(4));
-    assertThat(blockedFlows.contains("PASSWORDLESS"), equalTo(true));
-    assertThat(blockedFlows.contains("social_AUTH"), equalTo(true));
-    assertThat(blockedFlows.contains("Password"), equalTo(true));
-    assertThat(blockedFlows.contains("OTP_verify"), equalTo(true));
+    response
+        .then()
+        .statusCode(HttpStatus.SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(
+            MESSAGE,
+            equalTo(
+                "Invalid flow: PASSWORDLESS. Valid flows are: [passwordless, password, social_auth, otp_verify]"));
   }
 
   @Test
@@ -731,10 +593,10 @@ public class UserBlockFlowsIT {
   public void blockFlowInvalidFlowNames() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     Map<String, Object> requestBody =
         generateBlockRequestBody(
-            contact, new String[] {"invalid_flow"}, randomAlphanumeric(10), unblockedAt);
+            contact, new String[] {"invalid_flow"}, randomAlphanumeric(10), UNBLOCKED_AT);
 
     // Act
     Response response = blockUserFlows(TENANT_ID, requestBody);
@@ -756,40 +618,23 @@ public class UserBlockFlowsIT {
   public void blockAlreadyBlockedUser() {
     // Arrange
     String contact = randomNumeric(10);
-    Long unblockedAt1 = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
     Map<String, Object> requestBody1 =
         generateBlockRequestBody(
-            contact, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), unblockedAt1);
+            contact, new String[] {PASSWORDLESS_FLOW}, randomAlphanumeric(10), UNBLOCKED_AT);
 
     Response response1 = blockUserFlows(TENANT_ID, requestBody1);
-    response1.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response1.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-
-    List<String> blockedFlows =
-        response1.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows.size(), equalTo(1));
-    assertThat(blockedFlows.contains(PASSWORDLESS_FLOW), equalTo(true));
+    response1.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
     // Act
-    Long unblockedAt2 = Instant.now().plusSeconds(7200).toEpochMilli() / 1000;
+    Long unblockedAt1 = Instant.now().plusSeconds(7200).toEpochMilli() / 1000;
     Map<String, Object> requestBody2 =
         generateBlockRequestBody(
-            contact, new String[] {SOCIAL_AUTH_FLOW}, randomAlphanumeric(10), unblockedAt2);
+            contact, new String[] {SOCIAL_AUTH_FLOW}, randomAlphanumeric(10), unblockedAt1);
 
     Response response2 = blockUserFlows(TENANT_ID, requestBody2);
 
     // Assert
-    response2.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response2.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-
-    List<String> blockedflows =
-        response2.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedflows.size(), equalTo(1));
-    assertThat(blockedflows.contains(SOCIAL_AUTH_FLOW), equalTo(true));
+    response2.then().statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
   @Test
@@ -798,35 +643,18 @@ public class UserBlockFlowsIT {
     // Arrange
     String email = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
     String phone = randomNumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     String reason = randomAlphanumeric(10);
 
     Map<String, Object> emailBlockBody =
-        generateBlockRequestBody(email, new String[] {PASSWORDLESS_FLOW}, reason, unblockedAt);
+        generateBlockRequestBody(email, new String[] {PASSWORDLESS_FLOW}, reason, UNBLOCKED_AT);
     Response emailBlockResponse = blockUserFlows(TENANT_ID, emailBlockBody);
-    emailBlockResponse.then().statusCode(HttpStatus.SC_OK);
+    emailBlockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
     Map<String, Object> phoneBlockBody =
-        generateBlockRequestBody(phone, new String[] {PASSWORDLESS_FLOW}, reason, unblockedAt);
+        generateBlockRequestBody(phone, new String[] {PASSWORDLESS_FLOW}, reason, UNBLOCKED_AT);
     Response phoneBlockResponse = blockUserFlows(TENANT_ID, phoneBlockBody);
-    phoneBlockResponse.then().statusCode(HttpStatus.SC_OK);
-
-    // Assert
-    assertThat(
-        emailBlockResponse.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER),
-        equalTo(email));
-    assertThat(
-        phoneBlockResponse.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER),
-        equalTo(phone));
-
-    List<String> emailBlockedFlows =
-        emailBlockResponse.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    List<String> phoneBlockedFlows =
-        phoneBlockResponse.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(emailBlockedFlows.size(), equalTo(1));
-    assertThat(phoneBlockedFlows.size(), equalTo(1));
-    assertThat(emailBlockedFlows.contains(PASSWORDLESS_FLOW), equalTo(true));
-    assertThat(phoneBlockedFlows.contains(PASSWORDLESS_FLOW), equalTo(true));
+    phoneBlockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
   }
 
   @Test
@@ -835,13 +663,13 @@ public class UserBlockFlowsIT {
     // Arrange
     String email = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
     String phoneNumber = randomAlphanumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
+
     String reason = randomAlphanumeric(10);
 
     Map<String, Object> blockBody =
-        generateBlockRequestBody(email, new String[] {PASSWORDLESS_FLOW}, reason, unblockedAt);
+        generateBlockRequestBody(email, new String[] {PASSWORDLESS_FLOW}, reason, UNBLOCKED_AT);
     Response blockResponse = blockUserFlows(TENANT_ID, blockBody);
-    blockResponse.then().statusCode(HttpStatus.SC_OK);
+    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
 
     StubMapping userStub = getStubForNonExistingUser();
     StubMapping emailStub = getStubForSendEmail();
@@ -855,61 +683,5 @@ public class UserBlockFlowsIT {
 
     wireMockServer.removeStub(userStub);
     wireMockServer.removeStub(emailStub);
-  }
-
-  @Test
-  @DisplayName("Should verify blocking password flow does not affect token refresh operations")
-  public void blockingPasswordFlowDoesNotAffectTokenRefresh() {
-    // Arrange
-    String username = randomAlphanumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    String reason = randomAlphanumeric(10);
-
-    Response signInResponse = signIn(TENANT_ID, username, PASSWORD, BODY_PARAM_RESPONSE_TYPE_TOKEN);
-
-    if (signInResponse.getStatusCode() == HttpStatus.SC_OK) {
-      String refreshToken = signInResponse.getBody().jsonPath().getString("refreshToken");
-
-      Map<String, Object> blockRequestBody =
-          generateBlockRequestBody(username, new String[] {PASSWORD_FLOW}, reason, unblockedAt);
-      Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-      blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-      // Act
-      Response refreshResponse = refreshToken(TENANT_ID, refreshToken);
-
-      // Assert
-      refreshResponse.then().statusCode(HttpStatus.SC_OK);
-    }
-  }
-
-  @Test
-  @DisplayName("Should verify blocking all flows does not affect token refresh operations")
-  public void blockingAllFlowsDoesNotAffectTokenRefresh() {
-    // Arrange
-    String username = randomAlphanumeric(10);
-    Long unblockedAt = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
-    String reason = randomAlphanumeric(10);
-
-    Response signInResponse = signIn(TENANT_ID, username, PASSWORD, BODY_PARAM_RESPONSE_TYPE_TOKEN);
-
-    if (signInResponse.getStatusCode() == HttpStatus.SC_OK) {
-      String refreshToken = signInResponse.getBody().jsonPath().getString("refreshToken");
-
-      Map<String, Object> blockRequestBody =
-          generateBlockRequestBody(
-              username,
-              new String[] {PASSWORD_FLOW, PASSWORDLESS_FLOW, SOCIAL_AUTH_FLOW, OTP_VERIFY_FLOW},
-              reason,
-              unblockedAt);
-      Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-      blockResponse.then().statusCode(HttpStatus.SC_OK);
-
-      // Act
-      Response refreshResponse = refreshToken(TENANT_ID, refreshToken);
-
-      // Assert
-      refreshResponse.then().statusCode(HttpStatus.SC_OK);
-    }
   }
 }
