@@ -6,10 +6,12 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 import com.dreamsportslabs.guardian.config.tenant.AdminConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.registry.Registry;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
+@UtilityClass
 public class AdminUtils {
 
   public static void validateAdminCredentials(
@@ -18,10 +20,7 @@ public class AdminUtils {
       throw UNAUTHORIZED.getCustomException("Missing authorization header");
     }
 
-    String[] credentials = Utils.extractCredentialsFromAuthHeader(authorizationHeader);
-    if (credentials.length != 2) {
-      throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
-    }
+    String[] credentials = Utils.getCredentialsFromAuthHeader(authorizationHeader);
 
     String username = credentials[0];
     String password = credentials[1];

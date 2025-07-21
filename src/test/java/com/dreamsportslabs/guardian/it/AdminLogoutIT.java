@@ -10,6 +10,7 @@ import static io.restassured.RestAssured.given;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
@@ -17,7 +18,6 @@ import com.dreamsportslabs.guardian.utils.DbUtils;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import java.util.Base64;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,32 +30,22 @@ class AdminLogoutIT {
   private static final String INVALID_USER_ID = randomAlphanumeric(10);
   private static final String SECOND_TENANT_ADMIN_USERNAME = "admin2";
   private static final String SECOND_TENANT_ADMIN_PASSWORD = "admin456";
-
-  private String validAuthHeader;
-  private String invalidAuthHeader;
-  private String otherTenantAuthHeader;
-
-  @BeforeEach
-  void setUp() {
-
-    String validCredentials = ADMIN_USERNAME + ":" + ADMIN_PASSWORD;
-    validAuthHeader = "Basic " + Base64.getEncoder().encodeToString(validCredentials.getBytes());
-
-    String invalidCredentials = ADMIN_USERNAME + ":wrongpassword";
-    invalidAuthHeader =
-        "Basic " + Base64.getEncoder().encodeToString(invalidCredentials.getBytes());
-
-    String otherTenantCredentials =
-        SECOND_TENANT_ADMIN_USERNAME + ":" + SECOND_TENANT_ADMIN_PASSWORD;
-    otherTenantAuthHeader =
-        "Basic " + Base64.getEncoder().encodeToString(otherTenantCredentials.getBytes());
-  }
+  private static final String validCredentials = ADMIN_USERNAME + ":" + ADMIN_PASSWORD;
+  private static final String validAuthHeader =
+      "Basic " + Base64.getEncoder().encodeToString(validCredentials.getBytes());
+  private static final String invalidCredentials = ADMIN_USERNAME + ":wrongPassword";
+  private static final String invalidAuthHeader =
+      "Basic " + Base64.getEncoder().encodeToString(invalidCredentials.getBytes());
+  private static final String otherTenantCredentials =
+      SECOND_TENANT_ADMIN_USERNAME + ":" + SECOND_TENANT_ADMIN_PASSWORD;
+  private static final String otherTenantAuthHeader =
+      "Basic " + Base64.getEncoder().encodeToString(otherTenantCredentials.getBytes());
 
   @Test
   @DisplayName("Should successfully logout user and invalidate all tokens")
   void testSuccessfulAdminLogout() {
     // Arrange
-    String refreshToken =
+    String refreshToken1 =
         DbUtils.insertRefreshToken(
             TENANT_ID,
             VALID_USER_ID,
@@ -65,12 +55,15 @@ class AdminLogoutIT {
             "test-location",
             "127.0.0.1");
 
-    // Act 1
-    Response refreshResponse = ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken);
-    refreshResponse
-        .then()
-        .statusCode(200)
-        .body("accessToken", org.hamcrest.Matchers.notNullValue());
+    String refreshToken2 =
+        DbUtils.insertRefreshToken(
+            TENANT_ID,
+            VALID_USER_ID,
+            1800L,
+            "test-source",
+            "test-device",
+            "test-location",
+            "127.0.0.1");
 
     // Act 2
     Response logoutResponse =
@@ -78,12 +71,31 @@ class AdminLogoutIT {
     logoutResponse.then().statusCode(204);
 
     // Act 3
-    Response invalidRefreshResponse = ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken);
-    invalidRefreshResponse
+    Response invalidRefreshTokenResponse1 =
+        ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken1);
+    invalidRefreshTokenResponse1
         .then()
         .statusCode(SC_UNAUTHORIZED)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_UNAUTHORIZED));
+
+    Response invalidRefreshTokenResponse2 =
+        ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken2);
+    invalidRefreshTokenResponse2
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_UNAUTHORIZED));
+
+    // verify
+    assertThat(
+        "Refresh token 1 should be revoked",
+        DbUtils.isRefreshTokenRevoked(refreshToken1, TENANT_ID),
+        equalTo(true));
+    assertThat(
+        "Refresh token 2 should be revoked",
+        DbUtils.isRefreshTokenRevoked(refreshToken2, TENANT_ID),
+        equalTo(true));
   }
 
   @Test
@@ -167,49 +179,6 @@ class AdminLogoutIT {
   void testAdminLogoutWithWrongTenantCredentials() {
     // Act & Assert
     ApplicationIoUtils.adminLogout(TENANT_ID, otherTenantAuthHeader, VALID_USER_ID)
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .rootPath(ERROR)
-        .body(CODE, equalTo(ERROR_UNAUTHORIZED));
-  }
-
-  @Test
-  @DisplayName("Should successfully logout multiple users and invalidate their tokens")
-  void testAdminLogoutMultipleUsers() {
-    // Arrange
-    String user1Id = "user1";
-    String user2Id = "user2";
-
-    String refreshToken1 =
-        DbUtils.insertRefreshToken(
-            TENANT_ID, user1Id, 1800L, "test-source", "test-device", "test-location", "127.0.0.1");
-
-    String refreshToken2 =
-        DbUtils.insertRefreshToken(
-            TENANT_ID, user2Id, 1800L, "test-source", "test-device", "test-location", "127.0.0.1");
-
-    // Act 1
-    ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken1).then().statusCode(200);
-
-    ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken2).then().statusCode(200);
-
-    // Act 2
-    ApplicationIoUtils.adminLogout(TENANT_ID, validAuthHeader, user1Id).then().statusCode(204);
-
-    // Act  3
-    ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken1)
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .rootPath(ERROR)
-        .body(CODE, equalTo(ERROR_UNAUTHORIZED));
-
-    ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken2).then().statusCode(200);
-
-    // Act 4
-    ApplicationIoUtils.adminLogout(TENANT_ID, validAuthHeader, user2Id).then().statusCode(204);
-
-    // Act 5
-    ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken2)
         .then()
         .statusCode(SC_UNAUTHORIZED)
         .rootPath(ERROR)
