@@ -3,6 +3,7 @@ package com.dreamsportslabs.guardian.exception;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_ERROR;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_ERROR_DESCRIPTION;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_STATE;
+import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.ws.rs.WebApplicationException;
@@ -17,6 +18,7 @@ public enum OidcErrorEnum {
       "invalid_request",
       "The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed",
       400),
+  UNAUTHORIZED(UNAUTHORIZED_ERROR_CODE, "Unauthorized", 401),
   INVALID_CLIENT("invalid_client", "Client authentication failed", 401),
   INVALID_REDIRECT_URI("invalid_redirect_uri", "Redirect uri is invalid", 400),
   ACCESS_DENIED(
