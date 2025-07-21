@@ -35,6 +35,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.constant.IdpUserIdentifier;
 import com.dreamsportslabs.guardian.dao.model.IdpCredentials;
@@ -55,10 +56,12 @@ import io.vertx.rxjava3.ext.web.client.WebClient;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -67,6 +70,7 @@ public class IdpConnectService {
   private final AuthorizationService authorizationService;
   private final WebClient webClient;
   private final Registry registry;
+  private final UserFlowBlockService userFlowBlockService;
 
   public Single<IdpConnectResponseDto> connect(
       IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
@@ -84,10 +88,32 @@ public class IdpConnectService {
     String userIdentifier = oidcProviderConfig.getUserIdentifier();
 
     return exchangeCodeForTokens(requestDto, oidcProviderConfig)
-        .flatMap(
+        .map(
             idpTokens -> {
               Provider provider = createProviderFromTokens(idpTokens, providerName);
               UserDto userDto = createUserDtoFromTokens(provider);
+              return Pair.of(idpTokens, userDto);
+            })
+        .flatMap(
+            pair -> {
+              IdpCredentials idpTokens = pair.getLeft();
+              UserDto userDto = pair.getRight();
+
+              // TODO: Implement block for phone Number and provider UserId. Need to think how
+              // tenant will get provider userId.
+              String email = userDto.getEmail();
+              if (email != null) {
+                return userFlowBlockService
+                    .isFlowBlocked(tenantId, List.of(email), BlockFlow.SOCIAL_AUTH)
+                    .andThen(Single.just(Pair.of(idpTokens, userDto)));
+              }
+              return Single.just(Pair.of(idpTokens, userDto));
+            })
+        .flatMap(
+            pair -> {
+              IdpCredentials idpTokens = pair.getLeft();
+              UserDto userDto = pair.getRight();
+
               Map<String, String> queryParams =
                   getUserIdentifierDetails(userIdentifier, userDto, requestDto.getIdProvider());
               return processUserBasedOnFlow(

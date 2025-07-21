@@ -39,6 +39,16 @@ public class Constants {
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
   public static final String BODY_PARAM_CONTACT = "contact";
 
+  // User Block Flow Constants
+  public static final String BODY_PARAM_USER_IDENTIFIER = "userIdentifier";
+  public static final String BODY_PARAM_BLOCK_FLOWS = "blockFlows";
+  public static final String BODY_PARAM_REASON = "reason";
+  public static final String BODY_PARAM_UNBLOCKED_AT = "unblockedAt";
+  public static final String BODY_PARAM_UNBLOCK_FLOWS = "unblockFlows";
+  public static final String RESPONSE_BODY_PARAM_BLOCKED_FLOWS = "blockedFlows";
+  public static final String RESPONSE_BODY_PARAM_UNBLOCKED_FLOWS = "unblockedFlows";
+  public static final String RESPONSE_BODY_PARAM_TOTAL_COUNT = "totalCount";
+
   // Request Body Params Values
 
   public static final String BODY_CHANNEL_EMAIL = "EMAIL";
@@ -76,6 +86,7 @@ public class Constants {
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_SMS_SERVICE = "sms_service_error";
   public static final String INVALID_STATE = "invalid_state";
+  public static final String ERROR_FLOW_BLOCKED = "flow_blocked";
 
   // Response Body Params
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
