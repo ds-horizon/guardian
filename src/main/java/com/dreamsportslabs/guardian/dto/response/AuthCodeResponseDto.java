@@ -1,7 +1,6 @@
 package com.dreamsportslabs.guardian.dto.response;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.UriBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,7 +12,7 @@ public class AuthCodeResponseDto {
   private String state;
   private String code;
 
-  public ResponseBuilder toResponse() {
+  public Response toResponse() {
     UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
 
     if (code != null) {
@@ -24,6 +23,6 @@ public class AuthCodeResponseDto {
       uriBuilder.queryParam("state", state);
     }
 
-    return Response.status(Response.Status.FOUND).location(uriBuilder.build());
+    return Response.status(Response.Status.FOUND).location(uriBuilder.build()).build();
   }
 }

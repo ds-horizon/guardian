@@ -2,12 +2,10 @@ package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
 
-import com.dreamsportslabs.guardian.dto.request.LoginAcceptRequestDto;
+import com.dreamsportslabs.guardian.dto.request.ConsentAcceptRequestDto;
 import com.dreamsportslabs.guardian.dto.response.AuthCodeResponseDto;
-import com.dreamsportslabs.guardian.dto.response.LoginAcceptResponseDto;
-import com.dreamsportslabs.guardian.service.LoginAcceptService;
+import com.dreamsportslabs.guardian.service.ConsentAcceptService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
@@ -22,34 +20,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Path("/login-accept")
+@Path("/consent-accept")
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-public class LoginAccept {
-  private final LoginAcceptService loginAcceptService;
+public class ConsentAccept {
+
+  private final ConsentAcceptService consentAcceptService;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public CompletionStage<Response> loginAccept(
-      LoginAcceptRequestDto requestDto,
+  public CompletionStage<Response> consentAccept(
+      ConsentAcceptRequestDto requestDto,
       @HeaderParam(TENANT_ID) String tenantId,
       @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String cookieRefreshToken) {
     requestDto.setRefreshTokenFromCookie(cookieRefreshToken);
     requestDto.validate();
-    return loginAcceptService
-        .loginAccept(requestDto, tenantId)
-        .map(
-            res -> {
-              Response response;
-              if (res instanceof LoginAcceptResponseDto loginAcceptResponseDto) {
-                response = loginAcceptResponseDto.toResponse();
-              } else if (res instanceof AuthCodeResponseDto authCodeResponseDto) {
-                response = authCodeResponseDto.toResponse();
-              } else {
-                throw SERVER_ERROR.getException();
-              }
-              return response;
-            })
+    return consentAcceptService
+        .consentAccept(requestDto, tenantId)
+        .map(AuthCodeResponseDto::toResponse)
         .toCompletionStage();
   }
 }
