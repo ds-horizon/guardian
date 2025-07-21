@@ -223,7 +223,6 @@ CREATE TABLE contact_verify_config
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
-
 CREATE TABLE oidc_provider_config
 (
     tenant_id          CHAR(10)      NOT NULL,
@@ -265,6 +264,22 @@ CREATE TABLE user_flow_block
 
         KEY idx_user_flow_block_tenant_user_flow (tenant_id, flow_name, user_identifier, unblocked_at)
 
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE admin_config
+(
+    tenant_id  CHAR(10) PRIMARY KEY,
+    username   VARCHAR(50) NOT NULL,
+    password   VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_tenant_admin_config FOREIGN KEY (tenant_id)
+        REFERENCES tenant (id) ON DELETE CASCADE,
+
+    UNIQUE KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;

@@ -163,6 +163,18 @@ public class AuthorizationService {
     return invalidateRefreshToken(requestDto, tenantId);
   }
 
+  public Completable adminLogout(String userId, String tenantId) {
+    return refreshTokenDao
+        .getRefreshTokens(userId, tenantId)
+        .flatMap(
+            list ->
+                refreshTokenDao
+                    .invalidateAllRefreshTokensForUser(userId, tenantId)
+                    .andThen(Single.just(list)))
+        .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
+        .ignoreElement();
+  }
+
   private Completable invalidateRefreshToken(V1LogoutRequestDto dto, String tenantId) {
     return refreshTokenDao
         .getRefreshToken(dto.getRefreshToken(), tenantId)

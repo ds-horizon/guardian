@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.vertx.core.json.JsonObject;
 import java.sql.PreparedStatement;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -231,5 +232,24 @@ public class DbUtils {
       log.error("Error creating user flow block with immediate expiry: ", e);
       throw new RuntimeException("Error creating user flow block", e);
     }
+  }
+
+  public static List<String> getRevocationsFromRedis(String tenantId) {
+    String revocationsKey = "revocations_" + tenantId;
+
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+
+      List<String> revocations = jedis.zrange(revocationsKey, 0, -1);
+      return new ArrayList<>(revocations);
+    } catch (Exception e) {
+      log.error("Error getting revocations from Redis: ", e);
+      throw new RuntimeException("Error getting revocations from Redis", e);
+    }
+  }
+
+  public static boolean isRefreshTokenRevoked(String refreshToken, String tenantId) {
+    String rftId = org.apache.commons.codec.digest.DigestUtils.md5Hex(refreshToken).toUpperCase();
+    List<String> revocations = getRevocationsFromRedis(tenantId);
+    return revocations.contains(rftId);
   }
 }
