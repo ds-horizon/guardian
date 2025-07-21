@@ -110,7 +110,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should block Flows successfully")
-  public void blockFlow_success() {
+  public void testBlockFlowsSuccess() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -130,7 +130,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should block Flows successfully with email userIdentifier")
-  public void blockFlow_emailContact_success() {
+  public void testBlockFlowsWithEmailContactSuccess() {
     // Arrange
 
     Map<String, Object> requestBody =
@@ -146,7 +146,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should update existing block successfully")
-  public void blockFlow_updateExisting_success() {
+  public void testUpdateExistingBlockSuccess() {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> requestBody1 =
@@ -173,7 +173,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should return error for missing userIdentifier")
-  public void blockFlow_missingContact() {
+  public void testMissingUserIdentifier() {
     // Arrange
 
     Map<String, Object> requestBody =
@@ -196,7 +196,7 @@ public class UserBlockFlowsIT {
   @ParameterizedTest
   @DisplayName("Should return error for empty and null userIdentifier")
   @NullAndEmptySource
-  public void blockFlow_emptyAndNullContact(String userIdentifier) {
+  public void testEmptyAndNullUserIdentifier(String userIdentifier) {
     // Arrange
 
     Map<String, Object> requestBody =
@@ -217,7 +217,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should return error for missing blockFlows")
-  public void blockFlow_missingBlockFlows() {
+  public void testMissingBlockFlows() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -240,7 +240,7 @@ public class UserBlockFlowsIT {
   @ParameterizedTest
   @DisplayName("Should return error for empty and null blockFlows array")
   @NullAndEmptySource
-  public void blockFlow_emptyAndNullBlockFlows(String[] blockFlows) {
+  public void testEmptyAndNullBlockFlows(String[] blockFlows) {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -261,7 +261,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should return error for missing reason")
-  public void blockFlow_missingReason() {
+  public void testMissingReason() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -286,7 +286,7 @@ public class UserBlockFlowsIT {
   @ParameterizedTest
   @DisplayName("Should return error for empty and null reason")
   @NullAndEmptySource
-  public void blockFlow_emptyAndNullReason(String reason) {
+  public void testEmptyAndNullReason(String reason) {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -307,7 +307,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should return error for past unblockedAt")
-  public void blockFlow_pastUnblockedAt() {
+  public void testPastUnblockedAt() {
     // Arrange
     String contact = randomNumeric(10);
     Long pastTime = Instant.now().minusSeconds(3600).toEpochMilli() / 1000;
@@ -329,7 +329,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should return error for current unblockedAt")
-  public void blockFlow_currentUnblockedAt() {
+  public void testCurrentUnblockedAt() {
     // Arrange
     String contact = randomNumeric(10);
     Long currentTime = Instant.now().toEpochMilli() / 1000;
@@ -351,7 +351,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should return error for unknown tenant")
-  public void blockFlow_unknownTenant() {
+  public void testUnknownTenant() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -373,7 +373,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify passwordless flow is blocked after blocking")
-  public void verifyPasswordlessFlowBlocked() {
+  public void testPasswordlessFlowBlockedAfterBlocking() {
     // Arrange
     String contact = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
 
@@ -408,7 +408,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify OTP verify flow is blocked after blocking")
-  public void verifyOtpVerifyFlowBlocked() {
+  public void testOtpVerifyFlowBlockedAfterBlocking() {
     // Arrange
     String testEmail = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
 
@@ -434,7 +434,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify OTP verify flow is blocked for existing OTP state")
-  public void verifyOtpVerifyFlowBlockedForExistingState() {
+  public void testOtpVerifyFlowBlockedForExistingState() {
     // Arrange
     String testEmail = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
     Map<String, Object> sendOtpBody = createSendOtpBody(testEmail);
@@ -466,7 +466,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify password signin flow is blocked after blocking")
-  public void verifyPasswordSignInFlowBlocked() {
+  public void testPasswordSignInFlowBlockedAfterBlocking() {
     // Arrange
     String username = randomAlphanumeric(10);
 
@@ -492,7 +492,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify password signup flow is blocked after blocking")
-  public void verifyPasswordSignUpFlowBlocked() {
+  public void testPasswordSignUpFlowBlockedAfterBlocking() {
     // Arrange
     String username = randomAlphanumeric(10);
 
@@ -518,7 +518,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify block is automatically lifted after unblockedAt time")
-  public void verifyBlockAutomaticallyLiftedAfterUnblockedAt() {
+  public void testBlockAutomaticallyLiftedAfterUnblockedAt() {
     // Arrange
     String contact = randomNumeric(10);
     String reason = randomAlphanumeric(10);
@@ -541,7 +541,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should block all available flow types at once")
-  public void blockAllAvailableFlowTypes() {
+  public void testBlockAllAvailableFlowTypes() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -562,7 +562,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should throw error in case-insensitive flow names")
-  public void blockFlowCaseInsensitive() {
+  public void testCaseInsensitiveFlowNames() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -590,7 +590,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should return error for invalid flow names")
-  public void blockFlowInvalidFlowNames() {
+  public void testInvalidFlowNames() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -615,7 +615,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should handle blocking already blocked user")
-  public void blockAlreadyBlockedUser() {
+  public void testBlockAlreadyBlockedUser() {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> requestBody1 =
@@ -639,7 +639,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should handle multiple user identifiers for same user")
-  public void blockMultipleUserIdentifiers() {
+  public void testBlockMultipleUserIdentifiers() {
     // Arrange
     String email = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
     String phone = randomNumeric(10);
@@ -659,7 +659,7 @@ public class UserBlockFlowsIT {
 
   @Test
   @DisplayName("Should verify blocking one identifier doesn't affect other identifiers")
-  public void blockOneIdentifierDoesNotAffectOthers() {
+  public void testBlockOneIdentifierDoesNotAffectOthers() {
     // Arrange
     String email = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
     String phoneNumber = randomAlphanumeric(10);

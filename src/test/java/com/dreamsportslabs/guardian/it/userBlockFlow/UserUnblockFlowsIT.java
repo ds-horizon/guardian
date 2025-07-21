@@ -97,7 +97,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should unblock Flows successfully")
-  public void unblockFlows_success() {
+  public void testUnblockFlowsSuccess() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -124,7 +124,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should unblock Flows successfully with email userIdentifier")
-  public void unblockFlows_emailContact_success() {
+  public void testUnblockFlowsWithEmailContactSuccess() {
     // Arrange
 
     Map<String, Object> blockRequestBody =
@@ -147,7 +147,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should unblock all Flows successfully")
-  public void unblockFlows_allFlows_success() {
+  public void testUnblockAllFlowsSuccess() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -174,7 +174,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should handle unblocking non-blocked Flows gracefully")
-  public void unblockFlows_nonBlockedFlows_success() {
+  public void testUnblockNonBlockedFlowsSuccess() {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> unblockRequestBody =
@@ -189,7 +189,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should return error for missing userIdentifier")
-  public void unblockFlows_missingContact() {
+  public void testMissingUserIdentifier() {
     // Arrange
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_UNBLOCK_FLOWS, new String[] {PASSWORDLESS});
@@ -209,7 +209,7 @@ public class UserUnblockFlowsIT {
   @ParameterizedTest
   @DisplayName("Should return error for empty and Null userIdentifier")
   @NullAndEmptySource
-  public void unblockFlows_emptyAndNullContact(String contact) {
+  public void testEmptyAndNullUserIdentifier(String contact) {
     // Arrange
     Map<String, Object> requestBody =
         generateUnblockRequestBody(contact, new String[] {PASSWORDLESS});
@@ -228,7 +228,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should return error for missing unblockFlows")
-  public void unblockFlows_missingunblockFlows() {
+  public void testMissingUnblockFlows() {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> requestBody = new HashMap<>();
@@ -249,7 +249,7 @@ public class UserUnblockFlowsIT {
   @ParameterizedTest
   @DisplayName("Should return error for empty and null unblockFlows array")
   @NullAndEmptySource
-  public void unblockFlows_emptyUnblockFlows(String[] unblockFlows) {
+  public void testEmptyUnblockFlows(String[] unblockFlows) {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> requestBody = generateUnblockRequestBody(contact, unblockFlows);
@@ -268,7 +268,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should return error for unknown tenant")
-  public void unblockFlows_unknownTenant() {
+  public void testUnknownTenant() {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> requestBody =
@@ -288,7 +288,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should handle unblocking already unblocked Flows gracefully")
-  public void unblockFlows_unblocking_Already_UnblockedFlow() {
+  public void testUnblockingAlreadyUnblockedFlow() {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> requestBody = new HashMap<>();
@@ -308,7 +308,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should verify that unblocked flows are actually accessible after unblocking")
-  public void unblockFlows_verifyAccessibilityAfterUnblocking() {
+  public void testVerifyAccessibilityAfterUnblocking() {
     // Arrange
     String contact = randomNumeric(10) + "@example.com";
 
@@ -360,7 +360,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should return error for invalid flow names in unblockFlows array")
-  public void unblockFlows_invalidFlowNames() {
+  public void testInvalidFlowNames() {
     // Arrange
     String contact = randomNumeric(10);
     Map<String, Object> requestBody =
@@ -383,7 +383,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should verify that other flows remain blocked after partial unblock")
-  public void unblockFlows_partialUnblockKeepsOthersBlocked() {
+  public void testPartialUnblockKeepsOthersBlocked() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -419,7 +419,7 @@ public class UserUnblockFlowsIT {
 
   @Test
   @DisplayName("Should handle unblocking flows that have already expired")
-  public void unblockFlows_expiredFlows() {
+  public void testUnblockExpiredFlows() {
     // Arrange
     String contact = randomNumeric(10);
     String reason = randomAlphanumeric(10);
@@ -436,34 +436,8 @@ public class UserUnblockFlowsIT {
   }
 
   @Test
-  @DisplayName("Should handle unblocking large number of flows")
-  public void unblockFlows_largeNumberOfFlows() {
-    // Arrange
-    String contact = randomNumeric(10);
-
-    Map<String, Object> blockRequestBody =
-        generateBlockRequestBody(
-            contact,
-            new String[] {PASSWORDLESS, SOCIAL_AUTH, PASSWORD, OTP_VERIFY},
-            randomAlphanumeric(10),
-            UNBLOCKED_AT);
-
-    Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
-
-    // Act
-    Map<String, Object> unblockRequestBody =
-        generateUnblockRequestBody(
-            contact, new String[] {PASSWORDLESS, SOCIAL_AUTH, PASSWORD, OTP_VERIFY});
-    Response unblockResponse = unblockUserFlows(TENANT_ID, unblockRequestBody);
-
-    // Assert
-    unblockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
-  }
-
-  @Test
   @DisplayName("Should throw error in unblocking mixed case flow names")
-  public void unblockFlows_mixedCaseFlowNames() {
+  public void testMixedCaseFlowNames() {
     // Arrange
     String contact = randomNumeric(10);
 

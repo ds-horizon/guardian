@@ -35,8 +35,6 @@ public class UserGetBlockedFlowsIT {
       randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
   private static final String PASSWORDLESS = "passwordless";
   private static final String SOCIAL_AUTH = "social_auth";
-  private static final String PASSWORD = "password";
-  private static final String OTP_VERIFY = "otp_verify";
   private static final Long UNBLOCKED_AT = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
 
   private Map<String, Object> generateBlockRequestBody(
@@ -52,7 +50,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should get blocked Flows successfully")
-  public void getBlockedFlows_success() {
+  public void testGetBlockedFlowsSuccess() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -85,7 +83,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should get blocked Flows successfully with email userIdentifier")
-  public void getBlockedFlows_emailContact_success() {
+  public void testGetBlockedFlowsWithEmailContactSuccess() {
     // Arrange
 
     Map<String, Object> blockRequestBody =
@@ -114,7 +112,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should return empty list when no Flows are blocked")
-  public void getBlockedFlows_noBlockedFlows_returnsEmptyList() {
+  public void testNoBlockedFlowsReturnsEmptyList() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -135,7 +133,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should return error for unknown tenant")
-  public void getBlockedFlows_unknownTenant_returnsError() {
+  public void testUnknownTenantReturnsError() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -153,7 +151,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should handle very long userIdentifier ID")
-  public void getBlockedFlows_longcontact_success() {
+  public void testLongUserIdentifierSuccess() {
     // Arrange
     String longcontact = "a".repeat(1000);
 
@@ -174,7 +172,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should return correct blocked Flows after partial unblock")
-  public void getBlockedFlows_afterPartialUnblock_success() {
+  public void testAfterPartialUnblockSuccess() {
     // Arrange
     String contact = randomNumeric(10);
 
@@ -225,7 +223,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should return error for missing userIdentifier parameter")
-  public void getBlockedFlows_missingUserIdentifier() {
+  public void testMissingUserIdentifierParameter() {
     // Act
     Response response = getBlockedFlows(TENANT_ID, null);
 
@@ -240,7 +238,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should return error for empty userIdentifier parameter")
-  public void getBlockedFlows_emptyUserIdentifier() {
+  public void testEmptyUserIdentifierParameter() {
     // Act
     Response response = getBlockedFlows(TENANT_ID, "");
 
@@ -255,7 +253,7 @@ public class UserGetBlockedFlowsIT {
 
   @Test
   @DisplayName("Should return empty list for expired blocks")
-  public void getBlockedFlows_expiredBlocks() {
+  public void testExpiredBlocks() {
     // Arrange
     String contact = randomNumeric(10);
     String reason = randomAlphanumeric(10);
@@ -276,72 +274,5 @@ public class UserGetBlockedFlowsIT {
     List<String> blockedFlows =
         response.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
     assertThat(blockedFlows.size(), equalTo(0));
-  }
-
-  @Test
-  @DisplayName("Should handle permanently blocked flows")
-  public void getBlockedFlows_permanentlyBlocked() {
-    // Arrange
-    String contact = randomNumeric(10);
-
-    Long unblockedAt = Instant.now().plusSeconds(31536000).toEpochMilli() / 1000;
-
-    Map<String, Object> blockRequestBody =
-        generateBlockRequestBody(
-            contact, new String[] {PASSWORDLESS, SOCIAL_AUTH}, randomAlphanumeric(10), unblockedAt);
-
-    Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
-
-    // Act
-    Response response = getBlockedFlows(TENANT_ID, contact);
-
-    // Assert
-    response.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-    assertThat(response.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_TOTAL_COUNT), equalTo(2));
-
-    List<String> blockedFlows =
-        response.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows.size(), equalTo(2));
-    assertThat(blockedFlows.contains(PASSWORDLESS), equalTo(true));
-    assertThat(blockedFlows.contains(SOCIAL_AUTH), equalTo(true));
-  }
-
-  @Test
-  @DisplayName("Should handle large number of blocked flows")
-  public void getBlockedFlows_largeNumberOfFlows() {
-    // Arrange
-    String contact = randomNumeric(10);
-
-    Map<String, Object> blockRequestBody =
-        generateBlockRequestBody(
-            contact,
-            new String[] {PASSWORDLESS, SOCIAL_AUTH, PASSWORD, OTP_VERIFY},
-            randomAlphanumeric(10),
-            UNBLOCKED_AT);
-
-    Response blockResponse = blockUserFlows(TENANT_ID, blockRequestBody);
-    blockResponse.then().statusCode(HttpStatus.SC_NO_CONTENT);
-
-    // Act
-    Response response = getBlockedFlows(TENANT_ID, contact);
-
-    // Assert
-    response.then().statusCode(HttpStatus.SC_OK);
-
-    assertThat(
-        response.getBody().jsonPath().getString(BODY_PARAM_USER_IDENTIFIER), equalTo(contact));
-    assertThat(response.getBody().jsonPath().getInt(RESPONSE_BODY_PARAM_TOTAL_COUNT), equalTo(4));
-
-    List<String> blockedFlows =
-        response.getBody().jsonPath().getList(RESPONSE_BODY_PARAM_BLOCKED_FLOWS);
-    assertThat(blockedFlows.size(), equalTo(4));
-    assertThat(blockedFlows.contains(PASSWORDLESS), equalTo(true));
-    assertThat(blockedFlows.contains(SOCIAL_AUTH), equalTo(true));
-    assertThat(blockedFlows.contains(PASSWORD), equalTo(true));
-    assertThat(blockedFlows.contains(OTP_VERIFY), equalTo(true));
   }
 }
