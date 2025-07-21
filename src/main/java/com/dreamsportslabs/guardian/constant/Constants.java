@@ -156,6 +156,7 @@ public final class Constants {
   public static final String OIDC_PARAM_STATE = "state";
   public static final String OIDC_PARAM_NONCE = "nonce";
   public static final String OIDC_PARAM_LOGIN_CHALLENGE = "login_challenge";
+  public static final String OIDC_PARAM_CONSENT_CHALLENGE = "consent_challenge";
   public static final String OIDC_PARAM_LOGIN_HINT = "login_hint";
   public static final String OIDC_PARAM_PROMPT = "prompt";
 }

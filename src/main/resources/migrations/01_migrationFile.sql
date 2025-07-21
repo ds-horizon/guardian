@@ -369,3 +369,26 @@ CREATE TABLE client_scope
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE consent
+(
+    tenant_id  CHAR(10)     NOT NULL,
+    client_id  VARCHAR(100) NOT NULL,
+    user_id    CHAR(64)     NOT NULL,
+    scope      VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`tenant_id`, `client_id`, `user_id`),
+    KEY `idx_tenant_scope` (`tenant_id`, `scope`),
+    
+    CONSTRAINT `fk_consent_tenant` FOREIGN KEY (`tenant_id`)
+        REFERENCES `tenant`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_consent_client` FOREIGN KEY (`tenant_id`, `client_id`)
+        REFERENCES `client`(`tenant_id`, `client_id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_consent_scope` FOREIGN KEY (`tenant_id`, `scope`)
+        REFERENCES `scope`(`tenant_id`, `name`) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;

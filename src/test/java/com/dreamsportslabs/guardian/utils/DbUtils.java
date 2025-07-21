@@ -22,6 +22,9 @@ public class DbUtils {
   private static final String INSERT_REFRESH_TOKEN =
       "INSERT INTO refresh_tokens (tenant_id, user_id, refresh_token, refresh_token_exp, source, device_name, location, ip) VALUES (?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
 
+  private static final String INSERT_USER_CONSENT =
+      "INSERT INTO consent (tenant_id, client_id, user_id, scope, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())";
+
   private static final String GET_SCOPE_BY_NAME =
       "SELECT name, display_name, description, claims, tenant_id, icon_url, is_oidc FROM scope WHERE tenant_id = ? AND name = ?";
 
@@ -461,6 +464,23 @@ public class DbUtils {
     } catch (Exception e) {
       log.error("Error while getting authorize session", e);
       return null;
+    }
+  }
+
+  public static void insertUserConsent(
+      String tenantId, String clientId, String userId, List<String> scopes) {
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(INSERT_USER_CONSENT)) {
+
+      for (String scope : scopes) {
+        stmt.setString(1, tenantId);
+        stmt.setString(2, clientId);
+        stmt.setString(3, userId);
+        stmt.setString(4, scope);
+        stmt.executeUpdate();
+      }
+    } catch (Exception e) {
+      log.error("Error while inserting user consent", e);
     }
   }
 }
