@@ -8,7 +8,6 @@ import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 
-import com.dreamsportslabs.guardian.Setup;
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
 import com.dreamsportslabs.guardian.utils.DbUtils;
 import io.restassured.http.ContentType;
@@ -17,9 +16,7 @@ import java.util.Base64;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(Setup.class)
 class AdminLogoutIT {
 
   private static final String TENANT_ID = "tenant1";
@@ -36,7 +33,7 @@ class AdminLogoutIT {
 
   @BeforeEach
   void setUp() {
-    // Create Basic Auth headers
+
     String validCredentials = ADMIN_USERNAME + ":" + ADMIN_PASSWORD;
     validAuthHeader = "Basic " + Base64.getEncoder().encodeToString(validCredentials.getBytes());
 
@@ -58,7 +55,7 @@ class AdminLogoutIT {
         DbUtils.insertRefreshToken(
             TENANT_ID,
             VALID_USER_ID,
-            1800L, // 30 minutes expiry
+            1800L,
             "test-source",
             "test-device",
             "test-location",
@@ -165,7 +162,7 @@ class AdminLogoutIT {
   @Test
   @DisplayName("Should return 401 when using admin credentials from different tenant")
   void testAdminLogoutWithWrongTenantCredentials() {
-    // Act & Assert - Using tenant2 credentials to access tenant1 should fail
+    // Act & Assert
     ApplicationIoUtils.adminLogout(TENANT_ID, otherTenantAuthHeader, VALID_USER_ID)
         .then()
         .statusCode(SC_UNAUTHORIZED)
@@ -176,7 +173,7 @@ class AdminLogoutIT {
   @Test
   @DisplayName("Should successfully logout multiple users and invalidate their tokens")
   void testAdminLogoutMultipleUsers() {
-    // Arrange - Create multiple users with refresh tokens
+    // Arrange
     String user1Id = "user1";
     String user2Id = "user2";
 
@@ -188,15 +185,15 @@ class AdminLogoutIT {
         DbUtils.insertRefreshToken(
             TENANT_ID, user2Id, 1800L, "test-source", "test-device", "test-location", "127.0.0.1");
 
-    // Act 1 - Verify both refresh tokens work before logout
+    // Act 1
     ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken1).then().statusCode(200);
 
     ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken2).then().statusCode(200);
 
-    // Act 2 - Logout user1
+    // Act 2
     ApplicationIoUtils.adminLogout(TENANT_ID, validAuthHeader, user1Id).then().statusCode(204);
 
-    // Act 3 - Verify user1's token is invalid but user2's token still works
+    // Act  3
     ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken1)
         .then()
         .statusCode(SC_UNAUTHORIZED)
@@ -205,10 +202,10 @@ class AdminLogoutIT {
 
     ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken2).then().statusCode(200);
 
-    // Act 4 - Logout user2
+    // Act 4
     ApplicationIoUtils.adminLogout(TENANT_ID, validAuthHeader, user2Id).then().statusCode(204);
 
-    // Act 5 - Verify user2's token is now also invalid
+    // Act 5
     ApplicationIoUtils.refreshToken(TENANT_ID, refreshToken2)
         .then()
         .statusCode(SC_UNAUTHORIZED)
