@@ -9,6 +9,7 @@ import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.UserConfig;
 import com.dreamsportslabs.guardian.dto.Provider;
 import com.dreamsportslabs.guardian.dto.UserDto;
+import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
@@ -111,5 +112,31 @@ public class UserService {
               return res;
             })
         .ignoreElement();
+  }
+
+  public Single<JsonObject> getOidcUser(
+      Map<String, String> userFilters, MultivaluedMap<String, String> headers, String tenantId) {
+    UserConfig userConfig = registry.get(tenantId, TenantConfig.class).getUserConfig();
+
+    HttpRequest<Buffer> request =
+        webClient.get(userConfig.getPort(), userConfig.getHost(), userConfig.getGetOidcUserPath());
+    userFilters.forEach(request::addQueryParam);
+    return request
+        .putHeaders(Utils.getForwardingHeaders(headers))
+        .ssl(userConfig.getIsSslEnabled())
+        .rxSend()
+        .onErrorResumeNext(err -> Single.error(ErrorEnum.INTERNAL_SERVER_ERROR.getException()))
+        .map(
+            res -> {
+              JsonObject resBody = res.bodyAsJsonObject();
+              if (res.statusCode() / 100 != 2) {
+                log.error(
+                    "Error fetching OIDC user details. Status: {} Response Body: {}",
+                    res.statusCode(),
+                    resBody.toString());
+                throw ErrorEnum.INTERNAL_SERVER_ERROR.getException();
+              }
+              return resBody;
+            });
   }
 }

@@ -89,5 +89,41 @@ def notify():
     logger.info("Payload: %s", request.json)
     return jsonify({}), 200
 
+@app.route('/oidcUser', methods=['GET'])
+def get_oidc_user():
+    logger.info("GET /oidcUser")
+    logger.info("Headers: %s", request.headers)
+    logger.info("Query Params: %s", request.args)
+    
+    user_id = request.args.get("userId")
+    scope = request.args.get("scope")
+    
+    if not user_id or user_id not in users:
+        return jsonify({"error": {"message": "User not found"}}), 404
+    
+    user = users[user_id].copy()
+    
+    # Filter user data based on scope
+    if scope:
+        scopes = scope.split()
+        filtered_user = {"sub": user_id}
+        
+        if "email" in scopes:
+            filtered_user["email"] = user.get("email")
+            filtered_user["email_verified"] = True
+            
+        if "phone" in scopes:
+            filtered_user["phone_number"] = user.get("phoneNumber")
+            filtered_user["phone_number_verified"] = True
+            
+        if "profile" in scopes or "read:profile" in scopes:
+            filtered_user["name"] = user.get("name")
+            filtered_user["picture"] = "https://example.com/avatar.jpg"
+            
+        return jsonify(filtered_user), 200
+    else:
+        # No scopes - return basic info
+        return jsonify({"sub": user_id}), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6000, debug=True)

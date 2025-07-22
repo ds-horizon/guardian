@@ -11,9 +11,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedMap;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,46 +26,50 @@ public class UserInfoService {
 
   public Single<JsonObject> getUserInfo(
       String accessToken, MultivaluedMap<String, String> headers, String tenantId) {
+
     return Single.fromCallable(() -> tokenVerifier.verifyAccessToken(accessToken, tenantId))
-        .flatMap(this::validateAndExtractUserData)
-        .flatMap(userData -> buildUserInfoResponse(userData, headers, tenantId));
-  }
-
-  private Single<UserData> validateAndExtractUserData(Map<String, Object> claims) {
-    String userId = (String) claims.get("sub");
-    if (userId == null) {
-      return Single.error(UNAUTHORIZED.getCustomException("Invalid token: missing sub claim"));
-    }
-
-    String scope = (String) claims.get("scope");
-    List<String> scopes = scope != null ? List.of(scope.split(" ")) : Collections.emptyList();
-
-    return Single.just(new UserData(userId, scopes));
-  }
-
-  private Single<JsonObject> buildUserInfoResponse(
-      UserData userData, MultivaluedMap<String, String> headers, String tenantId) {
-    return userService
-        .getUser(Map.of(USERID, userData.userId()), headers, tenantId)
         .flatMap(
-            userInfo -> {
-              if (userData.scopes().isEmpty()) {
-                return Single.just(buildBasicUserInfo(userData.userId(), tenantId));
+            claims -> {
+              String userId = (String) claims.get("sub");
+              if (userId == null) {
+                return Single.error(
+                    UNAUTHORIZED.getCustomException("Invalid token: missing sub claim"));
               }
 
-              return buildScopedUserInfo(userData.userId(), userInfo, userData.scopes(), tenantId);
+              String scope = (String) claims.get("scope");
+              return fetchUserInfoWithScopedClaims(userId, scope, headers, tenantId);
             });
   }
 
-  private Single<JsonObject> buildScopedUserInfo(
-      String userId, JsonObject userInfo, List<String> scopes, String tenantId) {
+  private Single<JsonObject> fetchUserInfoWithScopedClaims(
+      String userId, String scope, MultivaluedMap<String, String> headers, String tenantId) {
+
+    List<String> scopes =
+        scope.isEmpty() ? Collections.emptyList() : Arrays.asList(scope.split(" "));
+
     return scopeDao
         .getScopes(tenantId, scopes)
-        .map(this::extractClaimsFromScopes)
-        .map(claims -> buildFilteredUserInfo(userId, userInfo, claims, tenantId));
+        .map(this::extractClaimNamesFromScopeModels)
+        .flatMap(
+            claims -> {
+              Map<String, String> userFilters = new HashMap<>();
+              userFilters.put(USERID, userId);
+
+              if (!claims.isEmpty()) {
+                userFilters.put("claims", String.join(",", claims));
+              }
+
+              return userService
+                  .getOidcUser(userFilters, headers, tenantId)
+                  .map(
+                      userInfo -> {
+                        userInfo.put("iss", getIssuer(tenantId));
+                        return userInfo;
+                      });
+            });
   }
 
-  private List<String> extractClaimsFromScopes(List<ScopeModel> scopeModels) {
+  private List<String> extractClaimNamesFromScopeModels(List<ScopeModel> scopeModels) {
     return scopeModels.stream()
         .filter(scopeModel -> scopeModel.getClaims() != null)
         .flatMap(scopeModel -> scopeModel.getClaims().stream())
@@ -75,35 +77,8 @@ public class UserInfoService {
         .collect(Collectors.toList());
   }
 
-  private JsonObject buildBasicUserInfo(String userId, String tenantId) {
-    JsonObject userInfo = new JsonObject();
-    userInfo.put("sub", userId);
-    userInfo.put("iss", getIssuer(tenantId));
-    return userInfo;
-  }
-
-  private JsonObject buildFilteredUserInfo(
-      String userId, JsonObject userInfo, List<String> claims, String tenantId) {
-    JsonObject filteredInfo = new JsonObject();
-
-    filteredInfo.put("sub", userId);
-    filteredInfo.put("iss", getIssuer(tenantId));
-
-    claims.forEach(
-        claim -> {
-          Object value = userInfo.getValue(claim);
-          if (value != null) {
-            filteredInfo.put(claim, value);
-          }
-        });
-
-    return filteredInfo;
-  }
-
   private String getIssuer(String tenantId) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     return tenantConfig.getTokenConfig().getIssuer();
   }
-
-  private record UserData(String userId, List<String> scopes) {}
 }

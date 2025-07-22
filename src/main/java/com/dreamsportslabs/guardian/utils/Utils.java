@@ -3,8 +3,12 @@ package com.dreamsportslabs.guardian.utils;
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -49,6 +53,20 @@ public final class Utils {
       return token;
     } catch (Exception e) {
       throw UNAUTHORIZED.getCustomException("Invalid authorization header");
+    }
+  }
+
+  public static Map<String, Object> decodeJwtHeaders(String token) {
+    try {
+      String[] parts = token.split("\\.");
+      if (parts.length < 2) {
+        throw new IllegalArgumentException("Invalid JWT format");
+      }
+      String headerJson =
+          new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+      return new ObjectMapper().readValue(headerJson, Map.class);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to decode JWT header", e);
     }
   }
 }
