@@ -18,19 +18,28 @@ import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.TEST_STATE;
 import static com.dreamsportslabs.guardian.utils.DbUtils.authorizeSessionExists;
 import static com.dreamsportslabs.guardian.utils.DbUtils.getAuthorizeSession;
+import static com.dreamsportslabs.guardian.utils.DbUtils.getOidcCode;
 import static org.apache.http.HttpStatus.SC_MOVED_TEMPORARILY;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.notNullValue;
 
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OidcUtils {
+
+  private static final Logger log = LoggerFactory.getLogger(OidcUtils.class);
 
   /**
    * Creates a valid authorize request with all required parameters.
@@ -233,6 +242,227 @@ public class OidcUtils {
             sessionUserId,
             equalTo(expectedUserId));
       }
+    }
+  }
+
+  /**
+   * Extracts the consent challenge from a redirect location URL.
+   *
+   * @param response The response containing the redirect location
+   * @return The consent challenge value, or null if not found
+   */
+  public static String extractConsentChallenge(Response response) {
+    String location = response.getHeader(HEADER_LOCATION);
+    log.info("Extracting consent challenge from location: {}", location);
+
+    if (location == null) {
+      log.warn("Location header is null");
+      return null;
+    }
+
+    try {
+      String[] params = location.split(QUERY_SEPARATOR)[1].split(PARAM_SEPARATOR);
+      log.info("Split URL params: {}", Arrays.toString(params));
+
+      for (String param : params) {
+        log.info("Checking param: {}", param);
+        if (param.startsWith("consent_challenge" + EQUALS_SIGN)) {
+          String challenge = param.split(EQUALS_SIGN)[1];
+          log.info("Found consent challenge: {}", challenge);
+          return challenge;
+        }
+      }
+      log.warn("No consent_challenge found in params");
+      return null;
+    } catch (Exception e) {
+      log.error("Error extracting consent challenge from location: {}", location, e);
+      return null;
+    }
+  }
+
+  /**
+   * Validates the consent accept response for successful cases.
+   *
+   * @param response The response to validate
+   * @param tenantId The tenant ID
+   * @param consentChallenge The consent challenge that was used
+   * @param expectedUserId The expected user ID
+   */
+  public static void validateConsentAcceptResponse(
+      Response response, String tenantId, String consentChallenge, String expectedUserId) {
+    response
+        .then()
+        .statusCode(SC_MOVED_TEMPORARILY)
+        .header(HEADER_LOCATION, notNullValue())
+        .header(HEADER_LOCATION, containsString("code="))
+        .header(HEADER_LOCATION, containsString("state="));
+
+    String locationHeader = response.getHeader(HEADER_LOCATION);
+    assertThat("Location header should not be null", locationHeader, notNullValue());
+    assertThat("Location header should contain code", locationHeader, containsString("code="));
+    assertThat("Location header should contain state", locationHeader, containsString("state="));
+
+    // Verify auth code properties
+    validateAuthCodeProperties(locationHeader);
+
+    // Extract auth code for OIDC validation
+    String authCode = extractAuthCodeFromLocation(locationHeader);
+    assertThat("Auth code should not be null", authCode, notNullValue());
+
+    // Verify session was deleted from database
+    assertThat(
+        "Authorize session should be deleted after consent acceptance",
+        authorizeSessionExists(tenantId, consentChallenge),
+        equalTo(false));
+  }
+
+  /**
+   * Validates the consent accept response for successful cases with OIDC code validation.
+   *
+   * @param response The response to validate
+   * @param tenantId The tenant ID
+   * @param consentChallenge The consent challenge that was used
+   * @param expectedUserId The expected user ID
+   * @param expectedClientId The expected client ID
+   * @param expectedScopes The expected consented scopes
+   */
+  public static void validateConsentAcceptResponse(
+      Response response,
+      String tenantId,
+      String consentChallenge,
+      String expectedUserId,
+      String expectedClientId,
+      List<String> expectedScopes) {
+    response
+        .then()
+        .statusCode(SC_MOVED_TEMPORARILY)
+        .header(HEADER_LOCATION, notNullValue())
+        .header(HEADER_LOCATION, containsString("code="))
+        .header(HEADER_LOCATION, containsString("state="));
+
+    String locationHeader = response.getHeader(HEADER_LOCATION);
+    assertThat("Location header should not be null", locationHeader, notNullValue());
+    assertThat("Location header should contain code", locationHeader, containsString("code="));
+    assertThat("Location header should contain state", locationHeader, containsString("state="));
+
+    // Verify auth code properties
+    validateAuthCodeProperties(locationHeader);
+
+    // Extract auth code for OIDC validation
+    String authCode = extractAuthCodeFromLocation(locationHeader);
+    assertThat("Auth code should not be null", authCode, notNullValue());
+
+    // Verify session was deleted from database
+    assertThat(
+        "Authorize session should be deleted after consent acceptance",
+        authorizeSessionExists(tenantId, consentChallenge),
+        equalTo(false));
+
+    // Validate OIDC code properties in Redis
+    if (expectedUserId != null
+        && authCode != null
+        && expectedClientId != null
+        && expectedScopes != null) {
+      validateOidcCodeProperties(
+          tenantId, authCode, expectedUserId, expectedClientId, expectedScopes);
+    }
+  }
+
+  /**
+   * Validates auth code properties from location header.
+   *
+   * @param locationHeader The location header containing the auth code
+   */
+  public static void validateAuthCodeProperties(String locationHeader) {
+    assertThat("Location header should not be null", locationHeader, notNullValue());
+    assertThat(
+        "Location header should contain code parameter", locationHeader, containsString("code="));
+
+    // Extract and verify auth code format
+    String authCode = extractAuthCodeFromLocation(locationHeader);
+    assertThat("Auth code should not be null", authCode, notNullValue());
+    assertThat("Auth code should be alphanumeric", authCode, matchesPattern("[a-zA-Z0-9]+"));
+    assertThat("Auth code should have reasonable length", authCode.length(), greaterThan(20));
+  }
+
+  /**
+   * Extracts auth code from location header URL.
+   *
+   * @param location The location header URL
+   * @return The auth code value, or null if not found
+   */
+  public static String extractAuthCodeFromLocation(String location) {
+    if (location == null) return null;
+
+    try {
+      String[] params = location.split("\\?")[1].split("&");
+      for (String param : params) {
+        if (param.startsWith("code=")) {
+          return param.split("=")[1];
+        }
+      }
+      return null;
+    } catch (Exception e) {
+      log.error("Error extracting auth code from location: {}", location, e);
+      return null;
+    }
+  }
+
+  /**
+   * Validates OIDC code properties in Redis for positive test cases.
+   *
+   * @param tenantId The tenant ID
+   * @param authCode The auth code to validate
+   * @param expectedUserId The expected user ID
+   * @param expectedClientId The expected client ID
+   * @param expectedScopes The expected consented scopes
+   */
+  public static void validateOidcCodeProperties(
+      String tenantId,
+      String authCode,
+      String expectedUserId,
+      String expectedClientId,
+      List<String> expectedScopes) {
+    JsonObject oidcCodeData = getOidcCode(tenantId, authCode);
+    assertThat("OIDC code should exist in Redis", oidcCodeData, notNullValue());
+
+    // Validate user ID
+    String userId = oidcCodeData.getString("userId");
+    assertThat("OIDC code should have correct user ID", userId, equalTo(expectedUserId));
+
+    // Validate client
+    JsonObject client = oidcCodeData.getJsonObject("client");
+    assertThat("OIDC code should have client data", client, notNullValue());
+    String clientId = client.getString("clientId");
+    assertThat("OIDC code should have correct client ID", clientId, equalTo(expectedClientId));
+
+    // Validate consented scopes
+    List<String> consentedScopes = oidcCodeData.getJsonArray("consentedScopes").getList();
+    assertThat("OIDC code should have consented scopes", consentedScopes, notNullValue());
+    assertThat(
+        "OIDC code should have correct consented scopes",
+        consentedScopes,
+        containsInAnyOrder(expectedScopes.toArray(new String[0])));
+
+    // Validate redirect URI
+    String redirectUri = oidcCodeData.getString("redirectUri");
+    assertThat("OIDC code should have redirect URI", redirectUri, notNullValue());
+    assertThat("OIDC code should have valid redirect URI", redirectUri, containsString("https://"));
+
+    // Validate state
+    String state = oidcCodeData.getString("state");
+    assertThat("OIDC code should have state", state, notNullValue());
+
+    // Validate nonce (if present)
+    String nonce = oidcCodeData.getString("nonce");
+    if (nonce != null) {
+      assertThat("OIDC code nonce should not be empty", nonce.length(), greaterThan(0));
+    }
+
+    // Validate code challenge (if present)
+    String codeChallenge = oidcCodeData.getString("codeChallenge");
+    if (codeChallenge != null) {
+      assertThat("OIDC code challenge should not be empty", codeChallenge.length(), greaterThan(0));
     }
   }
 }

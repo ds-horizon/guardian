@@ -38,6 +38,8 @@ public class Constants {
   public static final String BODY_PARAM_PARAMS = "params";
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
   public static final String BODY_PARAM_LOGIN_CHALLENGE = "loginChallenge";
+  public static final String BODY_PARAM_CONSENT_CHALLENGE = "consentChallenge";
+  public static final String BODY_PARAM_CONSENTED_SCOPES = "consentedScopes";
 
   // User Block Flow Constants
   public static final String BODY_PARAM_USER_IDENTIFIER = "userIdentifier";

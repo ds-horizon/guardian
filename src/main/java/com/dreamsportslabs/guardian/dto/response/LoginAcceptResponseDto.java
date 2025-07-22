@@ -4,7 +4,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_CONSENT
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_STATE;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.UriBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,7 +15,7 @@ public class LoginAcceptResponseDto {
   private String consentChallenge;
   private String state;
 
-  public ResponseBuilder toResponse() {
+  public Response toResponse() {
     UriBuilder uriBuilder = UriBuilder.fromUri(consentPageUri);
 
     if (consentChallenge != null) {
@@ -27,6 +26,6 @@ public class LoginAcceptResponseDto {
       uriBuilder.queryParam(OIDC_PARAM_STATE, state);
     }
 
-    return Response.status(Response.Status.FOUND).location(uriBuilder.build());
+    return Response.status(Response.Status.FOUND).location(uriBuilder.build()).build();
   }
 }

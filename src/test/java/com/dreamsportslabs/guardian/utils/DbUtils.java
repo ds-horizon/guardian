@@ -433,25 +433,58 @@ public class DbUtils {
   }
 
   public static boolean authorizeSessionExists(String tenantId, String loginChallenge) {
+    int maxRetries = 3;
+    int retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try (Jedis jedis = redisConnectionPool.getResource()) {
+        String key = "AUTH_SESSION_" + tenantId + "_" + loginChallenge;
+        boolean keyExists = jedis.exists(key);
+
+        if (!keyExists) {
+          return false;
+        }
+
+        retryCount++;
+        if (retryCount < maxRetries) {
+          log.info("Key still exists, retrying (attempt {}/{}): {}", retryCount, maxRetries, key);
+        }
+      } catch (Exception e) {
+        log.error("Error while checking authorize session exists", e);
+        return false;
+      }
+    }
+
+    // After all retries, key still exists
+    return true;
+  }
+
+  public static JsonObject getAuthorizeSession(String tenantId, String challenge) {
     try (Jedis jedis = redisConnectionPool.getResource()) {
-      String key = "AUTH_SESSION_" + tenantId + "_" + loginChallenge;
-      return jedis.exists(key);
+      String cacheKey = "AUTH_SESSION_" + tenantId + "_" + challenge;
+      String sessionData = jedis.get(cacheKey);
+      if (sessionData != null) {
+        return new JsonObject(sessionData);
+      } else {
+        return null;
+      }
     } catch (Exception e) {
-      log.error("Error while checking authorize session exists", e);
-      return false;
+      log.error("Error while fetching authorize session", e);
+      return null;
     }
   }
 
-  public static JsonObject getAuthorizeSession(String tenantId, String loginChallenge) {
+  public static JsonObject getOidcCode(String tenantId, String code) {
     try (Jedis jedis = redisConnectionPool.getResource()) {
-      String key = "AUTH_SESSION_" + tenantId + "_" + loginChallenge;
-      String value = jedis.get(key);
-      if (value != null) {
-        return new JsonObject(value);
+      String cacheKey = "OIDC_CODE_" + tenantId + "_" + code;
+      String codeData = jedis.get(cacheKey);
+      if (codeData != null) {
+        return new JsonObject(codeData);
+      } else {
+        return null;
       }
-      return null;
     } catch (Exception e) {
-      log.error("Error while getting authorize session", e);
+      log.error("Error while fetching OIDC code", e);
       return null;
     }
   }
@@ -470,6 +503,16 @@ public class DbUtils {
       }
     } catch (Exception e) {
       log.error("Error while inserting user consent", e);
+    }
+  }
+
+  public static void expireAuthorizeSession(String tenantId, String challenge) {
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      String key = "AUTH_SESSION_" + tenantId + "_" + challenge;
+      // Set a very short TTL (1 second) to expire the session quickly
+      jedis.expire(key, 0);
+    } catch (Exception e) {
+      log.error("Error while expiring authorize session", e);
     }
   }
 }

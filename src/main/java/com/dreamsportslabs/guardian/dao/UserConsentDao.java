@@ -32,6 +32,24 @@ public class UserConsentDao {
         .onErrorResumeNext(err -> Completable.error(INTERNAL_SERVER_ERROR.getException(err)));
   }
 
+  public Completable insertConsents(
+      String tenantId, String clientId, String userId, List<String> scopes) {
+    if (scopes.isEmpty()) {
+      return Completable.complete();
+    }
+    List<Tuple> tuples =
+        scopes.stream().map(scope -> Tuple.of(tenantId, clientId, userId, scope)).toList();
+
+    log.info("Creating user consents with {} scopes for user {}", tuples.size(), userId);
+
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(INSERT_CONSENT)
+        .rxExecuteBatch(tuples)
+        .ignoreElement()
+        .onErrorResumeNext(err -> Completable.error(INTERNAL_SERVER_ERROR.getException(err)));
+  }
+
   public Single<List<UserConsentModel>> getUserConsents(
       String tenantId, String clientId, String userId) {
     Tuple params = Tuple.of(tenantId, clientId, userId);
