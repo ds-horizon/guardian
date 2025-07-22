@@ -11,6 +11,8 @@ import com.dreamsportslabs.guardian.constant.OidcResponseType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.ws.rs.QueryParam;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -54,6 +56,12 @@ public class AuthorizeRequestDto {
   @JsonIgnore private OidcCodeChallengeMethod oidcCodeChallengeMethod;
 
   @JsonIgnore private OidcPrompt oidcPrompt;
+
+  public void setScope(String scope) {
+    if (scope != null) {
+      this.scope = Arrays.stream(scope.split("\\s+")).distinct().collect(Collectors.joining(" "));
+    }
+  }
 
   public void validate() {
     if (StringUtils.isBlank(responseType)) {

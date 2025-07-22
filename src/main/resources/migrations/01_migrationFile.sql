@@ -380,7 +380,7 @@ CREATE TABLE consent
     updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (`tenant_id`, `client_id`, `user_id`),
+    PRIMARY KEY (`tenant_id`, `client_id`, `user_id`, `scope`),
     KEY `idx_tenant_scope` (`tenant_id`, `scope`),
     
     CONSTRAINT `fk_consent_tenant` FOREIGN KEY (`tenant_id`)
