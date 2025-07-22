@@ -20,6 +20,4 @@ public final class UserConsentQuery {
             DELETE FROM consent
             WHERE tenant_id = ? AND client_id = ? AND user_id = ?
             """;
-
-  private UserConsentQuery() {}
 }

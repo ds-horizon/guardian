@@ -18,7 +18,8 @@ import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -36,7 +37,7 @@ public class LoginAcceptService {
   private final RefreshTokenDao refreshTokenDao;
   private final Registry registry;
 
-  public Single<ResponseBuilder> loginAccept(LoginAcceptRequestDto requestDto, String tenantId) {
+  public Single<Object> loginAccept(LoginAcceptRequestDto requestDto, String tenantId) {
 
     return validateRefreshToken(requestDto.getRefreshToken(), tenantId)
         .flatMap(
@@ -55,36 +56,41 @@ public class LoginAcceptService {
                                   authorizeSession.getClient().getClientId(), userId, tenantId)
                               .flatMap(
                                   consentedScopes -> {
-                                    if (hasConsentForAllRequiredScopes(
-                                        authorizeSession.getAllowedScopes(), consentedScopes)) {
+                                    List<String> commonScopesList =
+                                        getCommonScopes(
+                                            authorizeSession.getAllowedScopes(), consentedScopes);
+                                    if (commonScopesList.size()
+                                        == authorizeSession.getAllowedScopes().size()) {
                                       return handleSkipConsentFlow(authorizeSession, tenantId);
                                     } else {
+                                      authorizeSession.setConsentedScopes(commonScopesList);
                                       return handleConsentRequiredFlow(authorizeSession, tenantId);
                                     }
                                   });
                         })
-                    .doOnSuccess(
-                        response ->
-                            deleteLoginChallengeAsync(requestDto.getLoginChallenge(), tenantId)));
+                    .map(
+                        response -> {
+                          deleteLoginChallengeAsync(requestDto.getLoginChallenge(), tenantId);
+                          return response;
+                        }));
   }
 
-  private Single<ResponseBuilder> handleSkipConsentFlow(
+  private Single<AuthCodeResponseDto> handleSkipConsentFlow(
       AuthorizeSessionModel authorizeSession, String tenantId) {
     authorizeSession.setConsentedScopes(authorizeSession.getAllowedScopes());
     String code = RandomStringUtils.randomAlphanumeric(32);
-    OidcCodeModel codeSession = new OidcCodeModel(authorizeSession);
+    OidcCodeModel oidcCodeModel = new OidcCodeModel(authorizeSession);
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     return oidcCodeDao
-        .saveOidcCode(code, codeSession, tenantId, tenantConfig.getOidcConfig().getAuthorizeTtl())
+        .saveOidcCode(code, oidcCodeModel, tenantId, tenantConfig.getOidcConfig().getAuthorizeTtl())
         .toSingleDefault(code)
         .map(
             oidcCode ->
                 new AuthCodeResponseDto(
-                        authorizeSession.getRedirectUri(), authorizeSession.getState(), oidcCode)
-                    .toResponse());
+                    authorizeSession.getRedirectUri(), authorizeSession.getState(), oidcCode));
   }
 
-  private Single<ResponseBuilder> handleConsentRequiredFlow(
+  private Single<LoginAcceptResponseDto> handleConsentRequiredFlow(
       AuthorizeSessionModel authorizeSession, String tenantId) {
     String consentChallenge = UUID.randomUUID().toString();
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
@@ -97,10 +103,9 @@ public class LoginAcceptService {
             tenantConfig.getOidcConfig().getAuthorizeTtl())
         .toSingleDefault(
             new LoginAcceptResponseDto(
-                    tenantConfig.getOidcConfig().getConsentPageUri(),
-                    consentChallenge,
-                    authorizeSession.getState())
-                .toResponse());
+                tenantConfig.getOidcConfig().getConsentPageUri(),
+                consentChallenge,
+                authorizeSession.getState()));
   }
 
   private Single<String> validateRefreshToken(String refreshToken, String tenantId) {
@@ -120,14 +125,11 @@ public class LoginAcceptService {
                 consents.stream().map(UserConsentModel::getScope).collect(Collectors.toSet()));
   }
 
-  private boolean hasConsentForAllRequiredScopes(
-      List<String> requiredScopes, Set<String> consentedScopes) {
-    for (String scope : requiredScopes) {
-      if (!consentedScopes.contains(scope.trim())) {
-        return false;
-      }
-    }
-    return true;
+  private List<String> getCommonScopes(List<String> requiredScopes, Set<String> consentedScopes) {
+    Set<String> allowedScopesSet = new HashSet<>(requiredScopes);
+    Set<String> intersection = new HashSet<>(consentedScopes);
+    intersection.retainAll(allowedScopesSet);
+    return new ArrayList<>(intersection);
   }
 
   private void deleteLoginChallengeAsync(String loginChallenge, String tenantId) {
