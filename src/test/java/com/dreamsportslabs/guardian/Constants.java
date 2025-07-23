@@ -126,7 +126,7 @@ public class Constants {
   public static final String ERROR_MSG_OPENID_SCOPE_INVALID_CLAIMS =
       "openid scope must only include 'sub' claim";
   public static final String ERROR_MSG_PHONE_SCOPE_INVALID_CLAIMS =
-      "phone scope must include 'phone_number' and 'phone_number_verified' claim";
+      "phone scope must include 'phone_number' or 'phone_number_verified' claim";
   public static final String ERROR_MSG_EMAIL_SCOPE_INVALID_CLAIMS =
       "email scope must include 'email' or 'email_verified' claim";
   public static final String ERROR_MSG_ADDRESS_SCOPE_INVALID_CLAIMS =
