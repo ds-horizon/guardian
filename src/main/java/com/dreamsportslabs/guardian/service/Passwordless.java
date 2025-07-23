@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.OTP_RESEND_AFTER;
 import static com.dreamsportslabs.guardian.constant.Constants.OTP_RETRIES_LEFT;
+import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
@@ -44,7 +45,6 @@ public class Passwordless {
   private final PasswordlessDao passwordlessDao;
   private final AuthorizationService authorizationService;
   private final Registry registry;
-  private final UserFlowBlockService userFlowBlockService;
 
   public Single<PasswordlessModel> init(
       V1PasswordlessInitRequestDto requestDto,
@@ -52,34 +52,27 @@ public class Passwordless {
       String tenantId) {
     String state = requestDto.getState();
     Single<PasswordlessModel> passwordlessModel;
-
     if (state != null) {
       passwordlessModel = this.getPasswordlessModel(state, tenantId);
     } else {
       updateDefaultTemplate(requestDto, tenantId);
       passwordlessModel = this.createPasswordlessModel(requestDto, headers, tenantId);
     }
-
     return passwordlessModel
-        .flatMap(
-            model ->
-                userFlowBlockService
-                    .isUserBlocked(model, tenantId)
-                    .andThen(
-                        Single.fromCallable(
-                            () -> {
-                              if (model.getResends() >= model.getMaxResends()) {
-                                passwordlessDao.deletePasswordlessModel(state, tenantId);
-                                throw RESENDS_EXHAUSTED.getException();
-                              }
+        .map(
+            model -> {
+              if (model.getResends() >= model.getMaxResends()) {
+                passwordlessDao.deletePasswordlessModel(state, tenantId);
+                throw RESENDS_EXHAUSTED.getException();
+              }
 
-                              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
-                                throw RESEND_NOT_ALLOWED.getCustomException(
-                                    Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
-                              }
+              if ((System.currentTimeMillis() / SECONDS_TO_MILLISECONDS) < model.getResendAfter()) {
+                throw RESEND_NOT_ALLOWED.getCustomException(
+                    Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
+              }
 
-                              return model;
-                            })))
+              return model;
+            })
         .flatMap(
             model -> {
               if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
@@ -107,7 +100,7 @@ public class Passwordless {
         .switchIfEmpty(Single.error(INVALID_STATE.getException()))
         .map(
             model -> {
-              if (System.currentTimeMillis() / 1000 > model.getExpiry()) {
+              if (System.currentTimeMillis() / SECONDS_TO_MILLISECONDS > model.getExpiry()) {
                 passwordlessDao.deletePasswordlessModel(state, tenantId);
                 throw INVALID_STATE.getException();
               }
@@ -150,7 +143,9 @@ public class Passwordless {
                   .responseType(dto.getResponseType())
                   .metaInfo(dto.getMetaInfo())
                   .additionalInfo(dto.getAdditionalInfo())
-                  .expiry(System.currentTimeMillis() / 1000 + config.getOtpValidity())
+                  .expiry(
+                      System.currentTimeMillis() / SECONDS_TO_MILLISECONDS
+                          + config.getOtpValidity())
                   .build();
             });
   }
@@ -174,18 +169,13 @@ public class Passwordless {
   }
 
   public Single<Object> complete(V1PasswordlessCompleteRequestDto dto, String tenantId) {
-
     return getPasswordlessModel(dto.getState(), tenantId)
-        .flatMap(
-            model ->
-                userFlowBlockService.isUserBlocked(model, tenantId).andThen(Single.just(model)))
         .flatMap(model -> validateOtp(model, dto.getOtp(), tenantId))
         .flatMap(
             model -> {
               if (model.getUser().get(USERID) != null) {
                 return Single.just(model);
               }
-
               UserDto.UserDtoBuilder builder = UserDto.builder();
               Contact contact = model.getContacts().get(0);
               if (contact.getChannel() == Channel.EMAIL) {
@@ -194,10 +184,8 @@ public class Passwordless {
                 builder.phoneNumber(contact.getIdentifier());
               }
               builder.additionalInfo(model.getAdditionalInfo());
-
               MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
               model.getHeaders().forEach(headers::add);
-
               return userService
                   .createUser(builder.build(), headers, tenantId)
                   .map(

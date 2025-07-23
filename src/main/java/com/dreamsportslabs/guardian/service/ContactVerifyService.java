@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
@@ -9,7 +10,6 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.RETRIES_EXHAUSTED
 
 import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
-import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.dao.ContactVerifyDao;
 import com.dreamsportslabs.guardian.dao.model.OtpGenerateModel;
@@ -33,7 +33,6 @@ public class ContactVerifyService {
   private final ContactVerifyDao contactVerifyDao;
   private final Registry registry;
   private final OtpService otpService;
-  private final UserFlowBlockService userFlowBlockService;
 
   public Single<OtpGenerateModel> initOtp(
       V1SendOtpRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
@@ -53,13 +52,6 @@ public class ContactVerifyService {
     }
 
     return otpGenerateModel
-        .flatMap(
-            model -> {
-              String contactIdentifier = model.getContact().getIdentifier();
-              return userFlowBlockService
-                  .isFlowBlocked(tenantId, List.of(contactIdentifier), BlockFlow.OTP_VERIFY)
-                  .andThen(Single.just(model));
-            })
         .map(
             model -> {
               if (model.getResends() >= model.getMaxResends()) {
@@ -67,7 +59,7 @@ public class ContactVerifyService {
                 throw RESENDS_EXHAUSTED.getException();
               }
 
-              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
+              if ((System.currentTimeMillis() / SECONDS_TO_MILLISECONDS) < model.getResendAfter()) {
                 throw RESEND_NOT_ALLOWED.getCustomException(
                     Map.of("resendAfter", model.getResendAfter()));
               }
@@ -79,7 +71,6 @@ public class ContactVerifyService {
               if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
                 return Single.just(model);
               }
-
               return otpService
                   .sendOtp(List.of(model.getContact()), model.getOtp(), headers, tenantId)
                   .andThen(Single.just(model));
@@ -115,7 +106,7 @@ public class ContactVerifyService {
             .maxResends(config.getResendLimit())
             .headers(h)
             .contact(dto.getContact())
-            .expiry(System.currentTimeMillis() / 1000 + config.getOtpValidity())
+            .expiry(System.currentTimeMillis() / SECONDS_TO_MILLISECONDS + config.getOtpValidity())
             .build());
   }
 
@@ -123,34 +114,25 @@ public class ContactVerifyService {
     return getOtpGenerateModel(tenantId, state)
         .flatMap(
             model -> {
-              String contactIdentifier = model.getContact().getIdentifier();
-              return userFlowBlockService
-                  .isFlowBlocked(tenantId, List.of(contactIdentifier), BlockFlow.OTP_VERIFY)
-                  .andThen(Single.just(model));
-            })
-        .flatMap(
-            otpModel -> {
-              if (otpModel.getOtp().equals(otp)) {
+              if (model.getOtp().equals(otp)) {
                 contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 return Single.just(true);
               }
 
-              otpModel.incRetry();
+              model.incRetry();
 
-              if (otpModel.getTries() >= otpModel.getMaxTries()) {
+              if (model.getTries() >= model.getMaxTries()) {
                 contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 return Single.error(RETRIES_EXHAUSTED.getException());
               }
 
               return contactVerifyDao
-                  .setOtpGenerateModel(otpModel, tenantId, state)
+                  .setOtpGenerateModel(model, tenantId, state)
                   .flatMap(
                       m ->
                           Single.error(
                               INCORRECT_OTP.getCustomException(
-                                  Map.of(
-                                      "retriesLeft",
-                                      otpModel.getMaxTries() - otpModel.getTries()))));
+                                  Map.of("retriesLeft", model.getMaxTries() - model.getTries()))));
             });
   }
 
@@ -160,7 +142,7 @@ public class ContactVerifyService {
         .switchIfEmpty(Single.error(INVALID_STATE.getException()))
         .map(
             model -> {
-              if (System.currentTimeMillis() / 1000 > model.getExpiry()) {
+              if (System.currentTimeMillis() / SECONDS_TO_MILLISECONDS > model.getExpiry()) {
                 contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 throw INVALID_STATE.getException();
               }

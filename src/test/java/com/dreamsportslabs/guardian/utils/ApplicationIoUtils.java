@@ -58,19 +58,6 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/signin"));
   }
 
-  public static Response signUp(
-      String tenantId, String username, String password, String responseType) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-
-    Map<String, Object> body = new HashMap<>();
-    body.put(BODY_PARAM_USERNAME, username);
-    body.put(BODY_PARAM_PASSWORD, password);
-    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
-
-    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/signup"));
-  }
-
   public static Response refreshToken(String tenantId, String refreshToken) {
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_TENANT_ID, tenantId);
@@ -188,32 +175,6 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/otp/verify"));
   }
 
-  public static Response authFb(
-      String tenantId, String accessToken, String flow, String responseType) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-
-    Map<String, Object> body = new HashMap<>();
-    body.put("accessToken", accessToken);
-    body.put(BODY_PARAM_FLOW, flow);
-    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
-
-    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/auth/fb"));
-  }
-
-  public static Response authGoogle(
-      String tenantId, String idToken, String flow, String responseType) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-
-    Map<String, Object> body = new HashMap<>();
-    body.put("idToken", idToken);
-    body.put(BODY_PARAM_FLOW, flow);
-    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
-
-    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/auth/google"));
-  }
-
   public static Response getJwks(String tenantId) {
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_TENANT_ID, tenantId);
@@ -319,46 +280,86 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/keys/generate"));
   }
 
-  public static Response blockUserFlows(String tenantId, Map<String, Object> body) {
+  public static Response authorize(String tenantId, Map<String, String> queryParams) {
     Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-    headers.put(CONTENT_TYPE, "application/json");
-
-    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/user/flow/block"));
-  }
-
-  public static Response unblockUserFlows(String tenantId, Map<String, Object> body) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-    headers.put(CONTENT_TYPE, "application/json");
-
-    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/user/flow/unblock"));
-  }
-
-  public static Response getBlockedFlows(String tenantId, String userIdentifier) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-
-    Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("userIdentifier", userIdentifier);
-
-    return execute(null, headers, queryParams, spec -> spec.get("/v1/user/flow/blocked"));
-  }
-
-  public static Response adminLogout(String tenantId, String authHeader, String userId) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_TENANT_ID, tenantId);
-    if (authHeader != null) {
-      headers.put("Authorization", authHeader);
-    }
-    headers.put(CONTENT_TYPE, "application/json");
-
-    Map<String, Object> body = new HashMap<>();
-    if (userId != null) {
-      body.put("userId", userId);
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
     }
 
-    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/admin/logout"));
+    return execute(null, headers, queryParams, spec -> spec.get("/authorize"));
+  }
+
+  public static Response loginAccept(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/login-accept"));
+  }
+
+  public static Response loginAccept(
+      String tenantId, Map<String, Object> body, String refreshTokenCookie) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, String> cookies = new HashMap<>();
+    if (StringUtils.isNotBlank(refreshTokenCookie)) {
+      cookies.put("RT", refreshTokenCookie);
+    }
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> {
+          if (!cookies.isEmpty()) {
+            spec.cookies(cookies);
+          }
+          return spec.post("/login-accept");
+        });
+  }
+
+  public static Response consentAccept(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/consent-accept"));
+  }
+
+  public static Response consentAccept(
+      String tenantId, Map<String, Object> body, String refreshTokenCookie) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, String> cookies = new HashMap<>();
+    if (StringUtils.isNotBlank(refreshTokenCookie)) {
+      cookies.put("RT", refreshTokenCookie);
+    }
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> {
+          if (!cookies.isEmpty()) {
+            spec.cookies(cookies);
+          }
+          return spec.post("/consent-accept");
+        });
+  }
+
+  public static Response token(
+      String tenantId, Map<String, String> headers, Map<String, String> formParams) {
+    if (headers == null) {
+      headers = new HashMap<>();
+    }
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    RequestSpecification spec = given().redirects().follow(false);
+    spec.formParams(formParams);
+    spec.headers(headers);
+    return spec.post("/token");
   }
 
   public static Response authorize(String tenantId, Map<String, String> queryParams) {

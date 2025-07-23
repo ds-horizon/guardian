@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 
 import com.dreamsportslabs.guardian.dao.ClientDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
@@ -84,5 +85,14 @@ public class ClientService {
                   .updateClientSecret(newSecret, clientId, tenantId)
                   .andThen(Single.just(newSecret));
             });
+  }
+
+  public Single<ClientModel> authenticateClient(
+      String clientId, String clientSecret, String tenantId) {
+    return getClient(clientId, tenantId)
+        .onErrorResumeNext(err -> Single.error(INVALID_CLIENT.getException()))
+        .filter(clientModel -> clientModel.getClientSecret().equals(clientSecret))
+        .switchIfEmpty(Single.error(INVALID_CLIENT.getException()))
+        .map(clientModel -> clientModel);
   }
 }

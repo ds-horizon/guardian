@@ -3,13 +3,20 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
+import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
 
 import com.dreamsportslabs.guardian.config.tenant.AuthCodeConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -24,18 +31,18 @@ import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
-import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
 import com.dreamsportslabs.guardian.dto.response.RefreshTokenResponseDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.dreamsportslabs.guardian.registry.Registry;
-import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.NewCookie;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -66,21 +73,23 @@ public class AuthorizationService {
     return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
   }
 
-  public NewCookie[] getIDPConnectCookies(IdpConnectResponseDto responseDto, String tenantId) {
-    NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
-    NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
-    return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
-  }
-
   private Single<TokenResponseDto> generateTokens(
       JsonObject user, MetaInfo metaInfo, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     String refreshToken = tokenIssuer.generateRefreshToken();
-    Long iat = System.currentTimeMillis() / 1000;
+    Long iat = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS;
+    Map<String, Object> commonTokenClaims = new HashMap<>();
+    commonTokenClaims.put(JWT_CLAIMS_SUB, user.getString(USERID));
+    commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
+    commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+    Map<String, Object> accessTokenClaims = new HashMap<>(commonTokenClaims),
+        idTokenClaims = new HashMap<>(commonTokenClaims);
+    accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
+    accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+    idTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getIdTokenExpiry());
     return Single.zip(
-            tokenIssuer.generateAccessToken(
-                user.getString(USERID), iat, getRftId(refreshToken), config),
-            tokenIssuer.generateIdToken(user, iat, config),
+            tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()),
+            tokenIssuer.generateIdToken(idTokenClaims, user, config.getTenantId()),
             (accessToken, idToken) ->
                 new TokenResponseDto(
                     accessToken,
@@ -117,20 +126,21 @@ public class AuthorizationService {
         .getRefreshToken(dto.getRefreshToken(), tenantId)
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
-            userId ->
-                tokenIssuer.generateAccessToken(
-                    userId,
-                    System.currentTimeMillis() / 1000,
-                    getRftId(dto.getRefreshToken()),
-                    config))
+            userId -> {
+              long iat = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS;
+              Map<String, Object> accessTokenClaims = new HashMap<>();
+              accessTokenClaims.put(JWT_CLAIMS_SUB, userId);
+              accessTokenClaims.put(JWT_CLAIMS_IAT, iat);
+              accessTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+              accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(dto.getRefreshToken()));
+              accessTokenClaims.put(
+                  JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+              return tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId());
+            })
         .map(
             accessToken ->
                 new RefreshTokenResponseDto(
                     accessToken, TOKEN_TYPE, config.getTokenConfig().getAccessTokenExpiry()));
-  }
-
-  private String getRftId(String refreshToken) {
-    return Utils.getMd5Hash(refreshToken);
   }
 
   private Single<CodeResponseDto> generateCode(
@@ -161,18 +171,6 @@ public class AuthorizationService {
 
   public Completable logout(V1LogoutRequestDto requestDto, String tenantId) {
     return invalidateRefreshToken(requestDto, tenantId);
-  }
-
-  public Completable adminLogout(String userId, String tenantId) {
-    return refreshTokenDao
-        .getRefreshTokens(userId, tenantId)
-        .flatMap(
-            list ->
-                refreshTokenDao
-                    .invalidateAllRefreshTokensForUser(userId, tenantId)
-                    .andThen(Single.just(list)))
-        .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
-        .ignoreElement();
   }
 
   private Completable invalidateRefreshToken(V1LogoutRequestDto dto, String tenantId) {
@@ -208,7 +206,7 @@ public class AuthorizationService {
       String rftId = getRftId(refreshToken);
       expiredRefreshTokens.add(rftId);
     }
-    long currentTimeStamp = System.currentTimeMillis() / 1000;
+    long currentTimeStamp = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS;
 
     long accessTokenExpiry = config.getAccessTokenExpiry() * 60;
 
