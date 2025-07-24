@@ -125,7 +125,12 @@ public class UserService {
         .putHeaders(Utils.getForwardingHeaders(headers))
         .ssl(userConfig.getIsSslEnabled())
         .rxSend()
-        .onErrorResumeNext(err -> Single.error(OidcErrorEnum.INTERNAL_SERVER_ERROR.getException()))
+        .onErrorResumeNext(
+            err -> {
+              log.error("Error in fetching OIDC user info :: {}", err.getMessage());
+              return Single.error(
+                  OidcErrorEnum.INTERNAL_SERVER_ERROR.getJsonCustomException(err.getMessage()));
+            })
         .map(
             res -> {
               JsonObject resBody = res.bodyAsJsonObject();

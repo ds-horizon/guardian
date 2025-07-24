@@ -32,6 +32,7 @@ import static com.dreamsportslabs.guardian.Constants.CONTENT_TYPE_FORM_URLENCODE
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.EXAMPLE_CALLBACK;
 import static com.dreamsportslabs.guardian.Constants.EXPIRED_TOKEN_OFFSET_SECONDS;
 import static com.dreamsportslabs.guardian.Constants.GRANT_TYPES;
@@ -82,7 +83,6 @@ import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_INVALID_SCO
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_REDIRECT_URI_INVALID;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_REDIRECT_URI_REQUIRED;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_REFRESH_TOKEN_EXPIRED;
-import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_REFRESH_TOKEN_INACTIVE;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_REFRESH_TOKEN_INVALID;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_UNAUTHORIZED_CLIENT;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_UNSUPPORTED_GRANT_TYPE;
@@ -148,9 +148,9 @@ import org.junit.jupiter.api.Test;
 
 public class OidcTokenIT {
 
-  private static final ObjectMapper objectMapper = new ObjectMapper();
-  public static String tenant1 = TENANT_1;
-  public static String tenant2 = TENANT_2;
+  private final ObjectMapper objectMapper = new ObjectMapper();
+  private static final String tenant1 = TENANT_1;
+  private static final String tenant2 = TENANT_2;
 
   private String validClientId;
   private String validClientSecret;
@@ -958,11 +958,8 @@ public class OidcTokenIT {
     response
         .then()
         .statusCode(400)
-        .body(ERROR, equalTo("invalid_scope"))
-        .body(
-            ERROR_DESCRIPTION,
-            equalTo(
-                "The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner"));
+        .body(ERROR, equalTo(ERROR_INVALID_SCOPE))
+        .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_INVALID_SCOPE));
   }
 
   @Test
@@ -1091,7 +1088,7 @@ public class OidcTokenIT {
         .then()
         .statusCode(400)
         .body(ERROR, equalTo(TOKEN_ERROR_INVALID_GRANT))
-        .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_REFRESH_TOKEN_INACTIVE));
+        .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_REFRESH_TOKEN_INVALID));
   }
 
   @Test

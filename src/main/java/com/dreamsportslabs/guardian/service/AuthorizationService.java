@@ -9,13 +9,13 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
-import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
 
 import com.dreamsportslabs.guardian.config.tenant.AuthCodeConfig;
@@ -84,7 +84,7 @@ public class AuthorizationService {
       JsonObject user, MetaInfo metaInfo, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     String refreshToken = tokenIssuer.generateRefreshToken();
-    Long iat = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS;
+    Long iat = getCurrentTimeInSeconds();
     Map<String, Object> commonTokenClaims = new HashMap<>();
     commonTokenClaims.put(JWT_CLAIMS_SUB, user.getString(USERID));
     commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
@@ -130,20 +130,14 @@ public class AuthorizationService {
       V1RefreshTokenRequestDto dto, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     return refreshTokenDao
-        .getRefreshToken(dto.getRefreshToken(), tenantId)
+        .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
-            userId -> {
-              long iat = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS;
-              Map<String, Object> accessTokenClaims = new HashMap<>();
-              accessTokenClaims.put(JWT_CLAIMS_SUB, userId);
-              accessTokenClaims.put(JWT_CLAIMS_IAT, iat);
-              accessTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
-              accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(dto.getRefreshToken()));
-              accessTokenClaims.put(
-                  JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
-              return tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId());
-            })
+            userId ->
+                tokenIssuer.generateAccessToken(
+                    getAccessTokenClaims(
+                        userId, getCurrentTimeInSeconds(), config, dto.getRefreshToken()),
+                    config.getTenantId()))
         .map(
             accessToken ->
                 new RefreshTokenResponseDto(
@@ -194,7 +188,7 @@ public class AuthorizationService {
 
   private Completable invalidateRefreshToken(V1LogoutRequestDto dto, String tenantId) {
     return refreshTokenDao
-        .getRefreshToken(dto.getRefreshToken(), tenantId)
+        .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMapCompletable(
             userId -> {
@@ -225,7 +219,7 @@ public class AuthorizationService {
       String rftId = getRftId(refreshToken);
       expiredRefreshTokens.add(rftId);
     }
-    long currentTimeStamp = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS;
+    long currentTimeStamp = getCurrentTimeInSeconds();
 
     long accessTokenExpiry = config.getAccessTokenExpiry() * 60;
 
@@ -263,5 +257,16 @@ public class AuthorizationService {
         refreshToken,
         registry.get(tenantId, TenantConfig.class).getTokenConfig().getRefreshTokenExpiry(),
         tenantId);
+  }
+
+  public Map<String, Object> getAccessTokenClaims(
+      String userId, long iat, TenantConfig config, String refreshToken) {
+    Map<String, Object> accessTokenClaims = new HashMap<>();
+    accessTokenClaims.put(JWT_CLAIMS_SUB, userId);
+    accessTokenClaims.put(JWT_CLAIMS_IAT, iat);
+    accessTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+    accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
+    accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+    return accessTokenClaims;
   }
 }

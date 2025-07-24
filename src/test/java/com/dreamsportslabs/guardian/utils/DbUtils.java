@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.vertx.core.json.JsonObject;
@@ -17,6 +19,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 @Slf4j
 public class DbUtils {
+  private static final ObjectMapper objectMapper = new ObjectMapper();
   private static HikariDataSource mysqlConnectionPool;
   private static JedisPool redisConnectionPool;
   private static final String INSERT_REFRESH_TOKEN =
@@ -545,7 +548,9 @@ public class DbUtils {
       stmt.setString(3, userId);
       stmt.setString(4, refreshToken);
       stmt.setLong(5, Instant.now().getEpochSecond() + exp);
-      stmt.setString(6, "[\"" + String.join("\", \"", scopes) + "\"]");
+      ArrayNode scopesArray = objectMapper.createArrayNode();
+      scopes.forEach(scopesArray::add);
+      stmt.setString(6, objectMapper.writeValueAsString(scopesArray));
       stmt.setBoolean(7, isActive);
       stmt.setString(8, deviceName);
       stmt.setString(9, ip);

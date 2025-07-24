@@ -1,6 +1,6 @@
 package com.dreamsportslabs.guardian.dao.model;
 
-import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 
 import com.dreamsportslabs.guardian.constant.Contact;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class OtpGenerateModel {
   }
 
   public OtpGenerateModel updateResend() {
-    this.resendAfter = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS + resendInterval;
+    this.resendAfter = getCurrentTimeInSeconds() + resendInterval;
     this.resends += 1;
     return this;
   }

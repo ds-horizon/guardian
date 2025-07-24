@@ -10,7 +10,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_NONCE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
-import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_BASIC;
@@ -21,6 +20,7 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_GRANT
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_SCOPE;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED_CLIENT;
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
@@ -110,7 +110,8 @@ public class OidcTokenService {
                     .flatMap(
                         userResponse -> {
                           GenerateOidcTokenDto generateOidcTokenDto =
-                              getGenerateOidcTokenDto(oidcCodeModel, tenantId, userResponse);
+                              getGenerateOidcTokenDto(
+                                  oidcCodeModel, tenantId, userResponse, requestDto);
                           return Single.just(generateOidcTokenDto);
                         }))
         .flatMap(
@@ -234,13 +235,9 @@ public class OidcTokenService {
         .getOidcRefreshToken(tenantId, requestDto.getClientId(), requestDto.getRefreshToken())
         .switchIfEmpty(
             Single.error(INVALID_GRANT.getJsonCustomException("The refresh_token is invalid")))
-        .filter(OidcRefreshTokenModel::getIsActive)
-        .switchIfEmpty(
-            Single.error(INVALID_GRANT.getJsonCustomException("The refresh_token is inactive")))
         .filter(
             oidcRefreshTokenModel ->
-                oidcRefreshTokenModel.getRefreshTokenExp()
-                    > (System.currentTimeMillis() / SECONDS_TO_MILLISECONDS))
+                oidcRefreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
         .switchIfEmpty(
             Single.error(INVALID_GRANT.getJsonCustomException("The refresh_token is expired")))
         .map(oidcRefreshTokenModel -> oidcRefreshTokenModel);
@@ -415,7 +412,10 @@ public class OidcTokenService {
   }
 
   private GenerateOidcTokenDto getGenerateOidcTokenDto(
-      OidcCodeModel oidcCodeModel, String tenantId, JsonObject userResponse) {
+      OidcCodeModel oidcCodeModel,
+      String tenantId,
+      JsonObject userResponse,
+      TokenRequestDto tokenRequestDto) {
     return GenerateOidcTokenDto.builder()
         .clientId(oidcCodeModel.getClient().getClientId())
         .userId(oidcCodeModel.getUserId())
@@ -423,7 +423,9 @@ public class OidcTokenService {
         .userResponse(userResponse)
         .nonce(oidcCodeModel.getNonce())
         .tenantId(tenantId)
-        .iat(System.currentTimeMillis() / SECONDS_TO_MILLISECONDS)
+        .iat(getCurrentTimeInSeconds())
+        .deviceName(tokenRequestDto.getDeviceName())
+        .ip(tokenRequestDto.getIp())
         .build();
   }
 
@@ -434,7 +436,7 @@ public class OidcTokenService {
         .userId(clientId)
         .scope(allowedScopes)
         .tenantId(tenantId)
-        .iat(System.currentTimeMillis() / SECONDS_TO_MILLISECONDS)
+        .iat(getCurrentTimeInSeconds())
         .build();
   }
 
@@ -444,7 +446,7 @@ public class OidcTokenService {
         .clientId(clientId)
         .userId(userId)
         .tenantId(tenantId)
-        .iat(System.currentTimeMillis() / SECONDS_TO_MILLISECONDS)
+        .iat(getCurrentTimeInSeconds())
         .scope(scopes)
         .build();
   }

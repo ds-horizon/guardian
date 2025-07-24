@@ -12,7 +12,6 @@ public class OidcRefreshTokenModel {
   private String tenantId;
   private String clientId;
   private String userId;
-  private Boolean isActive;
   private String refreshToken;
   private long refreshTokenExp;
   private List<String> scope;

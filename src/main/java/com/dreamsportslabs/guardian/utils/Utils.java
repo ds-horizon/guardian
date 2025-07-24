@@ -8,6 +8,7 @@ import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -87,5 +88,9 @@ public final class Utils {
       return null;
     }
     return userAgent;
+  }
+
+  public static long getCurrentTimeInSeconds() {
+    return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
   }
 }

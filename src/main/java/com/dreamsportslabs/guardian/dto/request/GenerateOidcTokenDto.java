@@ -1,6 +1,6 @@
 package com.dreamsportslabs.guardian.dto.request;
 
-import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 
 import io.vertx.core.json.JsonObject;
 import java.util.List;
@@ -18,7 +18,7 @@ public class GenerateOidcTokenDto {
   private String nonce;
   private List<String> scope;
   private JsonObject userResponse;
-  @Builder.Default private long iat = System.currentTimeMillis() / SECONDS_TO_MILLISECONDS;
+  @Builder.Default private long iat = getCurrentTimeInSeconds();
   private String deviceName;
   private String ip;
 }

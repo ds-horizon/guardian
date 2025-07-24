@@ -51,6 +51,11 @@ public class Token {
     if (StringUtils.isBlank(authorizationHeader) && StringUtils.isBlank(requestDto.getClientId())) {
       throw INVALID_CLIENT.getException();
     }
+    if (StringUtils.isNotBlank(authorizationHeader)
+        && StringUtils.isNotBlank(requestDto.getClientId())) {
+      throw INVALID_REQUEST.getJsonCustomException(
+          "Only one of 'Authorization' header or 'client_id' parameter should be provided");
+    }
 
     return oidcTokenService
         .getOidcTokens(requestDto, tenantId, authorizationHeader, headers.getRequestHeaders())

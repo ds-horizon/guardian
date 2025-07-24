@@ -1,12 +1,12 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.constant.Constants.SECONDS_TO_MILLISECONDS;
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESEND_NOT_ALLOWED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RETRIES_EXHAUSTED;
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 
 import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -68,7 +68,7 @@ public class ContactVerifyService {
                 throw RESENDS_EXHAUSTED.getException();
               }
 
-              if ((System.currentTimeMillis() / SECONDS_TO_MILLISECONDS) < model.getResendAfter()) {
+              if ((getCurrentTimeInSeconds()) < model.getResendAfter()) {
                 throw RESEND_NOT_ALLOWED.getCustomException(
                     Map.of("resendAfter", model.getResendAfter()));
               }
@@ -116,7 +116,7 @@ public class ContactVerifyService {
             .maxResends(config.getResendLimit())
             .headers(h)
             .contact(dto.getContact())
-            .expiry(System.currentTimeMillis() / SECONDS_TO_MILLISECONDS + config.getOtpValidity())
+            .expiry(getCurrentTimeInSeconds() + config.getOtpValidity())
             .build());
   }
 
@@ -161,7 +161,7 @@ public class ContactVerifyService {
         .switchIfEmpty(Single.error(INVALID_STATE.getException()))
         .map(
             model -> {
-              if (System.currentTimeMillis() / SECONDS_TO_MILLISECONDS > model.getExpiry()) {
+              if (getCurrentTimeInSeconds() > model.getExpiry()) {
                 contactVerifyDao.deleteOtpGenerateModel(tenantId, state);
                 throw INVALID_STATE.getException();
               }

@@ -5,7 +5,6 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
-import com.dreamsportslabs.guardian.dao.OidcCodeDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
@@ -32,7 +31,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class LoginAcceptService {
   private final AuthorizeSessionDao authorizeSessionDao;
-  private final OidcCodeDao oidcCodeDao;
+  private final OidcCodeService oidcCodeService;
   private final UserConsentDao userConsentDao;
   private final RefreshTokenDao refreshTokenDao;
   private final Registry registry;
@@ -80,9 +79,8 @@ public class LoginAcceptService {
     authorizeSession.setConsentedScopes(authorizeSession.getAllowedScopes());
     String code = RandomStringUtils.randomAlphanumeric(32);
     OidcCodeModel oidcCodeModel = new OidcCodeModel(authorizeSession);
-    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-    return oidcCodeDao
-        .saveOidcCode(code, oidcCodeModel, tenantId, tenantConfig.getOidcConfig().getAuthorizeTtl())
+    return oidcCodeService
+        .saveOidcCode(code, oidcCodeModel, tenantId)
         .toSingleDefault(code)
         .map(
             oidcCode ->
@@ -110,7 +108,7 @@ public class LoginAcceptService {
 
   private Single<String> validateRefreshToken(String refreshToken, String tenantId) {
     return refreshTokenDao
-        .getRefreshToken(refreshToken, tenantId)
+        .getUserIdFromRefreshToken(refreshToken, tenantId)
         .onErrorResumeNext(
             err -> Maybe.error(SERVER_ERROR.getJsonCustomException("Invalid refresh token")))
         .switchIfEmpty(Single.error(UNAUTHORIZED.getJsonCustomException("Invalid refresh token")));

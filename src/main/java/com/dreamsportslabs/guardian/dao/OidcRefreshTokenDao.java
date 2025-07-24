@@ -49,7 +49,11 @@ public class OidcRefreshTokenDao {
         .getReaderPool()
         .preparedQuery(GET_OIDC_REFRESH_TOKEN)
         .rxExecute(params)
-        .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException()))
+        .onErrorResumeNext(
+            err -> {
+              log.error("Failed to get OIDC refresh token", err);
+              return Single.error(INTERNAL_SERVER_ERROR.getException());
+            })
         .filter(result -> result.size() > 0)
         .switchIfEmpty(Maybe.empty())
         .map(result -> JsonUtils.rowSetToList(result, OidcRefreshTokenModel.class).get(0));

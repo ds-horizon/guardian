@@ -410,7 +410,9 @@ CREATE TABLE oidc_refresh_token
 
     PRIMARY KEY (id),
     KEY               `idx_oidc_refresh_token` (`tenant_id`, `client_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
-    KEY               `idx_oidc_refresh_token_user` (`tenant_id`, `user_id`)
+    KEY               `idx_oidc_refresh_token_user` (`tenant_id`, `user_id`),
+    CONSTRAINT `fk_oidc_refresh_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_oidc_refresh_token_client` FOREIGN KEY (`tenant_id`, `client_id`) REFERENCES `client`(`tenant_id`, `client_id`) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;

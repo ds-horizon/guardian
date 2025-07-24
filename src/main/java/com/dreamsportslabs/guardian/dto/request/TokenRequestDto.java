@@ -48,6 +48,7 @@ public class TokenRequestDto {
     if (StringUtils.isBlank(grantType)) {
       throw INVALID_REQUEST.getJsonCustomException("grant_type is required");
     }
+    // Ensure both client_id and client_secret are either both provided or both missing
     if (StringUtils.isBlank(clientId) ^ StringUtils.isBlank(clientSecret)) {
       throw INVALID_CLIENT.getException();
     }

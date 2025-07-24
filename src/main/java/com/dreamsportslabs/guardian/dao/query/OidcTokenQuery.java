@@ -13,6 +13,6 @@ public class OidcTokenQuery {
       """
       SELECT tenant_id, client_id, user_id, is_active, refresh_token, refresh_token_exp, scope
       FROM oidc_refresh_token
-      WHERE tenant_id = ? AND client_id = ? AND refresh_token = ?
+      WHERE tenant_id = ? AND client_id = ? AND refresh_token = ? AND is_active = true
       """;
 }

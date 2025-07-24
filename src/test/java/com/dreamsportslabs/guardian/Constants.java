@@ -455,8 +455,6 @@ public class Constants {
       "The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner";
   public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_INVALID = "The refresh_token is invalid";
   public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_EXPIRED = "The refresh_token is expired";
-  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_INACTIVE =
-      "The refresh_token is inactive";
   public static final String TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID =
       "The authorization_code is invalid";
   public static final String TOKEN_ERROR_MSG_REDIRECT_URI_INVALID = "The redirect_uri is invalid";
