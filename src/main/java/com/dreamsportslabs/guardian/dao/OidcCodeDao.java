@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
-import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.redis.client.Command;
 import io.vertx.rxjava3.redis.client.Redis;
 import io.vertx.rxjava3.redis.client.Request;
@@ -35,14 +34,13 @@ public class OidcCodeDao {
         .ignoreElement();
   }
 
-  public Single<OidcCodeModel> getOidcCode(String code, String tenantId) {
+  public Maybe<OidcCodeModel> getOidcCode(String code, String tenantId) {
     String cacheKey = getCacheKey(code, tenantId);
 
     return redisClient
         .rxSend(Request.cmd(Command.GET).arg(cacheKey))
         .switchIfEmpty(Maybe.empty())
-        .map(response -> objectMapper.readValue(response.toString(), OidcCodeModel.class))
-        .toSingle();
+        .map(response -> objectMapper.readValue(response.toString(), OidcCodeModel.class));
   }
 
   public Completable deleteOidcCode(String code, String tenantId) {

@@ -450,6 +450,8 @@ public class Constants {
   public static final String TOKEN_ERROR_MSG_UNSUPPORTED_GRANT_TYPE =
       "The grant type '%s' is not supported";
   public static final String TOKEN_ERROR_MSG_CLIENT_AUTH_FAILED = "Client authentication failed";
+  public static final String TOKEN_ERROR_MSG_AUTH =
+      "Both 'Authorization' header and 'client_id' parameter are missing";
   public static final String TOKEN_ERROR_MSG_UNAUTHORIZED_CLIENT =
       "The authenticated client is not authorized to use this authorization grant type";
   public static final String TOKEN_ERROR_MSG_INVALID_SCOPE =

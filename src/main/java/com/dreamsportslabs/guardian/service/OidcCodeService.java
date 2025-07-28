@@ -9,7 +9,7 @@ import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.core.Maybe;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,12 +25,12 @@ public class OidcCodeService {
     return oidcCodeDao.saveOidcCode(code, oidcCodeModel, tenantId, oidcConfig.getAuthorizeTtl());
   }
 
-  public Single<OidcCodeModel> getOidcCode(String code, String tenantId) {
+  public Maybe<OidcCodeModel> getOidcCode(String code, String tenantId) {
     return oidcCodeDao
         .getOidcCode(code, tenantId)
         .onErrorResumeNext(
             err ->
-                Single.error(INTERNAL_SERVER_ERROR.getJsonCustomException(500, "code is invalid")));
+                Maybe.error(INTERNAL_SERVER_ERROR.getJsonCustomException(500, "code is invalid")));
   }
 
   public Completable deleteOidcCode(String code, String tenantId) {

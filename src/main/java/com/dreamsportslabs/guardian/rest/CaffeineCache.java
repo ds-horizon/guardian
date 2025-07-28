@@ -30,7 +30,8 @@ public class CaffeineCache {
 
     tenantCache.invalidateCache(tenantId);
 
-    return Single.just(Response.status(Response.Status.CREATED).entity("Cache invalidated").build())
+    return Single.just(
+            Response.status(Response.Status.NO_CONTENT).entity("Cache invalidated").build())
         .toCompletionStage();
   }
 }

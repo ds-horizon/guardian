@@ -71,7 +71,8 @@ public class TokenRequestDto {
 
   public void validateAuth(String authorizationHeader, String tenantId, Registry registry) {
     if (StringUtils.isBlank(authorizationHeader) && StringUtils.isBlank(clientId)) {
-      throw INVALID_REQUEST.getException();
+      throw INVALID_REQUEST.getJsonCustomException(
+          "Both 'Authorization' header and 'client_id' parameter are missing");
     }
 
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);

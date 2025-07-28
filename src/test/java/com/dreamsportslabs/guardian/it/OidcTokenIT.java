@@ -74,6 +74,7 @@ import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID_3;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_INVALID_GRANT;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_INVALID_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_AUTH;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_CLIENT_AUTH_FAILED;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_CODE_REQUIRED;
@@ -633,9 +634,9 @@ public class OidcTokenIT {
     // Validate
     response
         .then()
-        .statusCode(401)
-        .body(ERROR, equalTo(TOKEN_ERROR_INVALID_CLIENT))
-        .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_CLIENT_AUTH_FAILED));
+        .statusCode(400)
+        .body(ERROR, equalTo(INVALID_REQUEST))
+        .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_AUTH));
   }
 
   @Test
@@ -1291,7 +1292,7 @@ public class OidcTokenIT {
     // Validate
     response
         .then()
-        .statusCode(400)
+        .statusCode(SC_BAD_REQUEST)
         .body(ERROR, equalTo(TOKEN_ERROR_INVALID_GRANT))
         .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID));
   }
@@ -1524,31 +1525,5 @@ public class OidcTokenIT {
     validateIdTokenClaims(idToken, TEST_USER_ID, validClientId, expectedClaims, notExpectedClaims);
 
     wireMockServer.removeStub(stubMapping);
-  }
-
-  @Test
-  @DisplayName("Authorization Code - Should return error for expired authorization code")
-  public void testAuthorizationCodeExpired() {
-    // Arrange
-    // Use an invalid/expired authorization code that doesn't exist in the database
-    String expiredAuthCode = "expired_auth_code_" + System.currentTimeMillis();
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
-    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
-    Map<String, String> formParams = new HashMap<>();
-    formParams.put(TOKEN_PARAM_GRANT_TYPE, AUTHORIZATION_CODE);
-    formParams.put(TOKEN_PARAM_CODE, expiredAuthCode);
-    formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
-
-    // Act
-    Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
-
-    // Validate
-    response
-        .then()
-        .statusCode(400)
-        .body(ERROR, equalTo(TOKEN_ERROR_INVALID_GRANT))
-        .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID));
   }
 }
