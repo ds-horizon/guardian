@@ -49,6 +49,7 @@ public enum OidcErrorEnum {
       "The authorization grant type is not supported by the authorization server",
       400),
   INVALID_GRANT("invalid_grant", "The authorization grant is invalid", 400),
+  USER_SERVICE_ERROR("user_service_error", "user service error", 500),
   INTERNAL_SERVER_ERROR("internal_server_error", "Something went wrong", 500);
 
   private final String error;
@@ -107,6 +108,18 @@ public enum OidcErrorEnum {
 
     Response response =
         Response.status(this.httpStatus)
+            .replaceAll(this.additionalHeaders)
+            .header("Content-Type", "application/json")
+            .entity(new OidcErrorEntity(this.error, message))
+            .build();
+    return new WebApplicationException(response);
+  }
+
+  public WebApplicationException getJsonCustomException(int httpStatus, String message) {
+    message = message == null ? this.errorDescription : message;
+
+    Response response =
+        Response.status(httpStatus)
             .replaceAll(this.additionalHeaders)
             .header("Content-Type", "application/json")
             .entity(new OidcErrorEntity(this.error, message))

@@ -373,14 +373,21 @@ public class OidcTokenIT {
   public void testMissingGrantType() {
     // Arrange
     Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
+    // Test with empty grant_type value instead of missing grant_type
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, "");
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
 
     // Validate
-    response.then().statusCode(SC_BAD_REQUEST);
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .body(ERROR, equalTo(INVALID_REQUEST))
+        .body(ERROR_DESCRIPTION, equalTo("grant_type is required"));
   }
 
   @Test
@@ -1454,5 +1461,94 @@ public class OidcTokenIT {
         .statusCode(400)
         .body(ERROR, equalTo(INVALID_REQUEST))
         .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_REDIRECT_URI_REQUIRED));
+  }
+
+  @Test
+  @DisplayName("Authorization Code - Should ignore scope passed in request body")
+  public void testAuthorizationCodeIgnoresScopeInRequestBody() {
+    // Arrange
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStub(email, phoneNumber);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, AUTHORIZATION_CODE);
+    formParams.put(TOKEN_PARAM_CODE, validAuthCode);
+    formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
+    formParams.put(
+        TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL); // Different scope than consented
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
+
+    // Validate
+    response
+        .then()
+        .statusCode(200)
+        .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
+        .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
+        .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Verify that the tokens contain the originally consented scopes, not the requested ones
+    String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
+    String idToken = response.jsonPath().getString(TOKEN_PARAM_ID_TOKEN);
+    String refreshToken = response.jsonPath().getString(TOKEN_PARAM_REFRESH_TOKEN);
+
+    // Should contain the originally consented scopes (openid email phone), not the requested ones
+    // (openid email)
+    List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
+    List<String> notExpectedScopes = List.of(SCOPE_ADDRESS);
+    validateAccessTokenClaims(
+        accessToken,
+        response.jsonPath().getLong(TOKEN_PARAM_EXPIRES_IN),
+        TEST_USER_ID,
+        validClientId,
+        expectedScopes,
+        notExpectedScopes,
+        true,
+        refreshToken);
+
+    List<String> expectedClaims =
+        List.of(
+            CLAIM_SUB,
+            CLAIM_EMAIL,
+            CLAIM_EMAIL_VERIFIED,
+            CLAIM_PHONE_NUMBER,
+            CLAIM_PHONE_NUMBER_VERIFIED);
+    List<String> notExpectedClaims = List.of(CLAIM_ADDRESS);
+    validateIdTokenClaims(idToken, TEST_USER_ID, validClientId, expectedClaims, notExpectedClaims);
+
+    wireMockServer.removeStub(stubMapping);
+  }
+
+  @Test
+  @DisplayName("Authorization Code - Should return error for expired authorization code")
+  public void testAuthorizationCodeExpired() {
+    // Arrange
+    // Use an invalid/expired authorization code that doesn't exist in the database
+    String expiredAuthCode = "expired_auth_code_" + System.currentTimeMillis();
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, AUTHORIZATION_CODE);
+    formParams.put(TOKEN_PARAM_CODE, expiredAuthCode);
+    formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
+
+    // Validate
+    response
+        .then()
+        .statusCode(400)
+        .body(ERROR, equalTo(TOKEN_ERROR_INVALID_GRANT))
+        .body(ERROR_DESCRIPTION, equalTo(TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID));
   }
 }

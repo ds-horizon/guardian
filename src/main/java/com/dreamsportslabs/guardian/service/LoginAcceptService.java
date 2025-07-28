@@ -110,7 +110,10 @@ public class LoginAcceptService {
     return refreshTokenDao
         .getUserIdFromRefreshToken(refreshToken, tenantId)
         .onErrorResumeNext(
-            err -> Maybe.error(SERVER_ERROR.getJsonCustomException("Invalid refresh token")))
+            err ->
+                Maybe.error(
+                    SERVER_ERROR.getJsonCustomException(
+                        "Failed to retrieve user-id from refresh token")))
         .switchIfEmpty(Single.error(UNAUTHORIZED.getJsonCustomException("Invalid refresh token")));
   }
 

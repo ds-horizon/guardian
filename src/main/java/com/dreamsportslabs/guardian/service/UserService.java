@@ -140,7 +140,7 @@ public class UserService {
                     "Error fetching OIDC user details. Status: {} Response Body: {}",
                     res.statusCode(),
                     resBody.toString());
-                throw OidcErrorEnum.INTERNAL_SERVER_ERROR.getException();
+                throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonException();
               }
               return resBody;
             });

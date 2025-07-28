@@ -29,7 +29,7 @@ public class OidcCodeService {
     return oidcCodeDao
         .getOidcCode(code, tenantId)
         .onErrorResumeNext(
-            err -> Single.error(INVALID_GRANT.getJsonCustomException("code is invalid")));
+            err -> Single.error(INVALID_GRANT.getJsonCustomException(500, "code is invalid")));
   }
 
   public Completable deleteOidcCode(String code, String tenantId) {

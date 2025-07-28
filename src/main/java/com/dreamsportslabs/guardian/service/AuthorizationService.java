@@ -259,7 +259,7 @@ public class AuthorizationService {
         tenantId);
   }
 
-  public Map<String, Object> getAccessTokenClaims(
+  private Map<String, Object> getAccessTokenClaims(
       String userId, long iat, TenantConfig config, String refreshToken) {
     Map<String, Object> accessTokenClaims = new HashMap<>();
     accessTokenClaims.put(JWT_CLAIMS_SUB, userId);
