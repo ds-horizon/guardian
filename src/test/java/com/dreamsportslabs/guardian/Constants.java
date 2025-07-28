@@ -174,6 +174,7 @@ public class Constants {
   public static final String INVALID_STATE = "invalid_state";
   public static final String ERROR_FLOW_BLOCKED = "flow_blocked";
   public static final String ERROR_INTERNAL_ERROR = "internal_error";
+  public static final String ERROR_INTERNAL_SERVER_ERROR = "internal_server_error";
 
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
   public static final String RESPONSE_BODY_PARAM_TRIES = "tries";

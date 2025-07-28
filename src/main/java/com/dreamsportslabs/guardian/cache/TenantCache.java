@@ -46,4 +46,9 @@ public class TenantCache {
             .toCompletionStage()
             .toCompletableFuture();
   }
+
+  public void invalidateCache(String tenantId) {
+    cache.synchronous().invalidate(tenantId);
+    log.info("Tenant cache invalidated for tenantId: {}", tenantId);
+  }
 }

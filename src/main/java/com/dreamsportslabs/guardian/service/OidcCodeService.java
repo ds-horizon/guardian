@@ -1,6 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_GRANT;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INTERNAL_SERVER_ERROR;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -29,7 +29,8 @@ public class OidcCodeService {
     return oidcCodeDao
         .getOidcCode(code, tenantId)
         .onErrorResumeNext(
-            err -> Single.error(INVALID_GRANT.getJsonCustomException(500, "code is invalid")));
+            err ->
+                Single.error(INTERNAL_SERVER_ERROR.getJsonCustomException(500, "code is invalid")));
   }
 
   public Completable deleteOidcCode(String code, String tenantId) {

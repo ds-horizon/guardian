@@ -9,6 +9,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.dto.request.TokenRequestDto;
+import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.service.OidcTokenService;
 import com.google.inject.Inject;
 import jakarta.ws.rs.BeanParam;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Token {
 
   private final OidcTokenService oidcTokenService;
+  private final Registry registry;
 
   @POST
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -46,7 +48,7 @@ public class Token {
     }
 
     requestDto.validate();
-    requestDto.validateAuth(authorizationHeader);
+    requestDto.validateAuth(authorizationHeader, tenantId, registry);
 
     return oidcTokenService
         .getOidcTokens(requestDto, tenantId, authorizationHeader, headers.getRequestHeaders())

@@ -8,11 +8,15 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIEN
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNSUPPORTED_GRANT_TYPE;
 
+import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
+import com.dreamsportslabs.guardian.constant.OidcTokenEndpointAuthMethod;
+import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.util.List;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -65,13 +69,29 @@ public class TokenRequestDto {
     this.deviceName = Utils.getDeviceNameFromHeaders(headers);
   }
 
-  public void validateAuth(String authorizationHeader) {
+  public void validateAuth(String authorizationHeader, String tenantId, Registry registry) {
     if (StringUtils.isBlank(authorizationHeader) && StringUtils.isBlank(clientId)) {
-      throw INVALID_CLIENT.getException();
+      throw INVALID_REQUEST.getException();
     }
-    if (StringUtils.isNotBlank(authorizationHeader) && StringUtils.isNotBlank(clientId)) {
-      throw INVALID_REQUEST.getJsonCustomException(
-          "Only one of 'Authorization' header or 'client_id' parameter should be provided");
+
+    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
+    List<OidcTokenEndpointAuthMethod> endpointAuthMethods =
+        tenantConfig.getOidcConfig().getTokenEndpointAuthMethodsSupported();
+
+    if (endpointAuthMethods.contains(OidcTokenEndpointAuthMethod.CLIENT_SECRET_BASIC)
+        && endpointAuthMethods.contains(OidcTokenEndpointAuthMethod.CLIENT_SECRET_POST)) {
+      if (StringUtils.isNotBlank(authorizationHeader) && StringUtils.isNotBlank(clientId)) {
+        throw INVALID_REQUEST.getJsonCustomException(
+            "Only one of 'Authorization' header or 'client_id' parameter should be provided");
+      }
+    } else if (endpointAuthMethods.contains(OidcTokenEndpointAuthMethod.CLIENT_SECRET_BASIC)) {
+      if (StringUtils.isBlank(authorizationHeader)) {
+        throw INVALID_REQUEST.getJsonCustomException("Authorization header is required");
+      }
+    } else if (endpointAuthMethods.contains(OidcTokenEndpointAuthMethod.CLIENT_SECRET_POST)) {
+      if (StringUtils.isBlank(clientId)) {
+        throw INVALID_REQUEST.getJsonCustomException("client_id is required");
+      }
     }
   }
 
