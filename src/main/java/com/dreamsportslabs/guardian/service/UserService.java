@@ -121,6 +121,7 @@ public class UserService {
     HttpRequest<Buffer> request =
         webClient.get(userConfig.getPort(), userConfig.getHost(), userConfig.getGetUserPath());
     userFilters.forEach(request::addQueryParam);
+
     return request
         .putHeaders(Utils.getForwardingHeaders(headers))
         .ssl(userConfig.getIsSslEnabled())

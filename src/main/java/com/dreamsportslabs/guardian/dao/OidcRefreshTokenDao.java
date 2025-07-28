@@ -31,6 +31,7 @@ public class OidcRefreshTokenDao {
     params.addJsonArray(JsonArray.of(refreshTokenModel.getScope()));
     params.addString(refreshTokenModel.getDeviceName());
     params.addString(refreshTokenModel.getIp());
+
     return mysqlClient
         .getWriterPool()
         .preparedQuery(SAVE_OIDC_REFRESH_TOKEN)

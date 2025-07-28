@@ -453,12 +453,11 @@ public class Constants {
       "The authenticated client is not authorized to use this authorization grant type";
   public static final String TOKEN_ERROR_MSG_INVALID_SCOPE =
       "The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner";
-  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_INVALID = "The refresh_token is invalid";
-  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_EXPIRED = "The refresh_token is expired";
-  public static final String TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID =
-      "The authorization_code is invalid";
-  public static final String TOKEN_ERROR_MSG_REDIRECT_URI_INVALID = "The redirect_uri is invalid";
-  public static final String TOKEN_ERROR_MSG_CODE_VERIFIER_INVALID = "The code_verifier is invalid";
+  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_INVALID = "refresh_token is invalid";
+  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_EXPIRED = "refresh_token is expired";
+  public static final String TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID = "code is invalid";
+  public static final String TOKEN_ERROR_MSG_REDIRECT_URI_INVALID = "redirect_uri is invalid";
+  public static final String TOKEN_ERROR_MSG_CODE_VERIFIER_INVALID = "code_verifier is invalid";
   public static final String TOKEN_ERROR_MSG_CODE_VERIFIER_REQUIRED = "code_verifier is required";
   public static final String TOKEN_ERROR_MSG_CODE_REQUIRED = "code is required";
   public static final String TOKEN_ERROR_MSG_REDIRECT_URI_REQUIRED = "redirect_uri is required";

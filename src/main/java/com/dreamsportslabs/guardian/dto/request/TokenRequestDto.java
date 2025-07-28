@@ -1,14 +1,18 @@
 package com.dreamsportslabs.guardian.dto.request;
 
-import static com.dreamsportslabs.guardian.constant.OidcGrantType.AUTHORIZATION_CODE;
-import static com.dreamsportslabs.guardian.constant.OidcGrantType.REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CODE;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_GRANT_TYPE;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_REDIRECT_URI;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNSUPPORTED_GRANT_TYPE;
 
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
+import com.dreamsportslabs.guardian.utils.Utils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.core.MultivaluedMap;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,30 +49,56 @@ public class TokenRequestDto {
   @JsonIgnore private OidcGrantType oidcGrantType;
 
   public void validate() {
-    if (StringUtils.isBlank(grantType)) {
-      throw INVALID_REQUEST.getJsonCustomException("grant_type is required");
+    validateGrantType();
+    validateClientCredentials();
+
+    switch (oidcGrantType) {
+      case AUTHORIZATION_CODE -> validateAuthCodeFlow();
+      case REFRESH_TOKEN -> validateRefreshTokenFlow();
+      case CLIENT_CREDENTIALS -> {}
+      default -> throw UNSUPPORTED_GRANT_TYPE.getException();
     }
-    // Ensure both client_id and client_secret are either both provided or both missing
+  }
+
+  public void setDataFromHeaders(MultivaluedMap<String, String> headers) {
+    this.ip = Utils.getIpFromHeaders(headers);
+    this.deviceName = Utils.getDeviceNameFromHeaders(headers);
+  }
+
+  public void validateAuth(String authorizationHeader) {
+    if (StringUtils.isBlank(authorizationHeader) && StringUtils.isBlank(clientId)) {
+      throw INVALID_CLIENT.getException();
+    }
+    if (StringUtils.isNotBlank(authorizationHeader) && StringUtils.isNotBlank(clientId)) {
+      throw INVALID_REQUEST.getJsonCustomException(
+          "Only one of 'Authorization' header or 'client_id' parameter should be provided");
+    }
+  }
+
+  private void validateGrantType() {
+    requireNonBlank(grantType, OIDC_GRANT_TYPE);
+    oidcGrantType = OidcGrantType.fromString(grantType);
+  }
+
+  /** Ensure both client_id and client_secret are either both provided or both missing */
+  private void validateClientCredentials() {
     if (StringUtils.isBlank(clientId) ^ StringUtils.isBlank(clientSecret)) {
       throw INVALID_CLIENT.getException();
     }
-    oidcGrantType = OidcGrantType.fromString(grantType);
-    switch (oidcGrantType) {
-      case AUTHORIZATION_CODE -> {
-        if (StringUtils.isBlank(code)) {
-          throw INVALID_REQUEST.getJsonCustomException("code is required");
-        }
-        if (StringUtils.isBlank(redirectUri)) {
-          throw INVALID_REQUEST.getJsonCustomException("redirect_uri is required");
-        }
-      }
-      case REFRESH_TOKEN -> {
-        if (StringUtils.isBlank(refreshToken)) {
-          throw INVALID_REQUEST.getJsonCustomException("refresh_token is required");
-        }
-      }
-      case CLIENT_CREDENTIALS -> {}
-      default -> throw UNSUPPORTED_GRANT_TYPE.getException();
+  }
+
+  private void validateAuthCodeFlow() {
+    requireNonBlank(code, OIDC_CODE);
+    requireNonBlank(redirectUri, OIDC_REDIRECT_URI);
+  }
+
+  private void validateRefreshTokenFlow() {
+    requireNonBlank(refreshToken, OIDC_REFRESH_TOKEN);
+  }
+
+  private void requireNonBlank(String value, String field) {
+    if (StringUtils.isBlank(value)) {
+      throw INVALID_REQUEST.getJsonCustomException(field + " is required");
     }
   }
 }

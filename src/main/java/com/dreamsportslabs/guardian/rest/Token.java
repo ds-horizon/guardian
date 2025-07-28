@@ -6,12 +6,10 @@ import static com.dreamsportslabs.guardian.constant.Constants.CACHE_CONTROL_NO_S
 import static com.dreamsportslabs.guardian.constant.Constants.PRAGMA_HEADER;
 import static com.dreamsportslabs.guardian.constant.Constants.PRAGMA_NO_CACHE;
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.dto.request.TokenRequestDto;
 import com.dreamsportslabs.guardian.service.OidcTokenService;
-import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -25,7 +23,6 @@ import jakarta.ws.rs.core.Response;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Path("/token")
@@ -44,18 +41,12 @@ public class Token {
 
     if (requestDto == null) {
       throw INVALID_REQUEST.getJsonCustomException("request body is required");
+    } else {
+      requestDto.setDataFromHeaders(headers.getRequestHeaders());
     }
+
     requestDto.validate();
-    requestDto.setIp(Utils.getIpFromHeaders(headers.getRequestHeaders()));
-    requestDto.setDeviceName(Utils.getDeviceNameFromHeaders(headers.getRequestHeaders()));
-    if (StringUtils.isBlank(authorizationHeader) && StringUtils.isBlank(requestDto.getClientId())) {
-      throw INVALID_CLIENT.getException();
-    }
-    if (StringUtils.isNotBlank(authorizationHeader)
-        && StringUtils.isNotBlank(requestDto.getClientId())) {
-      throw INVALID_REQUEST.getJsonCustomException(
-          "Only one of 'Authorization' header or 'client_id' parameter should be provided");
-    }
+    requestDto.validateAuth(authorizationHeader);
 
     return oidcTokenService
         .getOidcTokens(requestDto, tenantId, authorizationHeader, headers.getRequestHeaders())

@@ -14,6 +14,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_BASIC;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_HEADER;
+import static com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod.S256;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_GRANT;
@@ -38,12 +39,12 @@ import com.dreamsportslabs.guardian.dto.request.GenerateOidcTokenDto;
 import com.dreamsportslabs.guardian.dto.request.TokenRequestDto;
 import com.dreamsportslabs.guardian.dto.request.scope.GetScopeRequestDto;
 import com.dreamsportslabs.guardian.dto.response.OidcTokenResponseDto;
-import com.dreamsportslabs.guardian.exception.OidcErrorEnum;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.nio.charset.StandardCharsets;
@@ -79,10 +80,8 @@ public class OidcTokenService {
     return switch (requestDto.getOidcGrantType()) {
       case AUTHORIZATION_CODE -> authorizationCodeFlow(
           requestDto, tenantId, authorizationHeader, headers);
-      case CLIENT_CREDENTIALS -> clientCredentialsFlow(
-          requestDto, tenantId, authorizationHeader, headers);
-      case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader, headers);
-      default -> Single.error(INVALID_GRANT.getException());
+      case CLIENT_CREDENTIALS -> clientCredentialsFlow(requestDto, tenantId, authorizationHeader);
+      case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader);
     };
   }
 
@@ -91,6 +90,7 @@ public class OidcTokenService {
       String tenantId,
       String authorizationHeader,
       MultivaluedMap<String, String> headers) {
+
     return authenticateClient(requestDto, tenantId, authorizationHeader)
         .map(
             clientId -> {
@@ -102,36 +102,29 @@ public class OidcTokenService {
             oidcCodeModel ->
                 oidcCodeService
                     .deleteOidcCode(requestDto.getCode(), tenantId)
-                    .andThen(Single.just(oidcCodeModel)))
+                    .toSingleDefault(oidcCodeModel))
         .flatMap(
             oidcCodeModel ->
                 userService
                     .getOidcUser(getUserFilters(oidcCodeModel), headers, tenantId)
-                    .flatMap(
-                        userResponse -> {
-                          GenerateOidcTokenDto generateOidcTokenDto =
-                              getGenerateOidcTokenDto(
-                                  oidcCodeModel, tenantId, userResponse, requestDto);
-                          return Single.just(generateOidcTokenDto);
-                        }))
+                    .map(
+                        userResponse ->
+                            getGenerateOidcTokenDto(
+                                oidcCodeModel, tenantId, userResponse, requestDto)))
         .flatMap(
             generateOidcTokenDto ->
                 generateOidcTokensForAuthorizationCodeFlow(generateOidcTokenDto)
                     .flatMap(
-                        tokenResponseDto -> {
-                          OidcRefreshTokenModel refreshTokenModel =
-                              getOidcRefreshTokenModel(tokenResponseDto, generateOidcTokenDto);
-                          return oidcRefreshTokenDao
-                              .saveOidcRefreshToken(refreshTokenModel)
-                              .andThen(Single.just(tokenResponseDto));
-                        }));
+                        tokenResponseDto ->
+                            oidcRefreshTokenDao
+                                .saveOidcRefreshToken(
+                                    getOidcRefreshTokenModel(
+                                        tokenResponseDto, generateOidcTokenDto))
+                                .toSingleDefault(tokenResponseDto)));
   }
 
   private Single<OidcTokenResponseDto> clientCredentialsFlow(
-      TokenRequestDto requestDto,
-      String tenantId,
-      String authorizationHeader,
-      MultivaluedMap<String, String> headers) {
+      TokenRequestDto requestDto, String tenantId, String authorizationHeader) {
     return authenticateClient(requestDto, tenantId, authorizationHeader)
         .map(
             clientId -> {
@@ -147,10 +140,7 @@ public class OidcTokenService {
   }
 
   private Single<OidcTokenResponseDto> refreshTokenFlow(
-      TokenRequestDto requestDto,
-      String tenantId,
-      String authorizationHeader,
-      MultivaluedMap<String, String> headers) {
+      TokenRequestDto requestDto, String tenantId, String authorizationHeader) {
     return authenticateClient(requestDto, tenantId, authorizationHeader)
         .map(
             clientId -> {
@@ -175,50 +165,37 @@ public class OidcTokenService {
 
   private Single<String> authenticateClient(
       TokenRequestDto requestDto, String tenantId, String authorizationHeader) {
+    Single<ClientModel> clientAuth;
+
     if (authorizationHeader != null) {
-      return Single.just(Utils.getCredentialsFromAuthHeader(authorizationHeader))
-          .flatMap(
-              clientCredentials ->
-                  clientService.authenticateClient(
-                      clientCredentials[0], clientCredentials[1], tenantId))
-          .onErrorResumeNext(
-              err ->
-                  Single.error(
-                      INVALID_CLIENT
-                          .setHeaders(
-                              getFailedAuthenticationHeaders(
-                                  registry
-                                      .get(tenantId, TenantConfig.class)
-                                      .getOidcConfig()
-                                      .getIssuer()))
-                          .getJsonException()))
-          .filter(clientModel -> validateClientGrantType(clientModel, requestDto.getGrantType()))
-          .switchIfEmpty(Single.error(UNAUTHORIZED_CLIENT.getException()))
-          .map(ClientModel::getClientId);
+      clientAuth =
+          Single.just(Utils.getCredentialsFromAuthHeader(authorizationHeader))
+              .flatMap(
+                  credentials ->
+                      clientService.authenticateClient(credentials[0], credentials[1], tenantId))
+              .onErrorResumeNext(err -> Single.error(createInvalidClientError(tenantId)));
     } else {
-      return clientService
-          .authenticateClient(requestDto.getClientId(), requestDto.getClientSecret(), tenantId)
-          .filter(clientModel -> validateClientGrantType(clientModel, requestDto.getGrantType()))
-          .switchIfEmpty(Single.error(UNAUTHORIZED_CLIENT.getException()))
-          .map(ClientModel::getClientId);
+      clientAuth =
+          clientService.authenticateClient(
+              requestDto.getClientId(), requestDto.getClientSecret(), tenantId);
     }
+
+    return clientAuth
+        .filter(clientModel -> validateClientGrantType(clientModel, requestDto.getGrantType()))
+        .switchIfEmpty(Single.error(UNAUTHORIZED_CLIENT.getException()))
+        .map(ClientModel::getClientId);
   }
 
   private Single<OidcCodeModel> validateCode(TokenRequestDto requestDto, String tenantId) {
     return oidcCodeService
         .getOidcCode(requestDto.getCode(), tenantId)
-        .onErrorResumeNext(
-            err ->
-                Single.error(
-                    INVALID_GRANT.getJsonCustomException("The authorization_code is invalid")))
         .filter(
             oidcCodeModel ->
                 oidcCodeModel.getClient().getClientId().equals(requestDto.getClientId()))
-        .switchIfEmpty(
-            Single.error(INVALID_GRANT.getJsonCustomException("The authorization_code is invalid")))
+        .switchIfEmpty(Single.error(INVALID_GRANT.getJsonCustomException("code is invalid")))
         .filter(oidcCodeModel -> oidcCodeModel.getRedirectUri().equals(requestDto.getRedirectUri()))
         .switchIfEmpty(
-            Single.error(INVALID_GRANT.getJsonCustomException("The redirect_uri is invalid")))
+            Single.error(INVALID_GRANT.getJsonCustomException("redirect_uri is invalid")))
         .filter(
             oidcCodeModel ->
                 validatePkceChallenge(
@@ -226,7 +203,7 @@ public class OidcTokenService {
                     oidcCodeModel.getCodeChallenge(),
                     oidcCodeModel.getCodeChallengeMethod()))
         .switchIfEmpty(
-            Single.error(INVALID_GRANT.getJsonCustomException("The code_verifier is invalid")));
+            Single.error(INVALID_GRANT.getJsonCustomException("code_verifier is invalid")));
   }
 
   private Single<OidcRefreshTokenModel> validateRefreshToken(
@@ -234,13 +211,12 @@ public class OidcTokenService {
     return oidcRefreshTokenDao
         .getOidcRefreshToken(tenantId, requestDto.getClientId(), requestDto.getRefreshToken())
         .switchIfEmpty(
-            Single.error(INVALID_GRANT.getJsonCustomException("The refresh_token is invalid")))
+            Single.error(INVALID_GRANT.getJsonCustomException("refresh_token is invalid")))
         .filter(
             oidcRefreshTokenModel ->
                 oidcRefreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
         .switchIfEmpty(
-            Single.error(INVALID_GRANT.getJsonCustomException("The refresh_token is expired")))
-        .map(oidcRefreshTokenModel -> oidcRefreshTokenModel);
+            Single.error(INVALID_GRANT.getJsonCustomException("refresh_token is expired")));
   }
 
   private Single<List<String>> getAllowedScopes(
@@ -270,11 +246,13 @@ public class OidcTokenService {
 
   private Single<OidcTokenResponseDto> generateOidcTokensForAuthorizationCodeFlow(
       GenerateOidcTokenDto generateOidcTokenDto) {
+
     TenantConfig tenantConfig =
         registry.get(generateOidcTokenDto.getTenantId(), TenantConfig.class);
     TokenConfig tokenConfig = tenantConfig.getTokenConfig();
     OidcConfig oidcConfig = tenantConfig.getOidcConfig();
     String refreshToken = tokenIssuer.generateRefreshToken();
+
     Map<String, Object> accessTokenClaims =
         getAccessTokenClaims(
             generateOidcTokenDto.getClientId(),
@@ -285,6 +263,7 @@ public class OidcTokenService {
             getRftId(refreshToken),
             generateOidcTokenDto.getScope(),
             generateOidcTokenDto.getUserId());
+
     Map<String, Object> idTokenClaims =
         getIdTokenClaims(
             generateOidcTokenDto.getClientId(),
@@ -293,10 +272,10 @@ public class OidcTokenService {
             oidcConfig.getIssuer(),
             generateOidcTokenDto.getNonce(),
             generateOidcTokenDto.getUserId());
-    GetScopeRequestDto getScopeRequestDto = new GetScopeRequestDto();
-    getScopeRequestDto.setNames(generateOidcTokenDto.getScope());
+
     return scopeService
-        .getScopes(generateOidcTokenDto.getTenantId(), getScopeRequestDto)
+        .getScopes(
+            generateOidcTokenDto.getTenantId(), createScopeRequest(generateOidcTokenDto.getScope()))
         .map(
             scopeModels ->
                 scopeModels.stream().map(ScopeModel::getClaims).flatMap(List::stream).toList())
@@ -311,21 +290,38 @@ public class OidcTokenService {
                         generateOidcTokenDto.getTenantId(),
                         claims),
                     (accessToken, idToken) ->
-                        OidcTokenResponseDto.builder()
-                            .accessToken(accessToken)
-                            .idToken(idToken)
-                            .refreshToken(refreshToken)
-                            .tokenType(TOKEN_TYPE)
-                            .expiresIn(tokenConfig.getAccessTokenExpiry())
-                            .build()));
+                        buildTokenResponse(
+                            accessToken,
+                            idToken,
+                            refreshToken,
+                            tokenConfig.getAccessTokenExpiry())));
+  }
+
+  private GetScopeRequestDto createScopeRequest(List<String> scopes) {
+    GetScopeRequestDto scopeRequest = new GetScopeRequestDto();
+    scopeRequest.setNames(scopes);
+    return scopeRequest;
+  }
+
+  private OidcTokenResponseDto buildTokenResponse(
+      String accessToken, String idToken, String refreshToken, int expiresIn) {
+    return OidcTokenResponseDto.builder()
+        .accessToken(accessToken)
+        .idToken(idToken)
+        .refreshToken(refreshToken)
+        .tokenType(TOKEN_TYPE)
+        .expiresIn(expiresIn)
+        .build();
   }
 
   private Single<OidcTokenResponseDto> generateOidcTokensForClientCredentialsFlow(
       GenerateOidcTokenDto generateOidcTokenDto) {
+
     TenantConfig tenantConfig =
         registry.get(generateOidcTokenDto.getTenantId(), TenantConfig.class);
     TokenConfig tokenConfig = tenantConfig.getTokenConfig();
     OidcConfig oidcConfig = tenantConfig.getOidcConfig();
+
     Map<String, Object> accessTokenClaims =
         getAccessTokenClaims(
             generateOidcTokenDto.getClientId(),
@@ -336,6 +332,7 @@ public class OidcTokenService {
             null,
             generateOidcTokenDto.getScope(),
             generateOidcTokenDto.getUserId());
+
     return tokenIssuer
         .generateAccessToken(accessTokenClaims, generateOidcTokenDto.getTenantId())
         .map(
@@ -349,10 +346,13 @@ public class OidcTokenService {
 
   private Single<OidcTokenResponseDto> generateOidcTokensForRefreshTokenFlow(
       GenerateOidcTokenDto generateOidcTokenDto, String refreshToken) {
+
     TenantConfig tenantConfig =
         registry.get(generateOidcTokenDto.getTenantId(), TenantConfig.class);
+
     TokenConfig tokenConfig = tenantConfig.getTokenConfig();
     OidcConfig oidcConfig = tenantConfig.getOidcConfig();
+
     Map<String, Object> accessTokenClaims =
         getAccessTokenClaims(
             generateOidcTokenDto.getClientId(),
@@ -363,6 +363,7 @@ public class OidcTokenService {
             getRftId(refreshToken),
             generateOidcTokenDto.getScope(),
             generateOidcTokenDto.getUserId());
+
     return tokenIssuer
         .generateAccessToken(accessTokenClaims, generateOidcTokenDto.getTenantId())
         .map(
@@ -378,22 +379,16 @@ public class OidcTokenService {
   private Boolean validatePkceChallenge(
       String codeVerifier, String codeChallenge, OidcCodeChallengeMethod codeChallengeMethod) {
     if (codeChallenge == null && codeChallengeMethod == null) return true;
-    if (codeChallenge != null && codeChallengeMethod != null && codeVerifier == null)
+
+    if (codeChallenge != null && codeChallengeMethod != null && codeVerifier == null) {
       throw INVALID_REQUEST.getJsonCustomException("code_verifier is required");
-    if (codeChallengeMethod == null) {
-      throw OidcErrorEnum.INTERNAL_SERVER_ERROR.getException();
     }
-    switch (codeChallengeMethod) {
-      case PLAIN -> {
-        return codeChallenge.equals(codeVerifier);
-      }
-      case S256 -> {
-        return codeChallenge.equals(hashAndEncodeString(codeVerifier));
-      }
-      default -> {
-        return false;
-      }
-    }
+
+    return switch (codeChallengeMethod) {
+      case PLAIN -> codeChallenge.equals(codeVerifier);
+      case S256 -> codeChallenge.equals(hashAndEncodeString(codeVerifier));
+      default -> false;
+    };
   }
 
   private String hashAndEncodeString(String input) {
@@ -453,9 +448,11 @@ public class OidcTokenService {
 
   private OidcRefreshTokenModel getOidcRefreshTokenModel(
       OidcTokenResponseDto tokenResponseDto, GenerateOidcTokenDto generateOidcTokenDto) {
+
     TenantConfig tenantConfig =
         registry.get(generateOidcTokenDto.getTenantId(), TenantConfig.class);
     TokenConfig tokenConfig = tenantConfig.getTokenConfig();
+
     return OidcRefreshTokenModel.builder()
         .tenantId(generateOidcTokenDto.getTenantId())
         .clientId(generateOidcTokenDto.getClientId())
@@ -507,6 +504,14 @@ public class OidcTokenService {
     Map<String, String> filters = new HashMap<>();
     filters.put(USERID, oidcCodeModel.getUserId());
     return filters;
+  }
+
+  private WebApplicationException createInvalidClientError(String tenantId) {
+    return INVALID_CLIENT
+        .setHeaders(
+            getFailedAuthenticationHeaders(
+                registry.get(tenantId, TenantConfig.class).getOidcConfig().getIssuer()))
+        .getJsonException();
   }
 
   private MultivaluedMap<String, Object> getFailedAuthenticationHeaders(String iss) {

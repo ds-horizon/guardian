@@ -51,8 +51,7 @@ public final class Utils {
       if (!prefix.equals("Basic ")) {
         throw ErrorEnum.UNAUTHORIZED.getException();
       }
-      String credentials;
-      credentials = new String(Base64.getDecoder().decode(token.getBytes()));
+      String credentials = new String(Base64.getDecoder().decode(token.getBytes()));
       return credentials.split(":", 2);
     } catch (Exception e) {
       throw ErrorEnum.UNAUTHORIZED.getException();
