@@ -455,4 +455,22 @@ public class ApplicationIoUtils {
     spec.headers(headers);
     return spec.post("/token/revoke");
   }
+
+  public static Response getUserInfo(String tenantId, String accessToken) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+    headers.put("Authorization", "Bearer " + accessToken);
+    headers.put("Accept", "application/json");
+
+    return execute(null, headers, new HashMap<>(), spec -> spec.get("/userinfo"));
+  }
+
+  public static Response postUserInfo(String tenantId, String accessToken) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+    headers.put("Authorization", "Bearer " + accessToken);
+    headers.put("Accept", "application/json");
+
+    return execute(null, headers, new HashMap<>(), spec -> spec.post("/userinfo"));
+  }
 }

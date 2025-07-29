@@ -4,11 +4,16 @@ import static com.dreamsportslabs.guardian.constant.Constants.BASIC_AUTHENTICATI
 import static com.dreamsportslabs.guardian.constant.Constants.USER_AGENT;
 import static com.dreamsportslabs.guardian.constant.Constants.X_FORWARDED_FOR;
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
 
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -92,5 +97,32 @@ public final class Utils {
 
   public static long getCurrentTimeInSeconds() {
     return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+  }
+
+  public static String getAccessTokenFromAuthHeader(String authorizationHeader) {
+    try {
+      String prefix = authorizationHeader.substring(0, 7);
+      String token = authorizationHeader.substring(7).strip();
+      if (!prefix.equals("Bearer ")) {
+        throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
+      }
+      return token;
+    } catch (Exception e) {
+      throw UNAUTHORIZED.getCustomException("Invalid authorization header");
+    }
+  }
+
+  public static Map<String, Object> decodeJwtHeaders(String token) {
+    try {
+      String[] parts = token.split("\\.");
+      if (parts.length < 2) {
+        throw new IllegalArgumentException("Invalid JWT format");
+      }
+      String headerJson =
+          new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+      return new ObjectMapper().readValue(headerJson, Map.class);
+    } catch (Exception e) {
+      throw INVALID_TOKEN.getBearerAuthHeaderException();
+    }
   }
 }
