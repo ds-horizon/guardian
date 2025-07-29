@@ -1,9 +1,21 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.Constants.ACCESS_TOKEN_EXPIRY_SECONDS;
 import static com.dreamsportslabs.guardian.Constants.AUTH_RESPONSE_TYPE_CODE;
+import static com.dreamsportslabs.guardian.Constants.CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.EQUALS_SIGN;
 import static com.dreamsportslabs.guardian.Constants.EXAMPLE_CALLBACK;
 import static com.dreamsportslabs.guardian.Constants.HEADER_LOCATION;
+import static com.dreamsportslabs.guardian.Constants.ID_TOKEN_EXPIRY_SECONDS;
+import static com.dreamsportslabs.guardian.Constants.JWT_ALGORITHM_RS256;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_CLIENT_ID;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_EXP;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_IAT;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_ISS;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_JTI;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_RFT_ID;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.JWT_TYPE_ACCESS_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.LOGIN_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.PARAM_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.PARAM_REDIRECT_URI;
@@ -15,31 +27,49 @@ import static com.dreamsportslabs.guardian.Constants.QUERY_SEPARATOR;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
+import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER;
+import static com.dreamsportslabs.guardian.Constants.TEST_KID;
+import static com.dreamsportslabs.guardian.Constants.TEST_PUBLIC_KEY_PATH;
 import static com.dreamsportslabs.guardian.Constants.TEST_STATE;
 import static com.dreamsportslabs.guardian.utils.DbUtils.authorizeSessionExists;
 import static com.dreamsportslabs.guardian.utils.DbUtils.getAuthorizeSession;
 import static com.dreamsportslabs.guardian.utils.DbUtils.getOidcCode;
 import static org.apache.http.HttpStatus.SC_MOVED_TEMPORARILY;
+import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fusionauth.jwt.domain.JWT;
+import io.fusionauth.jwt.rsa.RSAVerifier;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.SneakyThrows;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class OidcUtils {
 
   private static final Logger log = LoggerFactory.getLogger(OidcUtils.class);
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   /**
    * Creates a valid authorize request with all required parameters.
@@ -52,6 +82,24 @@ public class OidcUtils {
     queryParams.put(PARAM_RESPONSE_TYPE, AUTH_RESPONSE_TYPE_CODE);
     queryParams.put(PARAM_CLIENT_ID, clientId);
     queryParams.put(PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL + " " + SCOPE_ADDRESS);
+    queryParams.put(PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
+    queryParams.put(PARAM_STATE, TEST_STATE);
+    return queryParams;
+  }
+
+  /**
+   * Creates a valid authorize request with all required parameters.
+   *
+   * @param clientId The client ID to use in the request
+   * @param scopes The list of scopes to add to the request
+   * @return Map containing the query parameters for a valid authorize request
+   */
+  public static Map<String, String> createValidAuthorizeRequest(
+      String clientId, List<String> scopes) {
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put(PARAM_RESPONSE_TYPE, AUTH_RESPONSE_TYPE_CODE);
+    queryParams.put(PARAM_CLIENT_ID, clientId);
+    queryParams.put(PARAM_SCOPE, String.join(" ", scopes));
     queryParams.put(PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
     queryParams.put(PARAM_STATE, TEST_STATE);
     return queryParams;
@@ -463,6 +511,80 @@ public class OidcUtils {
     String codeChallenge = oidcCodeData.getString("codeChallenge");
     if (codeChallenge != null) {
       assertThat("OIDC code challenge should not be empty", codeChallenge.length(), greaterThan(0));
+    }
+  }
+
+  @SneakyThrows
+  public static void validateAccessTokenClaims(
+      String accessToken,
+      Long expiresIn,
+      String expectedUserId,
+      String expectedClientId,
+      List<String> expectedScopes,
+      List<String> notExpectedScopes,
+      Boolean validateRftId,
+      String refreshToken) {
+    Path path = Paths.get(TEST_PUBLIC_KEY_PATH);
+    JWT accessTokenJwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    String encodeHeaderClaims = accessToken.split("\\.")[0];
+    String decodedHeader =
+        new String(Base64.getDecoder().decode(encodeHeaderClaims), StandardCharsets.UTF_8);
+    Map<String, Object> headerClaims;
+    headerClaims = objectMapper.readValue(decodedHeader, new TypeReference<>() {});
+    assertThat(headerClaims.get("alg"), equalTo(JWT_ALGORITHM_RS256));
+    assertThat(headerClaims.get("typ"), equalTo(JWT_TYPE_ACCESS_TOKEN));
+    assertThat(headerClaims.get("kid"), equalTo(TEST_KID));
+    Map<String, Object> claims = accessTokenJwt.getAllClaims();
+    assertThat(claims.get("aud"), equalTo(expectedClientId));
+    long exp = ((ZonedDateTime) claims.get(JWT_CLAIM_EXP)).toInstant().toEpochMilli() / 1000;
+    long iat = ((ZonedDateTime) claims.get(JWT_CLAIM_IAT)).toInstant().toEpochMilli() / 1000;
+    assertThat(exp - iat, equalTo(ACCESS_TOKEN_EXPIRY_SECONDS));
+    assertThat(expiresIn, equalTo(exp - iat));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER));
+    assertThat(claims.get(CLAIM_SUB), equalTo(expectedUserId));
+    for (String scope : expectedScopes) {
+      assertThat((String) claims.get(JWT_CLAIM_SCOPE), containsString(scope));
+    }
+    for (String scope : notExpectedScopes) {
+      assertThat((String) claims.get(JWT_CLAIM_SCOPE), not(containsString(scope)));
+    }
+    assertThat(claims.get(JWT_CLAIM_CLIENT_ID), equalTo(expectedClientId));
+    assertThat((String) claims.get(JWT_CLAIM_JTI), isA(String.class));
+    if (validateRftId) {
+      assertThat(
+          claims.get(JWT_CLAIM_RFT_ID), equalTo(DigestUtils.md5Hex(refreshToken).toUpperCase()));
+    }
+  }
+
+  @SneakyThrows
+  public static void validateIdTokenClaims(
+      String idToken,
+      String expectedUserId,
+      String expectedClientId,
+      List<String> expectedClaims,
+      List<String> notExpectedClaims) {
+    Path path = Paths.get(TEST_PUBLIC_KEY_PATH);
+    JWT idTokenJwt = JWT.getDecoder().decode(idToken, RSAVerifier.newVerifier(path));
+    String encodeHeaderClaims = idToken.split("\\.")[0];
+    String decodedHeader =
+        new String(Base64.getDecoder().decode(encodeHeaderClaims), StandardCharsets.UTF_8);
+    Map<String, Object> headerClaims;
+    headerClaims = objectMapper.readValue(decodedHeader, new TypeReference<>() {});
+    assertThat(headerClaims.get("alg"), equalTo(JWT_ALGORITHM_RS256));
+    assertThat(headerClaims.get("typ"), equalTo("JWT"));
+    assertThat(headerClaims.get("kid"), equalTo(TEST_KID));
+    Map<String, Object> claims = idTokenJwt.getAllClaims();
+    assertThat(claims.get("aud"), equalTo(expectedClientId));
+    long exp = ((ZonedDateTime) claims.get(JWT_CLAIM_EXP)).toInstant().toEpochMilli() / 1000;
+    long iat = ((ZonedDateTime) claims.get(JWT_CLAIM_IAT)).toInstant().toEpochMilli() / 1000;
+    assertThat(exp - iat, equalTo(ID_TOKEN_EXPIRY_SECONDS));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER));
+    assertThat(claims.get(CLAIM_SUB), equalTo(expectedUserId));
+    for (String claim : expectedClaims) {
+      assertThat((String) claims.get(claim), notNullValue());
+    }
+    for (String claim : notExpectedClaims) {
+      assertThat((String) claims.get(claim), nullValue());
     }
   }
 }
