@@ -44,7 +44,7 @@ public class RefreshTokenDao {
         .ignoreElement();
   }
 
-  public Maybe<String> getRefreshToken(String refreshToken, String tenantId) {
+  public Maybe<String> getUserIdFromRefreshToken(String refreshToken, String tenantId) {
     return mysqlClient
         .getReaderPool()
         .preparedQuery(VALIDATE_REFRESH_TOKEN)

@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.vertx.core.json.JsonObject;
@@ -17,6 +19,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 @Slf4j
 public class DbUtils {
+  private static final ObjectMapper objectMapper = new ObjectMapper();
   private static HikariDataSource mysqlConnectionPool;
   private static JedisPool redisConnectionPool;
   private static final String INSERT_REFRESH_TOKEN =
@@ -27,6 +30,9 @@ public class DbUtils {
 
   private static final String GET_SCOPE_BY_NAME =
       "SELECT name, display_name, description, claims, tenant_id, icon_url, is_oidc FROM scope WHERE tenant_id = ? AND name = ?";
+
+  private static final String INSERT_OIDC_REFRESH_TOKEN =
+      "INSERT INTO oidc_refresh_token (tenant_id, client_id, user_id, refresh_token, refresh_token_exp, scope, is_active, device_name, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
 
   public static void initializeRedisConnectionPool(String host, int port) {
     if (redisConnectionPool != null) {
@@ -371,7 +377,7 @@ public class DbUtils {
 
   // Scope management utilities
   public static void cleanupScopes(String tenantId) {
-    String deleteScopes = "DELETE FROM scopes WHERE tenant_id = ?";
+    String deleteScopes = "DELETE FROM scope WHERE tenant_id = ?";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt1 = conn.prepareStatement(deleteScopes)) {
@@ -489,6 +495,14 @@ public class DbUtils {
     }
   }
 
+  public static void cleanupRedis() {
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      jedis.flushAll();
+    } catch (Exception e) {
+      log.error("Error while cleaning up Redis", e);
+    }
+  }
+
   public static void insertUserConsent(
       String tenantId, String clientId, String userId, List<String> scopes) {
     try (Connection conn = mysqlConnectionPool.getConnection();
@@ -513,6 +527,52 @@ public class DbUtils {
       jedis.expire(key, 0);
     } catch (Exception e) {
       log.error("Error while expiring authorize session", e);
+    }
+  }
+
+  public static String insertOidcRefreshToken(
+      String tenantId,
+      String clientId,
+      String userId,
+      long exp,
+      List<String> scopes,
+      Boolean isActive,
+      String deviceName,
+      String ip) {
+    String refreshToken = RandomStringUtils.randomAlphanumeric(32);
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(INSERT_OIDC_REFRESH_TOKEN)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, userId);
+      stmt.setString(4, refreshToken);
+      stmt.setLong(5, Instant.now().getEpochSecond() + exp);
+      ArrayNode scopesArray = objectMapper.createArrayNode();
+      scopes.forEach(scopesArray::add);
+      stmt.setString(6, objectMapper.writeValueAsString(scopesArray));
+      stmt.setBoolean(7, isActive);
+      stmt.setString(8, deviceName);
+      stmt.setString(9, ip);
+
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while inserting refresh token", e);
+      return null;
+    }
+
+    return refreshToken;
+  }
+
+  public static void cleanupOidcRefreshTokens(String tenantId) {
+    String deleteQuery = "DELETE FROM oidc_refresh_token WHERE tenant_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
+      stmt.setString(1, tenantId);
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up OIDC refresh tokens", e);
     }
   }
 }

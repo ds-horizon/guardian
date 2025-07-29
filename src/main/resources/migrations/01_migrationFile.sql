@@ -382,7 +382,7 @@ CREATE TABLE consent
 
     PRIMARY KEY (`tenant_id`, `client_id`, `user_id`, `scope`),
     KEY `idx_tenant_scope` (`tenant_id`, `scope`),
-    
+
     CONSTRAINT `fk_consent_tenant` FOREIGN KEY (`tenant_id`)
         REFERENCES `tenant`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_consent_client` FOREIGN KEY (`tenant_id`, `client_id`)
@@ -392,3 +392,27 @@ CREATE TABLE consent
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE oidc_refresh_token
+(
+    id                BIGINT                     NOT NULL AUTO_INCREMENT,
+    client_id         VARCHAR(100)               NOT NULL,
+    tenant_id         CHAR(10)                   NOT NULL,
+    user_id           CHAR(64)                   NOT NULL,
+    is_active         BOOLEAN                    NOT NULL DEFAULT TRUE,
+    refresh_token     CHAR(32) COLLATE ascii_bin NOT NULL,
+    refresh_token_exp BIGINT UNSIGNED NOT NULL,
+    scope             JSON                      NOT NULL DEFAULT (JSON_ARRAY()),
+    device_name       VARCHAR(256),
+    ip                VARBINARY(16),
+    created_at        TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    KEY               `idx_oidc_refresh_token` (`tenant_id`, `client_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
+    KEY               `idx_oidc_refresh_token_user` (`tenant_id`, `user_id`),
+    CONSTRAINT `fk_oidc_refresh_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_oidc_refresh_token_client` FOREIGN KEY (`tenant_id`, `client_id`) REFERENCES `client`(`tenant_id`, `client_id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;

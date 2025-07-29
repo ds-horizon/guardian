@@ -1,13 +1,17 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.constant.Constants.USER_AGENT;
+import static com.dreamsportslabs.guardian.constant.Constants.X_FORWARDED_FOR;
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
 
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public final class Utils {
 
@@ -47,8 +51,7 @@ public final class Utils {
       if (!prefix.equals("Basic ")) {
         throw ErrorEnum.UNAUTHORIZED.getException();
       }
-      String credentials;
-      credentials = new String(Base64.getDecoder().decode(token.getBytes()));
+      String credentials = new String(Base64.getDecoder().decode(token.getBytes()));
       return credentials.split(":", 2);
     } catch (Exception e) {
       throw ErrorEnum.UNAUTHORIZED.getException();
@@ -58,5 +61,35 @@ public final class Utils {
   public static String generateBasicAuthHeader(String clientId, String clientSecret) {
     return "Basic "
         + new String(Base64.getEncoder().encode((clientId + ":" + clientSecret).getBytes()));
+  }
+
+  public static String getRftId(String refreshToken) {
+    if (refreshToken == null) {
+      return null;
+    }
+    return getMd5Hash(refreshToken);
+  }
+
+  public static String getIpFromHeaders(MultivaluedMap<String, String> headers) {
+    String xForwardedFor = headers.getFirst(X_FORWARDED_FOR);
+    if (!StringUtils.isBlank(xForwardedFor)) {
+      String[] ips = xForwardedFor.split(",");
+      if (ips.length > 0) {
+        return ips[0].trim();
+      }
+    }
+    return null;
+  }
+
+  public static String getDeviceNameFromHeaders(MultivaluedMap<String, String> headers) {
+    String userAgent = headers.getFirst(USER_AGENT);
+    if (StringUtils.isBlank(userAgent)) {
+      return null;
+    }
+    return userAgent;
+  }
+
+  public static long getCurrentTimeInSeconds() {
+    return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
   }
 }

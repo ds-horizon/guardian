@@ -60,8 +60,6 @@ public class Constants {
   public static final String BODY_PARAM_IS_OIDC = "isOidc";
   public static final String BODY_PARAM_OTP = "otp";
 
-  // Request Body Params Values
-
   public static final String BODY_CHANNEL_EMAIL = "EMAIL";
   public static final String BODY_CHANNEL_SMS = "SMS";
 
@@ -148,6 +146,9 @@ public class Constants {
   public static final String JWT_HEADER_ALG = "alg";
 
   public static final String JWT_CLAIM_IAT = "iat";
+  public static final String JWT_CLAIM_CLIENT_ID = "client_id";
+  public static final String JWT_CLAIM_JTI = "jti";
+  public static final String JWT_CLAIM_SCOPE = "scope";
   public static final String JWT_CLAIM_EXP = "exp";
   public static final String JWT_CLAIM_ISS = "iss";
   public static final String JWT_CLAIM_SUB = "sub";
@@ -174,6 +175,7 @@ public class Constants {
   public static final String INVALID_STATE = "invalid_state";
   public static final String ERROR_FLOW_BLOCKED = "flow_blocked";
   public static final String ERROR_INTERNAL_ERROR = "internal_error";
+  public static final String ERROR_INTERNAL_SERVER_ERROR = "internal_server_error";
 
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
   public static final String RESPONSE_BODY_PARAM_TRIES = "tries";
@@ -298,6 +300,7 @@ public class Constants {
   public static final String INVALID_GRANT_TYPE = "invalid_grant_type";
   public static final String INVALID_RESPONSE_TYPE = "invalid_response_type";
   public static final String INVALID_TENANT = "invalid";
+  public static final String INVALID_CODE = "invalid_code";
   public static final String BLANK_STRING = "   ";
   public static final int MIN_SECRET_LENGTH = 32;
   public static final int MIN_CLIENT_ID_LENGTH = 20;
@@ -317,6 +320,9 @@ public class Constants {
   public static final String TEST_STATE = "test_state_123";
   public static final String TEST_LOGIN_HINT = "user@example.com";
   public static final String TEST_CODE_CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaBkNVHYeP552O7hfQYVWU";
+  public static final String TEST_CODE_CHALLENGE_2 = "ysJXbKHz-FWCDD3vYpbFchqeQflbzg2yjdiTJD4EUl8";
+  public static final String TEST_CODE_VERIFIER_2 =
+      "5UbkjcmBPZ8ufxbmCBR07RXXxtV6Iu-r36LHDLn0hI9JxQBzGTA_xzNVkID6zyHg";
   public static final String TEST_NONCE = "test_nonce_123";
 
   // Authorization Parameter Names
@@ -374,6 +380,7 @@ public class Constants {
   // Authorization Test URLs
   public static final String MALICIOUS_CALLBACK_URL = "https://malicious.com/callback";
   public static final String INVALID_CLIENT_ID = "invalid_client_id";
+  public static final String INVALID_CLIENT_SECRET = "invalid_client_secret";
 
   // Authorization Test Boolean Values
   public static final boolean AUTH_SKIP_CONSENT_FALSE = false;
@@ -406,6 +413,8 @@ public class Constants {
   public static final String ERROR_INVALID_CHALLENGE = "Invalid challenge";
   public static final String ERROR_INVALID_REFRESH_TOKEN = "Invalid refresh token";
   public static final String TEST_USER_ID = "testuser";
+  public static final String TEST_USER_ID_2 = "testuser_2";
+  public static final String TEST_USER_ID_3 = "testuser_3";
   public static final String PARTIAL_CONSENT_USER_ID = "partial_consent_user";
   public static final String FULL_CONSENT_USER_ID = "full_consent_user";
   public static final String DETAILED_VALIDATION_USER_ID = "detailed_validation_user";
@@ -414,4 +423,77 @@ public class Constants {
   public static final String DEVICE_VALUE = "device1";
   public static final String LOCATION_VALUE = "location";
   public static final String IP_ADDRESS = "1.2.3.4";
+
+  // Token Test
+  public static final String INVALID_REFRESH_TOKEN = "invalid_refresh_token";
+
+  // Token Endpoint Parameter Names
+  public static final String TOKEN_PARAM_GRANT_TYPE = "grant_type";
+  public static final String TOKEN_PARAM_SCOPE = "scope";
+  public static final String TOKEN_PARAM_CODE = "code";
+  public static final String TOKEN_PARAM_REDIRECT_URI = "redirect_uri";
+  public static final String TOKEN_PARAM_ID_TOKEN = "id_token";
+  public static final String TOKEN_PARAM_CODE_VERIFIER = "code_verifier";
+  public static final String TOKEN_PARAM_REFRESH_TOKEN = "refresh_token";
+  public static final String TOKEN_PARAM_ACCESS_TOKEN = "access_token";
+  public static final String TOKEN_PARAM_TOKEN_TYPE = "token_type";
+  public static final String TOKEN_PARAM_EXPIRES_IN = "expires_in";
+
+  // Token Endpoint Error Types
+  public static final String TOKEN_ERROR_INVALID_REQUEST = "invalid_request";
+  public static final String TOKEN_ERROR_UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type";
+  public static final String TOKEN_ERROR_INVALID_CLIENT = "invalid_client";
+  public static final String TOKEN_ERROR_UNAUTHORIZED_CLIENT = "unauthorized_client";
+  public static final String TOKEN_ERROR_INVALID_SCOPE = "invalid_scope";
+  public static final String TOKEN_ERROR_INVALID_GRANT = "invalid_grant";
+
+  // Token Endpoint Error Messages
+  public static final String TOKEN_ERROR_MSG_UNSUPPORTED_GRANT_TYPE =
+      "The grant type '%s' is not supported";
+  public static final String TOKEN_ERROR_MSG_CLIENT_AUTH_FAILED = "Client authentication failed";
+  public static final String TOKEN_ERROR_MSG_AUTH =
+      "Both 'Authorization' header and 'client_id' parameter are missing";
+  public static final String TOKEN_ERROR_MSG_UNAUTHORIZED_CLIENT =
+      "The authenticated client is not authorized to use this authorization grant type";
+  public static final String TOKEN_ERROR_MSG_INVALID_SCOPE =
+      "The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner";
+  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_INVALID = "refresh_token is invalid";
+  public static final String TOKEN_ERROR_MSG_REFRESH_TOKEN_EXPIRED = "refresh_token is expired";
+  public static final String TOKEN_ERROR_MSG_AUTHORIZATION_CODE_INVALID = "code is invalid";
+  public static final String TOKEN_ERROR_MSG_REDIRECT_URI_INVALID = "redirect_uri is invalid";
+  public static final String TOKEN_ERROR_MSG_CODE_VERIFIER_INVALID = "code_verifier is invalid";
+  public static final String TOKEN_ERROR_MSG_CODE_VERIFIER_REQUIRED = "code_verifier is required";
+  public static final String TOKEN_ERROR_MSG_CODE_REQUIRED = "code is required";
+  public static final String TOKEN_ERROR_MSG_REDIRECT_URI_REQUIRED = "redirect_uri is required";
+
+  // Token Response Values
+  public static final String TOKEN_TYPE_BEARER = "Bearer";
+
+  // HTTP Headers for Token Requests
+  public static final String HEADER_AUTHORIZATION = "Authorization";
+  public static final String HEADER_CONTENT_TYPE = "Content-Type";
+  public static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
+  public static final String HEADER_CACHE_CONTROL = "Cache-Control";
+  public static final String HEADER_PRAGMA = "Pragma";
+  public static final String CACHE_CONTROL_NO_STORE = "no-store";
+  public static final String PRAGMA_NO_CACHE = "no-cache";
+  public static final String CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded";
+  public static final String AUTH_BASIC_PREFIX = "Basic ";
+  public static final String WWW_AUTHENTICATE_BASIC_REALM_FORMAT = "Basic realm=\"%s\"";
+
+  // JWT Token Constants
+  public static final String JWT_ALGORITHM_RS256 = "RS256";
+  public static final String JWT_TYPE_ACCESS_TOKEN = "at+jwt";
+  public static final String TEST_KID = "test-kid";
+  public static final String TEST_ISSUER = "https://auth.example.com";
+  public static final String TEST_PUBLIC_KEY_PATH =
+      "src/test/resources/test-data/tenant1-public-key.pem";
+
+  // Token Test Data
+  public static final String TEST_DEVICE_NAME = "device1";
+  public static final String TEST_IP_ADDRESS = "1.2.3.4";
+  public static final long ACCESS_TOKEN_EXPIRY_SECONDS = 900L;
+  public static final long ID_TOKEN_EXPIRY_SECONDS = 3600L;
+  public static final long REFRESH_TOKEN_EXPIRY_SECONDS = 1800L;
+  public static final long EXPIRED_TOKEN_OFFSET_SECONDS = -1800L;
 }
