@@ -5,6 +5,7 @@ import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_IAT;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_ISS;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_RFT_ID;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_TENANT_ID;
 import static com.dreamsportslabs.guardian.Constants.JWT_HEADER_KID;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
@@ -55,6 +56,7 @@ public class RefreshTokenIT {
     assertThat(jwt.getHeaderClaim(JWT_HEADER_KID), equalTo("test-kid"));
     assertThat(claims.get(JWT_CLAIM_SUB), equalTo(userId));
     assertThat(claims.get(JWT_CLAIM_ISS), equalTo("https://test.com"));
+    assertThat(claims.get(JWT_CLAIM_TENANT_ID), equalTo(tenant1));
 
     long exp = ((ZonedDateTime) claims.get(JWT_CLAIM_EXP)).toInstant().toEpochMilli() / 1000;
     long iat = ((ZonedDateTime) claims.get(JWT_CLAIM_IAT)).toInstant().toEpochMilli() / 1000;
