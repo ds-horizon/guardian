@@ -1,5 +1,8 @@
 package com.dreamsportslabs.guardian.dao.query;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class OidcTokenQuery {
   public static final String SAVE_OIDC_REFRESH_TOKEN =
       """
@@ -14,5 +17,12 @@ public class OidcTokenQuery {
       SELECT tenant_id, client_id, user_id, is_active, refresh_token, refresh_token_exp, scope
       FROM oidc_refresh_token
       WHERE tenant_id = ? AND client_id = ? AND refresh_token = ? AND is_active = true
+      """;
+
+  public static final String REVOKE_OIDC_REFRESH_TOKEN =
+      """
+        UPDATE oidc_refresh_token
+        SET is_active = false
+        WHERE tenant_id = ? AND client_id = ? AND refresh_token = ?;
       """;
 }

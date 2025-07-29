@@ -230,6 +230,10 @@ public class AuthorizationService {
         currentTimeStamp, accessTokenExpiry, tenantId);
   }
 
+  public void revokeTokens(List<String> refreshTokens, String tenantId) {
+    updateRevocations(refreshTokens, tenantId);
+  }
+
   protected NewCookie buildCookie(String name, String value, Integer maxAge, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     return new NewCookie.Builder(name)

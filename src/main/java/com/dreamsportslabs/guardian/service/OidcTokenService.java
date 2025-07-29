@@ -36,12 +36,14 @@ import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
 import com.dreamsportslabs.guardian.dao.model.OidcRefreshTokenModel;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.dto.request.GenerateOidcTokenDto;
+import com.dreamsportslabs.guardian.dto.request.RevokeTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.request.TokenRequestDto;
 import com.dreamsportslabs.guardian.dto.request.scope.GetScopeRequestDto;
 import com.dreamsportslabs.guardian.dto.response.OidcTokenResponseDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.WebApplicationException;
@@ -69,6 +71,7 @@ public class OidcTokenService {
   private final TokenIssuer tokenIssuer;
 
   private final OidcRefreshTokenDao oidcRefreshTokenDao;
+  private final AuthorizationService authorizationService;
 
   private final Registry registry;
 
@@ -83,6 +86,21 @@ public class OidcTokenService {
       case CLIENT_CREDENTIALS -> clientCredentialsFlow(requestDto, tenantId, authorizationHeader);
       case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader);
     };
+  }
+
+  public Completable revokeOidcToken(
+      RevokeTokenRequestDto requestDto, String tenantId, String authorizationHeader) {
+    return authenticateClientUsingHeader(authorizationHeader, tenantId)
+        .flatMap(
+            clientModel ->
+                oidcRefreshTokenDao.revokeOidcRefreshToken(
+                    tenantId, clientModel.getClientId(), requestDto.getToken()))
+        .filter(result -> result)
+        .flatMapCompletable(
+            result -> {
+              authorizationService.revokeTokens(List.of(requestDto.getToken()), tenantId);
+              return Completable.complete();
+            });
   }
 
   private Single<OidcTokenResponseDto> authorizationCodeFlow(
@@ -168,12 +186,7 @@ public class OidcTokenService {
     Single<ClientModel> clientAuth;
 
     if (authorizationHeader != null) {
-      clientAuth =
-          Single.just(Utils.getCredentialsFromAuthHeader(authorizationHeader))
-              .flatMap(
-                  credentials ->
-                      clientService.authenticateClient(credentials[0], credentials[1], tenantId))
-              .onErrorResumeNext(err -> Single.error(createInvalidClientError(tenantId)));
+      clientAuth = authenticateClientUsingHeader(authorizationHeader, tenantId);
     } else {
       clientAuth =
           clientService.authenticateClient(
@@ -184,6 +197,15 @@ public class OidcTokenService {
         .filter(clientModel -> validateClientGrantType(clientModel, requestDto.getGrantType()))
         .switchIfEmpty(Single.error(UNAUTHORIZED_CLIENT.getException()))
         .map(ClientModel::getClientId);
+  }
+
+  private Single<ClientModel> authenticateClientUsingHeader(
+      String authorizationHeader, String tenantId) {
+    return Single.just(Utils.getCredentialsFromAuthHeader(authorizationHeader))
+        .flatMap(
+            credentials ->
+                clientService.authenticateClient(credentials[0], credentials[1], tenantId))
+        .onErrorResumeNext(err -> Single.error(createInvalidClientError(tenantId)));
   }
 
   private Single<OidcCodeModel> validateCode(TokenRequestDto requestDto, String tenantId) {
