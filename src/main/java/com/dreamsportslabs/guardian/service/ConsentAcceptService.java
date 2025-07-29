@@ -5,9 +5,7 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUE
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 
-import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
-import com.dreamsportslabs.guardian.dao.OidcCodeDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
@@ -31,7 +29,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 public class ConsentAcceptService {
 
   private final AuthorizeSessionDao authorizeSessionDao;
-  private final OidcCodeDao oidcCodeDao;
+  private final OidcCodeService oidcCodeService;
   private final RefreshTokenDao refreshTokenDao;
   private final UserConsentDao userConsentDao;
   private final Registry registry;
@@ -82,7 +80,7 @@ public class ConsentAcceptService {
 
   private Single<String> validateRefreshToken(String refreshToken, String tenantId) {
     return refreshTokenDao
-        .getRefreshToken(refreshToken, tenantId)
+        .getUserIdFromRefreshToken(refreshToken, tenantId)
         .onErrorResumeNext(
             err ->
                 Maybe.error(
@@ -122,13 +120,10 @@ public class ConsentAcceptService {
   }
 
   private Single<String> generateAuthCode(AuthorizeSessionModel authorizeSession, String tenantId) {
-    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     String code = RandomStringUtils.randomAlphanumeric(32);
     OidcCodeModel oidcCodeModel = new OidcCodeModel(authorizeSession);
 
-    return oidcCodeDao
-        .saveOidcCode(code, oidcCodeModel, tenantId, tenantConfig.getOidcConfig().getAuthorizeTtl())
-        .toSingleDefault(code);
+    return oidcCodeService.saveOidcCode(code, oidcCodeModel, tenantId).toSingleDefault(code);
   }
 
   private void deleteConsentChallengeAsync(String consentChallenge, String tenantId) {

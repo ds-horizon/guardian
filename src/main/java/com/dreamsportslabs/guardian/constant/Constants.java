@@ -9,6 +9,12 @@ public final class Constants {
   public static final String USERID = "userId";
   public static final String PROVIDER = "provider";
   public static final String IS_NEW_USER = "isNewUser";
+  public static final String SCOPE = "scope";
+
+  // HTTP Request Headers
+  public static final String AUTHORIZATION = "Authorization";
+  public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+  public static final String USER_AGENT = "User-Agent";
 
   public static final String TOKEN = "token";
   public static final String CODE = "code";
@@ -52,12 +58,33 @@ public final class Constants {
   public static final String TENANT_CONFIG_REFRESH_INTERVAL = "tenant_config_refresh_interval";
 
   // JWT CLAIMS
-  public static final String JWT_CLAIMS_ISS = "iss";
-  public static final String JWT_CLAIMS_SUB = "sub";
-  public static final String JWT_CLAIMS_IAT = "iat";
-  public static final String JWT_CLAIMS_EXP = "exp";
-  public static final String JWT_CLAIMS_RFT_ID = "rft_id";
   public static final String JWT_CLAIMS_AUD = "aud";
+  public static final String JWT_CLAIMS_CLIENT_ID = "client_id";
+  public static final String JWT_CLAIMS_EXP = "exp";
+  public static final String JWT_CLAIMS_IAT = "iat";
+  public static final String JWT_CLAIMS_ISS = "iss";
+  public static final String JWT_CLAIMS_JTI = "jti";
+  public static final String JWT_CLAIMS_NONCE = "nonce";
+  public static final String JWT_CLAIMS_RFT_ID = "rft_id";
+  public static final String JWT_CLAIMS_SCOPE = "scope";
+  public static final String JWT_CLAIMS_SUB = "sub";
+
+  // JWT Headers
+  public static final String JWT_HEADERS_TYP = "typ";
+  public static final String JWT_HEADERS_KID = "kid";
+
+  // JWT Headers Values
+  public static final String TYP_JWT_ACCESS_TOKEN = "at+jwt";
+
+  // Response Headers
+  public static final String CACHE_CONTROL_HEADER = "Cache-Control";
+  public static final String PRAGMA_HEADER = "Pragma";
+  public static final String WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
+
+  // Response Header Values
+  public static final String CACHE_CONTROL_NO_STORE = "no-store";
+  public static final String PRAGMA_NO_CACHE = "no-cache";
+  public static final String WWW_AUTHENTICATE_BASIC = "Basic realm=";
   public static final String JWT_TENANT_ID_CLAIM = "tid";
 
   public static final ImmutableList<String> fbAuthResponseTypes = ImmutableList.of(CODE, TOKEN);
@@ -134,7 +161,6 @@ public final class Constants {
 
   // OIDC Token Constants
   public static final String OIDC_REFRESH_TOKEN = "refresh_token";
-  public static final String AUTHORIZATION = "Authorization";
   public static final String OIDC_GRANT_TYPE = "grant_type";
   public static final String OIDC_AUTHORIZATION_CODE = "authorization_code";
   public static final String OIDC_REDIRECT_URI = "redirect_uri";
