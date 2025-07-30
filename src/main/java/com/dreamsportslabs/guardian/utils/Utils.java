@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.constant.Constants.BASIC_AUTHENTICATION_SCHEME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_AGENT;
 import static com.dreamsportslabs.guardian.constant.Constants.X_FORWARDED_FOR;
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
@@ -48,7 +49,7 @@ public final class Utils {
     try {
       String prefix = authorizationHeader.substring(0, 6);
       String token = authorizationHeader.substring(6).strip();
-      if (!prefix.equals("Basic ")) {
+      if (!prefix.equals(BASIC_AUTHENTICATION_SCHEME)) {
         throw ErrorEnum.UNAUTHORIZED.getException();
       }
       String credentials = new String(Base64.getDecoder().decode(token.getBytes()));
@@ -59,7 +60,7 @@ public final class Utils {
   }
 
   public static String generateBasicAuthHeader(String clientId, String clientSecret) {
-    return "Basic "
+    return BASIC_AUTHENTICATION_SCHEME
         + new String(Base64.getEncoder().encode((clientId + ":" + clientSecret).getBytes()));
   }
 
