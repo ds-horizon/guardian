@@ -68,15 +68,19 @@ public class Constants {
   public static final String TEST_DISPLAY_NAME = "Test display name";
   public static final String TEST_ICON_URL = "https://example.com/icon.png";
   public static final String TEST_EMAIL_CLAIM = "email";
+  public static final String TEST_EMAIL_VERIFIED_CLAIM = "email_verified";
   public static final String TEST_NAME_CLAIM = "name";
   public static final String TEST_PICTURE_CLAIM = "picture";
   public static final String TEST_PHONE_CLAIM = "phone";
+  public static final String TEST_PHONE_VERIFIED_CLAIM = "phone_verified";
 
   // Predefined scope names
+  public static final String SCOPE = "scope";
   public static final String SCOPE_OPENID = "openid";
   public static final String SCOPE_PHONE = "phone";
   public static final String SCOPE_EMAIL = "email";
   public static final String SCOPE_ADDRESS = "address";
+  public static final String DISPLAY_NAME = "displayName";
 
   // Predefined claim names
   public static final String CLAIM_SUB = "sub";
@@ -425,6 +429,7 @@ public class Constants {
 
   // Token Test
   public static final String INVALID_REFRESH_TOKEN = "invalid_refresh_token";
+  public static final String TOKEN = "token";
 
   // Token Endpoint Parameter Names
   public static final String TOKEN_PARAM_GRANT_TYPE = "grant_type";

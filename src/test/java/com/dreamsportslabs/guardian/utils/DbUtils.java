@@ -575,4 +575,24 @@ public class DbUtils {
       log.error("Error while cleaning up OIDC refresh tokens", e);
     }
   }
+
+  public static boolean isOidcRefreshTokenActive(
+      String tenantId, String clientId, String refreshToken) {
+    String deleteQuery =
+        "SELECT is_active FROM oidc_refresh_token WHERE tenant_id = ? and client_id = ? and refresh_token = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, refreshToken);
+      var rs = stmt.executeQuery();
+      if (rs.next()) {
+        return rs.getBoolean(1);
+      }
+    } catch (Exception e) {
+      log.error("Error while checking OIDC refresh token status", e);
+    }
+    return false;
+  }
 }
