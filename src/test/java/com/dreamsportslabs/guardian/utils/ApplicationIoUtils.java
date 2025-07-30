@@ -442,4 +442,17 @@ public class ApplicationIoUtils {
     spec.headers(headers);
     return spec.post("/token");
   }
+
+  public static Response revokeToken(
+      String tenantId, Map<String, String> headers, Map<String, String> formParams) {
+    if (headers == null) {
+      headers = new HashMap<>();
+    }
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    RequestSpecification spec = given().redirects().follow(false);
+    spec.formParams(formParams);
+    spec.headers(headers);
+    return spec.post("/token/revoke");
+  }
 }

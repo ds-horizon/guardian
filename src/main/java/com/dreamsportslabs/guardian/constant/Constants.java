@@ -15,6 +15,7 @@ public final class Constants {
   public static final String AUTHORIZATION = "Authorization";
   public static final String X_FORWARDED_FOR = "X-Forwarded-For";
   public static final String USER_AGENT = "User-Agent";
+  public static final String BASIC_AUTHENTICATION_SCHEME = "Basic ";
 
   public static final String TOKEN = "token";
   public static final String CODE = "code";
