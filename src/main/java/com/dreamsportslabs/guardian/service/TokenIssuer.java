@@ -5,6 +5,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 
@@ -57,7 +58,8 @@ public class TokenIssuer {
                 iat,
                 iat + config.getTokenConfig().getAccessTokenExpiry(),
                 config.getTokenConfig().getIssuer())
-            .addClaim(JWT_CLAIMS_RFT_ID, rftId);
+            .addClaim(JWT_CLAIMS_RFT_ID, rftId)
+            .addClaim(JWT_TENANT_ID_CLAIM, config.getTenantId());
 
     return signToken(jwt, config.getTenantId());
   }

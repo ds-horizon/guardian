@@ -69,6 +69,7 @@ public class Constants {
   public static final String JWT_CLAIM_ISS = "iss";
   public static final String JWT_CLAIM_SUB = "sub";
   public static final String JWT_CLAIM_RFT_ID = "rft_id";
+  public static final String JWT_CLAIM_TENANT_ID = "tid";
 
   // Error Response
   public static final String ERROR = "error";
