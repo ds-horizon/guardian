@@ -3,13 +3,18 @@ package com.dreamsportslabs.guardian.it;
 import static com.dreamsportslabs.guardian.Constants.AUTHORIZATION_CODE;
 import static com.dreamsportslabs.guardian.Constants.AUTH_BASIC_PREFIX;
 import static com.dreamsportslabs.guardian.Constants.AUTH_TEST_CLIENT_NAME;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
+import static com.dreamsportslabs.guardian.Constants.CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_CREDENTIALS;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_SECRET;
 import static com.dreamsportslabs.guardian.Constants.CONTENT_TYPE_FORM_URLENCODED;
+import static com.dreamsportslabs.guardian.Constants.DISPLAY_NAME;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.Constants.GRANT_TYPES;
 import static com.dreamsportslabs.guardian.Constants.HEADER_AUTHORIZATION;
 import static com.dreamsportslabs.guardian.Constants.HEADER_CONTENT_TYPE;
@@ -18,13 +23,19 @@ import static com.dreamsportslabs.guardian.Constants.INVALID_CLIENT_SECRET;
 import static com.dreamsportslabs.guardian.Constants.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.REFRESH_TOKEN_EXPIRY_SECONDS;
+import static com.dreamsportslabs.guardian.Constants.SCOPE;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TEST_DEVICE_NAME;
+import static com.dreamsportslabs.guardian.Constants.TEST_EMAIL_CLAIM;
+import static com.dreamsportslabs.guardian.Constants.TEST_EMAIL_VERIFIED_CLAIM;
 import static com.dreamsportslabs.guardian.Constants.TEST_IP_ADDRESS;
+import static com.dreamsportslabs.guardian.Constants.TEST_PHONE_CLAIM;
+import static com.dreamsportslabs.guardian.Constants.TEST_PHONE_VERIFIED_CLAIM;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID;
+import static com.dreamsportslabs.guardian.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_ERROR_MSG_CLIENT_AUTH_FAILED;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
@@ -57,7 +68,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class RevokeTokenIT {
+class RevokeTokenIT {
 
   private static final String tenant1 = TENANT_1;
   private static String validClientId;
@@ -99,27 +110,24 @@ public class RevokeTokenIT {
 
   private static void createRequiredScopes(String tenantId) {
     Map<String, Object> openidScope = new HashMap<>();
-    openidScope.put("scope", SCOPE_OPENID);
-    openidScope.put("displayName", "OpenID Connect");
-    openidScope.put("description", "OpenID Connect scope");
-    openidScope.put("claims", Arrays.asList("sub"));
-    openidScope.put("isOidc", true);
+    openidScope.put(SCOPE, SCOPE_OPENID);
+    openidScope.put(DISPLAY_NAME, SCOPE_OPENID);
+    openidScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_SUB));
+    openidScope.put(BODY_PARAM_IS_OIDC, true);
     createScope(tenantId, openidScope);
 
     Map<String, Object> emailScope = new HashMap<>();
-    emailScope.put("scope", SCOPE_EMAIL);
-    emailScope.put("displayName", "Email");
-    emailScope.put("description", "Email scope");
-    emailScope.put("claims", Arrays.asList("email", "email_verified"));
-    emailScope.put("isOidc", true);
+    emailScope.put(SCOPE, SCOPE_EMAIL);
+    emailScope.put(DISPLAY_NAME, SCOPE_EMAIL);
+    emailScope.put(BODY_PARAM_CLAIMS, Arrays.asList(TEST_EMAIL_CLAIM, TEST_EMAIL_VERIFIED_CLAIM));
+    emailScope.put(BODY_PARAM_IS_OIDC, true);
     createScope(tenantId, emailScope);
 
     Map<String, Object> phoneScope = new HashMap<>();
-    phoneScope.put("scope", SCOPE_PHONE);
-    phoneScope.put("displayName", "Phone");
-    phoneScope.put("description", "Phone scope");
-    phoneScope.put("claims", Arrays.asList("phone_number", "phone_number_verified"));
-    phoneScope.put("isOidc", true);
+    phoneScope.put(SCOPE, SCOPE_PHONE);
+    phoneScope.put(DISPLAY_NAME, SCOPE_EMAIL);
+    phoneScope.put(BODY_PARAM_CLAIMS, Arrays.asList(TEST_PHONE_CLAIM, TEST_PHONE_VERIFIED_CLAIM));
+    phoneScope.put(BODY_PARAM_IS_OIDC, true);
     createScope(tenantId, phoneScope);
   }
 
@@ -150,7 +158,7 @@ public class RevokeTokenIT {
     headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
-    formParams.put("token", refreshToken);
+    formParams.put(TOKEN, refreshToken);
 
     // Act
     Response response = revokeToken(tenant1, headers, formParams);
@@ -173,7 +181,7 @@ public class RevokeTokenIT {
     headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
-    formParams.put("token", invalidToken);
+    formParams.put(TOKEN, invalidToken);
 
     // Act
     Response response = revokeToken(tenant1, headers, formParams);
@@ -201,7 +209,7 @@ public class RevokeTokenIT {
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
-    formParams.put("token", refreshToken);
+    formParams.put(TOKEN, refreshToken);
 
     // Act
     Response response = revokeToken(tenant1, headers, formParams);
@@ -216,7 +224,7 @@ public class RevokeTokenIT {
 
   @Test
   @DisplayName("Should return error for invalid client credentials")
-  public void testRevokeTokenInvalidCredentials() {
+  void testRevokeTokenInvalidCredentials() {
     // Arrange
     List<String> scopes = Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL);
     String refreshToken =
@@ -234,7 +242,7 @@ public class RevokeTokenIT {
     headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(INVALID_CLIENT_ID, INVALID_CLIENT_SECRET));
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
-    formParams.put("token", refreshToken);
+    formParams.put(TOKEN, refreshToken);
 
     // Act
     Response response = revokeToken(tenant1, headers, formParams);
@@ -249,13 +257,13 @@ public class RevokeTokenIT {
 
   @Test
   @DisplayName("Should return error for empty token parameter")
-  public void testRevokeTokenEmptyToken() {
+  void testRevokeTokenEmptyToken() {
     // Arrange
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
-    formParams.put("token", ""); // Empty token
+    formParams.put(TOKEN, ""); // Empty token
 
     // Act
     Response response = revokeToken(tenant1, headers, formParams);
@@ -266,7 +274,7 @@ public class RevokeTokenIT {
 
   @Test
   @DisplayName("Should return error for malformed authorization header")
-  public void testRevokeTokenMalformedAuthHeader() {
+  void testRevokeTokenMalformedAuthHeader() {
     // Arrange
     List<String> scopes = Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL);
     String refreshToken =
@@ -284,7 +292,7 @@ public class RevokeTokenIT {
     headers.put(HEADER_AUTHORIZATION, "InvalidAuthHeader"); // Malformed header
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
-    formParams.put("token", refreshToken);
+    formParams.put(TOKEN, refreshToken);
 
     // Act
     Response response = revokeToken(tenant1, headers, formParams);
@@ -300,7 +308,7 @@ public class RevokeTokenIT {
   @Test
   @DisplayName(
       "Should not revoke token if token belongs to different client, but should respond successfully")
-  public void testRevokeTokenDifferentClientToken() {
+  void testRevokeTokenDifferentClientToken() {
     // Arrange - Create another client
     Map<String, Object> requestBody = ClientUtils.createValidClientRequest();
     requestBody.put(
@@ -328,7 +336,7 @@ public class RevokeTokenIT {
         getBasicAuthHeader(validClientId, validClientSecret)); // Using client1 credentials
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
-    formParams.put("token", refreshToken);
+    formParams.put(TOKEN, refreshToken);
 
     // Act
     Response response = revokeToken(tenant1, headers, formParams);
@@ -341,5 +349,103 @@ public class RevokeTokenIT {
     assertFalse(isRevoked, "Refresh token should be not be revoked in redis");
     boolean isActive = DbUtils.isOidcRefreshTokenActive(tenant1, client2Id, refreshToken);
     assertTrue(isActive, "Refresh token should still be active since it belongs to another client");
+  }
+
+  @Test
+  @DisplayName("Should return 200 for already revoked token")
+  void testAlreadyRevokedToken() {
+    // Arrange
+    List<String> scopes = Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL);
+    String refreshToken =
+        insertOidcRefreshToken(
+            tenant1,
+            validClientId,
+            TEST_USER_ID,
+            REFRESH_TOKEN_EXPIRY_SECONDS,
+            scopes,
+            false, // Already marked as revoked
+            TEST_DEVICE_NAME,
+            TEST_IP_ADDRESS);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN, refreshToken);
+
+    // Act
+    Response response = revokeToken(tenant1, headers, formParams);
+
+    // Assert - Even invalid tokens should return 200 as per OAuth 2.0 spec (RFC 7009)
+    response.then().statusCode(SC_OK);
+
+    // Check in database if the token is remains revoked
+    boolean isActive = DbUtils.isOidcRefreshTokenActive(tenant1, validClientId, refreshToken);
+    assertFalse(
+        isActive, "Refresh token should still be active since it belongs to another client");
+    boolean isRevoked = DbUtils.isRefreshTokenRevoked(refreshToken, tenant1);
+    assertTrue(isRevoked, "Refresh token should be not be revoked in redis");
+  }
+
+  @Test
+  @DisplayName("Should return error for null token parameter")
+  void testRevokeTokenNullToken() {
+    // Arrange
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN, null); // null token
+
+    // Act
+    Response response = revokeToken(tenant1, headers, formParams);
+
+    // Assert
+    response.then().statusCode(SC_BAD_REQUEST).body(ERROR, equalTo(INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should return error for empty body")
+  void testRevokeTokenEmptyBody() {
+    // Arrange
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(validClientId, validClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>(); // token not supplied
+    formParams.put("invalidParam", "invalidValue"); // Just to ensure body is not empty
+
+    // Act
+    Response response = revokeToken(tenant1, headers, formParams);
+
+    // Assert
+    response.then().statusCode(SC_BAD_REQUEST).body(ERROR, equalTo(INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should return error as unauthorized for malformed Basic auth header")
+  void testRevokeTokenMalformedBasicAuthHeader() {
+    List<String> scopes = Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL);
+    String refreshToken =
+        insertOidcRefreshToken(
+            tenant1,
+            validClientId,
+            TEST_USER_ID,
+            REFRESH_TOKEN_EXPIRY_SECONDS,
+            scopes,
+            true,
+            TEST_DEVICE_NAME,
+            TEST_IP_ADDRESS);
+    // Arrange
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, AUTH_BASIC_PREFIX + "invalidAuthHeader");
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN, refreshToken);
+
+    // Act
+    Response response = revokeToken(tenant1, headers, formParams);
+
+    // Assert
+    response.then().statusCode(SC_UNAUTHORIZED).body(ERROR, equalTo(ERROR_INVALID_CLIENT));
   }
 }

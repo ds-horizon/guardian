@@ -5,17 +5,15 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUE
 
 import jakarta.ws.rs.FormParam;
 import lombok.Data;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 @Data
-@Getter
 public class RevokeTokenRequestDto {
   @FormParam("token")
   String token;
 
   public void validate() {
-    if (StringUtils.isEmpty(token)) {
+    if (StringUtils.isBlank(token)) {
       throw INVALID_REQUEST.getJsonException();
     }
   }

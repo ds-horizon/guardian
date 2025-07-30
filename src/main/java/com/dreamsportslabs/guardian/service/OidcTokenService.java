@@ -95,10 +95,11 @@ public class OidcTokenService {
             clientModel ->
                 oidcRefreshTokenDao.revokeOidcRefreshToken(
                     tenantId, clientModel.getClientId(), requestDto.getToken()))
-        .filter(result -> result)
         .flatMapCompletable(
             result -> {
-              authorizationService.revokeTokens(List.of(requestDto.getToken()), tenantId);
+              if (result) {
+                authorizationService.revokeTokens(List.of(requestDto.getToken()), tenantId);
+              }
               return Completable.complete();
             });
   }
@@ -201,7 +202,7 @@ public class OidcTokenService {
 
   private Single<ClientModel> authenticateClientUsingHeader(
       String authorizationHeader, String tenantId) {
-    return Single.just(Utils.getCredentialsFromAuthHeader(authorizationHeader))
+    return Single.fromCallable(() -> Utils.getCredentialsFromAuthHeader(authorizationHeader))
         .flatMap(
             credentials ->
                 clientService.authenticateClient(credentials[0], credentials[1], tenantId))

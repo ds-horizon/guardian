@@ -63,10 +63,7 @@ public class OidcRefreshTokenDao {
 
   public Single<Boolean> revokeOidcRefreshToken(
       String tenantId, String clientId, String refreshToken) {
-    Tuple params = Tuple.tuple();
-    params.addString(tenantId);
-    params.addString(clientId);
-    params.addString(refreshToken);
+    Tuple params = Tuple.of(tenantId, clientId, refreshToken);
     return mysqlClient
         .getWriterPool()
         .preparedQuery(REVOKE_OIDC_REFRESH_TOKEN)
@@ -74,7 +71,9 @@ public class OidcRefreshTokenDao {
         .onErrorResumeNext(
             err -> {
               log.error("Failed to revoke OIDC refresh token", err);
-              return Single.error(INTERNAL_SERVER_ERROR.getException());
+              return Single.error(
+                  INTERNAL_SERVER_ERROR.getJsonCustomException(
+                      "Failed to revoke OIDC refresh token"));
             })
         .filter(result -> result.rowCount() > 0)
         .map(__ -> true)

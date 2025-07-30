@@ -30,8 +30,8 @@ public class RevokeToken {
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> revokeToken(
-      @HeaderParam(value = TENANT_ID) String tenantId,
-      @HeaderParam(value = AUTHORIZATION) String authorizationHeader,
+      @HeaderParam(TENANT_ID) String tenantId,
+      @HeaderParam(AUTHORIZATION) String authorizationHeader,
       @BeanParam RevokeTokenRequestDto revokeTokenRequestDto) {
 
     if (revokeTokenRequestDto == null) {
