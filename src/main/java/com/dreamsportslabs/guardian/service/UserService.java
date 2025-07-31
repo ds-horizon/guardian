@@ -145,7 +145,7 @@ public class UserService {
                     resBody.toString());
                 throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonException();
               }
-              return resBody;
+              return Utils.convertKeysToSnakeCase(resBody);
             });
   }
 }
