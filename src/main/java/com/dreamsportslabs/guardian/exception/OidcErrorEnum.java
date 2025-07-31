@@ -4,6 +4,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_ERROR;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_ERROR_DESCRIPTION;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_STATE;
 import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
+import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_HEADER;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.ws.rs.WebApplicationException;
@@ -49,6 +50,7 @@ public enum OidcErrorEnum {
       "The authorization grant type is not supported by the authorization server",
       400),
   INVALID_GRANT("invalid_grant", "The authorization grant is invalid", 400),
+  INVALID_TOKEN("invalid_token", "Invalid token", 401),
   USER_SERVICE_ERROR("user_service_error", "user service error", 500),
   INTERNAL_SERVER_ERROR("internal_server_error", "Something went wrong", 500);
 
@@ -135,6 +137,28 @@ public enum OidcErrorEnum {
             .header("Content-Type", "application/json")
             .entity(new OidcErrorEntity(this.error, this.errorDescription))
             .build();
+    return new WebApplicationException(response);
+  }
+
+  public WebApplicationException getBearerAuthHeaderException() {
+    return getBearerAuthHeaderException(null);
+  }
+
+  public WebApplicationException getBearerAuthHeaderException(String message) {
+    String errorDescription = (message != null) ? message : this.errorDescription;
+
+    StringBuilder headerValue = new StringBuilder("Bearer ");
+    headerValue.append("error=\"").append(this.error).append("\", ");
+    headerValue
+        .append("error_description=\"")
+        .append(errorDescription.replace("\"", "\\\""))
+        .append("\"");
+
+    Response response =
+        Response.status(this.httpStatus)
+            .header(WWW_AUTHENTICATE_HEADER, headerValue.toString())
+            .build();
+
     return new WebApplicationException(response);
   }
 

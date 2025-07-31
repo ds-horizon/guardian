@@ -82,6 +82,8 @@ public final class Constants {
   public static final String PRAGMA_HEADER = "Pragma";
   public static final String WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
 
+  public static final String APPLICATION_JWT = "application/jwt";
+
   // Response Header Values
   public static final String CACHE_CONTROL_NO_STORE = "no-store";
   public static final String PRAGMA_NO_CACHE = "no-cache";
