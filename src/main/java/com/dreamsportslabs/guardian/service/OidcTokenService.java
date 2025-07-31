@@ -126,6 +126,7 @@ public class OidcTokenService {
             oidcCodeModel ->
                 userService
                     .getOidcUser(getUserFilters(oidcCodeModel), headers, tenantId)
+                    .map(Utils::convertKeysToSnakeCase)
                     .map(
                         userResponse ->
                             getGenerateOidcTokenDto(

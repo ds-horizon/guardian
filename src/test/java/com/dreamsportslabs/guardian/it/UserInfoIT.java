@@ -49,11 +49,11 @@ public class UserInfoIT {
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
-            .put(CLAIM_SUB, VALID_USER_ID)
+            .put(BODY_PARAM_USERID, VALID_USER_ID)
             .put(CLAIM_EMAIL, VALID_EMAIL)
             .put(CLAIM_ADDRESS, "sampleAddress")
-            .put(CLAIM_EMAIL_VERIFIED, true)
-            .put(CLAIM_PHONE_NUMBER, VALID_PHONE)
+            .put("email-verified", true)
+            .put("phoneNumber", VALID_PHONE)
             .put(CLAIM_PHONE_NUMBER_VERIFIED, true);
 
     return wireMockServer.stubFor(

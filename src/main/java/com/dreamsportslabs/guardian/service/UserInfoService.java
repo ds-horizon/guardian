@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
@@ -7,6 +8,7 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN
 import com.dreamsportslabs.guardian.dao.ScopeDao;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.registry.Registry;
+import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
@@ -57,7 +59,8 @@ public class UserInfoService {
             claims ->
                 userService
                     .getUser(Map.of(USERID, userId), headers, tenantId)
-                    .map(userData -> filterUserData(claims, userData, tenantId)));
+                    .map(Utils::convertKeysToSnakeCase)
+                    .map(userData -> filterUserData(claims, userData).put(CLAIM_SUB, userId)));
   }
 
   private List<String> extractClaimNamesFromScopeModels(List<ScopeModel> scopeModels) {
@@ -68,8 +71,7 @@ public class UserInfoService {
         .collect(Collectors.toList());
   }
 
-  public JsonObject filterUserData(
-      List<String> scopedClaims, JsonObject userData, String tenantId) {
+  public JsonObject filterUserData(List<String> scopedClaims, JsonObject userData) {
 
     return scopedClaims.stream()
         .filter(userData::containsKey)

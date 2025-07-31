@@ -9,6 +9,7 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN
 
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.nio.charset.StandardCharsets;
@@ -124,5 +125,19 @@ public final class Utils {
     } catch (Exception e) {
       throw INVALID_TOKEN.getBearerAuthHeaderException();
     }
+  }
+
+  public static JsonObject convertKeysToSnakeCase(JsonObject input) {
+    JsonObject result = new JsonObject();
+    for (Map.Entry<String, Object> entry : input) {
+      String snakeKey = toSnakeCase(entry.getKey());
+      result.put(snakeKey, entry.getValue());
+    }
+    return result;
+  }
+
+  private static String toSnakeCase(String input) {
+
+    return input.replaceAll("([a-z])([A-Z]+)", "$1_$2").replaceAll("[-\\s]", "_").toLowerCase();
   }
 }
