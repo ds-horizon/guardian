@@ -8,7 +8,6 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN
 import com.dreamsportslabs.guardian.dao.ScopeDao;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.registry.Registry;
-import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
@@ -58,8 +57,7 @@ public class UserInfoService {
         .flatMap(
             claims ->
                 userService
-                    .getUser(Map.of(USERID, userId), headers, tenantId)
-                    .map(Utils::convertKeysToSnakeCase)
+                    .getOidcUser(Map.of(USERID, userId), headers, tenantId)
                     .map(userData -> filterUserData(claims, userData).put(CLAIM_SUB, userId)));
   }
 
