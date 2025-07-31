@@ -30,7 +30,6 @@ public class UserInfoIT {
   private static final String VALID_USER_ID = "1";
   private static final String VALID_EMAIL = "john.doe@test.com";
   private static final String VALID_PHONE = randomNumeric(10);
-  private static final String ISS = "iss";
   private static final String VALID_ACCESS_TOKEN =
       "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2lkIiwidHlwIjoiYXQrand0In0.eyJzdWIiOiIxIiwiZXhwIjozMzMxMDE4MjQ1NiwiaWF0IjoxNzUzMjU4OTg5LCJpc3MiOiJodHRwczovL3Rlc3QuY29tIiwiYXVkIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJjbGllbnRfaWQiOiJhYmMxMjMtY2xpZW50IiwianRpIjoiNmZhNWVhYjAtMmEwMS00YTYxLWJmMGItYjVkOGFhZGM3YzQ0Iiwic2NvcGUiOiJlbWFpbCBwaG9uZSBvcGVuaWQifQ.WkIe8Sbhhe56AlJ-MyoLGDGNSX5LabekrbCTUbB0W2YjSfx0tsOlrHPqrqcGmifPc8AKjuDKwTUwoy4CVPROhEtVspu1zeuiWnkABHJTxMNzw8IqtQESuyAkO61XyUMowFncxB81_wYxBc9He32r2H31tUOA-LCo64IxIjRIFYVuEUhYe5ME3OSmC6jgLC7WZbsWCF6uZKvzDIhFG1ekT69r6NuzNDCnR5mY-2b8pJWUnoRzqZ64S-9st5A0_4xE7-A-zV6l1G_P4YsmjeAYxM3brAMC9TpbgExblo2Dn-FJ0bZLj8STxvWt7Pul6o1_Jc6ovsGkkp_E6lNzl6oA_A";
   private static final String ACCESS_TOKEN_WITHOUT_KID_HEADER =

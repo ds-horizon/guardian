@@ -7,7 +7,9 @@ import com.dreamsportslabs.guardian.config.tenant.RsaKey;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
+import io.fusionauth.jwt.InvalidJWTSignatureException;
 import io.fusionauth.jwt.JWTDecoder;
+import io.fusionauth.jwt.JWTExpiredException;
 import io.fusionauth.jwt.domain.JWT;
 import io.fusionauth.jwt.rsa.RSAVerifier;
 import java.util.Map;
@@ -46,15 +48,12 @@ public class TokenVerifier {
     try {
       JWT jwt = decoder.decode(accessToken, RSAVerifier.newVerifier(rsaKey.getPublicKey()));
       return jwt.getAllClaims();
+    } catch (InvalidJWTSignatureException e) {
+      throw INVALID_TOKEN.getBearerAuthHeaderException("Token Signature is invalid");
+    } catch (JWTExpiredException e) {
+      throw INVALID_TOKEN.getBearerAuthHeaderException("Token has expired");
     } catch (Exception e) {
-      switch (e.getClass().getName()) {
-        case "io.fusionauth.jwt.InvalidJWTSignatureException":
-          throw INVALID_TOKEN.getBearerAuthHeaderException("Token Signature is invalid");
-        case "io.fusionauth.jwt.JWTExpiredException":
-          throw INVALID_TOKEN.getBearerAuthHeaderException("Token has expired");
-        default:
-          throw INVALID_TOKEN.getBearerAuthHeaderException();
-      }
+      throw INVALID_TOKEN.getBearerAuthHeaderException();
     }
   }
 }

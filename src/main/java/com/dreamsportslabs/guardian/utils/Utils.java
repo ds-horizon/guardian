@@ -116,7 +116,7 @@ public final class Utils {
     try {
       String[] parts = token.split("\\.");
       if (parts.length < 2) {
-        throw new IllegalArgumentException("Invalid JWT format");
+        throw INVALID_TOKEN.getBearerAuthHeaderException("Invalid JWT format");
       }
       String headerJson =
           new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
