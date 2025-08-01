@@ -72,7 +72,7 @@ public class UserFlowBlockDao {
         .map(rowSet -> JsonUtils.rowSetToList(rowSet, String.class));
   }
 
-  public Single<List<String>> checkFlowBlockedWithReasonBatch(
+  public Single<List<UserFlowBlockModel>> checkFlowBlockedWithReasonBatch(
       String tenantId, List<String> userIdentifiers, BlockFlow flowName) {
 
     String placeholders = String.join(",", userIdentifiers.stream().map(c -> "?").toList());
@@ -87,6 +87,6 @@ public class UserFlowBlockDao {
         .getReaderPool()
         .preparedQuery(query)
         .rxExecute(params)
-        .map(rowSet -> JsonUtils.rowSetToList(rowSet, String.class));
+        .map(rowSet -> JsonUtils.rowSetToList(rowSet, UserFlowBlockModel.class));
   }
 }

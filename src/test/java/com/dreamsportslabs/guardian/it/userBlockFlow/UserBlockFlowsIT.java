@@ -398,7 +398,8 @@ public class UserBlockFlowsIT {
         .statusCode(HttpStatus.SC_FORBIDDEN)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_FLOW_BLOCKED))
-        .body(MESSAGE, equalTo(reason));
+        .body(MESSAGE, equalTo(reason))
+        .body("metadata.retryAfter.toString()", equalTo(String.valueOf(UNBLOCKED_AT)));
 
     wireMockServer.removeStub(userStub);
     wireMockServer.removeStub(emailStub);
@@ -429,7 +430,8 @@ public class UserBlockFlowsIT {
         .statusCode(HttpStatus.SC_FORBIDDEN)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_FLOW_BLOCKED))
-        .body(MESSAGE, equalTo(reason));
+        .body(MESSAGE, equalTo(reason))
+        .body("metadata.retryAfter.toString()", equalTo(String.valueOf(UNBLOCKED_AT)));
   }
 
   @Test
@@ -460,7 +462,8 @@ public class UserBlockFlowsIT {
           .statusCode(HttpStatus.SC_FORBIDDEN)
           .rootPath(ERROR)
           .body(CODE, equalTo(ERROR_FLOW_BLOCKED))
-          .body(MESSAGE, equalTo(reason));
+          .body(MESSAGE, equalTo(reason))
+          .body("metadata.retryAfter.toString()", equalTo(String.valueOf(UNBLOCKED_AT)));
     }
   }
 
@@ -487,7 +490,8 @@ public class UserBlockFlowsIT {
         .statusCode(HttpStatus.SC_FORBIDDEN)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_FLOW_BLOCKED))
-        .body(MESSAGE, equalTo(reason));
+        .body(MESSAGE, equalTo(reason))
+        .body("metadata.retryAfter.toString()", equalTo(String.valueOf(UNBLOCKED_AT)));
   }
 
   @Test
@@ -513,7 +517,8 @@ public class UserBlockFlowsIT {
         .statusCode(HttpStatus.SC_FORBIDDEN)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_FLOW_BLOCKED))
-        .body(MESSAGE, equalTo(reason));
+        .body(MESSAGE, equalTo(reason))
+        .body("metadata.retryAfter.toString()", equalTo(String.valueOf(UNBLOCKED_AT)));
   }
 
   @Test

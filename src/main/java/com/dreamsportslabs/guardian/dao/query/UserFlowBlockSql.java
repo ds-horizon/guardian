@@ -19,5 +19,5 @@ public class UserFlowBlockSql {
       "SELECT flow_name FROM user_flow_block WHERE tenant_id = ? AND user_identifier = ? AND is_active = 1 AND (unblocked_at > UNIX_TIMESTAMP())";
 
   public static final String GET_FLOW_BLOCK_REASON_BATCH =
-      "SELECT reason FROM user_flow_block WHERE tenant_id = ? AND flow_name = ? AND user_identifier IN (%s) AND is_active = 1 AND (unblocked_at > UNIX_TIMESTAMP())";
+      "SELECT reason, unblocked_at FROM user_flow_block WHERE tenant_id = ? AND flow_name = ? AND user_identifier IN (%s) AND is_active = 1 AND (unblocked_at > UNIX_TIMESTAMP())";
 }
