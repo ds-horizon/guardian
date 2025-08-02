@@ -10,6 +10,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_NONCE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_BASIC;
@@ -285,7 +286,8 @@ public class OidcTokenService {
             oidcConfig.getIssuer(),
             getRftId(refreshToken),
             generateOidcTokenDto.getScope(),
-            generateOidcTokenDto.getUserId());
+            generateOidcTokenDto.getUserId(),
+            tenantConfig.getTenantId());
 
     Map<String, Object> idTokenClaims =
         getIdTokenClaims(
@@ -354,7 +356,8 @@ public class OidcTokenService {
             oidcConfig.getIssuer(),
             null,
             generateOidcTokenDto.getScope(),
-            generateOidcTokenDto.getUserId());
+            generateOidcTokenDto.getUserId(),
+            tenantConfig.getTenantId());
 
     return tokenIssuer
         .generateAccessToken(accessTokenClaims, generateOidcTokenDto.getTenantId())
@@ -385,7 +388,8 @@ public class OidcTokenService {
             oidcConfig.getIssuer(),
             getRftId(refreshToken),
             generateOidcTokenDto.getScope(),
-            generateOidcTokenDto.getUserId());
+            generateOidcTokenDto.getUserId(),
+            tenantConfig.getTenantId());
 
     return tokenIssuer
         .generateAccessToken(accessTokenClaims, generateOidcTokenDto.getTenantId())
@@ -496,12 +500,14 @@ public class OidcTokenService {
       String iss,
       String rftId,
       List<String> scope,
-      String sub) {
+      String sub,
+      String tenantId) {
     Map<String, Object> accessTokenClaims = getCommonJwtClaims(aud, exp, iat, iss, sub);
     accessTokenClaims.put(JWT_CLAIMS_CLIENT_ID, clientId);
     accessTokenClaims.put(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
     accessTokenClaims.put(JWT_CLAIMS_RFT_ID, rftId);
     accessTokenClaims.put(JWT_CLAIMS_SCOPE, String.join(" ", scope));
+    accessTokenClaims.put(JWT_TENANT_ID_CLAIM, tenantId);
     return accessTokenClaims;
   }
 

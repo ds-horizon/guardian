@@ -8,6 +8,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
@@ -84,15 +85,12 @@ public class AuthorizationService {
       JsonObject user, MetaInfo metaInfo, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     String refreshToken = tokenIssuer.generateRefreshToken();
-    Long iat = getCurrentTimeInSeconds();
-    Map<String, Object> commonTokenClaims = new HashMap<>();
-    commonTokenClaims.put(JWT_CLAIMS_SUB, user.getString(USERID));
-    commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
-    commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
-    Map<String, Object> accessTokenClaims = new HashMap<>(commonTokenClaims),
-        idTokenClaims = new HashMap<>(commonTokenClaims);
-    accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
-    accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+    long iat = getCurrentTimeInSeconds();
+    Map<String, Object> commonTokenClaims =
+        getCommonTokenClaims(user.getString(USERID), iat, config);
+    Map<String, Object> accessTokenClaims =
+        getAccessTokenClaims(user.getString(USERID), iat, config, refreshToken);
+    Map<String, Object> idTokenClaims = new HashMap<>(commonTokenClaims);
     idTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getIdTokenExpiry());
     return Single.zip(
             tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()),
@@ -265,12 +263,19 @@ public class AuthorizationService {
 
   private Map<String, Object> getAccessTokenClaims(
       String userId, long iat, TenantConfig config, String refreshToken) {
-    Map<String, Object> accessTokenClaims = new HashMap<>();
-    accessTokenClaims.put(JWT_CLAIMS_SUB, userId);
-    accessTokenClaims.put(JWT_CLAIMS_IAT, iat);
-    accessTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+    Map<String, Object> commonTokenClaims = getCommonTokenClaims(userId, iat, config);
+    Map<String, Object> accessTokenClaims = new HashMap<>(commonTokenClaims);
     accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
     accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+    accessTokenClaims.put(JWT_TENANT_ID_CLAIM, config.getTenantId());
     return accessTokenClaims;
+  }
+
+  private Map<String, Object> getCommonTokenClaims(String userId, long iat, TenantConfig config) {
+    Map<String, Object> commonTokenClaims = new HashMap<>();
+    commonTokenClaims.put(JWT_CLAIMS_SUB, userId);
+    commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
+    commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+    return commonTokenClaims;
   }
 }
