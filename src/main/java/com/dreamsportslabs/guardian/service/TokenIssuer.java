@@ -2,7 +2,6 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_HEADERS_KID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_HEADERS_TYP;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.TYP_JWT_ACCESS_TOKEN;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 
