@@ -12,6 +12,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,7 @@ public class UserFlowBlockService {
     return userFlowBlockDao.getActiveFlowBlocksByUser(tenantId, userIdentifier);
   }
 
-  public Single<Optional<String>> checkFlowBlockedWithReasonBatch(
+  public Single<Optional<UserFlowBlockModel>> checkFlowBlockedWithReasonBatch(
       String tenantId, List<String> userIdentifiers, BlockFlow flowName) {
 
     if (userIdentifiers.isEmpty()) {
@@ -63,8 +64,7 @@ public class UserFlowBlockService {
 
     return userFlowBlockDao
         .checkFlowBlockedWithReasonBatch(tenantId, userIdentifiers, flowName)
-        .map(
-            reasonList -> reasonList.isEmpty() ? Optional.empty() : Optional.of(reasonList.get(0)));
+        .map(list -> list.isEmpty() ? Optional.empty() : Optional.of(list.get(0)));
   }
 
   public Completable isUserBlocked(PasswordlessModel model, String tenantId) {
@@ -84,16 +84,19 @@ public class UserFlowBlockService {
   public Completable isFlowBlocked(String tenantId, List<String> userIdentifiers, BlockFlow flow) {
     return checkFlowBlockedWithReasonBatch(tenantId, userIdentifiers, flow)
         .flatMapCompletable(
-            optionalReason -> {
-              if (optionalReason.isPresent()) {
-                String reason = optionalReason.get();
+            optionalModel -> {
+              if (optionalModel.isPresent()) {
+                UserFlowBlockModel model = optionalModel.get();
                 log.info(
-                    "{} flow is blocked for userIdentifiers: {} in tenant: {} with reason: {}",
+                    "{} flow is blocked for userIdentifiers: {} in tenant: {} with reason: {}, unblockedAt: {}",
                     flow,
                     userIdentifiers,
                     tenantId,
-                    reason);
-                return Completable.error(FLOW_BLOCKED.getCustomException(reason));
+                    model.getReason(),
+                    model.getUnblockedAt());
+
+                Map<String, Object> meta = Map.of("retryAfter", model.getUnblockedAt());
+                return Completable.error(FLOW_BLOCKED.getCustomException(model.getReason(), meta));
               }
               return Completable.complete();
             });
