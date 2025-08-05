@@ -360,8 +360,8 @@ public class Constants {
   public static final String ERROR_CLIENT_ID_REQUIRED = "client_id is required";
   public static final String ERROR_SCOPE_REQUIRED = "scope is required";
   public static final String ERROR_REDIRECT_URI_REQUIRED = "redirect_uri is required";
-  public static final String ERROR_LOGIN_CHALLENGE_REQUIRED = "login_challenge is required";
-  public static final String ERROR_REFRESH_TOKEN_REQUIRED = "refresh_token is required";
+  public static final String ERROR_LOGIN_CHALLENGE_REQUIRED = "loginChallenge is required";
+  public static final String ERROR_REFRESH_TOKEN_REQUIRED = "refreshToken is required";
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_CODE_CHALLENGE_TOGETHER =
       "code_challenge and code_challenge_method must be provided together";
