@@ -12,10 +12,10 @@ public class LoginAcceptRequestDto {
 
   public void validate() {
     if (StringUtils.isBlank(loginChallenge)) {
-      throw INVALID_REQUEST.getJsonCustomException("login_challenge is required");
+      throw INVALID_REQUEST.getJsonCustomException("loginChallenge is required");
     }
     if (StringUtils.isBlank(refreshToken)) {
-      throw INVALID_REQUEST.getJsonCustomException("refresh_token is required");
+      throw INVALID_REQUEST.getJsonCustomException("refreshToken is required");
     }
   }
 
