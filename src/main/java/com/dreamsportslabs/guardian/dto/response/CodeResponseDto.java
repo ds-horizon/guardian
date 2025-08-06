@@ -8,4 +8,5 @@ import lombok.Getter;
 public class CodeResponseDto {
   private String code;
   private Integer expiresIn;
+  private Boolean isNewUser;
 }

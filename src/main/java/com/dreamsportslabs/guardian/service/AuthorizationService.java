@@ -146,7 +146,9 @@ public class AuthorizationService {
             .build();
     return codeDao
         .saveCode(codeModel, tenantId)
-        .andThen(Single.just(new CodeResponseDto(code, config.getTtl())));
+        .andThen(
+            Single.just(
+                new CodeResponseDto(code, config.getTtl(), user.getBoolean(IS_NEW_USER, false))));
   }
 
   public Single<TokenResponseDto> codeTokenExchange(
