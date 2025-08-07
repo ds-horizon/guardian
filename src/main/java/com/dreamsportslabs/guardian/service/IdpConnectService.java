@@ -3,6 +3,8 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.AUTHORIZATION;
 import static com.dreamsportslabs.guardian.constant.Constants.ERROR;
 import static com.dreamsportslabs.guardian.constant.Constants.ERROR_DESCRIPTION;
+import static com.dreamsportslabs.guardian.constant.Constants.GRANTED_TYPE_CODE;
+import static com.dreamsportslabs.guardian.constant.Constants.GRANTED_TYPE_ID_TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_AUTHORIZATION_CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_EMAIL;
@@ -44,6 +46,7 @@ import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.dto.request.IdpConnectRequestDto;
 import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
+import com.dreamsportslabs.guardian.jwtVerifier.TokenVerifier;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
@@ -87,7 +90,7 @@ public class IdpConnectService {
 
     String userIdentifier = oidcProviderConfig.getUserIdentifier();
 
-    return exchangeCodeForTokens(requestDto, oidcProviderConfig)
+    return verifyIdentifierAndGetProviderTokens(requestDto, oidcProviderConfig)
         .map(
             idpTokens -> {
               Provider provider = createProviderFromTokens(idpTokens, providerName);
@@ -142,8 +145,13 @@ public class IdpConnectService {
     String providerUserId = userIdClaim != null ? userIdClaim.toString() : null;
 
     Map<String, Object> credentials = new HashMap<>();
-    credentials.put(OIDC_TOKENS_ACCESS_TOKEN, idpTokens.getAccessToken());
-    credentials.put(OIDC_REFRESH_TOKEN, idpTokens.getRefreshToken());
+    if (StringUtils.isNotBlank(idpTokens.getAccessToken())) {
+      credentials.put(OIDC_TOKENS_ACCESS_TOKEN, idpTokens.getAccessToken());
+    }
+    if (StringUtils.isNotBlank(idpTokens.getRefreshToken())) {
+      credentials.put(OIDC_REFRESH_TOKEN, idpTokens.getRefreshToken());
+    }
+    credentials.put(OIDC_TOKENS_ID_TOKEN, idpTokens.getIdToken());
 
     return Provider.builder()
         .name(providerName)
@@ -264,6 +272,52 @@ public class IdpConnectService {
                       .andThen(Single.just(user));
               }
             });
+  }
+
+  private Single<IdpCredentials> verifyIdentifierAndGetProviderTokens(
+      IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
+
+    if (GRANTED_TYPE_ID_TOKEN.equalsIgnoreCase(idpConnectRequestDto.getGrantType())) {
+      return verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
+    } else if (GRANTED_TYPE_CODE.equalsIgnoreCase(idpConnectRequestDto.getGrantType())) {
+      return exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
+    } else {
+      return Single.error(ErrorEnum.INVALID_GRANT_TYPE.getException());
+    }
+  }
+
+  private Single<IdpCredentials> verifyIdToken(
+      IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
+
+    try {
+      TokenVerifier tokenVerifier =
+          new TokenVerifier(oidcProviderConfig.getJwksUrl(), oidcProviderConfig.getIssuer());
+      Map<String, Object> claims =
+          tokenVerifier.verify(
+              idpConnectRequestDto.getIdentifier(), oidcProviderConfig.getClientId());
+
+      verifyNonceClaim(idpConnectRequestDto, claims);
+      return Single.just(
+          IdpCredentials.builder().idToken(idpConnectRequestDto.getIdentifier()).build());
+
+    } catch (Exception e) {
+      throw INVALID_IDP_TOKEN.getException();
+    }
+  }
+
+  private void verifyNonceClaim(
+      IdpConnectRequestDto idpConnectRequestDto, Map<String, Object> claims) {
+
+    String requestNonce = idpConnectRequestDto.getNonce();
+    if (StringUtils.isNotBlank(requestNonce)) {
+      Object nonceClaim = claims.get("nonce");
+      if (nonceClaim == null) {
+        throw INVALID_IDP_TOKEN.getCustomException("Missing nonce claim in ID token when nonce was provided in request");
+      }
+      if (!requestNonce.equals(nonceClaim.toString())) {
+        throw INVALID_IDP_TOKEN.getCustomException("Invalid nonce claim in ID token");
+      }
+    }
   }
 
   public Single<IdpCredentials> exchangeCodeForTokens(

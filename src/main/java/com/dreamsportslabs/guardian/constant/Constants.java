@@ -139,4 +139,7 @@ public final class Constants {
   public static final String APP_ID_TOKEN = "idToken";
   public static final String APP_TOKEN_TYPE = "tokenType";
   public static final String APP_TOKEN_CODE_EXPIRY = "expiresIn";
+
+  public static final String GRANTED_TYPE_CODE = "code";
+  public static final String GRANTED_TYPE_ID_TOKEN = "id_token";
 }
