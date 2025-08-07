@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 public class IdpConnectRequestDto {
   private String idProvider;
   private String identifier;
-  private String grantType;
+  private String identifierType;
   private String responseType;
   private String nonce;
   private String codeVerifier;
@@ -58,7 +58,7 @@ public class IdpConnectRequestDto {
       throw INVALID_REQUEST.getCustomException("response type is required");
     }
 
-    if (StringUtils.isBlank(grantType)) {
+    if (StringUtils.isBlank(identifierType)) {
       throw INVALID_REQUEST.getCustomException("grant type is required");
     }
 

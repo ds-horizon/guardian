@@ -3,8 +3,8 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.AUTHORIZATION;
 import static com.dreamsportslabs.guardian.constant.Constants.ERROR;
 import static com.dreamsportslabs.guardian.constant.Constants.ERROR_DESCRIPTION;
-import static com.dreamsportslabs.guardian.constant.Constants.GRANTED_TYPE_CODE;
-import static com.dreamsportslabs.guardian.constant.Constants.GRANTED_TYPE_ID_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.IDENTIFIER_TYPE_CODE;
+import static com.dreamsportslabs.guardian.constant.Constants.IDENTIFIER_TYPE_ID_TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_AUTHORIZATION_CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_EMAIL;
@@ -19,6 +19,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLIENT_SECRET
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CODE_VERIFIER;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_GRANT_TYPE;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_NONCE;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_REDIRECT_URI;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_TOKENS_ACCESS_TOKEN;
@@ -277,9 +278,9 @@ public class IdpConnectService {
   private Single<IdpCredentials> verifyIdentifierAndGetProviderTokens(
       IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
 
-    if (GRANTED_TYPE_ID_TOKEN.equalsIgnoreCase(idpConnectRequestDto.getGrantType())) {
+    if (IDENTIFIER_TYPE_ID_TOKEN.equalsIgnoreCase(idpConnectRequestDto.getIdentifierType())) {
       return verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
-    } else if (GRANTED_TYPE_CODE.equalsIgnoreCase(idpConnectRequestDto.getGrantType())) {
+    } else if (IDENTIFIER_TYPE_CODE.equalsIgnoreCase(idpConnectRequestDto.getIdentifierType())) {
       return exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
     } else {
       return Single.error(ErrorEnum.INVALID_GRANT_TYPE.getException());
@@ -310,12 +311,9 @@ public class IdpConnectService {
 
     String requestNonce = idpConnectRequestDto.getNonce();
     if (StringUtils.isNotBlank(requestNonce)) {
-      Object nonceClaim = claims.get("nonce");
-      if (nonceClaim == null) {
-        throw INVALID_IDP_TOKEN.getCustomException("Missing nonce claim in ID token when nonce was provided in request");
-      }
-      if (!requestNonce.equals(nonceClaim.toString())) {
-        throw INVALID_IDP_TOKEN.getCustomException("Invalid nonce claim in ID token");
+      Object nonceClaim = claims.get(OIDC_NONCE);
+      if (nonceClaim == null || !requestNonce.equals(nonceClaim.toString())) {
+        throw INVALID_IDP_TOKEN.getException();
       }
     }
   }

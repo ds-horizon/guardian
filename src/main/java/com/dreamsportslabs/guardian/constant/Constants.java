@@ -132,6 +132,7 @@ public final class Constants {
   public static final String OIDC_CLIENT_AUTH_METHOD_POST = "client_secret_post";
   public static final String OIDC_CLIENT_AUTH_METHOD_BASIC = "client_secret_basic";
   public static final String FLOW_SIGNINUP = "SIGNINUP";
+  public static final String OIDC_NONCE = "nonce";
 
   public static final String APP_CODE = "code";
   public static final String APP_ACCESS_TOKEN = "accessToken";
@@ -140,6 +141,6 @@ public final class Constants {
   public static final String APP_TOKEN_TYPE = "tokenType";
   public static final String APP_TOKEN_CODE_EXPIRY = "expiresIn";
 
-  public static final String GRANTED_TYPE_CODE = "code";
-  public static final String GRANTED_TYPE_ID_TOKEN = "id_token";
+  public static final String IDENTIFIER_TYPE_CODE = "code";
+  public static final String IDENTIFIER_TYPE_ID_TOKEN = "id_token";
 }
