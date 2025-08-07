@@ -59,7 +59,7 @@ public class IdpConnectRequestDto {
     }
 
     if (StringUtils.isBlank(identifierType)) {
-      throw INVALID_REQUEST.getCustomException("grant type is required");
+      throw INVALID_REQUEST.getCustomException("identifier type is required");
     }
 
     setIdpResponseType();

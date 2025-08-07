@@ -283,7 +283,7 @@ public class IdpConnectService {
     } else if (IDENTIFIER_TYPE_CODE.equalsIgnoreCase(idpConnectRequestDto.getIdentifierType())) {
       return exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
     } else {
-      return Single.error(ErrorEnum.INVALID_GRANT_TYPE.getException());
+      return Single.error(ErrorEnum.INVALID_IDENTIFIER_TYPE.getException());
     }
   }
 
