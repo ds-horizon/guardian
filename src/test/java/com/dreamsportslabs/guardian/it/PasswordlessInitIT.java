@@ -1201,6 +1201,63 @@ public class PasswordlessInitIT {
     wireMockServer.removeStub(userStub);
   }
 
+  @Test
+  @DisplayName("Should use configured TTL value instead of any other value")
+  public void testConfiguredTtlValue() {
+    // Arrange
+    String email = generateRandomEmail();
+    Map<String, Object> requestBody =
+        getRequestBodyInit(
+            BODY_CHANNEL_EMAIL, email, PASSWORDLESS_FLOW_SIGNINUP, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    StubMapping stub = getStubForExistingUser(null, email);
+
+    // Act
+    Response response = passwordlessInit(tenant1, requestBody);
+    response.then().statusCode(SC_OK);
+
+    String state = response.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_STATE);
+
+    // validate
+    long ttl = DbUtils.getStateTtl(state, tenant1);
+    assertThat(ttl, greaterThanOrEqualTo(899L));
+    assertThat(ttl, lessThanOrEqualTo(900L));
+
+    // cleanup
+    wireMockServer.removeStub(stub);
+  }
+
+  @Test
+  @DisplayName("Should not extend TTL when resending OTP to existing state")
+  public void testTtlNotExtendedOnResend() {
+    // Arrange
+    String state = RandomStringUtils.randomAlphabetic(10);
+
+    addStateInRedis(
+        state,
+        60,
+        BODY_CHANNEL_EMAIL,
+        0,
+        0,
+        System.currentTimeMillis() / 1000 - 30,
+        0,
+        PASSWORDLESS_FLOW_SIGNINUP,
+        60);
+
+    long initialTtl = DbUtils.getStateTtl(state, tenant1);
+    assertThat(initialTtl, equalTo(60L));
+
+    // Act
+    Response response = passwordlessInit(tenant1, state);
+    response.then().statusCode(SC_OK);
+
+    long ttlAfterApiCall = DbUtils.getStateTtl(state, tenant1);
+
+    // Validate
+    assertThat(ttlAfterApiCall, greaterThanOrEqualTo(initialTtl - 1));
+    assertThat(ttlAfterApiCall, lessThanOrEqualTo(initialTtl));
+  }
+
   public Map<String, Object> getRequestBodyInit(
       String channel, String identifier, String flow, String responseType) {
     Map<String, Object> metaInfo = new HashMap<>();
