@@ -1,9 +1,11 @@
 package com.dreamsportslabs.guardian.dto.request;
 
 import static com.dreamsportslabs.guardian.constant.Constants.FLOW_SIGNINUP;
+import static com.dreamsportslabs.guardian.constant.Constants.IDENTIFIER_TYPE_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.constant.Flow;
+import com.dreamsportslabs.guardian.constant.IdentifierType;
 import com.dreamsportslabs.guardian.constant.ResponseType;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -28,6 +30,7 @@ public class IdpConnectRequestDto {
   @JsonIgnore private Map<String, Object> additionalInfo;
   @JsonIgnore private ResponseType idpResponseType;
   @JsonIgnore private Flow loginFlow;
+  @JsonIgnore private IdentifierType userIdentifierType;
 
   @JsonAnyGetter
   public Map<String, Object> getAdditionalInfo() {
@@ -43,6 +46,7 @@ public class IdpConnectRequestDto {
     this.loginFlow = Flow.SIGNINUP;
     this.metaInfo = new MetaInfo();
     this.additionalInfo = new HashMap<>();
+    this.userIdentifierType = IdentifierType.CODE;
   }
 
   public void validate() {
@@ -58,12 +62,9 @@ public class IdpConnectRequestDto {
       throw INVALID_REQUEST.getCustomException("response type is required");
     }
 
-    if (StringUtils.isBlank(identifierType)) {
-      throw INVALID_REQUEST.getCustomException("identifier type is required");
-    }
-
     setIdpResponseType();
     setLoginFlow();
+    setUserIdentifierType();
   }
 
   private void setIdpResponseType() {
@@ -80,6 +81,17 @@ public class IdpConnectRequestDto {
       this.loginFlow = Flow.valueOf(flowValue);
     } catch (IllegalArgumentException e) {
       throw INVALID_REQUEST.getCustomException("Unsupported flow: '" + flow + "'");
+    }
+  }
+
+  private void setUserIdentifierType() {
+    try {
+      String userIdentifierTypeValue =
+          StringUtils.isBlank(identifierType) ? IDENTIFIER_TYPE_CODE : identifierType.toUpperCase();
+      this.userIdentifierType = IdentifierType.valueOf(userIdentifierTypeValue);
+    } catch (IllegalArgumentException e) {
+      throw INVALID_REQUEST.getCustomException(
+          "Unsupported identifierType: '" + identifierType + "'");
     }
   }
 }

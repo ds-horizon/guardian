@@ -3,8 +3,6 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.AUTHORIZATION;
 import static com.dreamsportslabs.guardian.constant.Constants.ERROR;
 import static com.dreamsportslabs.guardian.constant.Constants.ERROR_DESCRIPTION;
-import static com.dreamsportslabs.guardian.constant.Constants.IDENTIFIER_TYPE_CODE;
-import static com.dreamsportslabs.guardian.constant.Constants.IDENTIFIER_TYPE_ID_TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_AUTHORIZATION_CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_EMAIL;
@@ -29,6 +27,8 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_IDENTIFIER_TYPE_CODE;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_IDENTIFIER_TYPE_ID_TOKEN;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_TOKEN;
@@ -146,12 +146,8 @@ public class IdpConnectService {
     String providerUserId = userIdClaim != null ? userIdClaim.toString() : null;
 
     Map<String, Object> credentials = new HashMap<>();
-    if (StringUtils.isNotBlank(idpTokens.getAccessToken())) {
-      credentials.put(OIDC_TOKENS_ACCESS_TOKEN, idpTokens.getAccessToken());
-    }
-    if (StringUtils.isNotBlank(idpTokens.getRefreshToken())) {
-      credentials.put(OIDC_REFRESH_TOKEN, idpTokens.getRefreshToken());
-    }
+    credentials.put(OIDC_TOKENS_ACCESS_TOKEN, idpTokens.getAccessToken());
+    credentials.put(OIDC_REFRESH_TOKEN, idpTokens.getRefreshToken());
     credentials.put(OIDC_TOKENS_ID_TOKEN, idpTokens.getIdToken());
 
     return Provider.builder()
@@ -278,13 +274,12 @@ public class IdpConnectService {
   private Single<IdpCredentials> verifyIdentifierAndGetProviderTokens(
       IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
 
-    if (IDENTIFIER_TYPE_ID_TOKEN.equalsIgnoreCase(idpConnectRequestDto.getIdentifierType())) {
-      return verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
-    } else if (IDENTIFIER_TYPE_CODE.equalsIgnoreCase(idpConnectRequestDto.getIdentifierType())) {
-      return exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
-    } else {
-      return Single.error(ErrorEnum.INVALID_IDENTIFIER_TYPE.getException());
-    }
+    return switch (idpConnectRequestDto.getUserIdentifierType().getValue()) {
+      case USER_IDENTIFIER_TYPE_ID_TOKEN -> verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
+      case USER_IDENTIFIER_TYPE_CODE ->
+          exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
+      default -> Single.error(ErrorEnum.INVALID_IDENTIFIER_TYPE.getException());
+    };
   }
 
   private Single<IdpCredentials> verifyIdToken(
