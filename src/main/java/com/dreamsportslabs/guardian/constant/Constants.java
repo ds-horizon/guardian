@@ -142,7 +142,4 @@ public final class Constants {
   public static final String APP_TOKEN_CODE_EXPIRY = "expiresIn";
 
   public static final String IDENTIFIER_TYPE_CODE = "CODE";
-
-  public static final String USER_IDENTIFIER_TYPE_CODE = "code";
-  public static final String USER_IDENTIFIER_TYPE_ID_TOKEN = "id_token";
 }

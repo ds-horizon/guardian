@@ -1,6 +1,8 @@
 package com.dreamsportslabs.guardian.jwtVerifier;
 
-import static com.dreamsportslabs.guardian.jwtVerifier.constants.Constants.*;
+import static com.dreamsportslabs.guardian.jwtVerifier.constants.Constants.DEFAULT_REFRESH_TIMEOUT;
+import static com.dreamsportslabs.guardian.jwtVerifier.constants.Constants.JWT_CLAIMS_AUDIENCE;
+import static com.dreamsportslabs.guardian.jwtVerifier.constants.Constants.JWT_CLAIMS_ISSUER;
 
 import com.dreamsportslabs.guardian.jwtVerifier.exception.InvalidTokenException;
 import io.fusionauth.jwt.JWTDecoder;

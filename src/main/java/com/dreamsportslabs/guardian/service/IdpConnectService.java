@@ -27,8 +27,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.USER_IDENTIFIER_TYPE_CODE;
-import static com.dreamsportslabs.guardian.constant.Constants.USER_IDENTIFIER_TYPE_ID_TOKEN;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_TOKEN;
@@ -274,10 +272,10 @@ public class IdpConnectService {
   private Single<IdpCredentials> verifyIdentifierAndGetProviderTokens(
       IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
 
-    switch (idpConnectRequestDto.getUserIdentifierType().getValue()) {
-      case USER_IDENTIFIER_TYPE_ID_TOKEN:
+    switch (idpConnectRequestDto.getOidcIdentifierType()) {
+      case ID_TOKEN:
         return verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
-      case USER_IDENTIFIER_TYPE_CODE:
+      case CODE:
         return exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
       default:
         return Single.error(ErrorEnum.INVALID_IDENTIFIER_TYPE.getException());

@@ -30,7 +30,7 @@ public class IdpConnectRequestDto {
   @JsonIgnore private Map<String, Object> additionalInfo;
   @JsonIgnore private ResponseType idpResponseType;
   @JsonIgnore private Flow loginFlow;
-  @JsonIgnore private IdentifierType userIdentifierType;
+  @JsonIgnore private IdentifierType oidcIdentifierType;
 
   @JsonAnyGetter
   public Map<String, Object> getAdditionalInfo() {
@@ -46,7 +46,7 @@ public class IdpConnectRequestDto {
     this.loginFlow = Flow.SIGNINUP;
     this.metaInfo = new MetaInfo();
     this.additionalInfo = new HashMap<>();
-    this.userIdentifierType = IdentifierType.CODE;
+    this.oidcIdentifierType = IdentifierType.CODE;
   }
 
   public void validate() {
@@ -64,7 +64,7 @@ public class IdpConnectRequestDto {
 
     setIdpResponseType();
     setLoginFlow();
-    setUserIdentifierType();
+    setOidcIdentifierType();
   }
 
   private void setIdpResponseType() {
@@ -84,11 +84,11 @@ public class IdpConnectRequestDto {
     }
   }
 
-  private void setUserIdentifierType() {
+  private void setOidcIdentifierType() {
     try {
-      String userIdentifierTypeValue =
+      String oidcIdentifierTypeValue =
           StringUtils.isBlank(identifierType) ? IDENTIFIER_TYPE_CODE : identifierType.toUpperCase();
-      this.userIdentifierType = IdentifierType.valueOf(userIdentifierTypeValue);
+      this.oidcIdentifierType = IdentifierType.valueOf(oidcIdentifierTypeValue);
     } catch (IllegalArgumentException e) {
       throw INVALID_REQUEST.getCustomException(
           "Unsupported identifierType: '" + identifierType + "'");
