@@ -274,12 +274,14 @@ public class IdpConnectService {
   private Single<IdpCredentials> verifyIdentifierAndGetProviderTokens(
       IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
 
-    return switch (idpConnectRequestDto.getUserIdentifierType().getValue()) {
-      case USER_IDENTIFIER_TYPE_ID_TOKEN -> verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
-      case USER_IDENTIFIER_TYPE_CODE ->
-          exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
-      default -> Single.error(ErrorEnum.INVALID_IDENTIFIER_TYPE.getException());
-    };
+    switch (idpConnectRequestDto.getUserIdentifierType().getValue()) {
+      case USER_IDENTIFIER_TYPE_ID_TOKEN:
+        return verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
+      case USER_IDENTIFIER_TYPE_CODE:
+        return exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
+      default:
+        return Single.error(ErrorEnum.INVALID_IDENTIFIER_TYPE.getException());
+    }
   }
 
   private Single<IdpCredentials> verifyIdToken(
