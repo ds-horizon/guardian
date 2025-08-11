@@ -473,4 +473,13 @@ public class ApplicationIoUtils {
 
     return execute(null, headers, new HashMap<>(), spec -> spec.post("/userinfo"));
   }
+
+  public static Response getUserConsent(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(null, headers, queryParams, spec -> spec.get("/user-consent"));
+  }
 }
