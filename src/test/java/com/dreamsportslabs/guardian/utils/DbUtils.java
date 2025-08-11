@@ -252,4 +252,15 @@ public class DbUtils {
     List<String> revocations = getRevocationsFromRedis(tenantId);
     return revocations.contains(rftId);
   }
+
+  public static long getStateTtl(String state, String tenantId) {
+    String key = "STATE" + "_" + tenantId + "_" + state;
+
+    try (Jedis jedis = redisConnectionPool.getResource()) {
+      return jedis.ttl(key);
+    } catch (Exception e) {
+      log.error("Error getting TTL for Redis key: {}", key, e);
+      throw new RuntimeException("Error getting TTL for Redis key: " + key, e);
+    }
+  }
 }
