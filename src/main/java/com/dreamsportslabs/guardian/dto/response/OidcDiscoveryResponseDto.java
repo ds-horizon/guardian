@@ -33,22 +33,22 @@ public class OidcDiscoveryResponseDto {
   private String jwksUri;
 
   @JsonProperty("response_types_supported")
-  private List<OidcResponseType> responseTypesSupported;
+  private List<String> responseTypesSupported;
 
   @JsonProperty("subject_types_supported")
-  private List<OidcSubjectType> subjectTypesSupported;
+  private List<String> subjectTypesSupported;
 
   @JsonProperty("id_token_signing_alg_values_supported")
-  private List<OidcIdTokenSigningAlgValue> idTokenSigningAlgValuesSupported;
+  private List<String> idTokenSigningAlgValuesSupported;
 
   @JsonProperty("grant_types_supported")
-  private List<OidcGrantType> grantTypesSupported;
+  private List<String> grantTypesSupported;
 
   @JsonProperty("scopes_supported")
   private List<String> scopesSupported;
 
   @JsonProperty("token_endpoint_auth_methods_supported")
-  private List<OidcTokenEndpointAuthMethod> tokenEndpointAuthMethodsSupported;
+  private List<String> tokenEndpointAuthMethodsSupported;
 
   @JsonProperty("claims_supported")
   private List<String> claimsSupported;
@@ -62,11 +62,20 @@ public class OidcDiscoveryResponseDto {
         .userinfoEndpoint(config.getUserinfoEndpoint())
         .revocationEndpoint(config.getRevocationEndpoint())
         .jwksUri(config.getJwksUri())
-        .grantTypesSupported(config.getGrantTypesSupported())
-        .responseTypesSupported(config.getResponseTypesSupported())
-        .subjectTypesSupported(config.getSubjectTypesSupported())
-        .idTokenSigningAlgValuesSupported(config.getIdTokenSigningAlgValuesSupported())
-        .tokenEndpointAuthMethodsSupported(config.getTokenEndpointAuthMethodsSupported())
+        .grantTypesSupported(
+            config.getGrantTypesSupported().stream().map(OidcGrantType::getType).toList())
+        .responseTypesSupported(
+            config.getResponseTypesSupported().stream().map(OidcResponseType::getValue).toList())
+        .subjectTypesSupported(
+            config.getSubjectTypesSupported().stream().map(OidcSubjectType::getType).toList())
+        .idTokenSigningAlgValuesSupported(
+            config.getIdTokenSigningAlgValuesSupported().stream()
+                .map(OidcIdTokenSigningAlgValue::getValue)
+                .toList())
+        .tokenEndpointAuthMethodsSupported(
+            config.getTokenEndpointAuthMethodsSupported().stream()
+                .map(OidcTokenEndpointAuthMethod::getValue)
+                .toList())
         .scopesSupported(scopes)
         .claimsSupported(claims)
         .build();
