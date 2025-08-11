@@ -1,7 +1,5 @@
 package com.dreamsportslabs.guardian.dto.request;
 
-import static com.dreamsportslabs.guardian.constant.Constants.FLOW_SIGNINUP;
-import static com.dreamsportslabs.guardian.constant.Constants.IDENTIFIER_TYPE_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.constant.Flow;
@@ -77,8 +75,8 @@ public class IdpConnectRequestDto {
 
   private void setLoginFlow() {
     try {
-      String flowValue = StringUtils.isBlank(flow) ? FLOW_SIGNINUP : flow.toUpperCase();
-      this.loginFlow = Flow.valueOf(flowValue);
+      String flowValue = StringUtils.isBlank(flow) ? Flow.SIGNINUP.getFlow() : flow;
+      this.loginFlow = Flow.valueOf(flowValue.toUpperCase());
     } catch (IllegalArgumentException e) {
       throw INVALID_REQUEST.getCustomException("Unsupported flow: '" + flow + "'");
     }
@@ -87,8 +85,8 @@ public class IdpConnectRequestDto {
   private void setOidcIdentifierType() {
     try {
       String oidcIdentifierTypeValue =
-          StringUtils.isBlank(identifierType) ? IDENTIFIER_TYPE_CODE : identifierType.toUpperCase();
-      this.oidcIdentifierType = IdentifierType.valueOf(oidcIdentifierTypeValue);
+          StringUtils.isBlank(identifierType) ? IdentifierType.CODE.getValue() : identifierType;
+      this.oidcIdentifierType = IdentifierType.valueOf(oidcIdentifierTypeValue.toUpperCase());
     } catch (IllegalArgumentException e) {
       throw INVALID_REQUEST.getCustomException(
           "Unsupported identifierType: '" + identifierType + "'");

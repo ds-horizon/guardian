@@ -10,8 +10,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_FAMILY
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_FULL_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_GIVEN_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLAIMS_PHONE;
-import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLIENT_AUTH_METHOD_BASIC;
-import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLIENT_AUTH_METHOD_POST;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLIENT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CLIENT_SECRET;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_CODE;
@@ -37,6 +35,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
+import com.dreamsportslabs.guardian.constant.ClientAuthMethod;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.constant.IdpUserIdentifier;
 import com.dreamsportslabs.guardian.dao.model.IdpCredentials;
@@ -323,7 +322,10 @@ public class IdpConnectService {
             .postAbs(oidcProviderConfig.getTokenUrl())
             .ssl(oidcProviderConfig.getIsSslEnabled());
 
-    if (oidcProviderConfig.getClientAuthMethod().getValue().equals(OIDC_CLIENT_AUTH_METHOD_BASIC)) {
+    if (oidcProviderConfig
+        .getClientAuthMethod()
+        .getValue()
+        .equals(ClientAuthMethod.BASIC.getValue())) {
       httpRequest =
           httpRequest.putHeader(
               AUTHORIZATION,
@@ -343,7 +345,10 @@ public class IdpConnectService {
     if (StringUtils.isNotBlank(requestDto.getCodeVerifier())) {
       oidcTokenRequestBody.add(OIDC_CODE_VERIFIER, requestDto.getCodeVerifier());
     }
-    if (oidcProviderConfig.getClientAuthMethod().getValue().equals(OIDC_CLIENT_AUTH_METHOD_POST)) {
+    if (oidcProviderConfig
+        .getClientAuthMethod()
+        .getValue()
+        .equals(ClientAuthMethod.POST.getValue())) {
       oidcTokenRequestBody.add(OIDC_CLIENT_ID, oidcProviderConfig.getClientId());
       oidcTokenRequestBody.add(OIDC_CLIENT_SECRET, oidcProviderConfig.getClientSecret());
     }
