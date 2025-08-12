@@ -1,7 +1,6 @@
 package com.dreamsportslabs.guardian.dto.request;
 
-import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
-
+import com.dreamsportslabs.guardian.exception.OidcErrorEnum;
 import jakarta.ws.rs.QueryParam;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +13,7 @@ public class UserConsentRequestDto {
 
   public void validate() {
     if (StringUtils.isBlank(consentChallenge)) {
-      throw INVALID_REQUEST.getCustomException("consent_challenge is required");
+      throw OidcErrorEnum.INVALID_REQUEST.getJsonCustomException("consent_challenge is required");
     }
   }
 }
