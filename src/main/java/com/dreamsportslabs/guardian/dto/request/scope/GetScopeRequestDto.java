@@ -17,7 +17,7 @@ public class GetScopeRequestDto {
   @DefaultValue("1")
   private int page;
 
-  @QueryParam("pageSize")
+  @QueryParam("page_size")
   @DefaultValue("10")
   private int pageSize;
 

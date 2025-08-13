@@ -2,12 +2,17 @@ package com.dreamsportslabs.guardian.dto.request;
 
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
 @Data
 public class LoginAcceptRequestDto {
+
+  @JsonProperty("login_challenge")
   private String loginChallenge;
+
+  @JsonProperty("refresh_token")
   private String refreshToken;
 
   public void validate() {

@@ -7,6 +7,7 @@ public class Constants {
   // Request Body Params
   public static final String BODY_PARAM_USERNAME = "username";
   public static final String BODY_PARAM_PASSWORD = "password";
+  public static final String OIDC_BODY_PARAM_REFRESH_TOKEN = "refresh_token";
   public static final String BODY_PARAM_REFRESH_TOKEN = "refreshToken";
   public static final String BODY_PARAM_RESPONSE_TYPE = "responseType";
   public static final String BODY_PARAM_RESPONSE_TYPE_TOKEN = "token";
@@ -37,9 +38,9 @@ public class Constants {
   public static final String BODY_PARAM_LOCATION = "location";
   public static final String BODY_PARAM_PARAMS = "params";
   public static final String BODY_PARAM_IS_NEW_USER = "isNewUser";
-  public static final String BODY_PARAM_LOGIN_CHALLENGE = "loginChallenge";
-  public static final String BODY_PARAM_CONSENT_CHALLENGE = "consentChallenge";
-  public static final String BODY_PARAM_CONSENTED_SCOPES = "consentedScopes";
+  public static final String BODY_PARAM_LOGIN_CHALLENGE = "login_challenge";
+  public static final String BODY_PARAM_CONSENT_CHALLENGE = "consent_challenge";
+  public static final String BODY_PARAM_CONSENTED_SCOPES = "consented_scopes";
 
   // User Block Flow Constants
   public static final String BODY_PARAM_USER_IDENTIFIER = "userIdentifier";
@@ -53,11 +54,11 @@ public class Constants {
 
   // Scope Configuration Params
   public static final String BODY_PARAM_SCOPE = "name";
-  public static final String BODY_PARAM_DISPLAY_NAME = "displayName";
+  public static final String BODY_PARAM_DISPLAY_NAME = "display_name";
   public static final String BODY_PARAM_DESCRIPTION = "description";
   public static final String BODY_PARAM_CLAIMS = "claims";
-  public static final String BODY_PARAM_ICON_URL = "iconUrl";
-  public static final String BODY_PARAM_IS_OIDC = "isOidc";
+  public static final String BODY_PARAM_ICON_URL = "icon_url";
+  public static final String BODY_PARAM_IS_OIDC = "is_oidc";
   public static final String BODY_PARAM_OTP = "otp";
 
   public static final String BODY_CHANNEL_EMAIL = "EMAIL";
@@ -80,7 +81,7 @@ public class Constants {
   public static final String SCOPE_PHONE = "phone";
   public static final String SCOPE_EMAIL = "email";
   public static final String SCOPE_ADDRESS = "address";
-  public static final String DISPLAY_NAME = "displayName";
+  public static final String DISPLAY_NAME = "display_name";
 
   // Predefined claim names
   public static final String CLAIM_SUB = "sub";

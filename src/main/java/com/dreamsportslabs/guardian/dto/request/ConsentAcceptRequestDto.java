@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.dto.request;
 
 import com.dreamsportslabs.guardian.exception.OidcErrorEnum;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -13,8 +14,14 @@ import org.apache.commons.lang3.StringUtils;
 @Setter
 @RequiredArgsConstructor
 public class ConsentAcceptRequestDto {
+
+  @JsonProperty("consent_challenge")
   private String consentChallenge;
+
+  @JsonProperty("consented_scopes")
   private List<String> consentedScopes;
+
+  @JsonProperty("refresh_token")
   private String refreshToken;
 
   public void setConsentedScopes(List<String> consentedScopes) {
