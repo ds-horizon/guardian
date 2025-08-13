@@ -1,12 +1,9 @@
 package com.dreamsportslabs.guardian.it;
 
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONSENTED_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONSENT_CHALLENGE;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_EMAIL;
@@ -39,7 +36,6 @@ import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.authorize;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.consentAccept;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClientScope;
-import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.loginAccept;
 import static com.dreamsportslabs.guardian.utils.DbUtils.authorizeSessionExists;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
@@ -61,6 +57,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 import com.dreamsportslabs.guardian.utils.ClientUtils;
+import com.dreamsportslabs.guardian.utils.OidcUtils;
 import io.restassured.response.Response;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -91,8 +88,8 @@ public class ConsentAcceptIT {
     cleanUpScopes(tenant1);
     cleanUpScopes(tenant2);
 
-    createRequiredScopes(tenant1);
-    createRequiredScopes(tenant2);
+    OidcUtils.createRequiredScopes(tenant1);
+    OidcUtils.createRequiredScopes(tenant2);
 
     Response clientResponse = createTestClient();
     validClientId = clientResponse.jsonPath().getString(CLIENT_ID);
@@ -116,41 +113,6 @@ public class ConsentAcceptIT {
     clientRequest.put("skip_consent", false);
 
     return createClient(tenant1, clientRequest);
-  }
-
-  private void createRequiredScopes(String tenantId) {
-    Map<String, Object> openidScope = new HashMap<>();
-    openidScope.put(BODY_PARAM_SCOPE, SCOPE_OPENID);
-    openidScope.put(BODY_PARAM_DISPLAY_NAME, "OpenID Connect");
-    openidScope.put(BODY_PARAM_DESCRIPTION, "OpenID Connect scope");
-    openidScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_SUB));
-    openidScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, openidScope);
-
-    Map<String, Object> emailScope = new HashMap<>();
-    emailScope.put(BODY_PARAM_SCOPE, SCOPE_EMAIL);
-    emailScope.put(BODY_PARAM_DISPLAY_NAME, "Email");
-    emailScope.put(BODY_PARAM_DESCRIPTION, "Email scope");
-    emailScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_EMAIL, CLAIM_EMAIL_VERIFIED));
-    emailScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, emailScope);
-
-    Map<String, Object> addressScope = new HashMap<>();
-    addressScope.put(BODY_PARAM_SCOPE, SCOPE_ADDRESS);
-    addressScope.put(BODY_PARAM_DISPLAY_NAME, "Address");
-    addressScope.put(BODY_PARAM_DESCRIPTION, "Address scope");
-    addressScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_ADDRESS));
-    addressScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, addressScope);
-
-    Map<String, Object> phoneScope = new HashMap<>();
-    phoneScope.put(BODY_PARAM_SCOPE, SCOPE_PHONE);
-    phoneScope.put(BODY_PARAM_DISPLAY_NAME, "Phone");
-    phoneScope.put(BODY_PARAM_DESCRIPTION, "Phone scope");
-    phoneScope.put(
-        BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_PHONE_NUMBER, CLAIM_PHONE_NUMBER_VERIFIED));
-    phoneScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, phoneScope);
   }
 
   private void createTestData() {

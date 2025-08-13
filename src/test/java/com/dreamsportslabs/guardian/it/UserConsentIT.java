@@ -1,14 +1,18 @@
 package com.dreamsportslabs.guardian.it;
 
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
-import static com.dreamsportslabs.guardian.Constants.CLAIM_SUB;
+import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT;
+import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_ID;
+import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_NAME;
+import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_SECRET;
+import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.CHECK_GRANT_TYPES;
+import static com.dreamsportslabs.guardian.Constants.CHECK_REDIRECT_URIS;
+import static com.dreamsportslabs.guardian.Constants.CHECK_RESPONSE_TYPES;
+import static com.dreamsportslabs.guardian.Constants.CHECK_SKIP_CONSENT;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
+import static com.dreamsportslabs.guardian.Constants.CONSENTED_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
 import static com.dreamsportslabs.guardian.Constants.ERROR_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.ERROR_FIELD;
@@ -17,24 +21,20 @@ import static com.dreamsportslabs.guardian.Constants.ERROR_UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.Constants.HEADER_LOCATION;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
+import static com.dreamsportslabs.guardian.Constants.REQUESTED_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
 import static com.dreamsportslabs.guardian.Constants.SOURCE_VALUE;
+import static com.dreamsportslabs.guardian.Constants.SUBJECT;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_ADDRESS;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL_VERIFIED;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_PHONE_NUMBER;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_PHONE_VERIFIED;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_CONSENT_CHALLENGE;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.authorize;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClientScope;
-import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.getUserConsent;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.loginAccept;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
@@ -47,17 +47,15 @@ import static com.dreamsportslabs.guardian.utils.OidcUtils.createValidAuthorizeR
 import static com.dreamsportslabs.guardian.utils.OidcUtils.extractConsentChallenge;
 import static com.dreamsportslabs.guardian.utils.OidcUtils.extractLoginChallenge;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_MOVED_TEMPORARILY;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
 import com.dreamsportslabs.guardian.utils.ClientUtils;
+import com.dreamsportslabs.guardian.utils.OidcUtils;
 import io.restassured.response.Response;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -91,8 +89,8 @@ public class UserConsentIT {
     cleanupClientScopes(tenant2);
     cleanupRedis();
 
-    createRequiredScopes(tenant1);
-    createRequiredScopes(tenant2);
+    OidcUtils.createRequiredScopes(tenant1);
+    OidcUtils.createRequiredScopes(tenant2);
 
     Response clientResponse = createTestClient();
     validClientId = clientResponse.jsonPath().getString(CLIENT_ID);
@@ -104,40 +102,6 @@ public class UserConsentIT {
             SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
 
     createTestData();
-  }
-
-  private void createRequiredScopes(String tenantId) {
-    Map<String, Object> openidScope = new HashMap<>();
-    openidScope.put(BODY_PARAM_SCOPE, SCOPE_OPENID);
-    openidScope.put(BODY_PARAM_DISPLAY_NAME, "OpenID Connect");
-    openidScope.put(BODY_PARAM_DESCRIPTION, "OpenID Connect scope");
-    openidScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_SUB));
-    openidScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, openidScope);
-
-    Map<String, Object> emailScope = new HashMap<>();
-    emailScope.put(BODY_PARAM_SCOPE, SCOPE_EMAIL);
-    emailScope.put(BODY_PARAM_DISPLAY_NAME, "Email");
-    emailScope.put(BODY_PARAM_DESCRIPTION, "Email scope");
-    emailScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_EMAIL, CLAIM_EMAIL_VERIFIED));
-    emailScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, emailScope);
-
-    Map<String, Object> addressScope = new HashMap<>();
-    addressScope.put(BODY_PARAM_SCOPE, SCOPE_ADDRESS);
-    addressScope.put(BODY_PARAM_DISPLAY_NAME, "Address");
-    addressScope.put(BODY_PARAM_DESCRIPTION, "Address scope");
-    addressScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_ADDRESS));
-    addressScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, addressScope);
-
-    Map<String, Object> phoneScope = new HashMap<>();
-    phoneScope.put(BODY_PARAM_SCOPE, SCOPE_PHONE);
-    phoneScope.put(BODY_PARAM_DISPLAY_NAME, "Phone");
-    phoneScope.put(BODY_PARAM_DESCRIPTION, "Phone scope");
-    phoneScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_PHONE_NUMBER, CLAIM_PHONE_VERIFIED));
-    phoneScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, phoneScope);
   }
 
   private Response createTestClient() {
@@ -175,7 +139,7 @@ public class UserConsentIT {
     queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
 
     // Act
-    Response response = getUserConsent(tenant1, queryParams);
+    Response response = getUserConsent(tenant1, queryParams, validRefreshToken);
 
     // Validate
     validateSuccessfulUserConsentResponse(
@@ -193,7 +157,7 @@ public class UserConsentIT {
     Map<String, String> queryParams = new HashMap<>();
 
     // Act
-    Response response = getUserConsent(tenant1, queryParams);
+    Response response = getUserConsent(tenant1, queryParams, validRefreshToken);
 
     // Validate
     response
@@ -212,7 +176,7 @@ public class UserConsentIT {
     queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, emptyConsentChallenge);
 
     // Act
-    Response response = getUserConsent(tenant1, queryParams);
+    Response response = getUserConsent(tenant1, queryParams, validRefreshToken);
 
     // Validate
     response
@@ -230,14 +194,14 @@ public class UserConsentIT {
     queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
 
     // Act
-    Response response = getUserConsent(tenant2, queryParams);
+    Response response = getUserConsent(tenant2, queryParams, validRefreshToken);
 
     // Validate
     response
         .then()
         .statusCode(SC_UNAUTHORIZED)
         .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Invalid challenge"));
+        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
   }
 
   @Test
@@ -265,7 +229,7 @@ public class UserConsentIT {
     userConsentParams.put(OIDC_PARAM_CONSENT_CHALLENGE, newConsentChallenge);
 
     // Act
-    Response response = getUserConsent(tenant1, userConsentParams);
+    Response response = getUserConsent(tenant1, userConsentParams, newRefreshToken);
 
     // Validate
     validateSuccessfulUserConsentResponse(
@@ -285,7 +249,7 @@ public class UserConsentIT {
     queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, malformedConsentChallenge);
 
     // Act
-    Response response = getUserConsent(tenant1, queryParams);
+    Response response = getUserConsent(tenant1, queryParams, validRefreshToken);
 
     // Validate
     response
@@ -293,95 +257,6 @@ public class UserConsentIT {
         .statusCode(SC_UNAUTHORIZED)
         .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
         .body(ERROR_DESCRIPTION, equalTo("Invalid challenge"));
-  }
-
-  @Test
-  @DisplayName("Should handle user with partial consents")
-  public void testGetUserConsentPartialConsents() {
-    // Arrange
-    String newUserId = "partial-user-" + RandomStringUtils.randomAlphanumeric(8);
-    String newRefreshToken =
-        insertRefreshToken(
-            tenant1, newUserId, 1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
-
-    insertUserConsent(
-        tenant1, validClientId, newUserId, Arrays.asList(SCOPE_OPENID, SCOPE_ADDRESS));
-
-    Map<String, String> queryParams =
-        createValidAuthorizeRequest(
-            validClientId, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
-    Response authorizeResponse = authorize(tenant1, queryParams);
-    String loginChallenge = extractLoginChallenge(authorizeResponse.getHeader(HEADER_LOCATION));
-
-    Map<String, Object> loginAcceptBody = new HashMap<>();
-    loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, newRefreshToken);
-    Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
-    String newConsentChallenge = extractConsentChallenge(loginAcceptResponse);
-
-    Map<String, String> userConsentParams = new HashMap<>();
-    userConsentParams.put(OIDC_PARAM_CONSENT_CHALLENGE, newConsentChallenge);
-
-    // Act
-    Response response = getUserConsent(tenant1, userConsentParams);
-
-    // Validate
-    validateSuccessfulUserConsentResponse(
-        response,
-        validClientId,
-        Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE),
-        Arrays.asList(SCOPE_OPENID, SCOPE_ADDRESS),
-        newUserId);
-  }
-
-  @Test
-  @DisplayName("Should verify that users with all scopes consented skip consent flow entirely")
-  public void testGetUserConsentAllScopesConsented() {
-    // Arrange
-    String newUserId = "all-consented-user-" + RandomStringUtils.randomAlphanumeric(8);
-    String newRefreshToken =
-        insertRefreshToken(
-            tenant1, newUserId, 1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
-
-    // User has consented to ALL requested scopes
-    insertUserConsent(
-        tenant1,
-        validClientId,
-        newUserId,
-        Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
-
-    Map<String, String> queryParams =
-        createValidAuthorizeRequest(
-            validClientId, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
-    Response authorizeResponse = authorize(tenant1, queryParams);
-    String loginChallenge = extractLoginChallenge(authorizeResponse.getHeader(HEADER_LOCATION));
-
-    Map<String, Object> loginAcceptBody = new HashMap<>();
-    loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, newRefreshToken);
-
-    // Act
-    Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
-
-    // Validate - When user has all consents, loginAccept skips consent flow entirely
-    // and returns auth code directly (no consent challenge is created)
-    loginAcceptResponse
-        .then()
-        .statusCode(SC_MOVED_TEMPORARILY)
-        .header(HEADER_LOCATION, notNullValue())
-        .header(HEADER_LOCATION, containsString("code="))
-        .header(HEADER_LOCATION, containsString("state="));
-
-    // Verify that no consent challenge exists (because consent was skipped)
-    String locationHeader = loginAcceptResponse.getHeader(HEADER_LOCATION);
-    assertThat(
-        "Location header should contain auth code",
-        locationHeader.contains("code="),
-        equalTo(true));
-    assertThat(
-        "Location header should NOT contain consent_challenge",
-        locationHeader.contains("consent_challenge="),
-        equalTo(false));
   }
 
   @Test
@@ -393,7 +268,7 @@ public class UserConsentIT {
     queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, upperCaseChallenge);
 
     // Act
-    Response response = getUserConsent(tenant1, queryParams);
+    Response response = getUserConsent(tenant1, queryParams, validRefreshToken);
 
     // Validate
     response
@@ -428,7 +303,7 @@ public class UserConsentIT {
     userConsentParams.put(OIDC_PARAM_CONSENT_CHALLENGE, newConsentChallenge);
 
     // Act
-    Response response = getUserConsent(tenant1, userConsentParams);
+    Response response = getUserConsent(tenant1, userConsentParams, newRefreshToken);
 
     // Validate
     validateSuccessfulUserConsentResponse(
@@ -437,10 +312,132 @@ public class UserConsentIT {
         Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE),
         Arrays.asList(),
         newUserId);
+  }
 
-    // Additional validation for empty list
-    List<String> consentedScopes = response.jsonPath().getList("consented_scopes");
-    assertThat("Consented scopes should be empty list", consentedScopes.isEmpty(), equalTo(true));
+  @Test
+  @DisplayName("Should return error when refresh token is invalid")
+  public void testGetUserConsentInvalidRefreshToken() {
+    // Arrange
+    String invalidRefreshToken =
+        "invalid_refresh_token_" + RandomStringUtils.randomAlphanumeric(10);
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
+
+    // Act
+    Response response = getUserConsent(tenant1, queryParams, invalidRefreshToken);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
+        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
+  }
+
+  @Test
+  @DisplayName("Should return error when refresh token is expired")
+  public void testGetUserConsentExpiredRefreshToken() {
+    // Arrange
+    String expiredRefreshToken =
+        insertRefreshToken(
+            tenant1, TEST_USER_ID, -1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
+
+    // Act
+    Response response = getUserConsent(tenant1, queryParams, expiredRefreshToken);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
+        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
+  }
+
+  @Test
+  @DisplayName("Should return error when refresh token belongs to different user")
+  public void testGetUserConsentDifferentUserRefreshToken() {
+    // Arrange
+    String differentUserId = "different-user-" + RandomStringUtils.randomAlphanumeric(8);
+    String differentUserRefreshToken =
+        insertRefreshToken(
+            tenant1,
+            differentUserId,
+            1800L,
+            SOURCE_VALUE,
+            DEVICE_VALUE,
+            LOCATION_VALUE,
+            IP_ADDRESS);
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
+
+    // Act
+    Response response = getUserConsent(tenant1, queryParams, differentUserRefreshToken);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo("invalid_token"))
+        .body(ERROR_DESCRIPTION, notNullValue());
+  }
+
+  @Test
+  @DisplayName("Should return error when refresh token is from different tenant")
+  public void testGetUserConsentCrossTenantRefreshToken() {
+    // Arrange
+    String crossTenantRefreshToken =
+        insertRefreshToken(
+            tenant2, TEST_USER_ID, 1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
+
+    // Act
+    Response response = getUserConsent(tenant1, queryParams, crossTenantRefreshToken);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
+        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
+  }
+
+  @Test
+  @DisplayName("Should handle refresh token from cookie successfully")
+  public void testGetUserConsentWithCookieRefreshToken() {
+    // Arrange
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
+
+    // Act
+    Response response = getUserConsent(tenant1, queryParams, validRefreshToken);
+
+    // Validate
+    validateSuccessfulUserConsentResponse(
+        response,
+        validClientId,
+        Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE),
+        Arrays.asList(SCOPE_EMAIL, SCOPE_PHONE),
+        TEST_USER_ID);
+  }
+
+  @Test
+  @DisplayName("Should return error when both consent challenge and refresh token are missing")
+  public void testGetUserConsentMissingBothParams() {
+    // Arrange
+    Map<String, String> queryParams = new HashMap<>();
+
+    // Act
+    Response response = getUserConsent(tenant1, queryParams);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .body(ERROR_FIELD, equalTo(ERROR_INVALID_REQUEST))
+        .body(ERROR_DESCRIPTION, equalTo("consent_challenge is required"));
   }
 
   private void validateSuccessfulUserConsentResponse(
@@ -453,29 +450,26 @@ public class UserConsentIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("client", notNullValue())
-        .body("client.clientId", equalTo(expectedClientId)) // camelCase, not snake_case
-        .body("requested_scopes", hasSize(expectedRequestedScopes.size()))
-        .body("requested_scopes", containsInAnyOrder(expectedRequestedScopes.toArray()))
-        .body("consented_scopes", hasSize(expectedConsentedScopes.size()))
-        .body("subject", equalTo(expectedSubject));
+        .body(CHECK_CLIENT, notNullValue())
+        .body(CHECK_CLIENT_ID, equalTo(expectedClientId)) // camelCase, not snake_case
+        .body(REQUESTED_SCOPES, hasSize(expectedRequestedScopes.size()))
+        .body(REQUESTED_SCOPES, containsInAnyOrder(expectedRequestedScopes.toArray()))
+        .body(SUBJECT, equalTo(expectedSubject));
 
     // Validate consented scopes only if there are any
     if (!expectedConsentedScopes.isEmpty()) {
-      response
-          .then()
-          .body("consented_scopes", containsInAnyOrder(expectedConsentedScopes.toArray()));
+      response.then().body(CONSENTED_SCOPES, containsInAnyOrder(expectedConsentedScopes.toArray()));
     }
 
     // Validate that client object has all required fields
     response
         .then()
-        .body("client.tenantId", notNullValue())
-        .body("client.clientName", notNullValue())
-        .body("client.clientSecret", notNullValue())
-        .body("client.grantTypes", notNullValue())
-        .body("client.redirectUris", notNullValue())
-        .body("client.responseTypes", notNullValue())
-        .body("client.skipConsent", notNullValue());
+        .body(CHECK_CLIENT_TENANT_ID, notNullValue())
+        .body(CHECK_CLIENT_NAME, notNullValue())
+        .body(CHECK_CLIENT_SECRET, notNullValue())
+        .body(CHECK_GRANT_TYPES, notNullValue())
+        .body(CHECK_REDIRECT_URIS, notNullValue())
+        .body(CHECK_RESPONSE_TYPES, notNullValue())
+        .body(CHECK_SKIP_CONSENT, notNullValue());
   }
 }

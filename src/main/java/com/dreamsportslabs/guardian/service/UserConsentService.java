@@ -1,9 +1,12 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
+
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
 import com.dreamsportslabs.guardian.dao.model.UserConsentModel;
+import com.dreamsportslabs.guardian.dto.request.UserConsentRequestDto;
 import com.dreamsportslabs.guardian.dto.response.UserConsentResponseDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
@@ -17,19 +20,27 @@ public class UserConsentService {
 
   private final AuthorizeSessionDao authorizeSessionDao;
   private final UserConsentDao userConsentDao;
+  private final OidcTokenService oidcTokenService;
 
-  public Single<UserConsentResponseDto> getUserConsent(String consentChallenge, String tenantId) {
-    return authorizeSessionDao
-        .getAuthorizeSession(consentChallenge, tenantId)
+  public Single<UserConsentResponseDto> getUserConsent(
+      UserConsentRequestDto userConsentRequestDto, String tenantId) {
+    return oidcTokenService
+        .validateRefreshToken(userConsentRequestDto.getRefreshToken(), tenantId)
         .flatMap(
-            authorizeSession -> {
-              String userId = authorizeSession.getUserId();
-              String clientId = authorizeSession.getClient().getClientId();
-
-              return userConsentDao
-                  .getUserConsents(tenantId, clientId, userId)
-                  .map(userConsents -> buildUserConsentResponse(authorizeSession, userConsents));
-            });
+            userId ->
+                authorizeSessionDao
+                    .getAuthorizeSession(userConsentRequestDto.getConsentChallenge(), tenantId)
+                    .filter(authorizeSession -> userId.equals(authorizeSession.getUserId()))
+                    .switchIfEmpty(Single.error(INVALID_TOKEN.getException()))
+                    .flatMap(
+                        authorizeSession -> {
+                          String clientId = authorizeSession.getClient().getClientId();
+                          return userConsentDao
+                              .getUserConsents(tenantId, clientId, userId)
+                              .map(
+                                  userConsents ->
+                                      buildUserConsentResponse(authorizeSession, userConsents));
+                        }));
   }
 
   private UserConsentResponseDto buildUserConsentResponse(

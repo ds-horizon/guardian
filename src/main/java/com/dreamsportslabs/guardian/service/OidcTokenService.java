@@ -15,12 +15,13 @@ import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_BASIC;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_HEADER;
-import static com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod.S256;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_GRANT;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_SCOPE;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED_CLIENT;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
@@ -31,6 +32,7 @@ import com.dreamsportslabs.guardian.config.tenant.TokenConfig;
 import com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod;
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
 import com.dreamsportslabs.guardian.dao.OidcRefreshTokenDao;
+import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dao.model.ClientScopeModel;
 import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
@@ -45,6 +47,7 @@ import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.WebApplicationException;
@@ -70,6 +73,7 @@ public class OidcTokenService {
   private final ScopeService scopeService;
   private final UserService userService;
   private final TokenIssuer tokenIssuer;
+  private final RefreshTokenDao refreshTokenDao;
 
   private final OidcRefreshTokenDao oidcRefreshTokenDao;
   private final AuthorizationService authorizationService;
@@ -82,8 +86,8 @@ public class OidcTokenService {
       String authorizationHeader,
       MultivaluedMap<String, String> headers) {
     return switch (requestDto.getOidcGrantType()) {
-      case AUTHORIZATION_CODE -> authorizationCodeFlow(
-          requestDto, tenantId, authorizationHeader, headers);
+      case AUTHORIZATION_CODE ->
+          authorizationCodeFlow(requestDto, tenantId, authorizationHeader, headers);
       case CLIENT_CREDENTIALS -> clientCredentialsFlow(requestDto, tenantId, authorizationHeader);
       case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader);
     };
@@ -103,6 +107,16 @@ public class OidcTokenService {
               }
               return Completable.complete();
             });
+  }
+
+  public Single<String> validateRefreshToken(String refreshToken, String tenantId) {
+    return refreshTokenDao
+        .getUserIdFromRefreshToken(refreshToken, tenantId)
+        .onErrorResumeNext(
+            err ->
+                Maybe.error(
+                    SERVER_ERROR.getJsonCustomException("Unable to validate refresh token")))
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getJsonCustomException("Invalid refresh token")));
   }
 
   private Single<OidcTokenResponseDto> authorizationCodeFlow(
@@ -167,7 +181,7 @@ public class OidcTokenService {
               requestDto.setClientId(clientId);
               return clientId;
             })
-        .flatMap(clientId -> validateRefreshToken(requestDto, tenantId))
+        .flatMap(clientId -> getOidcRefreshToken(requestDto, tenantId))
         .flatMap(
             oidcRefreshTokenModel -> {
               List<String> scopes =
@@ -230,7 +244,7 @@ public class OidcTokenService {
             Single.error(INVALID_GRANT.getJsonCustomException("code_verifier is invalid")));
   }
 
-  private Single<OidcRefreshTokenModel> validateRefreshToken(
+  private Single<OidcRefreshTokenModel> getOidcRefreshToken(
       TokenRequestDto requestDto, String tenantId) {
     return oidcRefreshTokenDao
         .getOidcRefreshToken(tenantId, requestDto.getClientId(), requestDto.getRefreshToken())

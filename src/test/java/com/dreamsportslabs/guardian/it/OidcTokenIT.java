@@ -4,15 +4,12 @@ import static com.dreamsportslabs.guardian.Constants.AUTHORIZATION_CODE;
 import static com.dreamsportslabs.guardian.Constants.AUTH_BASIC_PREFIX;
 import static com.dreamsportslabs.guardian.Constants.AUTH_CODE_CHALLENGE_METHOD_PLAIN;
 import static com.dreamsportslabs.guardian.Constants.AUTH_CODE_CHALLENGE_METHOD_S256;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONSENTED_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONSENT_CHALLENGE;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_EMAIL;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_NAME;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERID;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
@@ -106,7 +103,6 @@ import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.authorize;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.consentAccept;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClientScope;
-import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.loginAccept;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanupClients;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanupOidcRefreshTokens;
@@ -130,6 +126,7 @@ import static org.hamcrest.Matchers.equalTo;
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
 import com.dreamsportslabs.guardian.utils.ClientUtils;
 import com.dreamsportslabs.guardian.utils.DbUtils;
+import com.dreamsportslabs.guardian.utils.OidcUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -171,8 +168,8 @@ public class OidcTokenIT {
     cleanupOidcRefreshTokens(tenant2);
     cleanupRedis();
 
-    createRequiredScopes(tenant1);
-    createRequiredScopes(tenant2);
+    OidcUtils.createRequiredScopes(tenant1);
+    OidcUtils.createRequiredScopes(tenant2);
 
     // Create a test client for authorization tests
     Response clientResponse = createTestClient();
@@ -235,41 +232,6 @@ public class OidcTokenIT {
     requestBody.put(
         GRANT_TYPES, Arrays.asList(AUTHORIZATION_CODE, CLIENT_CREDENTIALS, REFRESH_TOKEN));
     return createClient(tenant1, requestBody);
-  }
-
-  private void createRequiredScopes(String tenantId) {
-    Map<String, Object> openidScope = new HashMap<>();
-    openidScope.put(BODY_PARAM_SCOPE, SCOPE_OPENID);
-    openidScope.put(BODY_PARAM_DISPLAY_NAME, "OpenID Connect");
-    openidScope.put(BODY_PARAM_DESCRIPTION, "OpenID Connect scope");
-    openidScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_SUB));
-    openidScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, openidScope);
-
-    Map<String, Object> emailScope = new HashMap<>();
-    emailScope.put(BODY_PARAM_SCOPE, SCOPE_EMAIL);
-    emailScope.put(BODY_PARAM_DISPLAY_NAME, "Email");
-    emailScope.put(BODY_PARAM_DESCRIPTION, "Email scope");
-    emailScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_EMAIL, CLAIM_EMAIL_VERIFIED));
-    emailScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, emailScope);
-
-    Map<String, Object> addressScope = new HashMap<>();
-    addressScope.put(BODY_PARAM_SCOPE, SCOPE_ADDRESS);
-    addressScope.put(BODY_PARAM_DISPLAY_NAME, "Address");
-    addressScope.put(BODY_PARAM_DESCRIPTION, "Address scope");
-    addressScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_ADDRESS));
-    addressScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, addressScope);
-
-    Map<String, Object> phoneScope = new HashMap<>();
-    phoneScope.put(BODY_PARAM_SCOPE, SCOPE_PHONE);
-    phoneScope.put(BODY_PARAM_DISPLAY_NAME, "Phone");
-    phoneScope.put(BODY_PARAM_DESCRIPTION, "Phone scope");
-    phoneScope.put(
-        BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_PHONE_NUMBER, CLAIM_PHONE_NUMBER_VERIFIED));
-    phoneScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, phoneScope);
   }
 
   private void createTestData() {
