@@ -86,8 +86,7 @@ public class OidcTokenService {
       String authorizationHeader,
       MultivaluedMap<String, String> headers) {
     return switch (requestDto.getOidcGrantType()) {
-      case AUTHORIZATION_CODE ->
-          authorizationCodeFlow(requestDto, tenantId, authorizationHeader, headers);
+      case AUTHORIZATION_CODE -> authorizationCodeFlow(requestDto, tenantId, authorizationHeader, headers);
       case CLIENT_CREDENTIALS -> clientCredentialsFlow(requestDto, tenantId, authorizationHeader);
       case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader);
     };
