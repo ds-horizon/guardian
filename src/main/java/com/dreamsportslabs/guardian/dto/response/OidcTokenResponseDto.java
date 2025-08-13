@@ -23,4 +23,6 @@ public class OidcTokenResponseDto {
 
   @JsonProperty(value = "expires_in")
   private Integer expiresIn;
+
+  private String scope;
 }

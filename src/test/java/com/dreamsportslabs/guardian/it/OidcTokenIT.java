@@ -369,6 +369,32 @@ public class OidcTokenIT {
     return AUTH_BASIC_PREFIX + authHeader;
   }
 
+  /**
+   * Custom matcher to validate that a space-separated scope string contains exactly the expected
+   * scopes in any order
+   */
+  private static org.hamcrest.Matcher<String> containsScopesInAnyOrder(String... expectedScopes) {
+    return new org.hamcrest.BaseMatcher<String>() {
+      @Override
+      public boolean matches(Object item) {
+        if (item == null || !(item instanceof String)) return false;
+        String scopeString = (String) item;
+        String[] actualScopes = scopeString.trim().split("\\s+");
+        java.util.List<String> actualList = java.util.Arrays.asList(actualScopes);
+        java.util.List<String> expectedList = java.util.Arrays.asList(expectedScopes);
+        return actualList.containsAll(expectedList) && expectedList.containsAll(actualList);
+      }
+
+      @Override
+      public void describeTo(org.hamcrest.Description description) {
+        description
+            .appendText("scope string containing exactly [")
+            .appendText(String.join(", ", expectedScopes))
+            .appendText("] in any order");
+      }
+    };
+  }
+
   @Test
   @DisplayName("Should return error in case of missing grant_type")
   public void testMissingGrantType() {
@@ -434,7 +460,10 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(
+            TOKEN_PARAM_SCOPE,
+            containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
@@ -472,7 +501,10 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(
+            TOKEN_PARAM_SCOPE,
+            containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
@@ -510,7 +542,8 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
@@ -550,7 +583,8 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
@@ -760,7 +794,10 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(
+            TOKEN_PARAM_SCOPE,
+            containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
@@ -812,7 +849,10 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(
+            TOKEN_PARAM_SCOPE,
+            containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
@@ -864,7 +904,8 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
@@ -917,7 +958,8 @@ public class OidcTokenIT {
         .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
@@ -1127,7 +1169,8 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     String idToken = response.jsonPath().getString(TOKEN_PARAM_ID_TOKEN);
@@ -1185,7 +1228,8 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     String idToken = response.jsonPath().getString(TOKEN_PARAM_ID_TOKEN);
@@ -1244,7 +1288,8 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     String idToken = response.jsonPath().getString(TOKEN_PARAM_ID_TOKEN);
@@ -1493,7 +1538,8 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
-        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(TOKEN_PARAM_SCOPE, containsScopesInAnyOrder(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
 
     // Verify that the tokens contain the originally consented scopes, not the requested ones
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);

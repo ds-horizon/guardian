@@ -15,7 +15,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_BASIC;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_HEADER;
-import static com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod.S256;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_GRANT;
@@ -319,7 +318,8 @@ public class OidcTokenService {
                             accessToken,
                             idToken,
                             refreshToken,
-                            tokenConfig.getAccessTokenExpiry())));
+                            tokenConfig.getAccessTokenExpiry(),
+                            String.join(" ", generateOidcTokenDto.getScope()))));
   }
 
   private GetScopeRequestDto createScopeRequest(List<String> scopes) {
@@ -329,13 +329,14 @@ public class OidcTokenService {
   }
 
   private OidcTokenResponseDto buildTokenResponse(
-      String accessToken, String idToken, String refreshToken, int expiresIn) {
+      String accessToken, String idToken, String refreshToken, int expiresIn, String scope) {
     return OidcTokenResponseDto.builder()
         .accessToken(accessToken)
         .idToken(idToken)
         .refreshToken(refreshToken)
         .tokenType(TOKEN_TYPE)
         .expiresIn(expiresIn)
+        .scope(scope)
         .build();
   }
 
@@ -367,6 +368,7 @@ public class OidcTokenService {
                     .accessToken(accessToken)
                     .tokenType(TOKEN_TYPE)
                     .expiresIn(tokenConfig.getAccessTokenExpiry())
+                    .scope(String.join(" ", generateOidcTokenDto.getScope()))
                     .build());
   }
 
@@ -400,6 +402,7 @@ public class OidcTokenService {
                     .refreshToken(refreshToken)
                     .tokenType(TOKEN_TYPE)
                     .expiresIn(tokenConfig.getAccessTokenExpiry())
+                    .scope(String.join(" ", generateOidcTokenDto.getScope()))
                     .build());
   }
 
