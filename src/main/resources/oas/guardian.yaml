@@ -1533,7 +1533,7 @@ paths:
         - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               type: object
               required:
