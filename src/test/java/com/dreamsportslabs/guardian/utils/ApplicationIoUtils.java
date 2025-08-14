@@ -473,4 +473,37 @@ public class ApplicationIoUtils {
 
     return execute(null, headers, new HashMap<>(), spec -> spec.post("/userinfo"));
   }
+
+  public static Response getUserConsent(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(null, headers, queryParams, spec -> spec.get("/user-consent"));
+  }
+
+  public static Response getUserConsent(
+      String tenantId, Map<String, String> queryParams, String refreshTokenCookie) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    Map<String, String> cookies = new HashMap<>();
+    if (StringUtils.isNotBlank(refreshTokenCookie)) {
+      cookies.put("RT", refreshTokenCookie);
+    }
+
+    return execute(
+        null,
+        headers,
+        queryParams,
+        spec -> {
+          if (!cookies.isEmpty()) {
+            spec.cookies(cookies);
+          }
+          return spec.get("/user-consent");
+        });
+  }
 }

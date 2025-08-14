@@ -2,7 +2,6 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
@@ -14,7 +13,6 @@ import com.dreamsportslabs.guardian.dto.request.ConsentAcceptRequestDto;
 import com.dreamsportslabs.guardian.dto.response.AuthCodeResponseDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -30,6 +28,7 @@ public class ConsentAcceptService {
 
   private final AuthorizeSessionDao authorizeSessionDao;
   private final OidcCodeService oidcCodeService;
+  private final OidcTokenService oidcTokenService;
   private final RefreshTokenDao refreshTokenDao;
   private final UserConsentDao userConsentDao;
   private final Registry registry;
@@ -37,7 +36,8 @@ public class ConsentAcceptService {
   public Single<AuthCodeResponseDto> consentAccept(
       ConsentAcceptRequestDto requestDto, String tenantId) {
 
-    return validateRefreshToken(requestDto.getRefreshToken(), tenantId)
+    return oidcTokenService
+        .validateRefreshToken(requestDto.getRefreshToken(), tenantId)
         .flatMap(
             userId ->
                 authorizeSessionDao
@@ -76,16 +76,6 @@ public class ConsentAcceptService {
               deleteConsentChallengeAsync(requestDto.getConsentChallenge(), tenantId);
               return res;
             });
-  }
-
-  private Single<String> validateRefreshToken(String refreshToken, String tenantId) {
-    return refreshTokenDao
-        .getUserIdFromRefreshToken(refreshToken, tenantId)
-        .onErrorResumeNext(
-            err ->
-                Maybe.error(
-                    SERVER_ERROR.getJsonCustomException("Unable to validate refresh token")))
-        .switchIfEmpty(Single.error(UNAUTHORIZED.getJsonCustomException("Invalid refresh token")));
   }
 
   private List<String> getNewlyConsentedScopes(

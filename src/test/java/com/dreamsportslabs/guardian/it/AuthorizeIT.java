@@ -6,12 +6,6 @@ import static com.dreamsportslabs.guardian.Constants.AUTH_CODE_CHALLENGE_METHOD_
 import static com.dreamsportslabs.guardian.Constants.AUTH_PROMPT_INVALID;
 import static com.dreamsportslabs.guardian.Constants.AUTH_PROMPT_LOGIN;
 import static com.dreamsportslabs.guardian.Constants.AUTH_RESPONSE_TYPE_TOKEN;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
-import static com.dreamsportslabs.guardian.Constants.CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.ERROR_CLIENT_AUTHENTICATION_FAILED;
 import static com.dreamsportslabs.guardian.Constants.ERROR_CLIENT_ID_REQUIRED;
@@ -57,15 +51,9 @@ import static com.dreamsportslabs.guardian.Constants.TENANT_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_CODE_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.TEST_LOGIN_HINT;
 import static com.dreamsportslabs.guardian.Constants.TEST_NONCE;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_ADDRESS;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL_VERIFIED;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_PHONE_NUMBER;
-import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_PHONE_VERIFIED;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.authorize;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClientScope;
-import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanupClientScopes;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanupClients;
@@ -82,11 +70,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
 import com.dreamsportslabs.guardian.utils.ClientUtils;
+import com.dreamsportslabs.guardian.utils.OidcUtils;
 import io.restassured.response.Response;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,8 +101,8 @@ public class AuthorizeIT {
     cleanupClientScopes(tenant2);
 
     // Create required scopes first
-    createRequiredScopes(tenant1);
-    createRequiredScopes(tenant2);
+    OidcUtils.createRequiredScopes(tenant1);
+    OidcUtils.createRequiredScopes(tenant2);
 
     // Create a test client for authorization tests
     Response clientResponse = createTestClient();
@@ -127,44 +114,6 @@ public class AuthorizeIT {
         validClientId,
         ClientUtils.createClientScopeRequest(
             SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
-  }
-
-  private void createRequiredScopes(String tenantId) {
-    // Create openid scope
-    Map<String, Object> openidScope = new HashMap<>();
-    openidScope.put(BODY_PARAM_SCOPE, SCOPE_OPENID);
-    openidScope.put(BODY_PARAM_DISPLAY_NAME, "OpenID Connect");
-    openidScope.put(BODY_PARAM_DESCRIPTION, "OpenID Connect scope");
-    openidScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_SUB));
-    openidScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, openidScope);
-
-    // Create email scope
-    Map<String, Object> emailScope = new HashMap<>();
-    emailScope.put(BODY_PARAM_SCOPE, SCOPE_EMAIL);
-    emailScope.put(BODY_PARAM_DISPLAY_NAME, "Email");
-    emailScope.put(BODY_PARAM_DESCRIPTION, "Email scope");
-    emailScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_EMAIL, CLAIM_EMAIL_VERIFIED));
-    emailScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, emailScope);
-
-    // Create address scope
-    Map<String, Object> addressScope = new HashMap<>();
-    addressScope.put(BODY_PARAM_SCOPE, SCOPE_ADDRESS);
-    addressScope.put(BODY_PARAM_DISPLAY_NAME, "Address");
-    addressScope.put(BODY_PARAM_DESCRIPTION, "Address scope");
-    addressScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_ADDRESS));
-    addressScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, addressScope);
-
-    // Create phone scope
-    Map<String, Object> phoneScope = new HashMap<>();
-    phoneScope.put(BODY_PARAM_SCOPE, SCOPE_PHONE);
-    phoneScope.put(BODY_PARAM_DISPLAY_NAME, "Phone");
-    phoneScope.put(BODY_PARAM_DESCRIPTION, "Phone scope");
-    phoneScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_PHONE_NUMBER, CLAIM_PHONE_VERIFIED));
-    phoneScope.put(BODY_PARAM_IS_OIDC, true);
-    createScope(tenantId, phoneScope);
   }
 
   @Test

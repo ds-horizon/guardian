@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.dao.model;
 
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
 import com.dreamsportslabs.guardian.constant.OidcResponseType;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +13,7 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Setter
 @Jacksonized
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ClientModel {
   private String tenantId;
   private String clientId;

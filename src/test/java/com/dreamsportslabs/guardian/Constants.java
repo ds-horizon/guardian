@@ -285,6 +285,9 @@ public class Constants {
   public static final String INVALID_REQUEST = "invalid_request";
   public static final String NO_FIELDS_TO_UPDATE = "no_fields_to_update";
   public static final String ERROR_MSG_NO_FIELDS_TO_UPDATE = "No fields for update";
+  public static final String REQUESTED_SCOPES = "requested_scopes";
+  public static final String CONSENTED_SCOPES = "consented_scopes";
+  public static final String SUBJECT = "subject";
 
   public static final String CLIENT_NOT_FOUND_MSG = "Client not found";
   public static final String GRANT_TYPES_REQUIRED = "Grant types are required";
@@ -502,4 +505,15 @@ public class Constants {
   public static final long ID_TOKEN_EXPIRY_SECONDS = 3600L;
   public static final long REFRESH_TOKEN_EXPIRY_SECONDS = 1800L;
   public static final long EXPIRED_TOKEN_OFFSET_SECONDS = -1800L;
+
+  // Test constants for client data checks
+  public static final String CHECK_CLIENT = "client";
+  public static final String CHECK_CLIENT_ID = "client.clientId";
+  public static final String CHECK_CLIENT_TENANT_ID = "client.tenantId";
+  public static final String CHECK_CLIENT_NAME = "client.clientName";
+  public static final String CHECK_CLIENT_SECRET = "client.clientSecret";
+  public static final String CHECK_GRANT_TYPES = "client.grantTypes";
+  public static final String CHECK_REDIRECT_URIS = "client.redirectUris";
+  public static final String CHECK_RESPONSE_TYPES = "client.responseTypes";
+  public static final String CHECK_SKIP_CONSENT = "client.skipConsent";
 }

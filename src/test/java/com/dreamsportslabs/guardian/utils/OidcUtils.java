@@ -2,6 +2,12 @@ package com.dreamsportslabs.guardian.utils;
 
 import static com.dreamsportslabs.guardian.Constants.ACCESS_TOKEN_EXPIRY_SECONDS;
 import static com.dreamsportslabs.guardian.Constants.AUTH_RESPONSE_TYPE_CODE;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLAIMS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.CLAIM_PHONE_NUMBER_VERIFIED;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.EQUALS_SIGN;
 import static com.dreamsportslabs.guardian.Constants.EXAMPLE_CALLBACK;
@@ -27,10 +33,16 @@ import static com.dreamsportslabs.guardian.Constants.QUERY_SEPARATOR;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
+import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
 import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER;
 import static com.dreamsportslabs.guardian.Constants.TEST_KID;
 import static com.dreamsportslabs.guardian.Constants.TEST_PUBLIC_KEY_PATH;
 import static com.dreamsportslabs.guardian.Constants.TEST_STATE;
+import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_ADDRESS;
+import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL;
+import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL_VERIFIED;
+import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_PHONE_NUMBER;
+import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createScope;
 import static com.dreamsportslabs.guardian.utils.DbUtils.authorizeSessionExists;
 import static com.dreamsportslabs.guardian.utils.DbUtils.getAuthorizeSession;
 import static com.dreamsportslabs.guardian.utils.DbUtils.getOidcCode;
@@ -586,5 +598,40 @@ public class OidcUtils {
     for (String claim : notExpectedClaims) {
       assertThat((String) claims.get(claim), nullValue());
     }
+  }
+
+  public static void createRequiredScopes(String tenantId) {
+    Map<String, Object> openidScope = new HashMap<>();
+    openidScope.put(BODY_PARAM_SCOPE, SCOPE_OPENID);
+    openidScope.put(BODY_PARAM_DISPLAY_NAME, "OpenID Connect");
+    openidScope.put(BODY_PARAM_DESCRIPTION, "OpenID Connect scope");
+    openidScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_SUB));
+    openidScope.put(BODY_PARAM_IS_OIDC, true);
+    createScope(tenantId, openidScope);
+
+    Map<String, Object> emailScope = new HashMap<>();
+    emailScope.put(BODY_PARAM_SCOPE, SCOPE_EMAIL);
+    emailScope.put(BODY_PARAM_DISPLAY_NAME, "Email");
+    emailScope.put(BODY_PARAM_DESCRIPTION, "Email scope");
+    emailScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_EMAIL, CLAIM_EMAIL_VERIFIED));
+    emailScope.put(BODY_PARAM_IS_OIDC, true);
+    createScope(tenantId, emailScope);
+
+    Map<String, Object> addressScope = new HashMap<>();
+    addressScope.put(BODY_PARAM_SCOPE, SCOPE_ADDRESS);
+    addressScope.put(BODY_PARAM_DISPLAY_NAME, "Address");
+    addressScope.put(BODY_PARAM_DESCRIPTION, "Address scope");
+    addressScope.put(BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_ADDRESS));
+    addressScope.put(BODY_PARAM_IS_OIDC, true);
+    createScope(tenantId, addressScope);
+
+    Map<String, Object> phoneScope = new HashMap<>();
+    phoneScope.put(BODY_PARAM_SCOPE, SCOPE_PHONE);
+    phoneScope.put(BODY_PARAM_DISPLAY_NAME, "Phone");
+    phoneScope.put(BODY_PARAM_DESCRIPTION, "Phone scope");
+    phoneScope.put(
+        BODY_PARAM_CLAIMS, Arrays.asList(CLAIM_PHONE_NUMBER, CLAIM_PHONE_NUMBER_VERIFIED));
+    phoneScope.put(BODY_PARAM_IS_OIDC, true);
+    createScope(tenantId, phoneScope);
   }
 }
