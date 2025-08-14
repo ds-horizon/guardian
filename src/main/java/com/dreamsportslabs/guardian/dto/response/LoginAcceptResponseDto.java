@@ -13,7 +13,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class LoginAcceptResponseDto {
 
-  @JsonProperty("consent_page_uri")
   private String consentPageUri;
 
   @JsonProperty("consent_challenge")

@@ -1,6 +1,5 @@
 package com.dreamsportslabs.guardian.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import lombok.AllArgsConstructor;
@@ -9,10 +8,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class AuthCodeResponseDto {
-
-  @JsonProperty("redirect_uri")
   private String redirectUri;
-
   private String state;
   private String code;
 
