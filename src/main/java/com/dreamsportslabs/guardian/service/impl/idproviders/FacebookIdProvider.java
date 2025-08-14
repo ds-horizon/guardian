@@ -9,6 +9,8 @@ import com.dreamsportslabs.guardian.service.IdProvider;
 import com.google.common.hash.Hashing;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
+import io.vertx.rxjava3.core.buffer.Buffer;
+import io.vertx.rxjava3.ext.web.client.HttpRequest;
 import io.vertx.rxjava3.ext.web.client.WebClient;
 import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
@@ -18,24 +20,30 @@ import org.apache.commons.lang3.StringUtils;
 public class FacebookIdProvider implements IdProvider {
   private final WebClient webClient;
   private final String appSecret;
+  private final Boolean sendAppSecret;
   private final String fields = "id,name,first_name,middle_name,last_name,email,picture";
 
   public FacebookIdProvider(FbConfig fbConfigDto) {
     this.webClient = GuiceInjector.getGuiceInjector().getInstance(WebClient.class);
     this.appSecret = fbConfigDto.getAppSecret();
+    this.sendAppSecret = fbConfigDto.getSendAppSecret();
   }
 
   @Override
   public Single<JsonObject> getUserIdentity(String accessToken) {
-    String appSecret =
-        Hashing.hmacSha256(this.appSecret.getBytes())
-            .hashString(accessToken, StandardCharsets.UTF_8)
-            .toString();
-    return webClient
-        .get(443, "graph.facebook.com", "/me")
+    HttpRequest<Buffer> request = webClient.get(443, "graph.facebook.com", "/me");
+
+    if (this.sendAppSecret) {
+      String appSecretProof =
+          Hashing.hmacSha256(this.appSecret.getBytes())
+              .hashString(accessToken, StandardCharsets.UTF_8)
+              .toString();
+      request.addQueryParam("appsecret_proof", appSecretProof);
+    }
+
+    return request
         .ssl(true)
         .addQueryParam("access_token", accessToken)
-        .addQueryParam("appsecret_proof", appSecret)
         .addQueryParam("fields", this.fields)
         .rxSend()
         .map(
