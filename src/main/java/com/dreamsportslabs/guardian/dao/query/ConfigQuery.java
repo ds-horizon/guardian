@@ -50,7 +50,8 @@ public class ConfigQuery {
   public static final String FB_AUTH_CONFIG =
       """
     SELECT app_id,
-           app_secret
+           app_secret,
+           app_secret_required
     FROM fb_config
     WHERE tenant_id = ?
     """;

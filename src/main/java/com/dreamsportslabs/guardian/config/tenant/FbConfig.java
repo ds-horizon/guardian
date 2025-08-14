@@ -6,4 +6,5 @@ import lombok.Data;
 public class FbConfig {
   private String appId;
   private String appSecret;
+  private Boolean appSecretRequired;
 }

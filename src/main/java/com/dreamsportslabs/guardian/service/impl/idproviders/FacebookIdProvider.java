@@ -20,18 +20,20 @@ import org.apache.commons.lang3.StringUtils;
 public class FacebookIdProvider implements IdProvider {
   private final WebClient webClient;
   private final String appSecret;
+  private final Boolean appSecretRequired;
   private final String fields = "id,name,first_name,middle_name,last_name,email,picture";
 
   public FacebookIdProvider(FbConfig fbConfigDto) {
     this.webClient = GuiceInjector.getGuiceInjector().getInstance(WebClient.class);
     this.appSecret = fbConfigDto.getAppSecret();
+    this.appSecretRequired = fbConfigDto.getAppSecretRequired();
   }
 
   @Override
   public Single<JsonObject> getUserIdentity(String accessToken) {
     HttpRequest<Buffer> request = webClient.get(443, "graph.facebook.com", "/me");
 
-    if (StringUtils.isNotBlank(this.appSecret)) {
+    if (this.appSecretRequired) {
       String appSecretProof =
           Hashing.hmacSha256(this.appSecret.getBytes())
               .hashString(accessToken, StandardCharsets.UTF_8)

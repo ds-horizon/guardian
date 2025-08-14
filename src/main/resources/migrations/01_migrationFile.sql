@@ -82,11 +82,12 @@ CREATE TABLE sms_config
 
 CREATE TABLE fb_config
 (
-    tenant_id  CHAR(10) PRIMARY KEY,
-    app_id     VARCHAR(256) NOT NULL,
-    app_secret VARCHAR(256) NOT NULL,
-    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    tenant_id           CHAR(10)     PRIMARY KEY,
+    app_id              VARCHAR(256) NOT NULL,
+    app_secret          VARCHAR(256) NOT NULL,
+    app_secret_required BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_tenant_fb_config FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
