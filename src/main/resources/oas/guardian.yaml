@@ -63,7 +63,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Tokens'
+                  - $ref: '#/components/schemas/TokenResponse'
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -303,7 +303,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Tokens'
+                  - $ref: '#/components/schemas/TokenResponse'
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -340,7 +340,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Tokens'
+                  - $ref: '#/components/schemas/TokenResponse'
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -376,7 +376,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Tokens'
+                  - $ref: '#/components/schemas/TokenResponse'
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -414,7 +414,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Tokens'
+                  - $ref: '#/components/schemas/TokenResponse'
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -1155,7 +1155,7 @@ paths:
                   summary: Invalid Client ID
                   value:
                     error: "invalid_request"
-                    message: "Invalid clientId"
+                    message: "Invalid client_id"
                 invalid_redirect_uri:
                   summary: Invalid Redirect URI
                   value:
@@ -1699,7 +1699,7 @@ paths:
             minimum: 1
             default: 1
             example: 1
-        - name: pageSize
+        - name: page_size
           in: query
           required: false
           description: Number of items per page
@@ -1729,7 +1729,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v1/admin/client/{clientId}:
+  /v1/admin/client/{client_id}:
     get:
       tags:
         - OIDC Client Management
@@ -1746,7 +1746,7 @@ paths:
         **Security Note:** Client secrets are included in the response and should be handled securely.
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
-        - name: clientId
+        - name: client_id
           in: path
           required: true
           description: Unique identifier of the client
@@ -1790,7 +1790,7 @@ paths:
         - Use the regenerate secret endpoint to update client secrets
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
-        - name: clientId
+        - name: client_id
           in: path
           required: true
           description: Unique identifier of the client
@@ -1843,7 +1843,7 @@ paths:
         **Security:** Ensure no active applications are using this client before deletion.
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
-        - name: clientId
+        - name: client_id
           in: path
           required: true
           description: Unique identifier of the client
@@ -1866,7 +1866,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v1/admin/client/{clientId}/regenerate-secret:
+  /v1/admin/client/{client_id}/regenerate-secret:
     post:
       tags:
         - OIDC Client Management
@@ -1884,7 +1884,7 @@ paths:
         - Store this securely as it won't be shown again
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
-        - name: clientId
+        - name: client_id
           in: path
           required: true
           description: Unique identifier of the client
@@ -1911,7 +1911,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v1/admin/client/{clientId}/scope:
+  /v1/admin/client/{client_id}/scope:
     post:
       tags:
         - OIDC Client Scope Management
@@ -1930,7 +1930,7 @@ paths:
         - The operation is atomic - either all valid scopes are added or none
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
-        - name: clientId
+        - name: client_id
           in: path
           required: true
           description: Unique identifier of the client
@@ -1977,7 +1977,7 @@ paths:
         - Scopes are returned in alphabetical order
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
-        - name: clientId
+        - name: client_id
           in: path
           required: true
           description: Unique identifier of the client
@@ -2020,7 +2020,7 @@ paths:
         - If the scope is not assigned, the operation succeeds (idempotent)
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
-        - name: clientId
+        - name: client_id
           in: path
           required: true
           description: Unique identifier of the client
@@ -2062,7 +2062,7 @@ paths:
         **Query Parameters:**
         - `name`: Filter scopes by name (case-insensitive partial match)
         - `page`: Page number for pagination (starts from 1)
-        - `pageSize`: Number of items per page (1-100, default: 10)
+        - `page_size`: Number of items per page (1-100, default: 10)
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
         - name: name
@@ -2081,7 +2081,7 @@ paths:
             minimum: 1
             default: 1
             example: 1
-        - name: pageSize
+        - name: page_size
           in: query
           required: false
           description: Number of items per page
@@ -2104,17 +2104,17 @@ paths:
                   value:
                     scopes:
                       - name: "openid"
-                        displayName: "OpenID"
+                        display_name: "OpenID"
                         description: "OpenID Connect scope"
                         claims: ["sub"]
-                        iconUrl: "https://example.com/icons/openid.png"
-                        isOidc: true
+                        icon_url: "https://example.com/icons/openid.png"
+                        is_oidc: true
                       - name: "read:profile"
-                        displayName: "Read Profile"
+                        display_name: "Read Profile"
                         description: "Allows reading user profile information"
                         claims: ["name", "email", "profile"]
-                        iconUrl: "https://example.com/icons/profile.png"
-                        isOidc: false
+                        icon_url: "https://example.com/icons/profile.png"
+                        is_oidc: false
         '400':
           description: Bad Request due to invalid query parameters
           content:
@@ -2129,11 +2129,11 @@ paths:
                       code: "invalid_request"
                       message: "page value cannot be less than 1"
                 invalid_page_size:
-                  summary: Invalid pageSize parameter
+                  summary: Invalid page_size parameter
                   value:
                     error:
                       code: "invalid_request"
-                      message: "pageSize must be between 1 and 100"
+                      message: "page_size must be between 1 and 100"
         '500':
           description: Internal Server Error
           content:
@@ -2169,47 +2169,47 @@ paths:
                 summary: Custom scope example
                 value:
                   name: "read:profile"
-                  displayName: "Read Profile"
+                  display_name: "Read Profile"
                   description: "Allows reading user profile information"
                   claims: ["name", "email", "profile"]
-                  iconUrl: "https://example.com/icons/profile.png"
-                  isOidc: false
+                  icon_url: "https://example.com/icons/profile.png"
+                  is_oidc: false
               openid_scope:
                 summary: OpenID scope example
                 value:
                   name: "openid"
-                  displayName: "OpenID"
+                  display_name: "OpenID"
                   description: "OpenID Connect scope"
                   claims: ["sub"]
-                  iconUrl: "https://example.com/icons/openid.png"
-                  isOidc: true
+                  icon_url: "https://example.com/icons/openid.png"
+                  is_oidc: true
               phone_scope:
                 summary: Phone scope example
                 value:
                   name: "phone"
-                  displayName: "Phone"
+                  display_name: "Phone"
                   description: "Phone number access"
                   claims: ["phone_number", "phone_number_verified"]
-                  iconUrl: "https://example.com/icons/phone.png"
-                  isOidc: true
+                  icon_url: "https://example.com/icons/phone.png"
+                  is_oidc: true
               email_scope:
                 summary: Email scope example
                 value:
                   name: "email"
-                  displayName: "Email"
+                  display_name: "Email"
                   description: "Email access"
                   claims: ["email", "email_verified"]
-                  iconUrl: "https://example.com/icons/email.png"
-                  isOidc: true
+                  icon_url: "https://example.com/icons/email.png"
+                  is_oidc: true
               address_scope:
                 summary: Address scope example
                 value:
                   name: "address"
-                  displayName: "Address"
+                  display_name: "Address"
                   description: "Address information access"
                   claims: ["address"]
-                  iconUrl: "https://example.com/icons/address.png"
-                  isOidc: true
+                  icon_url: "https://example.com/icons/address.png"
+                  is_oidc: true
       responses:
         '201':
           description: Scope created successfully
@@ -2222,11 +2222,11 @@ paths:
                   summary: Successfully created scope
                   value:
                     name: "read:profile"
-                    displayName: "Read Profile"
+                    display_name: "Read Profile"
                     description: "Allows reading user profile information"
                     claims: ["name", "email", "profile"]
-                    iconUrl: "https://example.com/icons/profile.png"
-                    isOidc: false
+                    icon_url: "https://example.com/icons/profile.png"
+                    is_oidc: false
         '400':
           description: Bad Request due to missing parameters, invalid data, or validation errors
           content:
@@ -2319,15 +2319,15 @@ paths:
               full_update:
                 summary: Update all fields
                 value:
-                  displayName: "Updated Profile Reader"
+                  display_name: "Updated Profile Reader"
                   description: "Updated description for profile reading permissions"
                   claims: ["name", "email", "profile", "picture"]
-                  iconUrl: "https://example.com/icons/updated-profile.png"
-                  isOidc: false
+                  icon_url: "https://example.com/icons/updated-profile.png"
+                  is_oidc: false
               partial_update:
                 summary: Update only display name
                 value:
-                  displayName: "New Display Name"
+                  display_name: "New Display Name"
               claims_update:
                 summary: Update only claims
                 value:
@@ -2335,24 +2335,24 @@ paths:
               openid_update:
                 summary: Update OpenID scope
                 value:
-                  displayName: "Updated OpenID"
+                  display_name: "Updated OpenID"
                   description: "Updated OpenID Connect scope"
                   claims: ["sub"]
-                  isOidc: true
+                  is_oidc: true
               phone_update:
                 summary: Update Phone scope
                 value:
-                  displayName: "Updated Phone Access"
+                  display_name: "Updated Phone Access"
                   claims: ["phone_number", "phone_number_verified"]
               email_update:
                 summary: Update Email scope
                 value:
-                  displayName: "Updated Email Access"
+                  display_name: "Updated Email Access"
                   claims: ["email", "email_verified"]
               address_update:
                 summary: Update Address scope
                 value:
-                  displayName: "Updated Address Access"
+                  display_name: "Updated Address Access"
                   claims: ["address"]
       responses:
         '200':
@@ -2366,20 +2366,20 @@ paths:
                   summary: Successfully updated scope
                   value:
                     name: "read:profile"
-                    displayName: "Updated Profile Reader"
+                    display_name: "Updated Profile Reader"
                     description: "Updated description for profile reading permissions"
                     claims: ["name", "email", "profile", "picture"]
-                    iconUrl: "https://example.com/icons/updated-profile.png"
-                    isOidc: false
+                    icon_url: "https://example.com/icons/updated-profile.png"
+                    is_oidc: false
                 updated_openid:
                   summary: Updated OpenID scope
                   value:
                     name: "openid"
-                    displayName: "Updated OpenID"
+                    display_name: "Updated OpenID"
                     description: "Updated OpenID Connect scope"
                     claims: ["sub"]
-                    iconUrl: "https://example.com/icons/openid.png"
-                    isOidc: true
+                    icon_url: "https://example.com/icons/openid.png"
+                    is_oidc: true
         '400':
           description: Bad Request due to invalid data or validation errors
           content:
@@ -2821,7 +2821,7 @@ components:
         isNewUser:
           type: boolean
           example: true
-    Tokens:
+    TokenResponse:
       type: object
       properties:
         accessToken:
@@ -2844,6 +2844,10 @@ components:
           type: integer
           example: 3600
           description: expiry of the access token in seconds
+        isNewUser:
+          type: boolean
+          description: Indicates if the user is new
+          example: false
     RefreshToken:
       type: object
       properties:
@@ -3044,13 +3048,13 @@ components:
       description: Scope information
       required:
         - name
-        - isOidc
+        - is_oidc
       properties:
         name:
           type: string
           description: Unique name of the scope
           example: "read:profile"
-        displayName:
+        display_name:
           type: string
           description: Human-readable display name
           example: "Read Profile"
@@ -3058,12 +3062,12 @@ components:
           type: string
           description: Detailed description of the scope
           example: "Allows reading user profile information"
-        iconUrl:
+        icon_url:
           type: string
           format: uri
           description: URL to the scope's icon
           example: "https://example.com/icons/profile.png"
-        isOidc:
+        is_oidc:
           type: boolean
           description: Whether this is an OpenID Connect standard scope
           example: true
@@ -3092,7 +3096,7 @@ components:
       description: Request payload for creating a new scope
       required:
         - name
-        - isOidc
+        - is_oidc
       properties:
         name:
           type: string
@@ -3106,7 +3110,7 @@ components:
           example: "read:profile"
           minLength: 1
           maxLength: 50
-        displayName:
+        display_name:
           type: string
           description: Human-readable display name
           example: "Read Profile"
@@ -3129,12 +3133,12 @@ components:
             type: string
             example: "name"
           example: ["name", "email", "profile"]
-        iconUrl:
+        icon_url:
           type: string
           format: uri
           description: URL to the scope's icon
           example: "https://example.com/icons/profile.png"
-        isOidc:
+        is_oidc:
           type: boolean
           description: Whether this is an OpenID Connect standard scope
           example: true
@@ -3145,7 +3149,7 @@ components:
         Request payload for updating an existing scope. All fields are optional for partial updates.
         The scope name cannot be changed through this endpoint.
       properties:
-        displayName:
+        display_name:
           type: string
           description: Human-readable display name
           example: "Updated Profile Reader"
@@ -3170,13 +3174,13 @@ components:
             type: string
             example: "name"
           example: ["name", "email", "profile", "picture"]
-        iconUrl:
+        icon_url:
           type: string
           format: uri
           description: URL to the scope's icon
           example: "https://example.com/icons/updated-profile.png"
           nullable: true
-        isOidc:
+        is_oidc:
           type: boolean
           description: Whether this is an OpenID Connect standard scope
           example: false
@@ -3281,47 +3285,47 @@ components:
       type: object
       description: Request body for accepting login challenge
       required:
-        - loginChallenge
-        - refreshToken
+        - login_challenge
+        - refresh_token
       properties:
-        loginChallenge:
+        login_challenge:
           type: string
           description: Login challenge received from the login page
           example: "login_challenge_abc123"
-        refreshToken:
+        refresh_token:
           type: string
           description: Valid refresh token for the user
           example: "refresh_token_xyz789"
       example:
-        loginChallenge: "login_challenge_abc123"
-        refreshToken: "refresh_token_xyz789"
+        login_challenge: "login_challenge_abc123"
+        refresh_token: "refresh_token_xyz789"
 
     ConsentAcceptRequestBody:
       type: object
       description: Request body for accepting consent challenge
       required:
-        - consentChallenge
-        - consentedScopes
-        - refreshToken
+        - consent_challenge
+        - consented_scopes
+        - refresh_token
       properties:
-        consentChallenge:
+        consent_challenge:
           type: string
           description: Consent challenge received from the consent page
           example: "consent_challenge_xyz789"
-        consentedScopes:
+        consented_scopes:
           type: array
           description: List of scopes the user has consented to
           items:
             type: string
           example: ["openid", "email", "profile"]
-        refreshToken:
+        refresh_token:
           type: string
           description: Valid refresh token for the user
           example: "refresh_token_xyz789"
       example:
-        consentChallenge: "consent_challenge_xyz789"
-        consentedScopes: ["openid", "email", "profile"]
-        refreshToken: "refresh_token_xyz789"
+        consent_challenge: "consent_challenge_xyz789"
+        consented_scopes: ["openid", "email", "profile"]
+        refresh_token: "refresh_token_xyz789"
 
     TokenRequestBody:
       type: object
@@ -3369,47 +3373,6 @@ components:
         redirect_uri: "https://client.example.com/callback"
         client_id: "my_client_id"
         client_secret: "my_client_secret"
-
-    TokenResponse:
-      type: object
-      description: OAuth 2.0 token response
-      required:
-        - access_token
-        - token_type
-        - expires_in
-      properties:
-        access_token:
-          type: string
-          description: OAuth 2.0 access token
-          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-        token_type:
-          type: string
-          description: Token type
-          enum: ["Bearer"]
-          example: "Bearer"
-        expires_in:
-          type: integer
-          description: Access token expiration time in seconds
-          example: 3600
-        refresh_token:
-          type: string
-          description: OAuth 2.0 refresh token
-          example: "refresh_token_xyz789"
-        id_token:
-          type: string
-          description: OpenID Connect ID token
-          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-        isNewUser:
-          type: boolean
-          description: Indicates if the user is new
-          example: false
-      example:
-        access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-        token_type: "Bearer"
-        expires_in: 3600
-        refresh_token: "refresh_token_xyz789"
-        id_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-        isNewUser: false
 
     OidcTokenResponse:
       type: object
@@ -3735,7 +3698,7 @@ components:
       required:
         - clients
         - page
-        - pageSize
+        - page_size
       properties:
         clients:
           type: array
@@ -3746,7 +3709,7 @@ components:
           type: integer
           description: Current page number
           example: 1
-        pageSize:
+        page_size:
           type: integer
           description: Number of items per page
           example: 10
@@ -3765,7 +3728,7 @@ components:
             response_types: ["code"]
             skip_consent: true
         page: 1
-        pageSize: 10
+        page_size: 10
 
     ClientSecretResponse:
       type: object
