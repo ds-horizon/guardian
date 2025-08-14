@@ -7,7 +7,6 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_EMAIL;
@@ -27,6 +26,7 @@ import static com.dreamsportslabs.guardian.Constants.HEADER_LOCATION;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
 import static com.dreamsportslabs.guardian.Constants.MESSAGE;
+import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
@@ -166,7 +166,7 @@ public class ConsentAcceptIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
 
@@ -178,7 +178,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, consentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, consentedScopes);
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
     return requestBody;
   }
 
@@ -315,7 +315,7 @@ public class ConsentAcceptIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
 
     Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
 
@@ -324,7 +324,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, consentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_ADDRESS));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -536,7 +536,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(nonExistentTenant, requestBody);
 
@@ -579,7 +579,7 @@ public class ConsentAcceptIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
 
     Response loginAcceptResponse = loginAccept(tenant2, loginAcceptBody);
 
@@ -590,7 +590,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, expiredConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
 
     Response response = consentAccept(tenant2, requestBody);
 
@@ -608,7 +608,7 @@ public class ConsentAcceptIT {
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     requestBody.put(
         BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -633,7 +633,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, tenant2RefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, tenant2RefreshToken);
 
     Response response = consentAccept(tenant2, requestBody);
 
@@ -650,7 +650,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -671,7 +671,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -693,7 +693,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, malformedConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -711,7 +711,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -730,7 +730,7 @@ public class ConsentAcceptIT {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     requestBody.put(BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -751,7 +751,7 @@ public class ConsentAcceptIT {
     requestBody.put(
         BODY_PARAM_CONSENTED_SCOPES,
         Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE, SCOPE_ADDRESS));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 
@@ -783,7 +783,7 @@ public class ConsentAcceptIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
 
     Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
 
@@ -794,7 +794,7 @@ public class ConsentAcceptIT {
     requestBody.put(BODY_PARAM_CONSENT_CHALLENGE, consentChallenge);
     requestBody.put(
         BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS));
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, testRefreshToken);
 
     Response response = consentAccept(tenant1, requestBody);
 

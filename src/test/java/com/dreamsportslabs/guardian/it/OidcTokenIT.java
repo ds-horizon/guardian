@@ -13,7 +13,6 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_NAME;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERID;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
@@ -50,6 +49,7 @@ import static com.dreamsportslabs.guardian.Constants.INVALID_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
+import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.PARAM_CODE_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.PARAM_CODE_CHALLENGE_METHOD;
 import static com.dreamsportslabs.guardian.Constants.PRAGMA_NO_CACHE;
@@ -313,17 +313,17 @@ public class OidcTokenIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
 
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallengeWithCodeChallengeMethodPlain);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser2);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser2);
     Response loginAcceptResponseWithCodeChallengeMethodPlain =
         loginAccept(tenant1, loginAcceptBody);
 
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallengeWithCodeChallengeMethodS256);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser3);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser3);
     Response loginAcceptResponseWithCodeChallengeMethodS256 = loginAccept(tenant1, loginAcceptBody);
 
     validConsentChallenge = extractConsentChallenge(loginAcceptResponse);
@@ -336,14 +336,14 @@ public class OidcTokenIT {
     consentRequestBody.put(BODY_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
     consentRequestBody.put(
         BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
-    consentRequestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    consentRequestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response consentAcceptResponse = consentAccept(tenant1, consentRequestBody);
     validAuthCode = extractAuthCodeFromLocation(consentAcceptResponse.getHeader(HEADER_LOCATION));
 
     consentRequestBody.put(
         BODY_PARAM_CONSENT_CHALLENGE, validConsentChallengeWithCodeChallengeMethodPlain);
-    consentRequestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser2);
+    consentRequestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser2);
 
     Response consentAcceptResponseWithCodeChallengeMethodPlain =
         consentAccept(tenant1, consentRequestBody);
@@ -353,7 +353,7 @@ public class OidcTokenIT {
 
     consentRequestBody.put(
         BODY_PARAM_CONSENT_CHALLENGE, validConsentChallengeWithCodeChallengeMethodS256);
-    consentRequestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser3);
+    consentRequestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshTokenForUser3);
 
     Response consentAcceptResponseWithCodeChallengeMethodS256 =
         consentAccept(tenant1, consentRequestBody);

@@ -5,7 +5,6 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_DISPLAY_NAME;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_IS_OIDC;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_EMAIL;
@@ -28,6 +27,7 @@ import static com.dreamsportslabs.guardian.Constants.HEADER_LOCATION;
 import static com.dreamsportslabs.guardian.Constants.INVALID_TENANT;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
+import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.PARTIAL_CONSENT_USER_ID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
@@ -149,8 +149,10 @@ public class LoginAcceptIT {
   public void testLoginAcceptSuccess() {
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            validRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -162,7 +164,7 @@ public class LoginAcceptIT {
   @NullAndEmptySource
   void testLoginAcceptNullEmptyLoginChallenge(String loginChallenge) {
     Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
     requestBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
 
     Response response = loginAccept(tenant1, requestBody);
@@ -180,7 +182,7 @@ public class LoginAcceptIT {
   void testLoginAcceptNullEmptyRefreshToken(String refreshToken) {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge);
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -198,8 +200,10 @@ public class LoginAcceptIT {
         "invalid_login_challenge_" + RandomStringUtils.randomAlphanumeric(10);
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, invalidLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            invalidLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            validRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -217,8 +221,10 @@ public class LoginAcceptIT {
         "invalid_refresh_token_" + RandomStringUtils.randomAlphanumeric(10);
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, invalidRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            invalidRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -234,7 +240,7 @@ public class LoginAcceptIT {
   public void testLoginAcceptMissingTenantId() {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge);
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = loginAccept(null, requestBody);
 
@@ -246,7 +252,7 @@ public class LoginAcceptIT {
   public void testLoginAcceptNonExistentTenantId() {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge);
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response = loginAccept(INVALID_TENANT, requestBody);
 
@@ -279,8 +285,10 @@ public class LoginAcceptIT {
 
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, skipConsentLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, skipConsentRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            skipConsentLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            skipConsentRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -311,8 +319,10 @@ public class LoginAcceptIT {
 
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, partialConsentRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            partialConsentRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -324,7 +334,7 @@ public class LoginAcceptIT {
   public void testLoginAcceptConcurrentRequests() {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge);
-    requestBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    requestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
 
     Response response1 = loginAccept(tenant1, requestBody);
     Response response2 = loginAccept(tenant1, requestBody);
@@ -345,8 +355,10 @@ public class LoginAcceptIT {
         "expired_login_challenge_" + RandomStringUtils.randomAlphanumeric(10);
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, expiredLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            expiredLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            validRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -366,8 +378,10 @@ public class LoginAcceptIT {
 
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, expiredRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            expiredRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -383,8 +397,10 @@ public class LoginAcceptIT {
   public void testLoginAcceptTenantIsolation() {
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            validRefreshToken);
 
     Response response = loginAccept(tenant2, requestBody);
 
@@ -414,8 +430,10 @@ public class LoginAcceptIT {
 
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            validRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -437,8 +455,10 @@ public class LoginAcceptIT {
 
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, malformedRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            malformedRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -455,8 +475,10 @@ public class LoginAcceptIT {
     // This test ensures the async deletion handles null gracefully
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            validRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -472,8 +494,10 @@ public class LoginAcceptIT {
 
     Map<String, Object> requestBody =
         Map.of(
-            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge,
-            BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            validRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
