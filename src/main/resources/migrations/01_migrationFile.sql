@@ -85,7 +85,7 @@ CREATE TABLE fb_config
     tenant_id           CHAR(10)     PRIMARY KEY,
     app_id              VARCHAR(256) NOT NULL,
     app_secret          VARCHAR(256) NOT NULL,
-    app_secret_required BOOLEAN      NOT NULL DEFAULT TRUE,
+    send_app_secret     BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 

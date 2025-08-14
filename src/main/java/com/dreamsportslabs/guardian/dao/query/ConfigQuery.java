@@ -51,7 +51,7 @@ public class ConfigQuery {
       """
     SELECT app_id,
            app_secret,
-           app_secret_required
+           send_app_secret
     FROM fb_config
     WHERE tenant_id = ?
     """;
