@@ -125,6 +125,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.CoreMatchers.isA;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
@@ -369,6 +371,13 @@ public class OidcTokenIT {
     return AUTH_BASIC_PREFIX + authHeader;
   }
 
+  /** Helper method to validate scope using assertThat with containsInAnyOrder */
+  private void validateScope(Response response, String... expectedScopes) {
+    String actualScope = response.jsonPath().getString(TOKEN_PARAM_SCOPE);
+    String[] actualScopeArray = actualScope.trim().split("\\s+");
+    assertThat(Arrays.asList(actualScopeArray), containsInAnyOrder(expectedScopes));
+  }
+
   @Test
   @DisplayName("Should return error in case of missing grant_type")
   public void testMissingGrantType() {
@@ -436,6 +445,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
 
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
+
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
     List<String> notExpectedScopes = List.of();
@@ -474,6 +486,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
 
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
+
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
     List<String> notExpectedScopes = List.of();
@@ -511,6 +526,9 @@ public class OidcTokenIT {
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL);
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
@@ -551,6 +569,9 @@ public class OidcTokenIT {
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL);
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
@@ -762,6 +783,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
 
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
+
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
     List<String> notExpectedScopes = List.of();
@@ -813,6 +837,9 @@ public class OidcTokenIT {
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
@@ -866,6 +893,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
 
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL);
+
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
     List<String> notExpectedScopes = List.of(SCOPE_ADDRESS, SCOPE_PHONE);
@@ -918,6 +948,9 @@ public class OidcTokenIT {
         .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
         .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL);
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     List<String> expectedScopes = List.of(SCOPE_OPENID, SCOPE_EMAIL);
@@ -1129,6 +1162,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
 
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
+
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     String idToken = response.jsonPath().getString(TOKEN_PARAM_ID_TOKEN);
     String refreshToken = response.jsonPath().getString(TOKEN_PARAM_REFRESH_TOKEN);
@@ -1186,6 +1222,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     String idToken = response.jsonPath().getString(TOKEN_PARAM_ID_TOKEN);
@@ -1245,6 +1284,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
 
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
     String idToken = response.jsonPath().getString(TOKEN_PARAM_ID_TOKEN);
@@ -1494,6 +1536,9 @@ public class OidcTokenIT {
         .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
         .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Validate scope using assertThat
+    validateScope(response, SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
 
     // Verify that the tokens contain the originally consented scopes, not the requested ones
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
