@@ -18,7 +18,7 @@ import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-@Path("/revocations")
+@Path("/v1/revocations")
 public class Revocations {
   private final RevocationService revocationService;
 
