@@ -59,14 +59,11 @@ public class UserConsentService {
 
   private ClientModel createClientResponse(ClientModel originalClient) {
     return ClientModel.builder()
-        .tenantId(originalClient.getTenantId())
         .clientId(originalClient.getClientId())
         .clientName(originalClient.getClientName())
         .clientUri(originalClient.getClientUri())
-        .grantTypes(originalClient.getGrantTypes())
         .logoUri(originalClient.getLogoUri())
         .policyUri(originalClient.getPolicyUri())
-        .responseTypes(originalClient.getResponseTypes())
         .build();
   }
 }

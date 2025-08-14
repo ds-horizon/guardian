@@ -4,9 +4,6 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT;
 import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_NAME;
-import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_TENANT_ID;
-import static com.dreamsportslabs.guardian.Constants.CHECK_GRANT_TYPES;
-import static com.dreamsportslabs.guardian.Constants.CHECK_RESPONSE_TYPES;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CONSENTED_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
@@ -448,7 +445,8 @@ public class UserConsentIT {
         .then()
         .statusCode(SC_OK)
         .body(CHECK_CLIENT, notNullValue())
-        .body(CHECK_CLIENT_ID, equalTo(expectedClientId)) // camelCase, not snake_case
+        .body(CHECK_CLIENT_ID, equalTo(expectedClientId))
+        .body(CHECK_CLIENT_NAME, notNullValue())
         .body(REQUESTED_SCOPES, hasSize(expectedRequestedScopes.size()))
         .body(REQUESTED_SCOPES, containsInAnyOrder(expectedRequestedScopes.toArray()))
         .body(SUBJECT, equalTo(expectedSubject));
@@ -457,12 +455,5 @@ public class UserConsentIT {
     if (!expectedConsentedScopes.isEmpty()) {
       response.then().body(CONSENTED_SCOPES, containsInAnyOrder(expectedConsentedScopes.toArray()));
     }
-
-    response
-        .then()
-        .body(CHECK_CLIENT_TENANT_ID, notNullValue())
-        .body(CHECK_CLIENT_NAME, notNullValue())
-        .body(CHECK_GRANT_TYPES, notNullValue())
-        .body(CHECK_RESPONSE_TYPES, notNullValue());
   }
 }
