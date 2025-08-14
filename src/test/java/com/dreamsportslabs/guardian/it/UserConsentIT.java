@@ -1,16 +1,12 @@
 package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT;
 import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_NAME;
-import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_SECRET;
 import static com.dreamsportslabs.guardian.Constants.CHECK_CLIENT_TENANT_ID;
 import static com.dreamsportslabs.guardian.Constants.CHECK_GRANT_TYPES;
-import static com.dreamsportslabs.guardian.Constants.CHECK_REDIRECT_URIS;
 import static com.dreamsportslabs.guardian.Constants.CHECK_RESPONSE_TYPES;
-import static com.dreamsportslabs.guardian.Constants.CHECK_SKIP_CONSENT;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CONSENTED_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
@@ -21,6 +17,7 @@ import static com.dreamsportslabs.guardian.Constants.ERROR_UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.Constants.HEADER_LOCATION;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
+import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.REQUESTED_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
@@ -123,7 +120,7 @@ public class UserConsentIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, validRefreshToken);
     Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
     validConsentChallenge = extractConsentChallenge(loginAcceptResponse);
 
@@ -221,7 +218,7 @@ public class UserConsentIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, newRefreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, newRefreshToken);
     Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
     String newConsentChallenge = extractConsentChallenge(loginAcceptResponse);
 
@@ -295,7 +292,7 @@ public class UserConsentIT {
 
     Map<String, Object> loginAcceptBody = new HashMap<>();
     loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
-    loginAcceptBody.put(BODY_PARAM_REFRESH_TOKEN, newRefreshToken);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, newRefreshToken);
     Response loginAcceptResponse = loginAccept(tenant1, loginAcceptBody);
     String newConsentChallenge = extractConsentChallenge(loginAcceptResponse);
 
@@ -461,15 +458,11 @@ public class UserConsentIT {
       response.then().body(CONSENTED_SCOPES, containsInAnyOrder(expectedConsentedScopes.toArray()));
     }
 
-    // Validate that client object has all required fields
     response
         .then()
         .body(CHECK_CLIENT_TENANT_ID, notNullValue())
         .body(CHECK_CLIENT_NAME, notNullValue())
-        .body(CHECK_CLIENT_SECRET, notNullValue())
         .body(CHECK_GRANT_TYPES, notNullValue())
-        .body(CHECK_REDIRECT_URIS, notNullValue())
-        .body(CHECK_RESPONSE_TYPES, notNullValue())
-        .body(CHECK_SKIP_CONSENT, notNullValue());
+        .body(CHECK_RESPONSE_TYPES, notNullValue());
   }
 }

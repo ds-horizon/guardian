@@ -9,8 +9,6 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONSENT_CHALLENG
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_NAME;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
-import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERID;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
 import static com.dreamsportslabs.guardian.Constants.CACHE_CONTROL_NO_STORE;

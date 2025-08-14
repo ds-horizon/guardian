@@ -34,7 +34,7 @@ public class UserConsent {
     requestDto.setRefreshTokenFromCookie(cookieRefreshToken);
     requestDto.validate();
     return userConsentService
-        .getUserConsent(requestDto, tenantId)
+        .getUserConsentForClient(requestDto, tenantId)
         .map(responseDto -> Response.ok(responseDto).build())
         .toCompletionStage();
   }

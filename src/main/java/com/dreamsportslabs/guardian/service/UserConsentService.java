@@ -5,6 +5,7 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
+import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dao.model.UserConsentModel;
 import com.dreamsportslabs.guardian.dto.request.UserConsentRequestDto;
 import com.dreamsportslabs.guardian.dto.response.UserConsentResponseDto;
@@ -22,7 +23,7 @@ public class UserConsentService {
   private final UserConsentDao userConsentDao;
   private final OidcTokenService oidcTokenService;
 
-  public Single<UserConsentResponseDto> getUserConsent(
+  public Single<UserConsentResponseDto> getUserConsentForClient(
       UserConsentRequestDto userConsentRequestDto, String tenantId) {
     return oidcTokenService
         .validateRefreshToken(userConsentRequestDto.getRefreshToken(), tenantId)
@@ -49,10 +50,23 @@ public class UserConsentService {
     List<String> consentedScopes = userConsents.stream().map(UserConsentModel::getScope).toList();
 
     return UserConsentResponseDto.builder()
-        .client(authorizeSession.getClient())
+        .client(createClientResponse(authorizeSession.getClient()))
         .requestedScopes(authorizeSession.getAllowedScopes())
         .consentedScopes(consentedScopes)
         .subject(authorizeSession.getUserId())
+        .build();
+  }
+
+  private ClientModel createClientResponse(ClientModel originalClient) {
+    return ClientModel.builder()
+        .tenantId(originalClient.getTenantId())
+        .clientId(originalClient.getClientId())
+        .clientName(originalClient.getClientName())
+        .clientUri(originalClient.getClientUri())
+        .grantTypes(originalClient.getGrantTypes())
+        .logoUri(originalClient.getLogoUri())
+        .policyUri(originalClient.getPolicyUri())
+        .responseTypes(originalClient.getResponseTypes())
         .build();
   }
 }
