@@ -140,7 +140,7 @@ public class Constants {
       "pageSize must be between 1 and 100";
 
   public static final String QUERY_PARAM_PAGE = "page";
-  public static final String QUERY_PARAM_PAGE_SIZE = "pageSize";
+  public static final String QUERY_PARAM_PAGE_SIZE = "page_size";
   public static final String QUERY_PARAM_NAME = "name";
 
   public static final String PASSWORDLESS_FLOW_SIGNINUP = "SIGNINUP";

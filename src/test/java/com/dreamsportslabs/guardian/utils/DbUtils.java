@@ -73,14 +73,14 @@ public class DbUtils {
       if (resultSet.next()) {
         JsonObject scope = new JsonObject();
         scope.put("name", resultSet.getString("name"));
-        scope.put("displayName", resultSet.getString("display_name"));
+        scope.put("display_name", resultSet.getString("display_name"));
         scope.put("description", resultSet.getString("description"));
         scope.put(
             "claims",
             resultSet.getString("claims").equals("[]") ? null : resultSet.getString("claims"));
         scope.put("tenantId", resultSet.getString("tenant_id"));
-        scope.put("iconUrl", resultSet.getString("icon_url"));
-        scope.put("isOidc", resultSet.getBoolean("is_oidc"));
+        scope.put("icon_url", resultSet.getString("icon_url"));
+        scope.put("is_oidc", resultSet.getBoolean("is_oidc"));
         return scope;
       } else {
         return null;

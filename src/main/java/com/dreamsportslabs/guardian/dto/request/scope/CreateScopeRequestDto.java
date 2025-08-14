@@ -12,16 +12,13 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 public class CreateScopeRequestDto {
 
-  @JsonProperty("name")
   private String name;
 
   @JsonProperty("display_name")
   private String displayName;
 
-  @JsonProperty("description")
   private String description;
 
-  @JsonProperty("claims")
   private List<String> claims = new ArrayList<>();
 
   @JsonProperty("icon_url")
