@@ -1343,14 +1343,8 @@ paths:
                   summary: Invalid refresh token
                   value:
                     error:
-                      code: "invalid_token"
-                      message: "The access token provided is expired, revoked, malformed, or invalid for other reasons"
-                token_user_mismatch:
-                  summary: Token user doesn't match session
-                  value:
-                    error:
-                      code: "invalid_token"
-                      message: "The access token provided is expired, revoked, malformed, or invalid for other reasons"
+                      code: "unauthorized"
+                      message: "Invalid refresh token"
         '500':
           description: Internal Server Error
           content:
