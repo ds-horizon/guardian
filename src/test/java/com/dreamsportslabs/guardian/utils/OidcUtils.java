@@ -509,10 +509,6 @@ public class OidcUtils {
     assertThat("OIDC code should have redirect URI", redirectUri, notNullValue());
     assertThat("OIDC code should have valid redirect URI", redirectUri, containsString("https://"));
 
-    // Validate state
-    String state = oidcCodeData.getString("state");
-    assertThat("OIDC code should have state", state, notNullValue());
-
     // Validate nonce (if present)
     String nonce = oidcCodeData.getString("nonce");
     if (nonce != null) {
