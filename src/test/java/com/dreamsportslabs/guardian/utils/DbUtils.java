@@ -493,7 +493,7 @@ public class DbUtils {
 
   public static JsonObject getOidcCode(String tenantId, String code) {
     try (Jedis jedis = redisConnectionPool.getResource()) {
-      String cacheKey = "OIDC_CODE_" + tenantId + "_" + code;
+      String cacheKey = "AUTH_CODE_" + tenantId + "_" + code;
       String codeData = jedis.get(cacheKey);
       if (codeData != null) {
         return new JsonObject(codeData);
