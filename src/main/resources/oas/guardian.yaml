@@ -1253,6 +1253,104 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /user-consent:
+    get:
+      tags:
+        - OIDC
+      summary: Get user consent information
+      description: |
+        API to retrieve user consent information for a specific client during the OAuth 2.0 authorization flow.
+        
+        This endpoint is used on the consent page to decide on what scopes to ask consent for based on the providers implementation.
+        
+        **Flow:**
+        1. User is redirected to consent page with consent challenge
+        2. Consent page calls this endpoint with the consent challenge
+        3. Server validates the consent challenge and refresh token
+        4. Returns client information and scope details (requested vs already consented)
+        
+        **Authentication:**
+        - Requires a valid refresh token (from cookie or request body)
+        - Refresh token must match the user associated with the consent challenge
+        
+        **Response Information:**
+        - Client details (name, URI, logo, etc.)
+        - List of scopes being requested by the client
+        - List of scopes the user has already consented to
+        - User subject (user ID)
+
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: consent_challenge
+          in: query
+          required: true
+          description: The consent challenge identifier from the authorization flow
+          schema:
+            type: string
+            example: "consent_challenge_xyz123"
+        - name: RT
+          in: cookie
+          required: false
+          description: Refresh token cookie (alternative to request body)
+          schema:
+            type: string
+            example: "refresh_token_value"
+      responses:
+        '200':
+          description: User consent information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserConsentResponse'
+              example:
+                client:
+                  clientId: "my-client-app"
+                  clientName: "My Application"
+                  clientUri: "https://myapp.example.com"
+                  logoUri: "https://myapp.example.com/logo.png"
+                  policyUri: "https://myapp.example.com/privacy"
+                requested_scopes:
+                  - "openid"
+                  - "email" 
+                  - "profile"
+                  - "phone"
+                consented_scopes:
+                  - "openid"
+                  - "email"
+                subject: "user123"
+        '400':
+          description: Bad Request due to missing or invalid consent challenge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_consent_challenge:
+                  summary: Missing consent challenge
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "consent_challenge is required"
+        '401':
+          description: Unauthorized - Invalid or mismatched refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_token:
+                  summary: Invalid refresh token
+                  value:
+                    error:
+                      code: "unauthorized"
+                      message: "Invalid refresh token"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /consent-accept:
     post:
       tags:
@@ -3772,3 +3870,69 @@ components:
           example: ["openid", "email", "profile"]
       example:
         scopes: ["openid", "email", "profile"]
+
+    UserConsentResponse:
+      type: object
+      description: User consent information for OAuth 2.0 client
+      required:
+        - client
+        - requested_scopes
+        - consented_scopes
+        - subject
+      properties:
+        client:
+          type: object
+          description: Client application information (filtered for security)
+          required:
+            - client_id
+            - client_name
+          properties:
+            clientId:
+              type: string
+              description: Unique identifier for the client application
+              example: "my-client-app"
+            clientName:
+              type: string
+              description: Human-readable name of the client application
+              example: "My Application"
+            clientUri:
+              type: string
+              format: uri
+              description: URL of the client application's home page
+              example: "https://myapp.example.com"
+            logoUri:
+              type: string
+              format: uri
+              description: URL of the client application's logo image
+              example: "https://myapp.example.com/logo.png"
+            policyUri:
+              type: string
+              format: uri
+              description: URL of the client application's privacy policy
+              example: "https://myapp.example.com/privacy"
+        requested_scopes:
+          type: array
+          description: List of OAuth 2.0 scopes being requested by the client
+          items:
+            type: string
+          example: ["openid", "email", "profile", "phone"]
+        consented_scopes:
+          type: array
+          description: List of OAuth 2.0 scopes the user has already consented to
+          items:
+            type: string
+          example: ["openid", "email"]
+        subject:
+          type: string
+          description: User identifier (subject) associated with the consent
+          example: "user123"
+      example:
+        client:
+          client_id: "my-client-app"
+          client_name: "My Application"
+          client_uri: "https://myapp.example.com"
+          logo_uri: "https://myapp.example.com/logo.png"
+          policy_uri: "https://myapp.example.com/privacy"
+        requested_scopes: ["openid", "email", "profile", "phone"]
+        consented_scopes: ["openid", "email"]
+        subject: "user123"
