@@ -1261,8 +1261,7 @@ paths:
       description: |
         API to retrieve user consent information for a specific client during the OAuth 2.0 authorization flow.
         
-        This endpoint is used on the consent page to display what scopes the user has previously consented to
-        and what new scopes are being requested by the client application.
+        This endpoint is used on the consent page to decide on what scopes to ask consent for based on the providers implementation.
         
         **Flow:**
         1. User is redirected to consent page with consent challenge
