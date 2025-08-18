@@ -1305,11 +1305,11 @@ paths:
                 $ref: '#/components/schemas/UserConsentResponse'
               example:
                 client:
-                  client_id: "my-client-app"
-                  client_name: "My Application"
-                  client_uri: "https://myapp.example.com"
-                  logo_uri: "https://myapp.example.com/logo.png"
-                  policy_uri: "https://myapp.example.com/privacy"
+                  clientId: "my-client-app"
+                  clientName: "My Application"
+                  clientUri: "https://myapp.example.com"
+                  logoUri: "https://myapp.example.com/logo.png"
+                  policyUri: "https://myapp.example.com/privacy"
                 requested_scopes:
                   - "openid"
                   - "email" 
@@ -3888,25 +3888,25 @@ components:
             - client_id
             - client_name
           properties:
-            client_id:
+            clientId:
               type: string
               description: Unique identifier for the client application
               example: "my-client-app"
-            client_name:
+            clientName:
               type: string
               description: Human-readable name of the client application
               example: "My Application"
-            client_uri:
+            clientUri:
               type: string
               format: uri
               description: URL of the client application's home page
               example: "https://myapp.example.com"
-            logo_uri:
+            logoUri:
               type: string
               format: uri
               description: URL of the client application's logo image
               example: "https://myapp.example.com/logo.png"
-            policy_uri:
+            policyUri:
               type: string
               format: uri
               description: URL of the client application's privacy policy
