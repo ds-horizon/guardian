@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum OidcCodeChallengeMethod {
-  PLAIN("plain"),
+  PLAIN("Plain"),
   S256("S256");
 
   private final String value;

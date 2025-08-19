@@ -55,10 +55,12 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -184,8 +186,9 @@ public class OidcTokenService {
         .flatMap(clientId -> getOidcRefreshToken(requestDto, tenantId))
         .flatMap(
             oidcRefreshTokenModel -> {
-              List<String> scopes =
-                  getValidScopes(oidcRefreshTokenModel.getScope(), requestDto.getScope());
+              String scopes =
+                  getValidScopes(
+                      String.join(" ", oidcRefreshTokenModel.getScope()), requestDto.getScope());
               GenerateOidcTokenDto generateOidcTokenDto =
                   getGenerateOidcTokenDto(
                       requestDto.getClientId(),
@@ -227,9 +230,7 @@ public class OidcTokenService {
   private Single<OidcCodeModel> validateCode(TokenRequestDto requestDto, String tenantId) {
     return oidcCodeService
         .getOidcCode(requestDto.getCode(), tenantId)
-        .filter(
-            oidcCodeModel ->
-                oidcCodeModel.getClient().getClientId().equals(requestDto.getClientId()))
+        .filter(oidcCodeModel -> oidcCodeModel.getClientId().equals(requestDto.getClientId()))
         .switchIfEmpty(Single.error(INVALID_GRANT.getJsonCustomException("code is invalid")))
         .filter(oidcCodeModel -> oidcCodeModel.getRedirectUri().equals(requestDto.getRedirectUri()))
         .switchIfEmpty(
@@ -257,29 +258,32 @@ public class OidcTokenService {
             Single.error(INVALID_GRANT.getJsonCustomException("refresh_token is expired")));
   }
 
-  private Single<List<String>> getAllowedScopes(
-      String clientId, String tenantId, String requestScopes) {
+  private Single<String> getAllowedScopes(String clientId, String tenantId, String requestScopes) {
     return clientScopeService
         .getClientScopes(clientId, tenantId)
         .map(
             clientScopeModels -> {
-              List<String> allowedScopes =
-                  clientScopeModels.stream().map(ClientScopeModel::getScope).toList();
+              String allowedScopes =
+                  clientScopeModels.stream()
+                      .map(ClientScopeModel::getScope)
+                      .collect(Collectors.joining(" "));
+
               return getValidScopes(allowedScopes, requestScopes);
             });
   }
 
-  private List<String> getValidScopes(List<String> allowedScopes, String requestScopes) {
-    if (requestScopes == null) {
+  private String getValidScopes(String allowedScopes, String requestedScopes) {
+    if (requestedScopes == null) {
       return allowedScopes;
     }
-    List<String> requestedScopes = List.of(requestScopes.split(" "));
-    for (String scope : requestedScopes) {
-      if (!allowedScopes.contains(scope)) {
+    List<String> requestedScopeList = List.of(requestedScopes.split(" "));
+    List<String> allowedScopeList = List.of(allowedScopes.split(" "));
+    for (String scope : requestedScopeList) {
+      if (!allowedScopeList.contains(scope)) {
         throw INVALID_SCOPE.getException();
       }
     }
-    return requestedScopes;
+    return String.join(" ", requestedScopeList);
   }
 
   private Single<OidcTokenResponseDto> generateOidcTokensForAuthorizationCodeFlow(
@@ -337,9 +341,9 @@ public class OidcTokenService {
                             String.join(" ", generateOidcTokenDto.getScope()))));
   }
 
-  private GetScopeRequestDto createScopeRequest(List<String> scopes) {
+  private GetScopeRequestDto createScopeRequest(String scope) {
     GetScopeRequestDto scopeRequest = new GetScopeRequestDto();
-    scopeRequest.setNames(scopes);
+    scopeRequest.setNames(Arrays.asList(scope.trim().split("\\s+")));
     return scopeRequest;
   }
 
@@ -422,14 +426,14 @@ public class OidcTokenService {
   }
 
   private Boolean validatePkceChallenge(
-      String codeVerifier, String codeChallenge, OidcCodeChallengeMethod codeChallengeMethod) {
+      String codeVerifier, String codeChallenge, String codeChallengeMethod) {
     if (codeChallenge == null && codeChallengeMethod == null) return true;
 
     if (codeChallenge != null && codeChallengeMethod != null && codeVerifier == null) {
       throw INVALID_REQUEST.getJsonCustomException("code_verifier is required");
     }
 
-    return switch (codeChallengeMethod) {
+    return switch (OidcCodeChallengeMethod.fromString(codeChallengeMethod)) {
       case PLAIN -> codeChallenge.equals(codeVerifier);
       case S256 -> codeChallenge.equals(hashAndEncodeString(codeVerifier));
       default -> false;
@@ -457,9 +461,9 @@ public class OidcTokenService {
       JsonObject userResponse,
       TokenRequestDto tokenRequestDto) {
     return GenerateOidcTokenDto.builder()
-        .clientId(oidcCodeModel.getClient().getClientId())
+        .clientId(oidcCodeModel.getClientId())
         .userId(oidcCodeModel.getUserId())
-        .scope(oidcCodeModel.getConsentedScopes())
+        .scope(oidcCodeModel.getScope())
         .userResponse(userResponse)
         .nonce(oidcCodeModel.getNonce())
         .tenantId(tenantId)
@@ -470,7 +474,7 @@ public class OidcTokenService {
   }
 
   private GenerateOidcTokenDto getGenerateOidcTokenDto(
-      String clientId, List<String> allowedScopes, String tenantId) {
+      String clientId, String allowedScopes, String tenantId) {
     return GenerateOidcTokenDto.builder()
         .clientId(clientId)
         .userId(clientId)
@@ -481,7 +485,7 @@ public class OidcTokenService {
   }
 
   private GenerateOidcTokenDto getGenerateOidcTokenDto(
-      String clientId, String userId, String tenantId, List<String> scopes) {
+      String clientId, String userId, String tenantId, String scopes) {
     return GenerateOidcTokenDto.builder()
         .clientId(clientId)
         .userId(userId)
@@ -504,7 +508,7 @@ public class OidcTokenService {
         .userId(generateOidcTokenDto.getUserId())
         .refreshToken(tokenResponseDto.getRefreshToken())
         .refreshTokenExp(generateOidcTokenDto.getIat() + tokenConfig.getRefreshTokenExpiry())
-        .scope(generateOidcTokenDto.getScope())
+        .scope(Arrays.asList(generateOidcTokenDto.getScope().trim().split("\\s+")))
         .deviceName(generateOidcTokenDto.getDeviceName())
         .ip(generateOidcTokenDto.getIp())
         .build();
@@ -517,14 +521,14 @@ public class OidcTokenService {
       long iat,
       String iss,
       String rftId,
-      List<String> scope,
+      String scope,
       String sub,
       String tenantId) {
     Map<String, Object> accessTokenClaims = getCommonJwtClaims(aud, exp, iat, iss, sub);
     accessTokenClaims.put(JWT_CLAIMS_CLIENT_ID, clientId);
     accessTokenClaims.put(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
     accessTokenClaims.put(JWT_CLAIMS_RFT_ID, rftId);
-    accessTokenClaims.put(JWT_CLAIMS_SCOPE, String.join(" ", scope));
+    accessTokenClaims.put(JWT_CLAIMS_SCOPE, scope);
     accessTokenClaims.put(JWT_TENANT_ID_CLAIM, tenantId);
     return accessTokenClaims;
   }

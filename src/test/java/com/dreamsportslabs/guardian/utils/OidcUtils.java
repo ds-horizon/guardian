@@ -491,13 +491,12 @@ public class OidcUtils {
     assertThat("OIDC code should have correct user ID", userId, equalTo(expectedUserId));
 
     // Validate client
-    JsonObject client = oidcCodeData.getJsonObject("client");
-    assertThat("OIDC code should have client data", client, notNullValue());
-    String clientId = client.getString("clientId");
+    String clientId = oidcCodeData.getString("clientId");
     assertThat("OIDC code should have correct client ID", clientId, equalTo(expectedClientId));
 
     // Validate consented scopes
-    List<String> consentedScopes = oidcCodeData.getJsonArray("consentedScopes").getList();
+    List<String> consentedScopes =
+        Arrays.asList(oidcCodeData.getString("scope").trim().split("\\s+"));
     assertThat("OIDC code should have consented scopes", consentedScopes, notNullValue());
     assertThat(
         "OIDC code should have correct consented scopes",

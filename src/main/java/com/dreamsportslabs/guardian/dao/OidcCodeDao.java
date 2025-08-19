@@ -20,7 +20,7 @@ public class OidcCodeDao {
   private final Redis redisClient;
   private final ObjectMapper objectMapper;
 
-  private static final String CACHE_KEY_OIDC_CODE = "OIDC_CODE";
+  private static final String CACHE_KEY_OIDC_CODE = "AUTH_CODE";
 
   @SneakyThrows
   public Completable saveOidcCode(String code, OidcCodeModel model, String tenantId, Integer ttl) {
