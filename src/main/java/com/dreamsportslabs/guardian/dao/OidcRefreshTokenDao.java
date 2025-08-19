@@ -29,7 +29,7 @@ public class OidcRefreshTokenDao {
     params.addString(refreshTokenModel.getUserId());
     params.addString(refreshTokenModel.getRefreshToken());
     params.addLong(refreshTokenModel.getRefreshTokenExp());
-    params.addJsonArray(JsonArray.of(refreshTokenModel.getScope()));
+    params.addJsonArray(new JsonArray(refreshTokenModel.getScope()));
     params.addString(refreshTokenModel.getDeviceName());
     params.addString(refreshTokenModel.getIp());
 
