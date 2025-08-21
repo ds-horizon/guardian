@@ -6,6 +6,7 @@ import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.CONTACT_VERIFY_
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.EMAIL_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.FB_AUTH_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.GOOGLE_AUTH_CONFIG;
+import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OIDC_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OIDC_PROVIDER_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OTP_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.SMS_CONFIG;
@@ -20,6 +21,7 @@ import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
 import com.dreamsportslabs.guardian.config.tenant.FbConfig;
 import com.dreamsportslabs.guardian.config.tenant.GoogleConfig;
+import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.SmsConfig;
@@ -55,7 +57,9 @@ public class ConfigDao {
             appendOtpConfig(tenantId, builder),
             appendContactVerifyConfig(tenantId, builder),
             appendOidcProviderConfig(tenantId, builder),
-            appendAdminConfig(tenantId, builder));
+            appendAdminConfig(tenantId, builder),
+            appendContactVerifyConfig(tenantId, builder),
+            appendOidcConfig(tenantId, builder));
     return Completable.merge(configSources)
         .andThen(Single.defer(() -> Single.just(builder.build())));
   }
@@ -114,6 +118,12 @@ public class ConfigDao {
   private Completable appendSmsConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
     return getConfigFromDb(tenantId, SmsConfig.class, SMS_CONFIG)
         .map(builder::smsConfig)
+        .ignoreElement();
+  }
+
+  private Completable appendOidcConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
+    return getConfigFromDb(tenantId, OidcConfig.class, OIDC_CONFIG)
+        .map(builder::oidcConfig)
         .ignoreElement();
   }
 

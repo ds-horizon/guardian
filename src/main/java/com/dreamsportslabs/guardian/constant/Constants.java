@@ -9,6 +9,13 @@ public final class Constants {
   public static final String USERID = "userId";
   public static final String PROVIDER = "provider";
   public static final String IS_NEW_USER = "isNewUser";
+  public static final String SCOPE = "scope";
+
+  // HTTP Request Headers
+  public static final String AUTHORIZATION = "Authorization";
+  public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+  public static final String USER_AGENT = "User-Agent";
+  public static final String BASIC_AUTHENTICATION_SCHEME = "Basic ";
 
   public static final String TOKEN = "token";
   public static final String CODE = "code";
@@ -32,6 +39,7 @@ public final class Constants {
   public static final String EXPIRY_OPTION_REDIS = "EX";
   public static final String EXPIRE_AT_REDIS = "EXAT";
   public static final String STATIC_OTP_NUMBER = "9";
+  public static final String KEEP_TTL = "KEEPTTL";
 
   // Application config
   public static final String PORT = "port";
@@ -51,12 +59,35 @@ public final class Constants {
   public static final String TENANT_CONFIG_REFRESH_INTERVAL = "tenant_config_refresh_interval";
 
   // JWT CLAIMS
-  public static final String JWT_CLAIMS_ISS = "iss";
-  public static final String JWT_CLAIMS_SUB = "sub";
-  public static final String JWT_CLAIMS_IAT = "iat";
-  public static final String JWT_CLAIMS_EXP = "exp";
-  public static final String JWT_CLAIMS_RFT_ID = "rft_id";
   public static final String JWT_CLAIMS_AUD = "aud";
+  public static final String JWT_CLAIMS_CLIENT_ID = "client_id";
+  public static final String JWT_CLAIMS_EXP = "exp";
+  public static final String JWT_CLAIMS_IAT = "iat";
+  public static final String JWT_CLAIMS_ISS = "iss";
+  public static final String JWT_CLAIMS_JTI = "jti";
+  public static final String JWT_CLAIMS_NONCE = "nonce";
+  public static final String JWT_CLAIMS_RFT_ID = "rft_id";
+  public static final String JWT_CLAIMS_SCOPE = "scope";
+  public static final String JWT_CLAIMS_SUB = "sub";
+
+  // JWT Headers
+  public static final String JWT_HEADERS_TYP = "typ";
+  public static final String JWT_HEADERS_KID = "kid";
+
+  // JWT Headers Values
+  public static final String TYP_JWT_ACCESS_TOKEN = "at+jwt";
+
+  // Response Headers
+  public static final String CACHE_CONTROL_HEADER = "Cache-Control";
+  public static final String PRAGMA_HEADER = "Pragma";
+  public static final String WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
+
+  public static final String APPLICATION_JWT = "application/jwt";
+
+  // Response Header Values
+  public static final String CACHE_CONTROL_NO_STORE = "no-store";
+  public static final String PRAGMA_NO_CACHE = "no-cache";
+  public static final String WWW_AUTHENTICATE_BASIC = "Basic realm=";
   public static final String JWT_TENANT_ID_CLAIM = "tid";
 
   public static final ImmutableList<String> fbAuthResponseTypes = ImmutableList.of(CODE, TOKEN);
@@ -84,6 +115,7 @@ public final class Constants {
 
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
+  public static final String CACHE_KEY_AUTH_SESSION = "AUTH_SESSION";
 
   public static final String TOKEN_TYPE = "Bearer";
 
@@ -103,6 +135,17 @@ public final class Constants {
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
 
+  public static final String SCOPE_EMAIL = "email";
+  public static final String CLAIM_EMAIL = "email";
+  public static final String SCOPE_PHONE = "phone";
+  public static final String SCOPE_ADDRESS = "address";
+  public static final String CLAIM_ADDRESS = "address";
+  public static final String SCOPE_OPENID = "openid";
+  public static final String CLAIM_EMAIL_VERIFIED = "email_verified";
+  public static final String CLAIM_PHONE_VERIFIED = "phone_number_verified";
+  public static final String CLAIM_PHONE_NUMBER = "phone_number";
+  public static final String CLAIM_SUB = "sub";
+
   public static final String UNAUTHORIZED_ERROR_CODE = "unauthorized";
   public static final String OTP_RESEND_AFTER = "resendAfter";
   public static final String OTP_RETRIES_LEFT = "retriesLeft";
@@ -121,7 +164,6 @@ public final class Constants {
 
   // OIDC Token Constants
   public static final String OIDC_REFRESH_TOKEN = "refresh_token";
-  public static final String AUTHORIZATION = "Authorization";
   public static final String OIDC_GRANT_TYPE = "grant_type";
   public static final String OIDC_AUTHORIZATION_CODE = "authorization_code";
   public static final String OIDC_REDIRECT_URI = "redirect_uri";
@@ -137,4 +179,13 @@ public final class Constants {
   public static final String APP_ID_TOKEN = "idToken";
   public static final String APP_TOKEN_TYPE = "tokenType";
   public static final String APP_TOKEN_CODE_EXPIRY = "expiresIn";
+
+  public static final String OIDC_PARAM_ERROR = "error";
+  public static final String OIDC_PARAM_ERROR_DESCRIPTION = "error_description";
+  public static final String OIDC_PARAM_STATE = "state";
+  public static final String OIDC_PARAM_NONCE = "nonce";
+  public static final String OIDC_PARAM_LOGIN_CHALLENGE = "login_challenge";
+  public static final String OIDC_PARAM_CONSENT_CHALLENGE = "consent_challenge";
+  public static final String OIDC_PARAM_LOGIN_HINT = "login_hint";
+  public static final String OIDC_PARAM_PROMPT = "prompt";
 }

@@ -1,13 +1,24 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.constant.Constants.BASIC_AUTHENTICATION_SCHEME;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_AGENT;
+import static com.dreamsportslabs.guardian.constant.Constants.X_FORWARDED_FOR;
 import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardingHeaders;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
+import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
 
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public final class Utils {
 
@@ -44,11 +55,10 @@ public final class Utils {
     try {
       String prefix = authorizationHeader.substring(0, 6);
       String token = authorizationHeader.substring(6).strip();
-      if (!prefix.equals("Basic ")) {
+      if (!prefix.equals(BASIC_AUTHENTICATION_SCHEME)) {
         throw ErrorEnum.UNAUTHORIZED.getException();
       }
-      String credentials;
-      credentials = new String(Base64.getDecoder().decode(token.getBytes()));
+      String credentials = new String(Base64.getDecoder().decode(token.getBytes()));
       return credentials.split(":", 2);
     } catch (Exception e) {
       throw ErrorEnum.UNAUTHORIZED.getException();
@@ -56,7 +66,78 @@ public final class Utils {
   }
 
   public static String generateBasicAuthHeader(String clientId, String clientSecret) {
-    return "Basic "
+    return BASIC_AUTHENTICATION_SCHEME
         + new String(Base64.getEncoder().encode((clientId + ":" + clientSecret).getBytes()));
+  }
+
+  public static String getRftId(String refreshToken) {
+    if (refreshToken == null) {
+      return null;
+    }
+    return getMd5Hash(refreshToken);
+  }
+
+  public static String getIpFromHeaders(MultivaluedMap<String, String> headers) {
+    String xForwardedFor = headers.getFirst(X_FORWARDED_FOR);
+    if (!StringUtils.isBlank(xForwardedFor)) {
+      String[] ips = xForwardedFor.split(",");
+      if (ips.length > 0) {
+        return ips[0].trim();
+      }
+    }
+    return null;
+  }
+
+  public static String getDeviceNameFromHeaders(MultivaluedMap<String, String> headers) {
+    String userAgent = headers.getFirst(USER_AGENT);
+    if (StringUtils.isBlank(userAgent)) {
+      return null;
+    }
+    return userAgent;
+  }
+
+  public static long getCurrentTimeInSeconds() {
+    return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+  }
+
+  public static String getAccessTokenFromAuthHeader(String authorizationHeader) {
+    try {
+      String prefix = authorizationHeader.substring(0, 7);
+      String token = authorizationHeader.substring(7).strip();
+      if (!prefix.equals("Bearer ")) {
+        throw UNAUTHORIZED.getCustomException("Invalid authorization header format");
+      }
+      return token;
+    } catch (Exception e) {
+      throw UNAUTHORIZED.getCustomException("Invalid authorization header");
+    }
+  }
+
+  public static Map<String, Object> decodeJwtHeaders(String token) {
+    try {
+      String[] parts = token.split("\\.");
+      if (parts.length < 2) {
+        throw INVALID_TOKEN.getBearerAuthHeaderException("Invalid JWT format");
+      }
+      String headerJson =
+          new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+      return new ObjectMapper().readValue(headerJson, Map.class);
+    } catch (Exception e) {
+      throw INVALID_TOKEN.getBearerAuthHeaderException();
+    }
+  }
+
+  public static JsonObject convertKeysToSnakeCase(JsonObject input) {
+    JsonObject result = new JsonObject();
+    for (Map.Entry<String, Object> entry : input) {
+      String snakeKey = toSnakeCase(entry.getKey());
+      result.put(snakeKey, entry.getValue());
+    }
+    return result;
+  }
+
+  private static String toSnakeCase(String input) {
+
+    return input.replaceAll("([a-z])([A-Z]+)", "$1_$2").replaceAll("[-\\s]", "_").toLowerCase();
   }
 }

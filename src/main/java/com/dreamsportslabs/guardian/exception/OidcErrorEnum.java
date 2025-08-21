@@ -1,0 +1,181 @@
+package com.dreamsportslabs.guardian.exception;
+
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_ERROR;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_ERROR_DESCRIPTION;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_STATE;
+import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
+import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_HEADER;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import java.net.URI;
+import lombok.Getter;
+
+@Getter
+public enum OidcErrorEnum {
+  INVALID_REQUEST(
+      "invalid_request",
+      "The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed",
+      400),
+  UNAUTHORIZED(UNAUTHORIZED_ERROR_CODE, "Unauthorized", 401),
+  UNAUTHORIZED_CLIENT(
+      "unauthorized_client",
+      "The authenticated client is not authorized to use this authorization grant type",
+      401),
+  INVALID_CLIENT("invalid_client", "Client authentication failed", 401),
+  INVALID_REDIRECT_URI("invalid_redirect_uri", "Redirect uri is invalid", 400),
+  ACCESS_DENIED(
+      "access_denied", "The resource owner or authorization server denied the request", 302),
+  UNSUPPORTED_RESPONSE_TYPE(
+      "unsupported_response_type",
+      "The authorization server does not support obtaining an authorization code using this method",
+      302),
+  INVALID_SCOPE(
+      "invalid_scope",
+      "The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner",
+      400),
+  SERVER_ERROR(
+      "server_error",
+      "The authorization server encountered an unexpected condition that prevented it from fulfilling the request",
+      302),
+  TEMPORARILY_UNAVAILABLE(
+      "temporarily_unavailable",
+      "The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server",
+      302),
+  UNSUPPORTED_GRANT_TYPE(
+      "unsupported_grant_type",
+      "The authorization grant type is not supported by the authorization server",
+      400),
+  INVALID_GRANT("invalid_grant", "The authorization grant is invalid", 400),
+  INVALID_TOKEN("invalid_token", "Invalid token", 401),
+  USER_SERVICE_ERROR("user_service_error", "user service error", 500),
+  INTERNAL_SERVER_ERROR("internal_server_error", "Something went wrong", 500);
+
+  private final String error;
+  private final String errorDescription;
+  private final int httpStatus;
+  private MultivaluedMap<String, Object> additionalHeaders;
+  @Getter private final WebApplicationException exception;
+
+  OidcErrorEnum(String error, String errorDescription, int httpStatus) {
+    this.error = error;
+    this.errorDescription = errorDescription;
+    this.httpStatus = httpStatus;
+    Response response =
+        Response.status(httpStatus)
+            .header("Content-Type", "application/json")
+            .entity(new OidcErrorEntity(this.error, this.errorDescription))
+            .build();
+    this.exception = new WebApplicationException(response);
+  }
+
+  public WebApplicationException getRedirectCustomException(
+      String customMessage, String state, String redirectUri) {
+    String errorDescription = customMessage != null ? customMessage : this.getErrorDescription();
+
+    UriBuilder uriBuilder =
+        UriBuilder.fromUri(redirectUri)
+            .queryParam(OIDC_PARAM_ERROR, this.getError())
+            .queryParam(OIDC_PARAM_ERROR_DESCRIPTION, errorDescription);
+
+    if (state != null) {
+      uriBuilder.queryParam(OIDC_PARAM_STATE, state);
+    }
+
+    URI location = uriBuilder.build();
+    Response response = Response.status(Response.Status.FOUND).location(location).build();
+    return new WebApplicationException(this.getError(), response);
+  }
+
+  public WebApplicationException getRedirectException(String state, String redirectUri) {
+    UriBuilder uriBuilder =
+        UriBuilder.fromUri(redirectUri)
+            .queryParam(OIDC_PARAM_ERROR, this.getError())
+            .queryParam(OIDC_PARAM_ERROR_DESCRIPTION, this.getErrorDescription());
+
+    if (state != null) {
+      uriBuilder.queryParam(OIDC_PARAM_STATE, state);
+    }
+
+    URI location = uriBuilder.build();
+    Response response = Response.status(Response.Status.FOUND).location(location).build();
+    return new WebApplicationException(this.getError(), response);
+  }
+
+  public WebApplicationException getJsonCustomException(String message) {
+    message = message == null ? this.errorDescription : message;
+
+    Response response =
+        Response.status(this.httpStatus)
+            .replaceAll(this.additionalHeaders)
+            .header("Content-Type", "application/json")
+            .entity(new OidcErrorEntity(this.error, message))
+            .build();
+    return new WebApplicationException(response);
+  }
+
+  public WebApplicationException getJsonCustomException(int httpStatus, String message) {
+    message = message == null ? this.errorDescription : message;
+
+    Response response =
+        Response.status(httpStatus)
+            .replaceAll(this.additionalHeaders)
+            .header("Content-Type", "application/json")
+            .entity(new OidcErrorEntity(this.error, message))
+            .build();
+    return new WebApplicationException(response);
+  }
+
+  public WebApplicationException getJsonException() {
+
+    Response response =
+        Response.status(this.httpStatus)
+            .replaceAll(this.additionalHeaders)
+            .header("Content-Type", "application/json")
+            .entity(new OidcErrorEntity(this.error, this.errorDescription))
+            .build();
+    return new WebApplicationException(response);
+  }
+
+  public WebApplicationException getBearerAuthHeaderException() {
+    return getBearerAuthHeaderException(null);
+  }
+
+  public WebApplicationException getBearerAuthHeaderException(String message) {
+    String errorDescription = (message != null) ? message : this.errorDescription;
+
+    StringBuilder headerValue = new StringBuilder("Bearer ");
+    headerValue.append("error=\"").append(this.error).append("\", ");
+    headerValue
+        .append("error_description=\"")
+        .append(errorDescription.replace("\"", "\\\""))
+        .append("\"");
+
+    Response response =
+        Response.status(this.httpStatus)
+            .header(WWW_AUTHENTICATE_HEADER, headerValue.toString())
+            .build();
+
+    return new WebApplicationException(response);
+  }
+
+  @Getter
+  @JsonInclude(value = JsonInclude.Include.NON_NULL)
+  public static class OidcErrorEntity {
+    final String error;
+    final String error_description;
+
+    OidcErrorEntity(String error, String errorDescription) {
+      this.error = error;
+      this.error_description = errorDescription;
+    }
+  }
+
+  public OidcErrorEnum setHeaders(MultivaluedMap<String, Object> additionalHeaders) {
+    this.additionalHeaders = additionalHeaders;
+    return this;
+  }
+}

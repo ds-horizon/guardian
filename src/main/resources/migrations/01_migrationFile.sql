@@ -205,16 +205,16 @@ CREATE TABLE refresh_tokens
 
 CREATE TABLE contact_verify_config
 (
-    tenant_id                  CHAR(10)  PRIMARY KEY,
-    is_otp_mocked              BOOLEAN   NOT NULL DEFAULT FALSE,
-    otp_length                 INT       NOT NULL DEFAULT 6,
-    try_limit                  INT       NOT NULL DEFAULT 5,
-    resend_limit               INT       NOT NULL DEFAULT 5,
-    otp_resend_interval        INT       NOT NULL DEFAULT 30,
-    otp_validity               INT       NOT NULL DEFAULT 900,
-    whitelisted_inputs         JSON      NOT NULL DEFAULT (JSON_OBJECT()),
-    created_at                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    tenant_id           CHAR(10) PRIMARY KEY,
+    is_otp_mocked       BOOLEAN   NOT NULL DEFAULT FALSE,
+    otp_length          INT       NOT NULL DEFAULT 6,
+    try_limit           INT       NOT NULL DEFAULT 5,
+    resend_limit        INT       NOT NULL DEFAULT 5,
+    otp_resend_interval INT       NOT NULL DEFAULT 30,
+    otp_validity        INT       NOT NULL DEFAULT 900,
+    whitelisted_inputs  JSON      NOT NULL DEFAULT (JSON_OBJECT()),
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_tenant_contact_verify_config FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,
@@ -281,6 +281,139 @@ CREATE TABLE admin_config
         REFERENCES tenant (id) ON DELETE CASCADE,
 
     UNIQUE KEY `idx_tenant_id` (`tenant_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
+
+CREATE TABLE scope
+(
+    tenant_id    CHAR(10)     NOT NULL,
+    name         VARCHAR(100) NOT NULL,
+    display_name VARCHAR(100),
+    description  VARCHAR(1000),
+    icon_url     VARCHAR(2083),
+    claims       JSON         NOT NULL,
+    is_oidc      BOOLEAN      NOT NULL DEFAULT FALSE,
+    updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY `uniq_tenant_scope` (`tenant_id`, `name`),
+    KEY `idx_tenant_oidc` (`tenant_id`, `is_oidc`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE oidc_config (
+    tenant_id CHAR(10) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    authorization_endpoint VARCHAR(255) NOT NULL,
+    token_endpoint VARCHAR(255) NOT NULL,
+    userinfo_endpoint VARCHAR(255) NOT NULL,
+    revocation_endpoint VARCHAR(255) NOT NULL,
+    jwks_uri VARCHAR(255) NOT NULL,
+    grant_types_supported JSON NOT NULL DEFAULT (JSON_ARRAY()),
+    response_types_supported JSON NOT NULL DEFAULT (JSON_ARRAY()),
+    subject_types_supported JSON NOT NULL DEFAULT (JSON_ARRAY()),
+    id_token_signing_alg_values_supported JSON NOT NULL DEFAULT (JSON_ARRAY()),
+    token_endpoint_auth_methods_supported JSON NOT NULL DEFAULT (JSON_ARRAY()),
+    login_page_uri VARCHAR(512) DEFAULT NULL,
+    consent_page_uri VARCHAR(512) DEFAULT NULL,
+    authorize_ttl INT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY `uniq_tenant_config` (`tenant_id`),
+
+    CONSTRAINT `fk_oidc_config` FOREIGN KEY (`tenant_id`)
+        REFERENCES `tenant`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE client
+(
+    tenant_id      CHAR(10)     NOT NULL,
+    client_id      VARCHAR(100) NOT NULL,
+    client_name    VARCHAR(100) NOT NULL,
+    client_secret  VARCHAR(100) NOT NULL,
+    client_uri     VARCHAR(2083),
+    contacts       JSON,
+    grant_types    JSON         NOT NULL,
+    logo_uri       VARCHAR(2083),
+    policy_uri     VARCHAR(2083),
+    redirect_uris  JSON         NOT NULL,
+    response_types JSON         NOT NULL,
+    skip_consent   BOOLEAN   DEFAULT FALSE,
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (tenant_id, client_id),
+    UNIQUE KEY unique_tenant_client_name (tenant_id, client_name)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE client_scope
+(
+    id         INT AUTO_INCREMENT,
+    tenant_id  CHAR(10)     NOT NULL,
+    scope      VARCHAR(100) NOT NULL,
+    client_id  VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY unique_tenant_client_scope (tenant_id, client_id, scope),
+    FOREIGN KEY (tenant_id, client_id) REFERENCES client (tenant_id, client_id) ON DELETE CASCADE,
+    FOREIGN KEY (tenant_id, scope) REFERENCES scope (tenant_id, name) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE consent
+(
+    tenant_id  CHAR(10)     NOT NULL,
+    client_id  VARCHAR(100) NOT NULL,
+    user_id    CHAR(64)     NOT NULL,
+    scope      VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`tenant_id`, `client_id`, `user_id`, `scope`),
+    KEY `idx_tenant_scope` (`tenant_id`, `scope`),
+
+    CONSTRAINT `fk_consent_tenant` FOREIGN KEY (`tenant_id`)
+        REFERENCES `tenant`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_consent_client` FOREIGN KEY (`tenant_id`, `client_id`)
+        REFERENCES `client`(`tenant_id`, `client_id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_consent_scope` FOREIGN KEY (`tenant_id`, `scope`)
+        REFERENCES `scope`(`tenant_id`, `name`) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE oidc_refresh_token
+(
+    id                BIGINT                     NOT NULL AUTO_INCREMENT,
+    client_id         VARCHAR(100)               NOT NULL,
+    tenant_id         CHAR(10)                   NOT NULL,
+    user_id           CHAR(64)                   NOT NULL,
+    is_active         BOOLEAN                    NOT NULL DEFAULT TRUE,
+    refresh_token     CHAR(32) COLLATE ascii_bin NOT NULL,
+    refresh_token_exp BIGINT UNSIGNED NOT NULL,
+    scope             JSON                      NOT NULL DEFAULT (JSON_ARRAY()),
+    device_name       VARCHAR(256),
+    ip                VARBINARY(16),
+    created_at        TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    KEY               `idx_oidc_refresh_token` (`tenant_id`, `client_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
+    KEY               `idx_oidc_refresh_token_user` (`tenant_id`, `user_id`),
+    CONSTRAINT `fk_oidc_refresh_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_oidc_refresh_token_client` FOREIGN KEY (`tenant_id`, `client_id`) REFERENCES `client`(`tenant_id`, `client_id`) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;

@@ -10,6 +10,7 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
 import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
 public class ApplicationIoUtils {
 
@@ -27,7 +29,7 @@ public class ApplicationIoUtils {
       Map<String, String> headers,
       Map<String, String> queryParams,
       Function<RequestSpecification, Response> fn) {
-    RequestSpecification spec = given();
+    RequestSpecification spec = given().redirects().follow(false);
     if (body != null) {
       spec.header(CONTENT_TYPE, "application/json").and().body(body);
     }
@@ -111,6 +113,63 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/passwordless/init"));
   }
 
+  // Scope Config API methods
+  public static Response createScope(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/scopes"));
+  }
+
+  public static Response listScopes(String tenantId, Map<String, String> queryParams) {
+    return listScopes(tenantId, queryParams, null);
+  }
+
+  public static Response listScopesByNames(String tenantId, List<String> scopeNames) {
+    return listScopes(tenantId, null, scopeNames);
+  }
+
+  public static Response listScopes(
+      String tenantId, Map<String, String> queryParams, List<String> scopeNames) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    RequestSpecification spec = given().headers(headers);
+
+    // Add regular query parameters
+    if (queryParams != null) {
+      queryParams.forEach(spec::queryParam);
+    }
+
+    // Add multiple scope names if provided (each as separate query param with same key)
+    if (scopeNames != null && !scopeNames.isEmpty()) {
+      for (String scopeName : scopeNames) {
+        spec.queryParam(QUERY_PARAM_NAME, scopeName);
+      }
+    }
+
+    return spec.get("/scopes");
+  }
+
+  public static Response deleteScope(String tenantId, String scopeName) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+    headers.put(CONTENT_TYPE, "application/json");
+
+    if (StringUtils.isBlank(scopeName)) {
+      return execute(null, headers, new HashMap<>(), spec -> spec.delete("/scopes/"));
+    }
+
+    return execute(null, headers, new HashMap<>(), spec -> spec.delete("/scopes/" + scopeName));
+  }
+
+  public static Response updateScope(String tenantId, String scopeName, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("tenant-id", tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.patch("/scopes/" + scopeName));
+  }
+
   public static Response sendOtp(
       String tenantId, Map<String, Object> body, Map<String, String> headers) {
     headers.put(HEADER_TENANT_ID, tenantId);
@@ -162,6 +221,97 @@ public class ApplicationIoUtils {
     return execute(null, headers, new HashMap<>(), spec -> spec.get("/v1/certs"));
   }
 
+  // Client API methods
+  public static Response createClient(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/admin/client"));
+  }
+
+  public static Response getClient(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null, headers, new HashMap<>(), spec -> spec.get("/v1/admin/client/" + clientId));
+  }
+
+  public static Response listClients(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(null, headers, queryParams, spec -> spec.get("/v1/admin/client"));
+  }
+
+  public static Response updateClient(String tenantId, String clientId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        body, headers, new HashMap<>(), spec -> spec.patch("/v1/admin/client/" + clientId));
+  }
+
+  public static Response deleteClient(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null, headers, new HashMap<>(), spec -> spec.delete("/v1/admin/client/" + clientId));
+  }
+
+  public static Response regenerateClientSecret(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null,
+        headers,
+        new HashMap<>(),
+        spec -> spec.post("/v1/admin/client/" + clientId + "/regenerate-secret"));
+  }
+
+  // Client Scope API methods
+  public static Response createClientScope(
+      String tenantId, String clientId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> spec.post("/v1/admin/client/" + clientId + "/scope"));
+  }
+
+  public static Response getClientScopes(String tenantId, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(
+        null,
+        headers,
+        new HashMap<>(),
+        spec -> spec.get("/v1/admin/client/" + clientId + "/scope"));
+  }
+
+  public static Response deleteClientScope(String tenantId, String clientId, String scope) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put("scope", scope);
+
+    return execute(
+        null, headers, queryParams, spec -> spec.delete("/v1/admin/client/" + clientId + "/scope"));
+  }
+
+  public static Response getOidcDiscovery(
+      Map<String, String> headers, Map<String, String> queryParams) {
+    return execute(
+        null, headers, queryParams, spec -> spec.get("/.well-known/openid-configuration"));
+  }
+
   public static Response generateRsaKey(Map<String, Object> body) {
     Map<String, String> headers = new HashMap<>();
     headers.put(CONTENT_TYPE, "application/json");
@@ -209,5 +359,151 @@ public class ApplicationIoUtils {
     }
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/admin/logout"));
+  }
+
+  public static Response authorize(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(null, headers, queryParams, spec -> spec.get("/authorize"));
+  }
+
+  public static Response loginAccept(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/login-accept"));
+  }
+
+  public static Response loginAccept(
+      String tenantId, Map<String, Object> body, String refreshTokenCookie) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, String> cookies = new HashMap<>();
+    if (StringUtils.isNotBlank(refreshTokenCookie)) {
+      cookies.put("RT", refreshTokenCookie);
+    }
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> {
+          if (!cookies.isEmpty()) {
+            spec.cookies(cookies);
+          }
+          return spec.post("/login-accept");
+        });
+  }
+
+  public static Response consentAccept(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/consent-accept"));
+  }
+
+  public static Response consentAccept(
+      String tenantId, Map<String, Object> body, String refreshTokenCookie) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, String> cookies = new HashMap<>();
+    if (StringUtils.isNotBlank(refreshTokenCookie)) {
+      cookies.put("RT", refreshTokenCookie);
+    }
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> {
+          if (!cookies.isEmpty()) {
+            spec.cookies(cookies);
+          }
+          return spec.post("/consent-accept");
+        });
+  }
+
+  public static Response token(
+      String tenantId, Map<String, String> headers, Map<String, String> formParams) {
+    if (headers == null) {
+      headers = new HashMap<>();
+    }
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    RequestSpecification spec = given().redirects().follow(false);
+    spec.formParams(formParams);
+    spec.headers(headers);
+    return spec.post("/token");
+  }
+
+  public static Response revokeToken(
+      String tenantId, Map<String, String> headers, Map<String, String> formParams) {
+    if (headers == null) {
+      headers = new HashMap<>();
+    }
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    RequestSpecification spec = given().redirects().follow(false);
+    spec.formParams(formParams);
+    spec.headers(headers);
+    return spec.post("/token/revoke");
+  }
+
+  public static Response getUserInfo(String tenantId, String accessToken) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+    headers.put("Authorization", "Bearer " + accessToken);
+    headers.put("Accept", "application/json");
+
+    return execute(null, headers, new HashMap<>(), spec -> spec.get("/userinfo"));
+  }
+
+  public static Response postUserInfo(String tenantId, String accessToken) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+    headers.put("Authorization", "Bearer " + accessToken);
+    headers.put("Accept", "application/json");
+
+    return execute(null, headers, new HashMap<>(), spec -> spec.post("/userinfo"));
+  }
+
+  public static Response getUserConsent(String tenantId, Map<String, String> queryParams) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(null, headers, queryParams, spec -> spec.get("/user-consent"));
+  }
+
+  public static Response getUserConsent(
+      String tenantId, Map<String, String> queryParams, String refreshTokenCookie) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    Map<String, String> cookies = new HashMap<>();
+    if (StringUtils.isNotBlank(refreshTokenCookie)) {
+      cookies.put("RT", refreshTokenCookie);
+    }
+
+    return execute(
+        null,
+        headers,
+        queryParams,
+        spec -> {
+          if (!cookies.isEmpty()) {
+            spec.cookies(cookies);
+          }
+          return spec.get("/user-consent");
+        });
   }
 }

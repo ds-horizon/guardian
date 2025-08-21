@@ -11,6 +11,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESEND_NOT_ALLOWED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RETRIES_EXHAUSTED;
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -73,7 +74,7 @@ public class Passwordless {
                                 throw RESENDS_EXHAUSTED.getException();
                               }
 
-                              if ((System.currentTimeMillis() / 1000) < model.getResendAfter()) {
+                              if ((getCurrentTimeInSeconds()) < model.getResendAfter()) {
                                 throw RESEND_NOT_ALLOWED.getCustomException(
                                     Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
                               }
@@ -107,7 +108,7 @@ public class Passwordless {
         .switchIfEmpty(Single.error(INVALID_STATE.getException()))
         .map(
             model -> {
-              if (System.currentTimeMillis() / 1000 > model.getExpiry()) {
+              if (getCurrentTimeInSeconds() > model.getExpiry()) {
                 passwordlessDao.deletePasswordlessModel(state, tenantId);
                 throw INVALID_STATE.getException();
               }
@@ -150,7 +151,7 @@ public class Passwordless {
                   .responseType(dto.getResponseType())
                   .metaInfo(dto.getMetaInfo())
                   .additionalInfo(dto.getAdditionalInfo())
-                  .expiry(System.currentTimeMillis() / 1000 + config.getOtpValidity())
+                  .expiry(getCurrentTimeInSeconds() + config.getOtpValidity())
                   .build();
             });
   }
