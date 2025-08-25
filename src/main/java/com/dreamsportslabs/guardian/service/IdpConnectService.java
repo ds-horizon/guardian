@@ -306,7 +306,7 @@ public class IdpConnectService {
     String requestNonce = idpConnectRequestDto.getNonce();
     if (StringUtils.isNotBlank(requestNonce)) {
       Object nonceClaim = claims.get(OIDC_NONCE);
-      if (nonceClaim == null || !requestNonce.equals(nonceClaim.toString())) {
+      if (!requestNonce.isBlank() && !requestNonce.equals(nonceClaim.toString())) {
         throw INVALID_IDP_TOKEN.getException();
       }
     }
