@@ -46,11 +46,15 @@ public class UserService {
         .map(
             res -> {
               JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() / 100 != 2) {
+
+              if (res.statusCode() / 100 == 2) {
+                resBody.put(IS_NEW_USER, resBody.getString(USERID) == null);
+                return resBody;
+              } else if (res.statusCode() / 100 == 4) {
+                throw USER_SERVICE_ERROR.getCustomException(400, resBody.getMap());
+              } else {
                 throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
               }
-              resBody.put(IS_NEW_USER, resBody.getString(USERID) == null);
-              return resBody;
             });
   }
 

@@ -100,6 +100,15 @@ public enum ErrorEnum {
     return new WebApplicationException(response);
   }
 
+  public WebApplicationException getCustomException(int statusCode, Map<String, Object> data) {
+    Response response =
+        Response.status(statusCode)
+            .header("Content-Type", "application/json")
+            .entity(new ErrorEntity(this.code, this.message, data))
+            .build();
+    return new WebApplicationException(response);
+  }
+
   public WebApplicationException getCustomException(String message, Map<String, Object> data) {
     message = message == null ? this.message : message;
 
