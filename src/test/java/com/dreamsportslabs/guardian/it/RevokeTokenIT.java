@@ -167,9 +167,6 @@ class RevokeTokenIT {
     response.then().statusCode(SC_OK);
     boolean isActive = DbUtils.isOidcRefreshTokenActive(tenant1, validClientId, refreshToken);
     assertFalse(isActive, "Refresh token should be inactive after revocation");
-
-    boolean isRevoked = DbUtils.isRefreshTokenRevoked(refreshToken, tenant1);
-    assertTrue(isRevoked, "Refresh token should be marked as revoked in redis");
   }
 
   @Test

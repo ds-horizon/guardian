@@ -1,8 +1,5 @@
 package com.dreamsportslabs.guardian.dto.request;
 
-import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_LOGIN_HINT;
-import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_NONCE;
-import static com.dreamsportslabs.guardian.constant.Constants.OIDC_PARAM_STATE;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod;
@@ -124,10 +121,6 @@ public class AuthorizeRequestDto {
             "code_challenge must be between 43 and 128 characters");
       }
     }
-
-    validateOptionalParameter(OIDC_PARAM_STATE, state);
-    validateOptionalParameter(OIDC_PARAM_NONCE, nonce);
-    validateOptionalParameter(OIDC_PARAM_LOGIN_HINT, loginHint);
   }
 
   private void validateOptionalParameter(String paramName, String value) {
