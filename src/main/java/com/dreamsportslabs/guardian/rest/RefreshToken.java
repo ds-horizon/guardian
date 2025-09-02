@@ -32,7 +32,7 @@ public class RefreshToken {
     String tenantId = headers.getHeaderString(TENANT_ID);
     requestDto.validate();
     return authorizationService
-        .refreshTokens(requestDto, tenantId)
+        .refreshTokens(requestDto, headers.getRequestHeaders(), tenantId)
         .map(
             resp ->
                 Response.ok(resp)

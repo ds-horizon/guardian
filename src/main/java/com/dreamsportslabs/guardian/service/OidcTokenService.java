@@ -13,6 +13,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_BASIC;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_HEADER;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
@@ -91,7 +92,7 @@ public class OidcTokenService {
       case AUTHORIZATION_CODE -> authorizationCodeFlow(
           requestDto, tenantId, authorizationHeader, headers);
       case CLIENT_CREDENTIALS -> clientCredentialsFlow(requestDto, tenantId, authorizationHeader);
-      case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader);
+      case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader, headers);
     };
   }
 
@@ -176,7 +177,12 @@ public class OidcTokenService {
   }
 
   private Single<OidcTokenResponseDto> refreshTokenFlow(
-      TokenRequestDto requestDto, String tenantId, String authorizationHeader) {
+      TokenRequestDto requestDto,
+      String tenantId,
+      String authorizationHeader,
+      MultivaluedMap<String, String> headers) {
+    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
+    TokenConfig tokenConfig = tenantConfig.getTokenConfig();
     return authenticateClient(requestDto, tenantId, authorizationHeader)
         .map(
             clientId -> {
@@ -189,15 +195,31 @@ public class OidcTokenService {
               String scopes =
                   getValidScopes(
                       String.join(" ", oidcRefreshTokenModel.getScope()), requestDto.getScope());
-              GenerateOidcTokenDto generateOidcTokenDto =
-                  getGenerateOidcTokenDto(
-                      requestDto.getClientId(),
-                      oidcRefreshTokenModel.getUserId(),
-                      tenantId,
-                      scopes);
-              return generateOidcTokensForRefreshTokenFlow(
-                  generateOidcTokenDto, requestDto.getRefreshToken());
-            });
+              if (Boolean.TRUE.equals(tokenConfig.getAdditionalClaimsEnabled())) {
+                return userService
+                    .getOidcUser(
+                        Map.of(USERID, oidcRefreshTokenModel.getUserId()), headers, tenantId)
+                    .map(
+                        oidcUserResponse ->
+                            getGenerateOidcTokenDto(
+                                requestDto.getClientId(),
+                                oidcRefreshTokenModel.getUserId(),
+                                tenantId,
+                                scopes,
+                                oidcUserResponse));
+              } else {
+                return Single.just(
+                    getGenerateOidcTokenDto(
+                        requestDto.getClientId(),
+                        oidcRefreshTokenModel.getUserId(),
+                        tenantId,
+                        scopes));
+              }
+            })
+        .flatMap(
+            generateOidcTokenDto ->
+                generateOidcTokensForRefreshTokenFlow(
+                    generateOidcTokenDto, requestDto.getRefreshToken()));
   }
 
   private Single<String> authenticateClient(
@@ -306,6 +328,13 @@ public class OidcTokenService {
             generateOidcTokenDto.getScope(),
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
+    if (Boolean.TRUE.equals(tokenConfig.getAdditionalClaimsEnabled())) {
+      accessTokenClaims.putAll(
+          generateOidcTokenDto
+              .getUserResponse()
+              .getJsonObject(USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS)
+              .getMap());
+    }
 
     Map<String, Object> idTokenClaims =
         getIdTokenClaims(
@@ -412,6 +441,13 @@ public class OidcTokenService {
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
 
+    if (Boolean.TRUE.equals(tokenConfig.getAdditionalClaimsEnabled())) {
+      accessTokenClaims.putAll(
+          generateOidcTokenDto
+              .getUserResponse()
+              .getJsonObject(USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS)
+              .getMap());
+    }
     return tokenIssuer
         .generateAccessToken(accessTokenClaims, generateOidcTokenDto.getTenantId())
         .map(
@@ -492,6 +528,18 @@ public class OidcTokenService {
         .tenantId(tenantId)
         .iat(getCurrentTimeInSeconds())
         .scope(scopes)
+        .build();
+  }
+
+  private GenerateOidcTokenDto getGenerateOidcTokenDto(
+      String clientId, String userId, String tenantId, String scopes, JsonObject userResponse) {
+    return GenerateOidcTokenDto.builder()
+        .clientId(clientId)
+        .userId(userId)
+        .tenantId(tenantId)
+        .iat(getCurrentTimeInSeconds())
+        .scope(scopes)
+        .userResponse(userResponse)
         .build();
   }
 

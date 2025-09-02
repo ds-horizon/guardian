@@ -113,6 +113,9 @@ public final class Constants {
   public static final String USER_FILTERS_PROVIDER_NAME = "providerName";
   public static final String USER_FILTERS_PROVIDER_USER_ID = "providerUserId";
 
+  public static final String USER_RESPONSE_ADDITIONAL_CLAIMS = "additionalClaims";
+  public static final String USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS = "additional_claims";
+
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
   public static final String CACHE_KEY_AUTH_SESSION = "AUTH_SESSION";
