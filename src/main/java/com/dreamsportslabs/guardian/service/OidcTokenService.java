@@ -328,7 +328,7 @@ public class OidcTokenService {
             generateOidcTokenDto.getScope(),
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
-    if (Boolean.TRUE.equals(tokenConfig.getAdditionalClaimsEnabled())) {
+    if (addAdditionalClaims(tokenConfig, generateOidcTokenDto)) {
       accessTokenClaims.putAll(
           generateOidcTokenDto
               .getUserResponse()
@@ -441,7 +441,7 @@ public class OidcTokenService {
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
 
-    if (Boolean.TRUE.equals(tokenConfig.getAdditionalClaimsEnabled())) {
+    if (addAdditionalClaims(tokenConfig, generateOidcTokenDto)) {
       accessTokenClaims.putAll(
           generateOidcTokenDto
               .getUserResponse()
@@ -617,5 +617,14 @@ public class OidcTokenService {
     MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
     headers.add(WWW_AUTHENTICATE_HEADER, WWW_AUTHENTICATE_BASIC + "\"" + iss + "\"");
     return headers;
+  }
+
+  private boolean addAdditionalClaims(
+      TokenConfig tokenConfig, GenerateOidcTokenDto generateOidcTokenDto) {
+    return Boolean.TRUE.equals(tokenConfig.getAdditionalClaimsEnabled())
+        && generateOidcTokenDto
+                .getUserResponse()
+                .getJsonObject(USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS)
+            != null;
   }
 }

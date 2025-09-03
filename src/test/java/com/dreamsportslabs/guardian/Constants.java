@@ -121,6 +121,7 @@ public class Constants {
 
   public static final String TENANT_1 = "tenant1";
   public static final String TENANT_2 = "tenant2";
+  public static final String TENANT_3 = "tenant3";
 
   public static final String ERROR_MSG_SCOPE_REQUIRED = "scope name is required";
   public static final String ERROR_MSG_SCOPE_CANNOT_BE_EMPTY = "scope name cannot be empty";
