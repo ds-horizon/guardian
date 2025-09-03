@@ -70,6 +70,7 @@ public final class Constants {
   public static final String JWT_CLAIMS_RFT_ID = "rft_id";
   public static final String JWT_CLAIMS_SCOPE = "scope";
   public static final String JWT_CLAIMS_SUB = "sub";
+  public static final String JWT_CLAIMS_TYPE = "sub_type";
 
   // JWT Headers
   public static final String JWT_HEADERS_TYP = "typ";

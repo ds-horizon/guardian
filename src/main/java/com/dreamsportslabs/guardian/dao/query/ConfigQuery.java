@@ -155,4 +155,14 @@ public class ConfigQuery {
     FROM oidc_config
     WHERE tenant_id = ?
     """;
+
+  public static final String GUEST_CONFIG =
+      """
+     SELECT tenant_id,
+            is_encrypted,
+            shared_secret_key,
+            allowed_scopes
+     FROM guest_config
+     WHERE tenant_id = ?
+     """;
 }

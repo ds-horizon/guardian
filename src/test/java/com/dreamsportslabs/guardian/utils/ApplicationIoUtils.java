@@ -506,4 +506,11 @@ public class ApplicationIoUtils {
           return spec.get("/user-consent");
         });
   }
+
+  public static Response guestLogin(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    return execute(body, headers, null, spec -> spec.post("/v1/guest/login"));
+  }
 }

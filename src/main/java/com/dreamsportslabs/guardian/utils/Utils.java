@@ -7,7 +7,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardi
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
 
-import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonObject;
@@ -15,10 +14,12 @@ import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -158,5 +159,25 @@ public final class Utils {
   public static boolean shouldSetAccessTokenAdditionalClaims(TenantConfig config) {
     return config.getTokenConfig().getAccessTokenClaims() != null
         && !config.getTokenConfig().getAccessTokenClaims().isEmpty();
+  }
+
+  public static String decryptUsingAESCBCAlgo(String encryptedBase64, String secretKey) {
+    try {
+      byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+      byte[] zeroIv = new byte[16];
+
+      SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+      IvParameterSpec ivSpec = new IvParameterSpec(zeroIv);
+
+      Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+      cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+
+      byte[] encryptedBytes = Base64.getDecoder().decode(encryptedBase64);
+      byte[] decrypted = cipher.doFinal(encryptedBytes);
+
+      return new String(decrypted, StandardCharsets.UTF_8).trim();
+    } catch (Exception e) {
+      throw ErrorEnum.DECRYPTION_FAILED.getException();
+    }
   }
 }

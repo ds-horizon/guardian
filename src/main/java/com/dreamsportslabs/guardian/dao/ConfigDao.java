@@ -6,6 +6,7 @@ import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.CONTACT_VERIFY_
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.EMAIL_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.FB_AUTH_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.GOOGLE_AUTH_CONFIG;
+import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.GUEST_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OIDC_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OIDC_PROVIDER_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OTP_CONFIG;
@@ -21,6 +22,7 @@ import com.dreamsportslabs.guardian.config.tenant.ContactVerifyConfig;
 import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
 import com.dreamsportslabs.guardian.config.tenant.FbConfig;
 import com.dreamsportslabs.guardian.config.tenant.GoogleConfig;
+import com.dreamsportslabs.guardian.config.tenant.GuestConfig;
 import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
@@ -59,7 +61,8 @@ public class ConfigDao {
             appendOidcProviderConfig(tenantId, builder),
             appendAdminConfig(tenantId, builder),
             appendContactVerifyConfig(tenantId, builder),
-            appendOidcConfig(tenantId, builder));
+            appendOidcConfig(tenantId, builder),
+            appendGuestConfig(tenantId, builder));
     return Completable.merge(configSources)
         .andThen(Single.defer(() -> Single.just(builder.build())));
   }
@@ -112,6 +115,12 @@ public class ConfigDao {
       String tenantId, TenantConfig.TenantConfigBuilder builder) {
     return getConfigFromDb(tenantId, GoogleConfig.class, GOOGLE_AUTH_CONFIG)
         .map(builder::googleConfig)
+        .ignoreElement();
+  }
+
+  private Completable appendGuestConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
+    return getConfigFromDb(tenantId, GuestConfig.class, GUEST_CONFIG)
+        .map(builder::guestConfig)
         .ignoreElement();
   }
 
