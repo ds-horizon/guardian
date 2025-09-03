@@ -130,7 +130,7 @@ CREATE TABLE token_config
     cookie_path               VARCHAR(256) NOT NULL DEFAULT '/',
     cookie_secure             BOOLEAN      NOT NULL DEFAULT FALSE,
     cookie_http_only          BOOLEAN      NOT NULL DEFAULT TRUE,
-    additional_claims_enabled BOOLEAN      NOT NULL DEFAULT FALSE,
+    access_token_claims       JSON         NOT NULL DEFAULT (JSON_ARRAY()),
     created_at                TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 

@@ -98,7 +98,6 @@ import static com.dreamsportslabs.guardian.Constants.TOKEN_PARAM_TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_TYPE_BEARER;
 import static com.dreamsportslabs.guardian.Constants.WWW_AUTHENTICATE_BASIC_REALM_FORMAT;
 import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL;
-import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.authorize;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.consentAccept;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.createClient;
@@ -1628,8 +1627,8 @@ public class OidcTokenIT {
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Validate additional claims
-    assertThat(claims.get("customClaim1"), equalTo("value1"));
-    assertThat(claims.get("customClaim2"), equalTo("value2"));
+    assertThat(claims.get("item1"), equalTo("value1"));
+    assertThat(claims.get("item2"), equalTo("value2"));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1701,8 +1700,8 @@ public class OidcTokenIT {
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Validate additional claims
-    assertThat(claims.get("customClaim1"), equalTo("value1"));
-    assertThat(claims.get("customClaim2"), equalTo("value2"));
+    assertThat(claims.get("item1"), equalTo("value1"));
+    assertThat(claims.get("item2"), equalTo("value2"));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1848,7 +1847,7 @@ public class OidcTokenIT {
     // Create WireMock stub with EMPTY additional claims
     String email = generateRandomEmail();
     String phoneNumber = generateRandomPhoneNumber();
-    StubMapping stubMapping = getOidcUserStubWithEmptyAdditionalClaims(email, phoneNumber);
+    StubMapping stubMapping = getOidcUserStubWithPartialAdditionalClaims(email, phoneNumber);
 
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
@@ -1877,8 +1876,9 @@ public class OidcTokenIT {
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Should not have additional claims since they were empty
-    assertThat(claims.containsKey("customClaim1"), equalTo(false));
-    assertThat(claims.containsKey("customClaim2"), equalTo(false));
+    assertThat(claims.containsKey("item1"), equalTo(true));
+    assertThat(claims.get("item1"), equalTo("value1"));
+    assertThat(claims.containsKey("item2"), equalTo(false));
 
     // Standard claims should still be present
     assertThat(claims.get("sub"), equalTo("testuser"));
@@ -2001,7 +2001,7 @@ public class OidcTokenIT {
     // Create WireMock stub with EMPTY additional claims
     String email = generateRandomEmail();
     String phoneNumber = generateRandomPhoneNumber();
-    StubMapping stubMapping = getOidcUserStubWithEmptyAdditionalClaims(email, phoneNumber);
+    StubMapping stubMapping = getOidcUserStubWithPartialAdditionalClaims(email, phoneNumber);
 
     Map<String, String> headers = new HashMap<>();
     headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
@@ -2029,8 +2029,9 @@ public class OidcTokenIT {
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Should not have additional claims since they were empty
-    assertThat(claims.containsKey("customClaim1"), equalTo(false));
-    assertThat(claims.containsKey("customClaim2"), equalTo(false));
+    assertThat(claims.containsKey("item1"), equalTo(true));
+    assertThat(claims.get("item1"), equalTo("value1"));
+    assertThat(claims.containsKey("item2"), equalTo(false));
 
     // Standard claims should still be present
     assertThat(claims.get("sub"), equalTo("testuser"));
@@ -2047,9 +2048,6 @@ public class OidcTokenIT {
   }
 
   private StubMapping getOidcUserStubWithAdditionalClaims(String email, String phoneNumber) {
-    JsonNode additionalClaims =
-        objectMapper.createObjectNode().put("customClaim1", "value1").put("customClaim2", "value2");
-
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
@@ -2060,9 +2058,8 @@ public class OidcTokenIT {
             .put("phone_number", phoneNumber)
             .put("phone_number_verified", phoneNumber)
             .put("email_verified", email)
-            .set(
-                USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS,
-                additionalClaims); // Key field for OIDC additional claims
+            .put("item1", "value1")
+            .put("item2", "value2"); // Key field for OIDC additional claims
 
     return wireMockServer.stubFor(
         get(urlPathMatching("/user"))
@@ -2095,8 +2092,7 @@ public class OidcTokenIT {
                     .withJsonBody(jsonNode)));
   }
 
-  private StubMapping getOidcUserStubWithEmptyAdditionalClaims(String email, String phoneNumber) {
-    JsonNode emptyAdditionalClaims = objectMapper.createObjectNode(); // Empty object {}
+  private StubMapping getOidcUserStubWithPartialAdditionalClaims(String email, String phoneNumber) {
 
     JsonNode jsonNode =
         objectMapper
@@ -2108,7 +2104,7 @@ public class OidcTokenIT {
             .put("phone_number", phoneNumber)
             .put("phone_number_verified", phoneNumber)
             .put("email_verified", email)
-            .set(USER_RESPONSE_OIDC_ADDITIONAL_CLAIMS, emptyAdditionalClaims);
+            .put("item1", "value1");
 
     return wireMockServer.stubFor(
         get(urlPathMatching("/user"))

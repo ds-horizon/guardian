@@ -35,6 +35,7 @@ public final class Constants {
   public static final String OIDC_CLAIMS_MIDDLE_NAME = "middle_name";
   public static final String OIDC_CLAIMS_PICTURE = "picture";
   public static final String OIDC_CLAIMS_PHONE = "phone_number";
+  public static final String OIDC_USERID = "user_id";
 
   public static final String EXPIRY_OPTION_REDIS = "EX";
   public static final String EXPIRE_AT_REDIS = "EXAT";

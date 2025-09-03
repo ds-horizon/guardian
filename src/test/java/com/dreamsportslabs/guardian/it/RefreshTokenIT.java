@@ -165,8 +165,8 @@ public class RefreshTokenIT {
 
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
-    assertThat(claims.get("a"), equalTo("b"));
-    assertThat(claims.get("c"), equalTo("d"));
+    assertThat(claims.get("item1"), equalTo("a"));
+    assertThat(claims.get("item2"), equalTo("b"));
     wireMockServer.removeStub(stub);
   }
 
@@ -192,8 +192,8 @@ public class RefreshTokenIT {
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Should not have additional claims, only standard claims
-    assertThat(claims.containsKey("a"), equalTo(false));
-    assertThat(claims.containsKey("c"), equalTo(false));
+    assertThat(claims.containsKey("item1"), equalTo(false));
+    assertThat(claims.containsKey("item2"), equalTo(false));
 
     // Standard claims should still be present
     assertThat(claims.get("sub"), equalTo(userId));
@@ -204,8 +204,8 @@ public class RefreshTokenIT {
   }
 
   @Test()
-  @DisplayName("Should handle empty additional claims gracefully")
-  public void testEmptyAdditionalClaimsRefreshToken() {
+  @DisplayName("Should handle partially added additional claims gracefully")
+  public void testPartialAdditionalClaimsRefreshToken() {
     // Arrange
     String userId = "1234";
     StubMapping stub = getStubForUserInfoWithEmptyAdditionalClaims(userId);
@@ -224,9 +224,9 @@ public class RefreshTokenIT {
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
 
-    // Should not have additional claims since the object was empty
-    assertThat(claims.containsKey("a"), equalTo(false));
-    assertThat(claims.containsKey("c"), equalTo(false));
+    assertThat(claims.containsKey("item1"), equalTo(true));
+    assertThat(claims.get("item1"), equalTo("a"));
+    assertThat(claims.containsKey("item2"), equalTo(false));
 
     // Standard claims should still be present
     assertThat(claims.get("sub"), equalTo(userId));
@@ -238,7 +238,6 @@ public class RefreshTokenIT {
 
   private StubMapping getStubForUserInfoWithAdditionalClaims(String userId) {
 
-    JsonNode additionalClaims = objectMapper.createObjectNode().put("a", "b").put("c", "d");
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
@@ -248,7 +247,8 @@ public class RefreshTokenIT {
             .put("email-verified", true)
             .put("phoneNumber", randomNumeric(10))
             .put(CLAIM_PHONE_NUMBER_VERIFIED, true)
-            .set("additionalClaims", additionalClaims);
+            .put("item1", "a")
+            .put("item2", "b");
 
     return wireMockServer.stubFor(
         get(urlPathMatching("/user"))
@@ -283,7 +283,6 @@ public class RefreshTokenIT {
 
   private StubMapping getStubForUserInfoWithEmptyAdditionalClaims(String userId) {
 
-    JsonNode emptyAdditionalClaims = objectMapper.createObjectNode(); // Empty object {}
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
@@ -293,7 +292,7 @@ public class RefreshTokenIT {
             .put("email-verified", true)
             .put("phoneNumber", randomNumeric(10))
             .put(CLAIM_PHONE_NUMBER_VERIFIED, true)
-            .set("additionalClaims", emptyAdditionalClaims);
+            .put("item1", "a");
 
     return wireMockServer.stubFor(
         get(urlPathMatching("/user"))

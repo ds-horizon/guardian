@@ -13,7 +13,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOK
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
-import static com.dreamsportslabs.guardian.constant.Constants.USER_RESPONSE_ADDITIONAL_CLAIMS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
@@ -91,19 +90,7 @@ public class AuthorizationService {
     long iat = getCurrentTimeInSeconds();
     Map<String, Object> commonTokenClaims =
         getCommonTokenClaims(user.getString(USERID), iat, config);
-    Map<String, Object> accessTokenClaims;
-    if (Boolean.TRUE.equals(config.getTokenConfig().getAdditionalClaimsEnabled())) {
-      accessTokenClaims =
-          getAccessTokenClaims(
-              user.getString(USERID),
-              iat,
-              config,
-              refreshToken,
-              user.getJsonObject(USER_RESPONSE_ADDITIONAL_CLAIMS));
-    } else {
-      accessTokenClaims =
-          getAccessTokenClaims(user.getString(USERID), iat, config, refreshToken, null);
-    }
+    Map<String, Object> accessTokenClaims = getAccessTokenClaims(user, iat, config, refreshToken);
     Map<String, Object> idTokenClaims = new HashMap<>(commonTokenClaims);
     idTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getIdTokenExpiry());
     return Single.zip(
@@ -146,26 +133,28 @@ public class AuthorizationService {
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
             userId -> {
-              if (Boolean.TRUE.equals(config.getTokenConfig().getAdditionalClaimsEnabled())) {
+              if (setAdditionalClaims(config)) {
                 return userService
                     .getUser(Map.of(USERID, userId), headers, tenantId)
-                    .flatMap(
+                    .map(
                         userResp ->
-                            tokenIssuer.generateAccessToken(
-                                getAccessTokenClaims(
-                                    userId,
-                                    getCurrentTimeInSeconds(),
-                                    config,
-                                    dto.getRefreshToken(),
-                                    userResp.getJsonObject(USER_RESPONSE_ADDITIONAL_CLAIMS)),
-                                config.getTenantId()));
+                            getAccessTokenClaims(
+                                userResp,
+                                getCurrentTimeInSeconds(),
+                                config,
+                                dto.getRefreshToken()));
               } else {
-                return tokenIssuer.generateAccessToken(
+                return Single.just(
                     getAccessTokenClaims(
-                        userId, getCurrentTimeInSeconds(), config, dto.getRefreshToken(), null),
-                    config.getTenantId());
+                        new JsonObject(Map.of(USERID, userId)),
+                        getCurrentTimeInSeconds(),
+                        config,
+                        dto.getRefreshToken()));
               }
             })
+        .flatMap(
+            accessTokenClaims ->
+                tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()))
         .map(
             accessToken ->
                 new RefreshTokenResponseDto(
@@ -294,18 +283,18 @@ public class AuthorizationService {
   }
 
   private Map<String, Object> getAccessTokenClaims(
-      String userId,
-      long iat,
-      TenantConfig config,
-      String refreshToken,
-      JsonObject userAdditionalClaims) {
-    Map<String, Object> commonTokenClaims = getCommonTokenClaims(userId, iat, config);
+      JsonObject userResponse, long iat, TenantConfig config, String refreshToken) {
+    Map<String, Object> commonTokenClaims =
+        getCommonTokenClaims(userResponse.getString(USERID), iat, config);
     Map<String, Object> accessTokenClaims = new HashMap<>(commonTokenClaims);
     accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
     accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
     accessTokenClaims.put(JWT_TENANT_ID_CLAIM, config.getTenantId());
-    if (userAdditionalClaims != null) {
-      accessTokenClaims.putAll(userAdditionalClaims.getMap());
+    if (setAdditionalClaims(config)) {
+      config.getTokenConfig().getAccessTokenClaims().stream()
+          .filter(userResponse::containsKey)
+          .toList()
+          .forEach(claim -> accessTokenClaims.put(claim, userResponse.getValue(claim)));
     }
     return accessTokenClaims;
   }
@@ -316,5 +305,10 @@ public class AuthorizationService {
     commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
     commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
     return commonTokenClaims;
+  }
+
+  private boolean setAdditionalClaims(TenantConfig config) {
+    return config.getTokenConfig().getAccessTokenClaims() != null
+        && !config.getTokenConfig().getAccessTokenClaims().isEmpty();
   }
 }

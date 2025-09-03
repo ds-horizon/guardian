@@ -78,7 +78,7 @@ public class ConfigQuery {
            cookie_domain,
            cookie_secure,
            cookie_http_only,
-           additional_claims_enabled
+           access_token_claims
     FROM token_config
     WHERE tenant_id = ?
     """;
