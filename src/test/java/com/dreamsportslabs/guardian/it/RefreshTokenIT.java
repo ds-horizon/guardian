@@ -1,5 +1,9 @@
 package com.dreamsportslabs.guardian.it;
 
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERID;
+import static com.dreamsportslabs.guardian.Constants.CLAIM_ADDRESS;
+import static com.dreamsportslabs.guardian.Constants.CLAIM_EMAIL;
+import static com.dreamsportslabs.guardian.Constants.CLAIM_PHONE_NUMBER_VERIFIED;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_EXP;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_IAT;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_ISS;
@@ -10,12 +14,21 @@ import static com.dreamsportslabs.guardian.Constants.JWT_HEADER_KID;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.refreshToken;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.dreamsportslabs.guardian.utils.DbUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.fusionauth.jwt.domain.JWT;
 import io.fusionauth.jwt.rsa.RSAVerifier;
 import io.restassured.response.Response;
@@ -32,6 +45,10 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class RefreshTokenIT {
   public static String tenant1 = "tenant1"; // OTP is mocked for this tenant
+  public static String tenant3 = "tenant3"; // Additional claims are enabled for this tenant
+
+  private final ObjectMapper objectMapper = new ObjectMapper();
+  private WireMockServer wireMockServer;
 
   @Test()
   @DisplayName("Should generate access token for a valid refresh token")
@@ -126,5 +143,163 @@ public class RefreshTokenIT {
     assertThat(response.getCookies().containsKey(REFRESH_TOKEN_COOKIE_NAME), is(true));
     assertThat(response.getCookie(ACCESS_TOKEN_COOKIE_NAME), equalTo(""));
     assertThat(response.getCookie(REFRESH_TOKEN_COOKIE_NAME), equalTo(""));
+  }
+
+  @Test()
+  @DisplayName("Should add additional claims in Access Token if setting is enabled")
+  public void testAdditionalClaimsEnabledRefreshToken() {
+    // Arrange
+    String userId = "1234";
+    StubMapping stub = getStubForUserInfoWithAdditionalClaims(userId);
+    String refreshToken =
+        DbUtils.insertRefreshToken(
+            tenant3, userId, 1800L, "source", "device1", "location", "1.2.3.4");
+
+    // Act
+    Response response = refreshToken(tenant3, refreshToken);
+
+    // Validate
+    response.then().statusCode(HttpStatus.SC_OK).body("accessToken", isA(String.class));
+    String accessToken = response.getBody().jsonPath().getString("accessToken");
+    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+    assertThat(claims.get("item1"), equalTo("a"));
+    assertThat(claims.get("item2"), equalTo("b"));
+    wireMockServer.removeStub(stub);
+  }
+
+  @Test()
+  @DisplayName("Should handle missing additional claims field gracefully")
+  public void testMissingAdditionalClaimsFieldRefreshToken() {
+    // Arrange
+    String userId = "1234";
+    StubMapping stub = getStubForUserInfoWithoutAdditionalClaims(userId);
+    String refreshToken =
+        DbUtils.insertRefreshToken(
+            tenant3, userId, 1800L, "source", "device1", "location", "1.2.3.4");
+
+    // Act
+    Response response = refreshToken(tenant3, refreshToken);
+
+    // Validate
+    response.then().statusCode(HttpStatus.SC_OK).body("accessToken", isA(String.class));
+    String accessToken = response.getBody().jsonPath().getString("accessToken");
+    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    // Should not have additional claims, only standard claims
+    assertThat(claims.containsKey("item1"), equalTo(false));
+    assertThat(claims.containsKey("item2"), equalTo(false));
+
+    // Standard claims should still be present
+    assertThat(claims.get("sub"), equalTo(userId));
+    assertThat(claims.get("iss"), equalTo("https://test.com"));
+    assertThat(claims.get("tid"), equalTo(tenant3));
+
+    wireMockServer.removeStub(stub);
+  }
+
+  @Test()
+  @DisplayName("Should handle partially added additional claims gracefully")
+  public void testPartialAdditionalClaimsRefreshToken() {
+    // Arrange
+    String userId = "1234";
+    StubMapping stub = getStubForUserInfoWithEmptyAdditionalClaims(userId);
+    String refreshToken =
+        DbUtils.insertRefreshToken(
+            tenant3, userId, 1800L, "source", "device1", "location", "1.2.3.4");
+
+    // Act
+    Response response = refreshToken(tenant3, refreshToken);
+
+    // Validate
+    response.then().statusCode(HttpStatus.SC_OK).body("accessToken", isA(String.class));
+    String accessToken = response.getBody().jsonPath().getString("accessToken");
+    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    assertThat(claims.containsKey("item1"), equalTo(true));
+    assertThat(claims.get("item1"), equalTo("a"));
+    assertThat(claims.containsKey("item2"), equalTo(false));
+
+    // Standard claims should still be present
+    assertThat(claims.get("sub"), equalTo(userId));
+    assertThat(claims.get("iss"), equalTo("https://test.com"));
+    assertThat(claims.get("tid"), equalTo(tenant3));
+
+    wireMockServer.removeStub(stub);
+  }
+
+  private StubMapping getStubForUserInfoWithAdditionalClaims(String userId) {
+
+    JsonNode jsonNode =
+        objectMapper
+            .createObjectNode()
+            .put(BODY_PARAM_USERID, userId)
+            .put(CLAIM_EMAIL, randomAlphanumeric(8) + "@example.com")
+            .put(CLAIM_ADDRESS, "sampleAddress")
+            .put("email-verified", true)
+            .put("phoneNumber", randomNumeric(10))
+            .put(CLAIM_PHONE_NUMBER_VERIFIED, true)
+            .put("item1", "a")
+            .put("item2", "b");
+
+    return wireMockServer.stubFor(
+        get(urlPathMatching("/user"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.SC_OK)
+                    .withHeader("Content-Type", "application/json")
+                    .withJsonBody(jsonNode)));
+  }
+
+  private StubMapping getStubForUserInfoWithoutAdditionalClaims(String userId) {
+
+    JsonNode jsonNode =
+        objectMapper
+            .createObjectNode()
+            .put(BODY_PARAM_USERID, userId)
+            .put(CLAIM_EMAIL, randomAlphanumeric(8) + "@example.com")
+            .put(CLAIM_ADDRESS, "sampleAddress")
+            .put("email-verified", true)
+            .put("phoneNumber", randomNumeric(10))
+            .put(CLAIM_PHONE_NUMBER_VERIFIED, true);
+    // Note: no additionalClaims field at all
+
+    return wireMockServer.stubFor(
+        get(urlPathMatching("/user"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.SC_OK)
+                    .withHeader("Content-Type", "application/json")
+                    .withJsonBody(jsonNode)));
+  }
+
+  private StubMapping getStubForUserInfoWithEmptyAdditionalClaims(String userId) {
+
+    JsonNode jsonNode =
+        objectMapper
+            .createObjectNode()
+            .put(BODY_PARAM_USERID, userId)
+            .put(CLAIM_EMAIL, randomAlphanumeric(8) + "@example.com")
+            .put(CLAIM_ADDRESS, "sampleAddress")
+            .put("email-verified", true)
+            .put("phoneNumber", randomNumeric(10))
+            .put(CLAIM_PHONE_NUMBER_VERIFIED, true)
+            .put("item1", "a");
+
+    return wireMockServer.stubFor(
+        get(urlPathMatching("/user"))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpStatus.SC_OK)
+                    .withHeader("Content-Type", "application/json")
+                    .withJsonBody(jsonNode)));
   }
 }

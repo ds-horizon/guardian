@@ -17,4 +17,5 @@ public class TokenConfig {
   private String cookiePath;
   private Boolean cookieSecure;
   private Boolean cookieHttpOnly;
+  private List<String> accessTokenClaims;
 }

@@ -561,6 +561,8 @@ public class OidcUtils {
       assertThat(
           claims.get(JWT_CLAIM_RFT_ID), equalTo(DigestUtils.md5Hex(refreshToken).toUpperCase()));
     }
+    assertThat(claims.containsKey("item1"), equalTo(false));
+    assertThat(claims.containsKey("item2"), equalTo(false));
   }
 
   @SneakyThrows

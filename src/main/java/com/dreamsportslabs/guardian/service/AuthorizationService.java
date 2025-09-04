@@ -16,8 +16,10 @@ import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
+import static com.dreamsportslabs.guardian.utils.Utils.appendAdditionalAccessTokenClaims;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
+import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
 
 import com.dreamsportslabs.guardian.config.tenant.AuthCodeConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -40,6 +42,7 @@ import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.NewCookie;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,6 +61,7 @@ public class AuthorizationService {
   private final RefreshTokenDao refreshTokenDao;
   private final CodeDao codeDao;
   private final RevocationDao revocationDao;
+  private final UserService userService;
 
   public Single<Object> generate(
       JsonObject user, String responseType, MetaInfo metaInfo, String tenantId) {
@@ -88,8 +92,7 @@ public class AuthorizationService {
     long iat = getCurrentTimeInSeconds();
     Map<String, Object> commonTokenClaims =
         getCommonTokenClaims(user.getString(USERID), iat, config);
-    Map<String, Object> accessTokenClaims =
-        getAccessTokenClaims(user.getString(USERID), iat, config, refreshToken);
+    Map<String, Object> accessTokenClaims = getAccessTokenClaims(user, iat, config, refreshToken);
     Map<String, Object> idTokenClaims = new HashMap<>(commonTokenClaims);
     idTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getIdTokenExpiry());
     return Single.zip(
@@ -125,17 +128,35 @@ public class AuthorizationService {
   }
 
   public Single<RefreshTokenResponseDto> refreshTokens(
-      V1RefreshTokenRequestDto dto, String tenantId) {
+      V1RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     return refreshTokenDao
         .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
-            userId ->
-                tokenIssuer.generateAccessToken(
+            userId -> {
+              if (shouldSetAccessTokenAdditionalClaims(config)) {
+                return userService
+                    .getUser(Map.of(USERID, userId), headers, tenantId)
+                    .map(
+                        userResp ->
+                            getAccessTokenClaims(
+                                userResp,
+                                getCurrentTimeInSeconds(),
+                                config,
+                                dto.getRefreshToken()));
+              } else {
+                return Single.just(
                     getAccessTokenClaims(
-                        userId, getCurrentTimeInSeconds(), config, dto.getRefreshToken()),
-                    config.getTenantId()))
+                        new JsonObject(Map.of(USERID, userId)),
+                        getCurrentTimeInSeconds(),
+                        config,
+                        dto.getRefreshToken()));
+              }
+            })
+        .flatMap(
+            accessTokenClaims ->
+                tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()))
         .map(
             accessToken ->
                 new RefreshTokenResponseDto(
@@ -264,13 +285,14 @@ public class AuthorizationService {
   }
 
   private Map<String, Object> getAccessTokenClaims(
-      String userId, long iat, TenantConfig config, String refreshToken) {
-    Map<String, Object> commonTokenClaims = getCommonTokenClaims(userId, iat, config);
+      JsonObject userResponse, long iat, TenantConfig config, String refreshToken) {
+    Map<String, Object> commonTokenClaims =
+        getCommonTokenClaims(userResponse.getString(USERID), iat, config);
     Map<String, Object> accessTokenClaims = new HashMap<>(commonTokenClaims);
     accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
     accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
     accessTokenClaims.put(JWT_TENANT_ID_CLAIM, config.getTenantId());
-    return accessTokenClaims;
+    return appendAdditionalAccessTokenClaims(accessTokenClaims, userResponse, config);
   }
 
   private Map<String, Object> getCommonTokenClaims(String userId, long iat, TenantConfig config) {

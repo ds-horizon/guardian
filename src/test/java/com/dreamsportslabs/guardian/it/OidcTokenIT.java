@@ -1,5 +1,9 @@
 package com.dreamsportslabs.guardian.it;
 
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_ITEM1;
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_ITEM2;
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_VALUE1;
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_VALUE2;
 import static com.dreamsportslabs.guardian.Constants.AUTHORIZATION_CODE;
 import static com.dreamsportslabs.guardian.Constants.AUTH_BASIC_PREFIX;
 import static com.dreamsportslabs.guardian.Constants.AUTH_CODE_CHALLENGE_METHOD_PLAIN;
@@ -19,14 +23,18 @@ import static com.dreamsportslabs.guardian.Constants.CLAIM_PHONE_NUMBER;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_PHONE_NUMBER_VERIFIED;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_CREDENTIALS;
+import static com.dreamsportslabs.guardian.Constants.CLIENT_CREDENTIALS_SEPARATOR;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_SECRET;
+import static com.dreamsportslabs.guardian.Constants.CONTENT_TYPE_APPLICATION_JSON;
 import static com.dreamsportslabs.guardian.Constants.CONTENT_TYPE_FORM_URLENCODED;
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
+import static com.dreamsportslabs.guardian.Constants.EMAIL_DOMAIN_EXAMPLE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_GRANT_TYPE_REQUIRED;
 import static com.dreamsportslabs.guardian.Constants.EXAMPLE_CALLBACK;
 import static com.dreamsportslabs.guardian.Constants.EXPIRED_TOKEN_OFFSET_SECONDS;
 import static com.dreamsportslabs.guardian.Constants.GRANT_TYPES;
@@ -43,7 +51,15 @@ import static com.dreamsportslabs.guardian.Constants.INVALID_GRANT_TYPE;
 import static com.dreamsportslabs.guardian.Constants.INVALID_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
+import static com.dreamsportslabs.guardian.Constants.JSON_EMAIL_VERIFIED;
+import static com.dreamsportslabs.guardian.Constants.JSON_PHONE_NUMBER;
+import static com.dreamsportslabs.guardian.Constants.JSON_PHONE_NUMBER_VERIFIED;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_ISS;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
+import static com.dreamsportslabs.guardian.Constants.MOCK_USERNAME;
+import static com.dreamsportslabs.guardian.Constants.MOCK_USER_ID;
+import static com.dreamsportslabs.guardian.Constants.MOCK_USER_NAME;
 import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.PARAM_CODE_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.PARAM_CODE_CHALLENGE_METHOD;
@@ -54,15 +70,20 @@ import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
+import static com.dreamsportslabs.guardian.Constants.SCOPE_SEPARATOR;
+import static com.dreamsportslabs.guardian.Constants.SCOPE_SPLIT_REGEX;
 import static com.dreamsportslabs.guardian.Constants.SOURCE_VALUE;
+import static com.dreamsportslabs.guardian.Constants.TENANT3_PUBLIC_KEY_PATH;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
+import static com.dreamsportslabs.guardian.Constants.TENANT_3;
 import static com.dreamsportslabs.guardian.Constants.TEST_CODE_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.TEST_CODE_CHALLENGE_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_CODE_VERIFIER_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_DEVICE_NAME;
 import static com.dreamsportslabs.guardian.Constants.TEST_IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER;
+import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER_URL;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID_3;
@@ -95,6 +116,7 @@ import static com.dreamsportslabs.guardian.Constants.TOKEN_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_PARAM_TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_TYPE_BEARER;
+import static com.dreamsportslabs.guardian.Constants.WIREMOCK_USER_ENDPOINT;
 import static com.dreamsportslabs.guardian.Constants.WWW_AUTHENTICATE_BASIC_REALM_FORMAT;
 import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.authorize;
@@ -131,8 +153,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
+import io.fusionauth.jwt.domain.JWT;
+import io.fusionauth.jwt.rsa.RSAVerifier;
 import io.restassured.response.Response;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -149,6 +175,7 @@ public class OidcTokenIT {
   private final ObjectMapper objectMapper = new ObjectMapper();
   private static final String tenant1 = TENANT_1;
   private static final String tenant2 = TENANT_2;
+  private static final String tenant3 = TENANT_3; // Additional claims enabled for this tenant
 
   private String validClientId;
   private String validClientSecret;
@@ -197,24 +224,24 @@ public class OidcTokenIT {
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
-            .put(BODY_PARAM_NAME, "John Doe")
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
             .put(BODY_PARAM_EMAIL, email)
-            .put(BODY_PARAM_USERID, "testuser")
-            .put(BODY_PARAM_USERNAME, "testuser")
-            .put("phone_number", phoneNumber)
-            .put("phone_number_verified", phoneNumber)
-            .put("email_verified", email);
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email);
     return wireMockServer.stubFor(
-        get(urlPathMatching("/user"))
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
                     .withJsonBody(jsonNode)));
   }
 
   private String generateRandomEmail() {
-    return RandomStringUtils.randomAlphanumeric(10) + "@example.com";
+    return RandomStringUtils.randomAlphanumeric(10) + EMAIL_DOMAIN_EXAMPLE;
   }
 
   private String generateRandomPhoneNumber() {
@@ -325,7 +352,7 @@ public class OidcTokenIT {
   }
 
   private String getBasicAuthHeader(String clientId, String clientSecret) {
-    String clientCredentials = clientId + ":" + clientSecret;
+    String clientCredentials = clientId + CLIENT_CREDENTIALS_SEPARATOR + clientSecret;
     String authHeader =
         new String(Base64.getEncoder().encode(clientCredentials.getBytes(StandardCharsets.UTF_8)));
     return AUTH_BASIC_PREFIX + authHeader;
@@ -334,7 +361,7 @@ public class OidcTokenIT {
   /** Helper method to validate scope using assertThat with containsInAnyOrder */
   private void validateScope(Response response, String... expectedScopes) {
     String actualScope = response.jsonPath().getString(TOKEN_PARAM_SCOPE);
-    String[] actualScopeArray = actualScope.trim().split("\\s+");
+    String[] actualScopeArray = actualScope.trim().split(SCOPE_SPLIT_REGEX);
     assertThat(Arrays.asList(actualScopeArray), containsInAnyOrder(expectedScopes));
   }
 
@@ -357,7 +384,7 @@ public class OidcTokenIT {
         .then()
         .statusCode(SC_BAD_REQUEST)
         .body(ERROR, equalTo(INVALID_REQUEST))
-        .body(ERROR_DESCRIPTION, equalTo("grant_type is required"));
+        .body(ERROR_DESCRIPTION, equalTo(ERROR_MSG_GRANT_TYPE_REQUIRED));
   }
 
   @Test
@@ -473,7 +500,7 @@ public class OidcTokenIT {
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, CLIENT_CREDENTIALS);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -516,7 +543,7 @@ public class OidcTokenIT {
     formParams.put(TOKEN_PARAM_GRANT_TYPE, CLIENT_CREDENTIALS);
     formParams.put(CLIENT_ID, validClientId);
     formParams.put(CLIENT_SECRET, validClientSecret);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -552,7 +579,8 @@ public class OidcTokenIT {
       "Client Credentials - Should return error in case of invalid client credentials - basic auth")
   public void testInvalidClientCredentialsBasicAuth() {
     // Arrange
-    String invalidClientCredentials = INVALID_CLIENT_ID + ":" + INVALID_CLIENT_SECRET;
+    String invalidClientCredentials =
+        INVALID_CLIENT_ID + CLIENT_CREDENTIALS_SEPARATOR + INVALID_CLIENT_SECRET;
     String authHeader =
         new String(
             Base64.getEncoder().encode(invalidClientCredentials.getBytes(StandardCharsets.UTF_8)));
@@ -630,7 +658,7 @@ public class OidcTokenIT {
     String clientId = clientResponse.jsonPath().getString(CLIENT_ID);
     String clientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
 
-    String clientCredentials = clientId + ":" + clientSecret;
+    String clientCredentials = clientId + CLIENT_CREDENTIALS_SEPARATOR + clientSecret;
     String authHeader =
         new String(Base64.getEncoder().encode(clientCredentials.getBytes(StandardCharsets.UTF_8)));
 
@@ -693,7 +721,9 @@ public class OidcTokenIT {
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, CLIENT_CREDENTIALS);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL + " " + SCOPE_ADDRESS);
+    formParams.put(
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL + SCOPE_SEPARATOR + SCOPE_ADDRESS);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -731,6 +761,11 @@ public class OidcTokenIT {
     formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
 
+    // Create WireMock stub with additional claims
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStubWithAdditionalClaims(email, phoneNumber);
+
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
 
@@ -758,6 +793,7 @@ public class OidcTokenIT {
         notExpectedScopes,
         true,
         refreshToken);
+    wireMockServer.removeStub(stubMapping);
   }
 
   @Test
@@ -839,7 +875,7 @@ public class OidcTokenIT {
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -895,7 +931,7 @@ public class OidcTokenIT {
     formParams.put(CLIENT_ID, validClientId);
     formParams.put(CLIENT_SECRET, validClientSecret);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -950,7 +986,9 @@ public class OidcTokenIT {
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL + " " + SCOPE_ADDRESS);
+    formParams.put(
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL + SCOPE_SEPARATOR + SCOPE_ADDRESS);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -1010,7 +1048,9 @@ public class OidcTokenIT {
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL + " " + SCOPE_ADDRESS);
+    formParams.put(
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL + SCOPE_SEPARATOR + SCOPE_ADDRESS);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -1481,7 +1521,8 @@ public class OidcTokenIT {
     formParams.put(TOKEN_PARAM_CODE, validAuthCode);
     formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
     formParams.put(
-        TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL); // Different scope than consented
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL); // Different scope than consented
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -1530,5 +1571,578 @@ public class OidcTokenIT {
     validateIdTokenClaims(idToken, TEST_USER_ID, validClientId, expectedClaims, notExpectedClaims);
 
     wireMockServer.removeStub(stubMapping);
+  }
+
+  @Test
+  @DisplayName(
+      "Authorization Code - Should include additional claims in Access Token when feature is enabled")
+  public void testAuthorizationCodeWithAdditionalClaims() {
+    // Arrange - Clean up tenant3 data and create required setup
+    cleanupClients(tenant3);
+    cleanupScopes(tenant3);
+    cleanupOidcRefreshTokens(tenant3);
+
+    OidcUtils.createRequiredScopes(tenant3);
+
+    // Create client for tenant3
+    Response clientResponse = createTestClientForTenant3();
+    String tenant3ClientId = clientResponse.jsonPath().getString(CLIENT_ID);
+    String tenant3ClientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
+
+    createClientScope(
+        tenant3,
+        tenant3ClientId,
+        ClientUtils.createClientScopeRequest(
+            SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
+
+    // Create test data for tenant3
+    String tenant3RefreshToken =
+        insertRefreshToken(
+            tenant3, TEST_USER_ID, 3600L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
+
+    List<String> scopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
+    Map<String, String> queryParams = createValidAuthorizeRequest(tenant3ClientId, scopes);
+
+    Response authorizeResponse = authorize(tenant3, queryParams);
+    String loginChallenge = extractLoginChallenge(authorizeResponse.getHeader(HEADER_LOCATION));
+
+    Map<String, Object> loginAcceptBody = new HashMap<>();
+    loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, tenant3RefreshToken);
+
+    Response loginAcceptResponse = loginAccept(tenant3, loginAcceptBody);
+    String consentChallenge = extractConsentChallenge(loginAcceptResponse);
+
+    Map<String, Object> consentRequestBody = new HashMap<>();
+    consentRequestBody.put(BODY_PARAM_CONSENT_CHALLENGE, consentChallenge);
+    consentRequestBody.put(
+        BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
+    consentRequestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, tenant3RefreshToken);
+
+    Response consentAcceptResponse = consentAccept(tenant3, consentRequestBody);
+    String authCode = extractAuthCodeFromLocation(consentAcceptResponse.getHeader(HEADER_LOCATION));
+
+    // Create WireMock stub with additional claims
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStubWithAdditionalClaims(email, phoneNumber);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, AUTHORIZATION_CODE);
+    formParams.put(TOKEN_PARAM_CODE, authCode);
+    formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant3, headers, formParams);
+
+    // Assert
+    response
+        .then()
+        .statusCode(200)
+        .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
+        .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
+        .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_ID_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_REFRESH_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Verify additional claims are present in access token
+    String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    // Validate additional claims
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM2), equalTo(ADDITIONAL_CLAIM_VALUE2));
+
+    wireMockServer.removeStub(stubMapping);
+  }
+
+  @Test
+  @DisplayName(
+      "Refresh Token - Should include additional claims in Access Token when feature is enabled")
+  public void testRefreshTokenWithAdditionalClaims() {
+    // Arrange - Clean up tenant3 data and create required setup
+    cleanupClients(tenant3);
+    cleanupScopes(tenant3);
+    cleanupOidcRefreshTokens(tenant3);
+
+    OidcUtils.createRequiredScopes(tenant3);
+
+    // Create client for tenant3
+    Response clientResponse = createTestClientForTenant3();
+    String tenant3ClientId = clientResponse.jsonPath().getString(CLIENT_ID);
+    String tenant3ClientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
+
+    createClientScope(
+        tenant3,
+        tenant3ClientId,
+        ClientUtils.createClientScopeRequest(
+            SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
+
+    // Create OIDC refresh token for tenant3
+    List<String> scopes = Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
+    String userId = TEST_USER_ID;
+    String refreshToken =
+        DbUtils.insertOidcRefreshToken(
+            tenant3,
+            tenant3ClientId,
+            userId,
+            REFRESH_TOKEN_EXPIRY_SECONDS,
+            scopes,
+            true,
+            TEST_DEVICE_NAME,
+            TEST_IP_ADDRESS);
+
+    // Create WireMock stub with additional claims
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStubWithAdditionalClaims(email, phoneNumber);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
+    formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant3, headers, formParams);
+
+    // Assert
+    response
+        .then()
+        .statusCode(200)
+        .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
+        .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
+        .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Verify additional claims are present in access token
+    String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    // Validate additional claims
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM2), equalTo(ADDITIONAL_CLAIM_VALUE2));
+
+    wireMockServer.removeStub(stubMapping);
+  }
+
+  @Test
+  @DisplayName("Authorization Code - Should handle missing additional claims field gracefully")
+  public void testAuthorizationCodeMissingAdditionalClaims() {
+    // Arrange - Clean up tenant3 data and create required setup
+    cleanupClients(tenant3);
+    cleanupScopes(tenant3);
+    cleanupOidcRefreshTokens(tenant3);
+
+    OidcUtils.createRequiredScopes(tenant3);
+
+    // Create client for tenant3
+    Response clientResponse = createTestClientForTenant3();
+    String tenant3ClientId = clientResponse.jsonPath().getString(CLIENT_ID);
+    String tenant3ClientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
+
+    createClientScope(
+        tenant3,
+        tenant3ClientId,
+        ClientUtils.createClientScopeRequest(
+            SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
+
+    // Create test data for tenant3
+    String tenant3RefreshToken =
+        insertRefreshToken(
+            tenant3, TEST_USER_ID, 3600L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
+
+    List<String> scopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
+    Map<String, String> queryParams = createValidAuthorizeRequest(tenant3ClientId, scopes);
+
+    Response authorizeResponse = authorize(tenant3, queryParams);
+    String loginChallenge = extractLoginChallenge(authorizeResponse.getHeader(HEADER_LOCATION));
+
+    Map<String, Object> loginAcceptBody = new HashMap<>();
+    loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, tenant3RefreshToken);
+
+    Response loginAcceptResponse = loginAccept(tenant3, loginAcceptBody);
+    String consentChallenge = extractConsentChallenge(loginAcceptResponse);
+
+    Map<String, Object> consentRequestBody = new HashMap<>();
+    consentRequestBody.put(BODY_PARAM_CONSENT_CHALLENGE, consentChallenge);
+    consentRequestBody.put(
+        BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
+    consentRequestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, tenant3RefreshToken);
+
+    Response consentAcceptResponse = consentAccept(tenant3, consentRequestBody);
+    String authCode = extractAuthCodeFromLocation(consentAcceptResponse.getHeader(HEADER_LOCATION));
+
+    // Create WireMock stub WITHOUT additional claims
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStubWithoutAdditionalClaims(email, phoneNumber);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, AUTHORIZATION_CODE);
+    formParams.put(TOKEN_PARAM_CODE, authCode);
+    formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant3, headers, formParams);
+
+    // Assert
+    response
+        .then()
+        .statusCode(200)
+        .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
+        .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
+        .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Verify NO additional claims are present in access token
+    String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    // Should not have additional claims
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
+
+    // Standard claims should still be present
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+
+    wireMockServer.removeStub(stubMapping);
+  }
+
+  @Test
+  @DisplayName("Authorization Code - Should handle empty additional claims gracefully")
+  public void testAuthorizationCodeEmptyAdditionalClaims() {
+    // Arrange - Clean up tenant3 data and create required setup
+    cleanupClients(tenant3);
+    cleanupScopes(tenant3);
+    cleanupOidcRefreshTokens(tenant3);
+
+    OidcUtils.createRequiredScopes(tenant3);
+
+    // Create client for tenant3
+    Response clientResponse = createTestClientForTenant3();
+    String tenant3ClientId = clientResponse.jsonPath().getString(CLIENT_ID);
+    String tenant3ClientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
+
+    createClientScope(
+        tenant3,
+        tenant3ClientId,
+        ClientUtils.createClientScopeRequest(
+            SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
+
+    // Create test data for tenant3
+    String tenant3RefreshToken =
+        insertRefreshToken(
+            tenant3, TEST_USER_ID, 3600L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
+
+    List<String> scopes = List.of(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE);
+    Map<String, String> queryParams = createValidAuthorizeRequest(tenant3ClientId, scopes);
+
+    Response authorizeResponse = authorize(tenant3, queryParams);
+    String loginChallenge = extractLoginChallenge(authorizeResponse.getHeader(HEADER_LOCATION));
+
+    Map<String, Object> loginAcceptBody = new HashMap<>();
+    loginAcceptBody.put(BODY_PARAM_LOGIN_CHALLENGE, loginChallenge);
+    loginAcceptBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, tenant3RefreshToken);
+
+    Response loginAcceptResponse = loginAccept(tenant3, loginAcceptBody);
+    String consentChallenge = extractConsentChallenge(loginAcceptResponse);
+
+    Map<String, Object> consentRequestBody = new HashMap<>();
+    consentRequestBody.put(BODY_PARAM_CONSENT_CHALLENGE, consentChallenge);
+    consentRequestBody.put(
+        BODY_PARAM_CONSENTED_SCOPES, Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_PHONE));
+    consentRequestBody.put(OIDC_BODY_PARAM_REFRESH_TOKEN, tenant3RefreshToken);
+
+    Response consentAcceptResponse = consentAccept(tenant3, consentRequestBody);
+    String authCode = extractAuthCodeFromLocation(consentAcceptResponse.getHeader(HEADER_LOCATION));
+
+    // Create WireMock stub with EMPTY additional claims
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStubWithPartialAdditionalClaims(email, phoneNumber);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, AUTHORIZATION_CODE);
+    formParams.put(TOKEN_PARAM_CODE, authCode);
+    formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant3, headers, formParams);
+
+    // Assert
+    response
+        .then()
+        .statusCode(200)
+        .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
+        .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
+        .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Verify NO additional claims are present in access token
+    String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    // Should not have additional claims since they were empty
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(true));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
+
+    // Standard claims should still be present
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+
+    wireMockServer.removeStub(stubMapping);
+  }
+
+  @Test
+  @DisplayName("Refresh Token - Should handle missing additional claims field gracefully")
+  public void testRefreshTokenMissingAdditionalClaims() {
+    // Arrange - Clean up tenant3 data and create required setup
+    cleanupClients(tenant3);
+    cleanupScopes(tenant3);
+    cleanupOidcRefreshTokens(tenant3);
+
+    OidcUtils.createRequiredScopes(tenant3);
+
+    // Create client for tenant3
+    Response clientResponse = createTestClientForTenant3();
+    String tenant3ClientId = clientResponse.jsonPath().getString(CLIENT_ID);
+    String tenant3ClientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
+
+    createClientScope(
+        tenant3,
+        tenant3ClientId,
+        ClientUtils.createClientScopeRequest(
+            SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
+
+    // Create OIDC refresh token for tenant3
+    List<String> scopes = Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
+    String userId = TEST_USER_ID;
+    String refreshToken =
+        DbUtils.insertOidcRefreshToken(
+            tenant3,
+            tenant3ClientId,
+            userId,
+            REFRESH_TOKEN_EXPIRY_SECONDS,
+            scopes,
+            true,
+            TEST_DEVICE_NAME,
+            TEST_IP_ADDRESS);
+
+    // Create WireMock stub WITHOUT additional claims
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStubWithoutAdditionalClaims(email, phoneNumber);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
+    formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant3, headers, formParams);
+
+    // Assert
+    response
+        .then()
+        .statusCode(200)
+        .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
+        .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
+        .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Verify NO additional claims are present in access token
+    String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    // Should not have additional claims
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
+
+    // Standard claims should still be present
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+
+    wireMockServer.removeStub(stubMapping);
+  }
+
+  @Test
+  @DisplayName("Refresh Token - Should handle empty additional claims gracefully")
+  public void testRefreshTokenEmptyAdditionalClaims() {
+    // Arrange - Clean up tenant3 data and create required setup
+    cleanupClients(tenant3);
+    cleanupScopes(tenant3);
+    cleanupOidcRefreshTokens(tenant3);
+
+    OidcUtils.createRequiredScopes(tenant3);
+
+    // Create client for tenant3
+    Response clientResponse = createTestClientForTenant3();
+    String tenant3ClientId = clientResponse.jsonPath().getString(CLIENT_ID);
+    String tenant3ClientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
+
+    createClientScope(
+        tenant3,
+        tenant3ClientId,
+        ClientUtils.createClientScopeRequest(
+            SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
+
+    // Create OIDC refresh token for tenant3
+    List<String> scopes = Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE);
+    String userId = TEST_USER_ID;
+    String refreshToken =
+        DbUtils.insertOidcRefreshToken(
+            tenant3,
+            tenant3ClientId,
+            userId,
+            REFRESH_TOKEN_EXPIRY_SECONDS,
+            scopes,
+            true,
+            TEST_DEVICE_NAME,
+            TEST_IP_ADDRESS);
+
+    // Create WireMock stub with EMPTY additional claims
+    String email = generateRandomEmail();
+    String phoneNumber = generateRandomPhoneNumber();
+    StubMapping stubMapping = getOidcUserStubWithPartialAdditionalClaims(email, phoneNumber);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_AUTHORIZATION, getBasicAuthHeader(tenant3ClientId, tenant3ClientSecret));
+    headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
+    Map<String, String> formParams = new HashMap<>();
+    formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
+    formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
+
+    // Act
+    Response response = ApplicationIoUtils.token(tenant3, headers, formParams);
+
+    // Assert
+    response
+        .then()
+        .statusCode(200)
+        .header(HEADER_CACHE_CONTROL, equalTo(CACHE_CONTROL_NO_STORE))
+        .header(HEADER_PRAGMA, equalTo(PRAGMA_NO_CACHE))
+        .body(TOKEN_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(TOKEN_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER));
+
+    // Verify NO additional claims are present in access token
+    String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
+    JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
+    Map<String, Object> claims = jwt.getAllClaims();
+
+    // Should not have additional claims since they were empty
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(true));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
+
+    // Standard claims should still be present
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+
+    wireMockServer.removeStub(stubMapping);
+  }
+
+  private Response createTestClientForTenant3() {
+    Map<String, Object> requestBody = ClientUtils.createValidClientRequest();
+    requestBody.put(
+        GRANT_TYPES, Arrays.asList(AUTHORIZATION_CODE, CLIENT_CREDENTIALS, REFRESH_TOKEN));
+    return createClient(tenant3, requestBody);
+  }
+
+  private StubMapping getOidcUserStubWithAdditionalClaims(String email, String phoneNumber) {
+    JsonNode jsonNode =
+        objectMapper
+            .createObjectNode()
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
+            .put(BODY_PARAM_EMAIL, email)
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email)
+            .put(ADDITIONAL_CLAIM_ITEM1, ADDITIONAL_CLAIM_VALUE1)
+            .put(
+                ADDITIONAL_CLAIM_ITEM2,
+                ADDITIONAL_CLAIM_VALUE2); // Key field for OIDC additional claims
+
+    return wireMockServer.stubFor(
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .withJsonBody(jsonNode)));
+  }
+
+  private StubMapping getOidcUserStubWithoutAdditionalClaims(String email, String phoneNumber) {
+    JsonNode jsonNode =
+        objectMapper
+            .createObjectNode()
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
+            .put(BODY_PARAM_EMAIL, email)
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email);
+    // Note: no additional_claims field at all
+
+    return wireMockServer.stubFor(
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .withJsonBody(jsonNode)));
+  }
+
+  private StubMapping getOidcUserStubWithPartialAdditionalClaims(String email, String phoneNumber) {
+
+    JsonNode jsonNode =
+        objectMapper
+            .createObjectNode()
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
+            .put(BODY_PARAM_EMAIL, email)
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email)
+            .put(ADDITIONAL_CLAIM_ITEM1, ADDITIONAL_CLAIM_VALUE1);
+
+    return wireMockServer.stubFor(
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
+                    .withJsonBody(jsonNode)));
   }
 }

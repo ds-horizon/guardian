@@ -7,6 +7,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardi
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
 
+import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonObject;
@@ -14,6 +15,7 @@ import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -139,5 +141,22 @@ public final class Utils {
   private static String toSnakeCase(String input) {
 
     return input.replaceAll("([a-z])([A-Z]+)", "$1_$2").replaceAll("[-\\s]", "_").toLowerCase();
+  }
+
+  public static Map<String, Object> appendAdditionalAccessTokenClaims(
+      Map<String, Object> accessTokenClaims, JsonObject userResponse, TenantConfig tenantConfig) {
+    Map<String, Object> additionalAccessTokenClaims = new HashMap<>(accessTokenClaims);
+    if (shouldSetAccessTokenAdditionalClaims(tenantConfig)) {
+      tenantConfig.getTokenConfig().getAccessTokenClaims().stream()
+          .filter(userResponse::containsKey)
+          .toList()
+          .forEach(claim -> additionalAccessTokenClaims.put(claim, userResponse.getValue(claim)));
+    }
+    return additionalAccessTokenClaims;
+  }
+
+  public static boolean shouldSetAccessTokenAdditionalClaims(TenantConfig config) {
+    return config.getTokenConfig().getAccessTokenClaims() != null
+        && !config.getTokenConfig().getAccessTokenClaims().isEmpty();
   }
 }

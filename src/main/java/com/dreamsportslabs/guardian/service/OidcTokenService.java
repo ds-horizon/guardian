@@ -11,6 +11,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
+import static com.dreamsportslabs.guardian.constant.Constants.OIDC_USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.WWW_AUTHENTICATE_BASIC;
@@ -23,8 +24,10 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_SCOPE
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED_CLIENT;
+import static com.dreamsportslabs.guardian.utils.Utils.appendAdditionalAccessTokenClaims;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
+import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -91,7 +94,7 @@ public class OidcTokenService {
       case AUTHORIZATION_CODE -> authorizationCodeFlow(
           requestDto, tenantId, authorizationHeader, headers);
       case CLIENT_CREDENTIALS -> clientCredentialsFlow(requestDto, tenantId, authorizationHeader);
-      case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader);
+      case REFRESH_TOKEN -> refreshTokenFlow(requestDto, tenantId, authorizationHeader, headers);
     };
   }
 
@@ -176,7 +179,11 @@ public class OidcTokenService {
   }
 
   private Single<OidcTokenResponseDto> refreshTokenFlow(
-      TokenRequestDto requestDto, String tenantId, String authorizationHeader) {
+      TokenRequestDto requestDto,
+      String tenantId,
+      String authorizationHeader,
+      MultivaluedMap<String, String> headers) {
+    TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     return authenticateClient(requestDto, tenantId, authorizationHeader)
         .map(
             clientId -> {
@@ -189,15 +196,27 @@ public class OidcTokenService {
               String scopes =
                   getValidScopes(
                       String.join(" ", oidcRefreshTokenModel.getScope()), requestDto.getScope());
-              GenerateOidcTokenDto generateOidcTokenDto =
-                  getGenerateOidcTokenDto(
-                      requestDto.getClientId(),
-                      oidcRefreshTokenModel.getUserId(),
-                      tenantId,
-                      scopes);
-              return generateOidcTokensForRefreshTokenFlow(
-                  generateOidcTokenDto, requestDto.getRefreshToken());
-            });
+              if (shouldSetAccessTokenAdditionalClaims(tenantConfig)) {
+                return userService
+                    .getOidcUser(
+                        Map.of(USERID, oidcRefreshTokenModel.getUserId()), headers, tenantId)
+                    .map(
+                        oidcUserResponse ->
+                            getGenerateOidcTokenDto(
+                                requestDto.getClientId(), oidcUserResponse, tenantId, scopes));
+              } else {
+                return Single.just(
+                    getGenerateOidcTokenDto(
+                        requestDto.getClientId(),
+                        JsonObject.of(OIDC_USERID, oidcRefreshTokenModel.getUserId()),
+                        tenantId,
+                        scopes));
+              }
+            })
+        .flatMap(
+            generateOidcTokenDto ->
+                generateOidcTokensForRefreshTokenFlow(
+                    generateOidcTokenDto, requestDto.getRefreshToken()));
   }
 
   private Single<String> authenticateClient(
@@ -307,6 +326,10 @@ public class OidcTokenService {
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
 
+    Map<String, Object> accessTokenClaimsWithAdditionalInfo =
+        appendAdditionalAccessTokenClaims(
+            accessTokenClaims, generateOidcTokenDto.getUserResponse(), tenantConfig);
+
     Map<String, Object> idTokenClaims =
         getIdTokenClaims(
             generateOidcTokenDto.getClientId(),
@@ -326,7 +349,7 @@ public class OidcTokenService {
             claims ->
                 Single.zip(
                     tokenIssuer.generateAccessToken(
-                        accessTokenClaims, generateOidcTokenDto.getTenantId()),
+                        accessTokenClaimsWithAdditionalInfo, generateOidcTokenDto.getTenantId()),
                     tokenIssuer.generateIdToken(
                         idTokenClaims,
                         generateOidcTokenDto.getUserResponse(),
@@ -412,6 +435,9 @@ public class OidcTokenService {
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
 
+    accessTokenClaims =
+        appendAdditionalAccessTokenClaims(
+            accessTokenClaims, generateOidcTokenDto.getUserResponse(), tenantConfig);
     return tokenIssuer
         .generateAccessToken(accessTokenClaims, generateOidcTokenDto.getTenantId())
         .map(
@@ -485,13 +511,14 @@ public class OidcTokenService {
   }
 
   private GenerateOidcTokenDto getGenerateOidcTokenDto(
-      String clientId, String userId, String tenantId, String scopes) {
+      String clientId, JsonObject userResponse, String tenantId, String scopes) {
     return GenerateOidcTokenDto.builder()
         .clientId(clientId)
-        .userId(userId)
+        .userId(userResponse.getString(OIDC_USERID))
         .tenantId(tenantId)
         .iat(getCurrentTimeInSeconds())
         .scope(scopes)
+        .userResponse(userResponse)
         .build();
   }
 
