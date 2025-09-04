@@ -24,8 +24,10 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_SCOPE
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED_CLIENT;
+import static com.dreamsportslabs.guardian.utils.Utils.appendAdditionalAccessTokenClaims;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
+import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -194,7 +196,7 @@ public class OidcTokenService {
               String scopes =
                   getValidScopes(
                       String.join(" ", oidcRefreshTokenModel.getScope()), requestDto.getScope());
-              if (setAdditionalClaims(tenantConfig)) {
+              if (shouldSetAccessTokenAdditionalClaims(tenantConfig)) {
                 return userService
                     .getOidcUser(
                         Map.of(USERID, oidcRefreshTokenModel.getUserId()), headers, tenantId)
@@ -323,15 +325,10 @@ public class OidcTokenService {
             generateOidcTokenDto.getScope(),
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
-    if (setAdditionalClaims(tenantConfig)) {
-      tenantConfig.getTokenConfig().getAccessTokenClaims().stream()
-          .filter(generateOidcTokenDto.getUserResponse()::containsKey)
-          .toList()
-          .forEach(
-              claim ->
-                  accessTokenClaims.put(
-                      claim, generateOidcTokenDto.getUserResponse().getValue(claim)));
-    }
+
+    Map<String, Object> accessTokenClaimsWithAdditionalInfo =
+        appendAdditionalAccessTokenClaims(
+            accessTokenClaims, generateOidcTokenDto.getUserResponse(), tenantConfig);
 
     Map<String, Object> idTokenClaims =
         getIdTokenClaims(
@@ -352,7 +349,7 @@ public class OidcTokenService {
             claims ->
                 Single.zip(
                     tokenIssuer.generateAccessToken(
-                        accessTokenClaims, generateOidcTokenDto.getTenantId()),
+                        accessTokenClaimsWithAdditionalInfo, generateOidcTokenDto.getTenantId()),
                     tokenIssuer.generateIdToken(
                         idTokenClaims,
                         generateOidcTokenDto.getUserResponse(),
@@ -438,15 +435,9 @@ public class OidcTokenService {
             generateOidcTokenDto.getUserId(),
             tenantConfig.getTenantId());
 
-    if (setAdditionalClaims(tenantConfig)) {
-      tenantConfig.getTokenConfig().getAccessTokenClaims().stream()
-          .filter(generateOidcTokenDto.getUserResponse()::containsKey)
-          .toList()
-          .forEach(
-              claim ->
-                  accessTokenClaims.put(
-                      claim, generateOidcTokenDto.getUserResponse().getValue(claim)));
-    }
+    accessTokenClaims =
+        appendAdditionalAccessTokenClaims(
+            accessTokenClaims, generateOidcTokenDto.getUserResponse(), tenantConfig);
     return tokenIssuer
         .generateAccessToken(accessTokenClaims, generateOidcTokenDto.getTenantId())
         .map(
@@ -605,10 +596,5 @@ public class OidcTokenService {
     MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
     headers.add(WWW_AUTHENTICATE_HEADER, WWW_AUTHENTICATE_BASIC + "\"" + iss + "\"");
     return headers;
-  }
-
-  private boolean setAdditionalClaims(TenantConfig config) {
-    return config.getTokenConfig().getAccessTokenClaims() != null
-        && !config.getTokenConfig().getAccessTokenClaims().isEmpty();
   }
 }

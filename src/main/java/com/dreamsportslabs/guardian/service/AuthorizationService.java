@@ -16,8 +16,10 @@ import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
+import static com.dreamsportslabs.guardian.utils.Utils.appendAdditionalAccessTokenClaims;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
+import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
 
 import com.dreamsportslabs.guardian.config.tenant.AuthCodeConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
@@ -133,7 +135,7 @@ public class AuthorizationService {
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
             userId -> {
-              if (setAdditionalClaims(config)) {
+              if (shouldSetAccessTokenAdditionalClaims(config)) {
                 return userService
                     .getUser(Map.of(USERID, userId), headers, tenantId)
                     .map(
@@ -290,13 +292,7 @@ public class AuthorizationService {
     accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
     accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
     accessTokenClaims.put(JWT_TENANT_ID_CLAIM, config.getTenantId());
-    if (setAdditionalClaims(config)) {
-      config.getTokenConfig().getAccessTokenClaims().stream()
-          .filter(userResponse::containsKey)
-          .toList()
-          .forEach(claim -> accessTokenClaims.put(claim, userResponse.getValue(claim)));
-    }
-    return accessTokenClaims;
+    return appendAdditionalAccessTokenClaims(accessTokenClaims, userResponse, config);
   }
 
   private Map<String, Object> getCommonTokenClaims(String userId, long iat, TenantConfig config) {
@@ -305,10 +301,5 @@ public class AuthorizationService {
     commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
     commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
     return commonTokenClaims;
-  }
-
-  private boolean setAdditionalClaims(TenantConfig config) {
-    return config.getTokenConfig().getAccessTokenClaims() != null
-        && !config.getTokenConfig().getAccessTokenClaims().isEmpty();
   }
 }
