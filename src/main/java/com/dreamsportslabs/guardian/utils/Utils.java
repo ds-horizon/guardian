@@ -7,6 +7,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.prohibitedForwardi
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
 
+import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonObject;
@@ -14,6 +15,7 @@ import io.vertx.rxjava3.core.MultiMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
