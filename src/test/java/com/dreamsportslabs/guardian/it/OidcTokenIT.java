@@ -1,5 +1,9 @@
 package com.dreamsportslabs.guardian.it;
 
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_ITEM1;
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_ITEM2;
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_VALUE1;
+import static com.dreamsportslabs.guardian.Constants.ADDITIONAL_CLAIM_VALUE2;
 import static com.dreamsportslabs.guardian.Constants.AUTHORIZATION_CODE;
 import static com.dreamsportslabs.guardian.Constants.AUTH_BASIC_PREFIX;
 import static com.dreamsportslabs.guardian.Constants.AUTH_CODE_CHALLENGE_METHOD_PLAIN;
@@ -19,14 +23,18 @@ import static com.dreamsportslabs.guardian.Constants.CLAIM_PHONE_NUMBER;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_PHONE_NUMBER_VERIFIED;
 import static com.dreamsportslabs.guardian.Constants.CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_CREDENTIALS;
+import static com.dreamsportslabs.guardian.Constants.CLIENT_CREDENTIALS_SEPARATOR;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_SECRET;
+import static com.dreamsportslabs.guardian.Constants.CONTENT_TYPE_APPLICATION_JSON;
 import static com.dreamsportslabs.guardian.Constants.CONTENT_TYPE_FORM_URLENCODED;
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
+import static com.dreamsportslabs.guardian.Constants.EMAIL_DOMAIN_EXAMPLE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.ERROR_MSG_GRANT_TYPE_REQUIRED;
 import static com.dreamsportslabs.guardian.Constants.EXAMPLE_CALLBACK;
 import static com.dreamsportslabs.guardian.Constants.EXPIRED_TOKEN_OFFSET_SECONDS;
 import static com.dreamsportslabs.guardian.Constants.GRANT_TYPES;
@@ -43,7 +51,15 @@ import static com.dreamsportslabs.guardian.Constants.INVALID_GRANT_TYPE;
 import static com.dreamsportslabs.guardian.Constants.INVALID_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
+import static com.dreamsportslabs.guardian.Constants.JSON_EMAIL_VERIFIED;
+import static com.dreamsportslabs.guardian.Constants.JSON_PHONE_NUMBER;
+import static com.dreamsportslabs.guardian.Constants.JSON_PHONE_NUMBER_VERIFIED;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_ISS;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
+import static com.dreamsportslabs.guardian.Constants.MOCK_USERNAME;
+import static com.dreamsportslabs.guardian.Constants.MOCK_USER_ID;
+import static com.dreamsportslabs.guardian.Constants.MOCK_USER_NAME;
 import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.PARAM_CODE_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.PARAM_CODE_CHALLENGE_METHOD;
@@ -54,7 +70,10 @@ import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
+import static com.dreamsportslabs.guardian.Constants.SCOPE_SEPARATOR;
+import static com.dreamsportslabs.guardian.Constants.SCOPE_SPLIT_REGEX;
 import static com.dreamsportslabs.guardian.Constants.SOURCE_VALUE;
+import static com.dreamsportslabs.guardian.Constants.TENANT3_PUBLIC_KEY_PATH;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
 import static com.dreamsportslabs.guardian.Constants.TENANT_3;
@@ -64,6 +83,7 @@ import static com.dreamsportslabs.guardian.Constants.TEST_CODE_VERIFIER_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_DEVICE_NAME;
 import static com.dreamsportslabs.guardian.Constants.TEST_IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER;
+import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER_URL;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID_3;
@@ -96,6 +116,7 @@ import static com.dreamsportslabs.guardian.Constants.TOKEN_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_PARAM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_PARAM_TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_TYPE_BEARER;
+import static com.dreamsportslabs.guardian.Constants.WIREMOCK_USER_ENDPOINT;
 import static com.dreamsportslabs.guardian.Constants.WWW_AUTHENTICATE_BASIC_REALM_FORMAT;
 import static com.dreamsportslabs.guardian.constant.Constants.CLAIM_EMAIL;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.authorize;
@@ -203,24 +224,24 @@ public class OidcTokenIT {
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
-            .put(BODY_PARAM_NAME, "John Doe")
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
             .put(BODY_PARAM_EMAIL, email)
-            .put(BODY_PARAM_USERID, "testuser")
-            .put(BODY_PARAM_USERNAME, "testuser")
-            .put("phone_number", phoneNumber)
-            .put("phone_number_verified", phoneNumber)
-            .put("email_verified", email);
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email);
     return wireMockServer.stubFor(
-        get(urlPathMatching("/user"))
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
                     .withJsonBody(jsonNode)));
   }
 
   private String generateRandomEmail() {
-    return RandomStringUtils.randomAlphanumeric(10) + "@example.com";
+    return RandomStringUtils.randomAlphanumeric(10) + EMAIL_DOMAIN_EXAMPLE;
   }
 
   private String generateRandomPhoneNumber() {
@@ -331,7 +352,7 @@ public class OidcTokenIT {
   }
 
   private String getBasicAuthHeader(String clientId, String clientSecret) {
-    String clientCredentials = clientId + ":" + clientSecret;
+    String clientCredentials = clientId + CLIENT_CREDENTIALS_SEPARATOR + clientSecret;
     String authHeader =
         new String(Base64.getEncoder().encode(clientCredentials.getBytes(StandardCharsets.UTF_8)));
     return AUTH_BASIC_PREFIX + authHeader;
@@ -340,7 +361,7 @@ public class OidcTokenIT {
   /** Helper method to validate scope using assertThat with containsInAnyOrder */
   private void validateScope(Response response, String... expectedScopes) {
     String actualScope = response.jsonPath().getString(TOKEN_PARAM_SCOPE);
-    String[] actualScopeArray = actualScope.trim().split("\\s+");
+    String[] actualScopeArray = actualScope.trim().split(SCOPE_SPLIT_REGEX);
     assertThat(Arrays.asList(actualScopeArray), containsInAnyOrder(expectedScopes));
   }
 
@@ -363,7 +384,7 @@ public class OidcTokenIT {
         .then()
         .statusCode(SC_BAD_REQUEST)
         .body(ERROR, equalTo(INVALID_REQUEST))
-        .body(ERROR_DESCRIPTION, equalTo("grant_type is required"));
+        .body(ERROR_DESCRIPTION, equalTo(ERROR_MSG_GRANT_TYPE_REQUIRED));
   }
 
   @Test
@@ -479,7 +500,7 @@ public class OidcTokenIT {
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, CLIENT_CREDENTIALS);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -522,7 +543,7 @@ public class OidcTokenIT {
     formParams.put(TOKEN_PARAM_GRANT_TYPE, CLIENT_CREDENTIALS);
     formParams.put(CLIENT_ID, validClientId);
     formParams.put(CLIENT_SECRET, validClientSecret);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -558,7 +579,8 @@ public class OidcTokenIT {
       "Client Credentials - Should return error in case of invalid client credentials - basic auth")
   public void testInvalidClientCredentialsBasicAuth() {
     // Arrange
-    String invalidClientCredentials = INVALID_CLIENT_ID + ":" + INVALID_CLIENT_SECRET;
+    String invalidClientCredentials =
+        INVALID_CLIENT_ID + CLIENT_CREDENTIALS_SEPARATOR + INVALID_CLIENT_SECRET;
     String authHeader =
         new String(
             Base64.getEncoder().encode(invalidClientCredentials.getBytes(StandardCharsets.UTF_8)));
@@ -636,7 +658,7 @@ public class OidcTokenIT {
     String clientId = clientResponse.jsonPath().getString(CLIENT_ID);
     String clientSecret = clientResponse.jsonPath().getString(CLIENT_SECRET);
 
-    String clientCredentials = clientId + ":" + clientSecret;
+    String clientCredentials = clientId + CLIENT_CREDENTIALS_SEPARATOR + clientSecret;
     String authHeader =
         new String(Base64.getEncoder().encode(clientCredentials.getBytes(StandardCharsets.UTF_8)));
 
@@ -699,7 +721,9 @@ public class OidcTokenIT {
     headers.put(HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_URLENCODED);
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, CLIENT_CREDENTIALS);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL + " " + SCOPE_ADDRESS);
+    formParams.put(
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL + SCOPE_SEPARATOR + SCOPE_ADDRESS);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -851,7 +875,7 @@ public class OidcTokenIT {
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -907,7 +931,7 @@ public class OidcTokenIT {
     formParams.put(CLIENT_ID, validClientId);
     formParams.put(CLIENT_SECRET, validClientSecret);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL);
+    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -962,7 +986,9 @@ public class OidcTokenIT {
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL + " " + SCOPE_ADDRESS);
+    formParams.put(
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL + SCOPE_SEPARATOR + SCOPE_ADDRESS);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -1022,7 +1048,9 @@ public class OidcTokenIT {
     Map<String, String> formParams = new HashMap<>();
     formParams.put(TOKEN_PARAM_GRANT_TYPE, REFRESH_TOKEN);
     formParams.put(TOKEN_PARAM_REFRESH_TOKEN, refreshToken);
-    formParams.put(TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL + " " + SCOPE_ADDRESS);
+    formParams.put(
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL + SCOPE_SEPARATOR + SCOPE_ADDRESS);
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -1493,7 +1521,8 @@ public class OidcTokenIT {
     formParams.put(TOKEN_PARAM_CODE, validAuthCode);
     formParams.put(TOKEN_PARAM_REDIRECT_URI, EXAMPLE_CALLBACK);
     formParams.put(
-        TOKEN_PARAM_SCOPE, SCOPE_OPENID + " " + SCOPE_EMAIL); // Different scope than consented
+        TOKEN_PARAM_SCOPE,
+        SCOPE_OPENID + SCOPE_SEPARATOR + SCOPE_EMAIL); // Different scope than consented
 
     // Act
     Response response = ApplicationIoUtils.token(tenant1, headers, formParams);
@@ -1622,13 +1651,13 @@ public class OidcTokenIT {
 
     // Verify additional claims are present in access token
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
-    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Validate additional claims
-    assertThat(claims.get("item1"), equalTo("value1"));
-    assertThat(claims.get("item2"), equalTo("value2"));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM2), equalTo(ADDITIONAL_CLAIM_VALUE2));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1695,13 +1724,13 @@ public class OidcTokenIT {
 
     // Verify additional claims are present in access token
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
-    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Validate additional claims
-    assertThat(claims.get("item1"), equalTo("value1"));
-    assertThat(claims.get("item2"), equalTo("value2"));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM2), equalTo(ADDITIONAL_CLAIM_VALUE2));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1781,17 +1810,17 @@ public class OidcTokenIT {
 
     // Verify NO additional claims are present in access token
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
-    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Should not have additional claims
-    assertThat(claims.containsKey("customClaim1"), equalTo(false));
-    assertThat(claims.containsKey("customClaim2"), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
 
     // Standard claims should still be present
-    assertThat(claims.get("sub"), equalTo("testuser"));
-    assertThat(claims.get("iss"), equalTo("https://auth.example.com"));
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1871,18 +1900,18 @@ public class OidcTokenIT {
 
     // Verify NO additional claims are present in access token
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
-    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Should not have additional claims since they were empty
-    assertThat(claims.containsKey("item1"), equalTo(true));
-    assertThat(claims.get("item1"), equalTo("value1"));
-    assertThat(claims.containsKey("item2"), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(true));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
 
     // Standard claims should still be present
-    assertThat(claims.get("sub"), equalTo("testuser"));
-    assertThat(claims.get("iss"), equalTo("https://auth.example.com"));
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1948,17 +1977,17 @@ public class OidcTokenIT {
 
     // Verify NO additional claims are present in access token
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
-    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Should not have additional claims
-    assertThat(claims.containsKey("customClaim1"), equalTo(false));
-    assertThat(claims.containsKey("customClaim2"), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
 
     // Standard claims should still be present
-    assertThat(claims.get("sub"), equalTo("testuser"));
-    assertThat(claims.get("iss"), equalTo("https://auth.example.com"));
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -2024,18 +2053,18 @@ public class OidcTokenIT {
 
     // Verify NO additional claims are present in access token
     String accessToken = response.jsonPath().getString(TOKEN_PARAM_ACCESS_TOKEN);
-    Path path = Paths.get("src/test/resources/test-data/tenant3-public-key.pem");
+    Path path = Paths.get(TENANT3_PUBLIC_KEY_PATH);
     JWT jwt = JWT.getDecoder().decode(accessToken, RSAVerifier.newVerifier(path));
     Map<String, Object> claims = jwt.getAllClaims();
 
     // Should not have additional claims since they were empty
-    assertThat(claims.containsKey("item1"), equalTo(true));
-    assertThat(claims.get("item1"), equalTo("value1"));
-    assertThat(claims.containsKey("item2"), equalTo(false));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM1), equalTo(true));
+    assertThat(claims.get(ADDITIONAL_CLAIM_ITEM1), equalTo(ADDITIONAL_CLAIM_VALUE1));
+    assertThat(claims.containsKey(ADDITIONAL_CLAIM_ITEM2), equalTo(false));
 
     // Standard claims should still be present
-    assertThat(claims.get("sub"), equalTo("testuser"));
-    assertThat(claims.get("iss"), equalTo("https://auth.example.com"));
+    assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -2051,22 +2080,24 @@ public class OidcTokenIT {
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
-            .put(BODY_PARAM_NAME, "John Doe")
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
             .put(BODY_PARAM_EMAIL, email)
-            .put(BODY_PARAM_USERID, "testuser")
-            .put(BODY_PARAM_USERNAME, "testuser")
-            .put("phone_number", phoneNumber)
-            .put("phone_number_verified", phoneNumber)
-            .put("email_verified", email)
-            .put("item1", "value1")
-            .put("item2", "value2"); // Key field for OIDC additional claims
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email)
+            .put(ADDITIONAL_CLAIM_ITEM1, ADDITIONAL_CLAIM_VALUE1)
+            .put(
+                ADDITIONAL_CLAIM_ITEM2,
+                ADDITIONAL_CLAIM_VALUE2); // Key field for OIDC additional claims
 
     return wireMockServer.stubFor(
-        get(urlPathMatching("/user"))
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
                     .withJsonBody(jsonNode)));
   }
 
@@ -2074,21 +2105,21 @@ public class OidcTokenIT {
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
-            .put(BODY_PARAM_NAME, "John Doe")
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
             .put(BODY_PARAM_EMAIL, email)
-            .put(BODY_PARAM_USERID, "testuser")
-            .put(BODY_PARAM_USERNAME, "testuser")
-            .put("phone_number", phoneNumber)
-            .put("phone_number_verified", phoneNumber)
-            .put("email_verified", email);
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email);
     // Note: no additional_claims field at all
 
     return wireMockServer.stubFor(
-        get(urlPathMatching("/user"))
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
                     .withJsonBody(jsonNode)));
   }
 
@@ -2097,21 +2128,21 @@ public class OidcTokenIT {
     JsonNode jsonNode =
         objectMapper
             .createObjectNode()
-            .put(BODY_PARAM_NAME, "John Doe")
+            .put(BODY_PARAM_NAME, MOCK_USER_NAME)
             .put(BODY_PARAM_EMAIL, email)
-            .put(BODY_PARAM_USERID, "testuser")
-            .put(BODY_PARAM_USERNAME, "testuser")
-            .put("phone_number", phoneNumber)
-            .put("phone_number_verified", phoneNumber)
-            .put("email_verified", email)
-            .put("item1", "value1");
+            .put(BODY_PARAM_USERID, MOCK_USER_ID)
+            .put(BODY_PARAM_USERNAME, MOCK_USERNAME)
+            .put(JSON_PHONE_NUMBER, phoneNumber)
+            .put(JSON_PHONE_NUMBER_VERIFIED, phoneNumber)
+            .put(JSON_EMAIL_VERIFIED, email)
+            .put(ADDITIONAL_CLAIM_ITEM1, ADDITIONAL_CLAIM_VALUE1);
 
     return wireMockServer.stubFor(
-        get(urlPathMatching("/user"))
+        get(urlPathMatching(WIREMOCK_USER_ENDPOINT))
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_APPLICATION_JSON)
                     .withJsonBody(jsonNode)));
   }
 }

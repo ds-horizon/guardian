@@ -517,4 +517,40 @@ public class Constants {
   public static final String CHECK_REDIRECT_URIS = "client.redirectUris";
   public static final String CHECK_RESPONSE_TYPES = "client.responseTypes";
   public static final String CHECK_SKIP_CONSENT = "client.skipConsent";
+
+  // Mock user data constants
+  public static final String MOCK_USER_NAME = "John Doe";
+  public static final String MOCK_USER_ID = "testuser";
+  public static final String MOCK_USERNAME = "testuser";
+
+  // WireMock related constants
+  public static final String WIREMOCK_USER_ENDPOINT = "/user";
+  public static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
+
+  // Email and phone field names for WireMock JSON
+  public static final String JSON_PHONE_NUMBER = "phone_number";
+  public static final String JSON_PHONE_NUMBER_VERIFIED = "phone_number_verified";
+  public static final String JSON_EMAIL_VERIFIED = "email_verified";
+
+  // Test data constants
+  public static final String EMAIL_DOMAIN_EXAMPLE = "@example.com";
+  public static final String CLIENT_CREDENTIALS_SEPARATOR = ":";
+  public static final String SCOPE_SEPARATOR = " ";
+  public static final String SCOPE_SPLIT_REGEX = "\\s+";
+
+  // Error message constants
+  public static final String ERROR_MSG_GRANT_TYPE_REQUIRED = "grant_type is required";
+
+  // JWT claim constants (using existing ones at lines 159-160)
+
+  // Test additional claims constants
+  public static final String ADDITIONAL_CLAIM_ITEM1 = "item1";
+  public static final String ADDITIONAL_CLAIM_ITEM2 = "item2";
+  public static final String ADDITIONAL_CLAIM_VALUE1 = "value1";
+  public static final String ADDITIONAL_CLAIM_VALUE2 = "value2";
+
+  // Test URLs and paths
+  public static final String TEST_ISSUER_URL = "https://auth.example.com";
+  public static final String TENANT3_PUBLIC_KEY_PATH =
+      "src/test/resources/test-data/tenant3-public-key.pem";
 }
