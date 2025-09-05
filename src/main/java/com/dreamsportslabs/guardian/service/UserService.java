@@ -70,13 +70,14 @@ public class UserService {
         .map(
             res -> {
               JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() / 100 != 2 || !resBody.containsKey(USERID)) {
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
-              } else if (!resBody.containsKey(USERID)) {
+              if (res.statusCode() / 100 == 2 && resBody.containsKey(USERID)) {
+                resBody.put(IS_NEW_USER, true);
+                return resBody;
+              } else if (res.statusCode() / 100 == 4) {
+                throw USER_SERVICE_ERROR.getCustomException(400, resBody.getMap());
+              } else {
                 throw USER_SERVICE_ERROR.getException();
               }
-              resBody.put(IS_NEW_USER, true);
-              return resBody;
             });
   }
 
@@ -92,12 +93,13 @@ public class UserService {
         .map(
             res -> {
               JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() != 200) {
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
-              } else if (!resBody.containsKey(USERID)) {
+              if (res.statusCode() / 100 == 2 && resBody.containsKey(USERID)) {
+                return resBody;
+              } else if (res.statusCode() / 100 == 4) {
+                throw USER_SERVICE_ERROR.getCustomException(400, resBody.getMap());
+              } else {
                 throw USER_SERVICE_ERROR.getException();
               }
-              return res.bodyAsJsonObject();
             });
   }
 
@@ -112,11 +114,15 @@ public class UserService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              if (res.statusCode() / 100 != 2) {
-                JsonObject resBody = res.bodyAsJsonObject();
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
+              JsonObject resBody = res.bodyAsJsonObject();
+
+              if (res.statusCode() / 100 == 2) {
+                return resBody;
+              } else if (res.statusCode() / 100 == 4) {
+                throw USER_SERVICE_ERROR.getCustomException(400, resBody.getMap());
+              } else {
+                throw USER_SERVICE_ERROR.getException();
               }
-              return res;
             })
         .ignoreElement();
   }
@@ -142,14 +148,22 @@ public class UserService {
         .map(
             res -> {
               JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() / 100 != 2) {
+              if (res.statusCode() / 100 == 2) {
+                return Utils.convertKeysToSnakeCase(resBody);
+              } else if (res.statusCode() / 100 == 4) {
+                log.error(
+                    "Error fetching OIDC user details. Status: {} Response Body: {}",
+                    res.statusCode(),
+                    resBody.toString());
+                throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonCustomException(
+                    400, resBody.toString());
+              } else {
                 log.error(
                     "Error fetching OIDC user details. Status: {} Response Body: {}",
                     res.statusCode(),
                     resBody.toString());
                 throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonException();
               }
-              return Utils.convertKeysToSnakeCase(resBody);
             });
   }
 }
