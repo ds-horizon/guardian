@@ -10,18 +10,17 @@ import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.INVALID_GUEST_IDENTIFIER;
 import static com.dreamsportslabs.guardian.Constants.INVALID_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIMS_AMR;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_EXP;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_IAT;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB;
-import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB_TYPE;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_TENANT_ID;
 import static com.dreamsportslabs.guardian.Constants.MESSAGE;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_ACCESS_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_EXPIRES_IN;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_TOKEN_TYPE;
-import static com.dreamsportslabs.guardian.Constants.SUB_TYPE_GUEST;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
 import static com.dreamsportslabs.guardian.Constants.TENANT_3;
@@ -31,6 +30,7 @@ import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -94,7 +94,8 @@ public class GuestLoginIT {
     assertThat(exp - iat, equalTo(ACCESS_TOKEN_EXPIRY_SECONDS));
     assertThat(claims.get(JWT_CLAIM_SCOPE), equalTo(scope));
     assertThat(claims.get(JWT_CLAIM_TENANT_ID), equalTo(tenantId));
-    assertThat(claims.get(JWT_CLAIM_SUB_TYPE), equalTo(SUB_TYPE_GUEST));
+    Object amr = claims.get(JWT_CLAIMS_AMR);
+    assertThat((java.util.List<?>) amr, empty());
     assertThat(claims.get(JWT_CLAIM_CLIENT_ID), equalTo("test-client"));
   }
 

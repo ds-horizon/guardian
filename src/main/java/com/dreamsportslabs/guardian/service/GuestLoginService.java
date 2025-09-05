@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_AMR;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_CLIENT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
@@ -7,7 +8,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_JTI;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
@@ -25,6 +25,7 @@ import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class GuestLoginService {
     claims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
     claims.put(JWT_TENANT_ID_CLAIM, tenantId);
     claims.put(JWT_CLAIMS_SCOPE, scope);
-    claims.put(JWT_CLAIMS_TYPE, "guest");
+    claims.put(JWT_CLAIMS_AMR, Collections.emptyList());
     claims.put(JWT_CLAIMS_CLIENT_ID, requestDto.getClientId());
 
     return validateClientScopes(requestDto.getClientId(), tenantId, scopes)
