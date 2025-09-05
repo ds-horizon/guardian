@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.constant.Constants.AES_ALGORITHM;
+import static com.dreamsportslabs.guardian.constant.Constants.AES_CBC_NO_PADDING;
 import static com.dreamsportslabs.guardian.constant.Constants.BASIC_AUTHENTICATION_SCHEME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_AGENT;
 import static com.dreamsportslabs.guardian.constant.Constants.X_FORWARDED_FOR;
@@ -168,10 +170,10 @@ public final class Utils {
       byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
       byte[] zeroIv = new byte[16];
 
-      SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+      SecretKeySpec keySpec = new SecretKeySpec(keyBytes, AES_ALGORITHM);
       IvParameterSpec ivSpec = new IvParameterSpec(zeroIv);
 
-      Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+      Cipher cipher = Cipher.getInstance(AES_CBC_NO_PADDING);
       cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 
       byte[] encryptedBytes = Base64.getDecoder().decode(encryptedBase64);

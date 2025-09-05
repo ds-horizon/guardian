@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,7 +9,12 @@ import lombok.Getter;
 @AllArgsConstructor
 @Builder
 public class GuestLoginResponseDto {
-  private String access_token;
-  private String token_type;
-  private Integer expires_in;
+  @JsonProperty("access_token")
+  private String accessToken;
+
+  @JsonProperty("token_type")
+  private String tokenType;
+
+  @JsonProperty("expires_in")
+  private Integer expiresIn;
 }

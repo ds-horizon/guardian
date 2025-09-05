@@ -18,7 +18,7 @@ public enum ErrorEnum {
   INVALID_QUERY_PARAM("invalid_query_param", "Invalid query param", 400),
   DECRYPTION_FAILED(
       "invalid_guest_identifier", "Decryption failed. guest identifier sent is invalid", 400),
-  INVALID_SCOPES("invalid_scope", "Invalid scopes", 400),
+  INVALID_SCOPE("invalid_scope", "Invalid scopes", 400),
 
   INVALID_CODE("invalid_code", "Invalid code", 400),
   NO_FIELDS_TO_UPDATE("no_fields_to_update", "No fields for update", 400),

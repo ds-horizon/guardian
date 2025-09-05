@@ -4,11 +4,13 @@ import static com.dreamsportslabs.guardian.Constants.ACCESS_TOKEN_EXPIRY_SECONDS
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_GUEST_IDENTIFIER;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPES;
+import static com.dreamsportslabs.guardian.Constants.CLIENT_NOT_FOUND;
 import static com.dreamsportslabs.guardian.Constants.CODE;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.INVALID_GUEST_IDENTIFIER;
 import static com.dreamsportslabs.guardian.Constants.INVALID_SCOPE;
+import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_EXP;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_IAT;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SCOPE;
@@ -26,9 +28,9 @@ import static com.dreamsportslabs.guardian.Constants.TENANT_3;
 import static com.dreamsportslabs.guardian.Constants.TOKEN_TYPE_BEARER;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.guestLogin;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -93,6 +95,7 @@ public class GuestLoginIT {
     assertThat(claims.get(JWT_CLAIM_SCOPE), equalTo(scope));
     assertThat(claims.get(JWT_CLAIM_TENANT_ID), equalTo(tenantId));
     assertThat(claims.get(JWT_CLAIM_SUB_TYPE), equalTo(SUB_TYPE_GUEST));
+    assertThat(claims.get(JWT_CLAIM_CLIENT_ID), equalTo("test-client"));
   }
 
   @Test
@@ -140,6 +143,7 @@ public class GuestLoginIT {
   @DisplayName("Should fail when guest identifier is missing")
   public void testGuestLoginFailureWhenGuestIdentifierMissing() {
     Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
     requestBody.put(BODY_PARAM_SCOPES, validScopes);
 
     Response response = guestLogin(TENANT_1, requestBody);
@@ -149,7 +153,7 @@ public class GuestLoginIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_INVALID_REQUEST))
-        .body(MESSAGE, containsString("guestIdentifier cannot be null or empty"));
+        .body(MESSAGE, equalTo("guestIdentifier cannot be null or empty"));
   }
 
   @ParameterizedTest
@@ -158,6 +162,7 @@ public class GuestLoginIT {
   public void testGuestLoginFailureWhenGuestIdentifierNullOrEmpty(String guestIdentifier) {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, guestIdentifier);
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
     requestBody.put(BODY_PARAM_SCOPES, validScopes);
 
     Response response = guestLogin(TENANT_1, requestBody);
@@ -167,14 +172,17 @@ public class GuestLoginIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_INVALID_REQUEST))
-        .body(MESSAGE, containsString("guestIdentifier cannot be null or empty"));
+        .body(MESSAGE, equalTo("guestIdentifier cannot be null or empty"));
   }
 
-  @Test
-  @DisplayName("Should fail when scopes are missing")
-  public void testGuestLoginFailureWhenScopesMissing() {
+  @ParameterizedTest
+  @NullAndEmptySource
+  @DisplayName("Should fail when clientId is null or empty")
+  public void testGuestLoginFailureWhenClientIdNullOrEmpty(String clientId) {
     Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_CLIENT_ID, clientId);
     requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, validGuestIdentifier);
+    requestBody.put(BODY_PARAM_SCOPES, validScopes);
 
     Response response = guestLogin(TENANT_1, requestBody);
 
@@ -183,7 +191,42 @@ public class GuestLoginIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_INVALID_REQUEST))
-        .body(MESSAGE, containsString("scopes cannot be null or empty"));
+        .body(MESSAGE, equalTo("clientId cannot be null or empty"));
+  }
+
+  @Test
+  @DisplayName("Should fail when clientId does not exist")
+  public void testGuestLoginFailureWhenClientIdDoesNotExist() {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_CLIENT_ID, "non-existent-client");
+    requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, validGuestIdentifier);
+    requestBody.put(BODY_PARAM_SCOPES, validScopes);
+
+    Response response = guestLogin(TENANT_1, requestBody);
+
+    response
+        .then()
+        .statusCode(SC_NOT_FOUND)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(CLIENT_NOT_FOUND))
+        .body(MESSAGE, equalTo("Client not found"));
+  }
+
+  @Test
+  @DisplayName("Should fail when scopes are missing")
+  public void testGuestLoginFailureWhenScopesMissing() {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, validGuestIdentifier);
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
+
+    Response response = guestLogin(TENANT_1, requestBody);
+
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo("scopes cannot be null or empty"));
   }
 
   @ParameterizedTest
@@ -192,6 +235,7 @@ public class GuestLoginIT {
   public void testGuestLoginFailureWhenScopesEmpty(List<String> scopes) {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, validGuestIdentifier);
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
     requestBody.put(BODY_PARAM_SCOPES, scopes);
 
     Response response = guestLogin(TENANT_1, requestBody);
@@ -201,7 +245,7 @@ public class GuestLoginIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_INVALID_REQUEST))
-        .body(MESSAGE, containsString("scopes cannot be null or empty"));
+        .body(MESSAGE, equalTo("scopes cannot be null or empty"));
   }
 
   @Test
@@ -209,6 +253,7 @@ public class GuestLoginIT {
   public void testGuestLoginFailureWhenInvalidScopeRequested() {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, validGuestIdentifier);
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
     requestBody.put(BODY_PARAM_SCOPES, List.of("invalid_scope"));
 
     Response response = guestLogin(TENANT_1, requestBody);
@@ -218,7 +263,7 @@ public class GuestLoginIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(INVALID_SCOPE))
-        .body(MESSAGE, containsString("Invalid scope 'invalid_scope'"));
+        .body(MESSAGE, equalTo("Invalid scope 'invalid_scope'"));
   }
 
   @Test
@@ -228,6 +273,7 @@ public class GuestLoginIT {
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, encryptedIdentifier);
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
     requestBody.put(BODY_PARAM_SCOPES, validScopes);
 
     Response response = guestLogin(TENANT_1, requestBody);
@@ -245,6 +291,7 @@ public class GuestLoginIT {
   public void testGuestLoginWithPartialScopes() {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, validGuestIdentifier);
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
     requestBody.put(BODY_PARAM_SCOPES, List.of("profile", "email"));
 
     Response response = guestLogin(TENANT_2, requestBody);
@@ -264,6 +311,7 @@ public class GuestLoginIT {
   public void testGuestLoginWithTenant3() {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put(BODY_PARAM_GUEST_IDENTIFIER, "/gvKzp9Sa8I2RqOy6QO1YQ==");
+    requestBody.put(BODY_PARAM_CLIENT_ID, "test-client");
     requestBody.put(BODY_PARAM_SCOPES, List.of("profile", "phone"));
 
     Response response = guestLogin(TENANT_3, requestBody);

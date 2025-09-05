@@ -43,8 +43,8 @@ public class Constants {
   public static final String BODY_PARAM_CONSENTED_SCOPES = "consented_scopes";
 
   // Guest Login Constants
-  public static final String BODY_PARAM_CLIENT_ID = "clientId";
-  public static final String BODY_PARAM_GUEST_IDENTIFIER = "guestIdentifier";
+  public static final String BODY_PARAM_CLIENT_ID = "client_id";
+  public static final String BODY_PARAM_GUEST_IDENTIFIER = "guest_identifier";
   public static final String BODY_PARAM_SCOPES = "scopes";
   public static final String RESPONSE_BODY_PARAM_ACCESS_TOKEN = "access_token";
   public static final String RESPONSE_BODY_PARAM_TOKEN_TYPE = "token_type";

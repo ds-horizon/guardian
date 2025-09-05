@@ -421,12 +421,13 @@ CREATE TABLE oidc_refresh_token
 
 
 CREATE TABLE guest_config (
-                              tenant_id CHAR(10) PRIMARY KEY,
-                              is_encrypted BOOLEAN NOT NULL DEFAULT true,
-                              shared_secret_key VARCHAR(16),                    -- AES key (nullable if isEncrypted = false)
-                              allowed_scopes JSON NOT NULL DEFAULT (JSON_ARRAY()),            -- list of scopes (e.g., ['read:public', 'view:feed'])
-                              created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                              updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    tenant_id CHAR(10) PRIMARY KEY,
+    is_encrypted BOOLEAN NOT NULL DEFAULT true,
+    shared_secret_key VARCHAR(16),
+    allowed_scopes JSON NOT NULL DEFAULT (JSON_ARRAY()),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
     KEY `idx_guest` (`tenant_id`, `is_encrypted`),
     CONSTRAINT `fk_guest_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE
 
