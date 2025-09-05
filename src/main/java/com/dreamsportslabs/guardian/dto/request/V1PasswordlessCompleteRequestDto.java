@@ -6,13 +6,12 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-@NoArgsConstructor
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -27,6 +26,10 @@ public class V1PasswordlessCompleteRequestDto {
     if (state == null) {
       throw INVALID_REQUEST.getCustomException("Invalid state");
     }
+  }
+
+  public V1PasswordlessCompleteRequestDto() {
+    this.additionalInfo = new HashMap<>();
   }
 
   @JsonAnyGetter
