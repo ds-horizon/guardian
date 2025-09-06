@@ -194,6 +194,9 @@ public class Passwordless {
               } else {
                 builder.phoneNumber(contact.getIdentifier());
               }
+              for (Map.Entry<String, Object> entry : dto.getAdditionalInfo().entrySet()) {
+                model.getAdditionalInfo().putIfAbsent(entry.getKey(), entry.getValue());
+              }
               builder.additionalInfo(model.getAdditionalInfo());
 
               MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
