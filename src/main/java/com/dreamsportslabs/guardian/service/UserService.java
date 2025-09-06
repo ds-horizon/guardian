@@ -70,13 +70,24 @@ public class UserService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() / 100 != 2 || !resBody.containsKey(USERID)) {
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
-              } else if (!resBody.containsKey(USERID)) {
-                throw USER_SERVICE_ERROR.getException();
+              int statusCode = res.statusCode();
+              JsonObject resBody;
+
+              if (statusCode / 100 != 2) {
+                try {
+                  resBody = new JsonObject(res.bodyAsString());
+                } catch (Exception e) {
+                  resBody = new JsonObject();
+                }
+                throw USER_SERVICE_ERROR.getCustomException(res.statusCode(), resBody.getMap());
+              } else {
+                resBody = res.bodyAsJsonObject();
+                if (!resBody.containsKey(USERID)) {
+                  throw USER_SERVICE_ERROR.getException();
+                } else {
+                  resBody.put(IS_NEW_USER, true);
+                }
               }
-              resBody.put(IS_NEW_USER, true);
               return resBody;
             });
   }
@@ -92,13 +103,23 @@ public class UserService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() != 200) {
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
-              } else if (!resBody.containsKey(USERID)) {
-                throw USER_SERVICE_ERROR.getException();
+              int statusCode = res.statusCode();
+              JsonObject resBody;
+
+              if (statusCode / 100 != 2) {
+                try {
+                  resBody = new JsonObject(res.bodyAsString());
+                } catch (Exception e) {
+                  resBody = new JsonObject();
+                }
+                throw USER_SERVICE_ERROR.getCustomException(res.statusCode(), resBody.getMap());
+              } else {
+                resBody = res.bodyAsJsonObject();
+                if (!resBody.containsKey(USERID)) {
+                  throw USER_SERVICE_ERROR.getException();
+                }
               }
-              return res.bodyAsJsonObject();
+              return resBody;
             });
   }
 
@@ -113,9 +134,16 @@ public class UserService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              if (res.statusCode() / 100 != 2) {
-                JsonObject resBody = res.bodyAsJsonObject();
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
+              int statusCode = res.statusCode();
+              JsonObject resBody;
+
+              if (statusCode / 100 != 2) {
+                try {
+                  resBody = new JsonObject(res.bodyAsString());
+                } catch (Exception e) {
+                  resBody = new JsonObject();
+                }
+                throw USER_SERVICE_ERROR.getCustomException(res.statusCode(), resBody.getMap());
               }
               return res;
             })
@@ -143,14 +171,22 @@ public class UserService {
         .map(
             res -> {
               JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() / 100 != 2) {
+              if (res.statusCode() / 100 == 2) {
+                return Utils.convertKeysToSnakeCase(resBody);
+              } else if (res.statusCode() / 100 == 4) {
+                log.error(
+                    "Error fetching OIDC user details. Status: {} Response Body: {}",
+                    res.statusCode(),
+                    resBody.toString());
+                throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonCustomException(
+                    400, resBody.toString());
+              } else {
                 log.error(
                     "Error fetching OIDC user details. Status: {} Response Body: {}",
                     res.statusCode(),
                     resBody.toString());
                 throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonException();
               }
-              return Utils.convertKeysToSnakeCase(resBody);
             });
   }
 }
