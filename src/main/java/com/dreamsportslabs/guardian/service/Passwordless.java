@@ -222,20 +222,26 @@ public class Passwordless {
               }
 
               UserDto.UserDtoBuilder builder = UserDto.builder();
+
+              for (Map.Entry<String, Object> entry : dto.getAdditionalInfo().entrySet()) {
+                model.getAdditionalInfo().putIfAbsent(entry.getKey(), entry.getValue());
+              }
+
               Contact contact = model.getContacts().get(0);
               if (contact.getChannel() == Channel.EMAIL) {
                 builder.email(contact.getIdentifier());
               } else {
                 builder.phoneNumber(contact.getIdentifier());
               }
-              builder.additionalInfo(model.getAdditionalInfo());
               builder.clientId(model.getClientId());
 
               MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
               model.getHeaders().forEach(headers::add);
+              UserDto userDto = builder.build();
+              userDto.setAdditionalInfo(model.getAdditionalInfo());
 
               return userService
-                  .createUser(builder.build(), headers, tenantId)
+                  .createUser(userDto, headers, tenantId)
                   .map(
                       user -> {
                         model.setUser(user.getMap());
