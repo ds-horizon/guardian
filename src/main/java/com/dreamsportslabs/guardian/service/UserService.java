@@ -143,10 +143,8 @@ public class UserService {
                   resBody = new JsonObject();
                 }
                 throw USER_SERVICE_ERROR.getCustomException(res.statusCode(), resBody.getMap());
-              } else {
-                resBody = res.bodyAsJsonObject();
               }
-              return resBody;
+              return res;
             })
         .ignoreElement();
   }
