@@ -45,24 +45,25 @@ public class UserDto {
 
   @JsonAnySetter
   public void addAdditionalInfo(String key, Object value) {
-    if (!knownFields.contains(key)) {
+    if (getFieldValue(key) == null || !knownFields.contains(key)) {
       additionalInfo.put(key, value);
     }
   }
 
-  public static class UserDtoBuilder {
-    public UserDtoBuilder additionalInfo(Map<String, Object> additionalInfo) {
-      if (additionalInfo == null) {
-        return this;
-      }
+  public void setAdditionalInfo(Map<String, Object> map) {
+    if (map == null) {
+      return;
+    }
+    map.forEach(this::addAdditionalInfo);
+  }
 
-      additionalInfo.forEach(
-          (key, value) -> {
-            if (!knownFields.contains(key)) {
-              this.additionalInfo$value.put(key, value);
-            }
-          });
-      return this;
+  public Object getFieldValue(String fieldName) {
+    try {
+      Field field = this.getClass().getDeclaredField(fieldName);
+      field.setAccessible(true);
+      return field.get(this);
+    } catch (Exception e) {
+      return null;
     }
   }
 }

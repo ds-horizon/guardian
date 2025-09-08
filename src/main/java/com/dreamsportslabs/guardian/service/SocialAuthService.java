@@ -121,20 +121,23 @@ public class SocialAuthService {
 
   private UserDto getUserDtoFromFbUserData(
       JsonObject fbUserData, String accessToken, Map<String, Object> additionalInfo) {
-    return UserDto.builder()
-        .name(fbUserData.getString(FACEBOOK_FIELDS_FULL_NAME))
-        .firstName(fbUserData.getString(FACEBOOK_FIELDS_FIRST_NAME))
-        .middleName(fbUserData.getString(FACEBOOK_FIELDS_MIDDLE_NAME))
-        .lastName(fbUserData.getString(FACEBOOK_FIELDS_LAST_NAME))
-        .email(fbUserData.getString(FACEBOOK_FIELDS_EMAIL))
-        .picture(
-            fbUserData
-                .getJsonObject(FACEBOOK_FIELDS_PICTURE, NO_PICTURE)
-                .getJsonObject(FACEBOOK_FIELDS_PICTURE_DATA)
-                .getString(FACEBOOK_FIELDS_PICTURE_DATA_URL))
-        .provider(getFbProviderData(fbUserData, accessToken))
-        .additionalInfo(additionalInfo)
-        .build();
+    UserDto dto =
+        UserDto.builder()
+            .name(fbUserData.getString(FACEBOOK_FIELDS_FULL_NAME))
+            .firstName(fbUserData.getString(FACEBOOK_FIELDS_FIRST_NAME))
+            .middleName(fbUserData.getString(FACEBOOK_FIELDS_MIDDLE_NAME))
+            .lastName(fbUserData.getString(FACEBOOK_FIELDS_LAST_NAME))
+            .email(fbUserData.getString(FACEBOOK_FIELDS_EMAIL))
+            .picture(
+                fbUserData
+                    .getJsonObject(FACEBOOK_FIELDS_PICTURE, NO_PICTURE)
+                    .getJsonObject(FACEBOOK_FIELDS_PICTURE_DATA)
+                    .getString(FACEBOOK_FIELDS_PICTURE_DATA_URL))
+            .provider(getFbProviderData(fbUserData, accessToken))
+            .build();
+
+    dto.setAdditionalInfo(additionalInfo);
+    return dto;
   }
 
   private Provider getFbProviderData(JsonObject fbUserData, String accessToken) {
@@ -211,16 +214,19 @@ public class SocialAuthService {
 
   private UserDto getUserDtoFromGoogleUserData(
       JsonObject googleUserData, String idToken, Map<String, Object> additionalInfo) {
-    return UserDto.builder()
-        .name(googleUserData.getString(OIDC_CLAIMS_FULL_NAME))
-        .firstName(googleUserData.getString(OIDC_CLAIMS_GIVEN_NAME))
-        .middleName(googleUserData.getString(OIDC_CLAIMS_MIDDLE_NAME))
-        .lastName(googleUserData.getString(OIDC_CLAIMS_FAMILY_NAME))
-        .email(googleUserData.getString(OIDC_CLAIMS_EMAIL))
-        .picture(googleUserData.getString(OIDC_CLAIMS_PICTURE))
-        .provider(getGoogleProviderData(googleUserData, idToken))
-        .additionalInfo(additionalInfo)
-        .build();
+    UserDto userDto =
+        UserDto.builder()
+            .name(googleUserData.getString(OIDC_CLAIMS_FULL_NAME))
+            .firstName(googleUserData.getString(OIDC_CLAIMS_GIVEN_NAME))
+            .middleName(googleUserData.getString(OIDC_CLAIMS_MIDDLE_NAME))
+            .lastName(googleUserData.getString(OIDC_CLAIMS_FAMILY_NAME))
+            .email(googleUserData.getString(OIDC_CLAIMS_EMAIL))
+            .picture(googleUserData.getString(OIDC_CLAIMS_PICTURE))
+            .provider(getGoogleProviderData(googleUserData, idToken))
+            .build();
+
+    userDto.setAdditionalInfo(additionalInfo);
+    return userDto;
   }
 
   private Provider getGoogleProviderData(JsonObject googleUserData, String idToken) {

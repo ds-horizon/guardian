@@ -189,9 +189,11 @@ public class IdpConnectService {
       userDtoBuilder.phoneNumber(claims.get(OIDC_CLAIMS_PHONE).toString());
     }
     userDtoBuilder.provider(provider);
-    userDtoBuilder.additionalInfo(idpConnectRequestDto.getAdditionalInfo());
 
-    return userDtoBuilder.build();
+    UserDto userDto = userDtoBuilder.build();
+    userDto.setAdditionalInfo(idpConnectRequestDto.getAdditionalInfo());
+
+    return userDto;
   }
 
   private Map<String, String> getUserIdentifierDetails(
