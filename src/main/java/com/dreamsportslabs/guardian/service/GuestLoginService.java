@@ -47,7 +47,7 @@ public class GuestLoginService {
     GuestConfig guestConfig = config.getGuestConfig();
 
     Boolean isEncrypted = guestConfig.getIsEncrypted();
-    String sharedSecretKey = guestConfig.getSharedSecretKey();
+    String sharedSecretKey = guestConfig.getSecretKey();
     List<String> guestAllowedScopes = guestConfig.getAllowedScopes();
     List<String> scopes = requestDto.getScopes();
     String guestIdentifier = requestDto.getGuestIdentifier();

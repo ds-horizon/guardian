@@ -743,7 +743,7 @@ paths:
                   value:
                     error:
                       code: invalid_guest_identifier
-                      message: Decryption failed. guest identifier sent is invalid
+                      message: Invalid guest identifier
                 invalidScopes:
                   summary: Invalid scopes (not recognized)
                   value:

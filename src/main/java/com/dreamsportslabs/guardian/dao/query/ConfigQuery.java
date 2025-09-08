@@ -160,7 +160,7 @@ public class ConfigQuery {
       """
      SELECT tenant_id,
             is_encrypted,
-            shared_secret_key,
+            secret_key,
             allowed_scopes
      FROM guest_config
      WHERE tenant_id = ?

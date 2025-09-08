@@ -6,8 +6,8 @@ import lombok.Data;
 
 @Data
 public class GuestConfig {
-  @JsonProperty("shared_secret_key")
-  private String sharedSecretKey;
+  @JsonProperty("secret_key")
+  private String secretKey;
 
   @JsonProperty("is_encrypted")
   private Boolean isEncrypted;

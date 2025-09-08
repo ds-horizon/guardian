@@ -423,7 +423,7 @@ CREATE TABLE oidc_refresh_token
 CREATE TABLE guest_config (
     tenant_id CHAR(10) PRIMARY KEY,
     is_encrypted BOOLEAN NOT NULL DEFAULT true,
-    shared_secret_key VARCHAR(16),
+    secret_key VARCHAR(16),
     allowed_scopes JSON NOT NULL DEFAULT (JSON_ARRAY()),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

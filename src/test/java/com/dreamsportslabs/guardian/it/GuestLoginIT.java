@@ -81,7 +81,7 @@ public class GuestLoginIT {
   @BeforeAll
   static void setUp() {
     validGuestIdentifier =
-        "lQk/p8rauzIz44v0hvla3A=="; // decrypted guestIdentifier of "abcd12345" String.
+        "QwnZ/2k+mpCm27nFOqb95g=="; // decrypted guestIdentifier of "abcd12345" String.
     validScopes = List.of("profile", "email", "phone");
 
     DbUtils.cleanupClientScopes(TENANT_1);
@@ -365,7 +365,7 @@ public class GuestLoginIT {
         .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(INVALID_GUEST_IDENTIFIER))
-        .body(MESSAGE, equalTo("Decryption failed. guest identifier sent is invalid"));
+        .body(MESSAGE, equalTo("Invalid guest identifier"));
   }
 
   @Test

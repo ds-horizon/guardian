@@ -16,8 +16,7 @@ public enum ErrorEnum {
   SMS_SERVICE_ERROR("sms_service_error", "SMS service error", 500),
   EMAIL_SERVICE_ERROR("email_service_error", "Email service error", 500),
   INVALID_QUERY_PARAM("invalid_query_param", "Invalid query param", 400),
-  DECRYPTION_FAILED(
-      "invalid_guest_identifier", "Decryption failed. guest identifier sent is invalid", 400),
+  DECRYPTION_FAILED("invalid_guest_identifier", "Invalid guest identifier", 400),
   INVALID_SCOPE("invalid_scope", "Invalid scopes", 400),
 
   INVALID_CODE("invalid_code", "Invalid code", 400),
