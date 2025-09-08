@@ -99,7 +99,10 @@ public class SocialAuthService {
 
               if (!userExists) {
                 return userService.createUser(
-                    getUserDtoFromFbUserData(fbUserData, dto.getAccessToken()), headers, tenantId);
+                    getUserDtoFromFbUserData(
+                        fbUserData, dto.getAccessToken(), dto.getAdditionalInfo()),
+                    headers,
+                    tenantId);
               } else {
                 return userService
                     .addProvider(
@@ -116,7 +119,8 @@ public class SocialAuthService {
                     user, dto.getResponseType(), dto.getMetaInfo(), tenantId));
   }
 
-  private UserDto getUserDtoFromFbUserData(JsonObject fbUserData, String accessToken) {
+  private UserDto getUserDtoFromFbUserData(
+      JsonObject fbUserData, String accessToken, Map<String, Object> additionalInfo) {
     return UserDto.builder()
         .name(fbUserData.getString(FACEBOOK_FIELDS_FULL_NAME))
         .firstName(fbUserData.getString(FACEBOOK_FIELDS_FIRST_NAME))
@@ -129,6 +133,7 @@ public class SocialAuthService {
                 .getJsonObject(FACEBOOK_FIELDS_PICTURE_DATA)
                 .getString(FACEBOOK_FIELDS_PICTURE_DATA_URL))
         .provider(getFbProviderData(fbUserData, accessToken))
+        .additionalInfo(additionalInfo)
         .build();
   }
 
@@ -184,7 +189,8 @@ public class SocialAuthService {
 
               if (!userExists) {
                 return userService.createUser(
-                    getUserDtoFromGoogleUserData(googleUserData, dto.getIdToken()),
+                    getUserDtoFromGoogleUserData(
+                        googleUserData, dto.getIdToken(), dto.getAdditionalInfo()),
                     headers,
                     tenantId);
               } else {
@@ -203,7 +209,8 @@ public class SocialAuthService {
                     user, dto.getResponseType().getResponseType(), dto.getMetaInfo(), tenantId));
   }
 
-  private UserDto getUserDtoFromGoogleUserData(JsonObject googleUserData, String idToken) {
+  private UserDto getUserDtoFromGoogleUserData(
+      JsonObject googleUserData, String idToken, Map<String, Object> additionalInfo) {
     return UserDto.builder()
         .name(googleUserData.getString(OIDC_CLAIMS_FULL_NAME))
         .firstName(googleUserData.getString(OIDC_CLAIMS_GIVEN_NAME))
@@ -212,6 +219,7 @@ public class SocialAuthService {
         .email(googleUserData.getString(OIDC_CLAIMS_EMAIL))
         .picture(googleUserData.getString(OIDC_CLAIMS_PICTURE))
         .provider(getGoogleProviderData(googleUserData, idToken))
+        .additionalInfo(additionalInfo)
         .build();
   }
 
