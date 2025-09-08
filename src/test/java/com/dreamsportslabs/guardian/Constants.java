@@ -89,6 +89,7 @@ public class Constants {
   public static final String SCOPE_PHONE = "phone";
   public static final String SCOPE_EMAIL = "email";
   public static final String SCOPE_ADDRESS = "address";
+  public static final String SCOPE_PROFILE = "profile";
   public static final String DISPLAY_NAME = "display_name";
 
   // Predefined claim names
