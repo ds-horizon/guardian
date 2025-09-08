@@ -28,6 +28,10 @@ Guardian application can be configured via environment variables
 | http_read_timeout              | GUARDIAN_HTTP_READ_TIMEOUT              | Integer | Read timeout value for external services in ms         |
 | http_write_timeout             | GUARDIAN_HTTP_WRITE_TIMEOUT             | Integer | Write timeout value for external services in ms        |
 | tenant_config_refresh_interval | GUARDIAN_TENANT_CONFIG_REFRESH_INTERVAL | Integer | Expiry time for tenant config in seconds               |
+| http_client_keep_alive         | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE         | Boolean | Enable HTTP keep-alive for client connections          |
+| http_client_keep_alive_timeout | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE_TIMEOUT | Integer | Keep-alive timeout for HTTP client connections in ms (must be > 1000) |
+| http_client_idle_timeout       | GUARDIAN_HTTP_CLIENT_IDLE_TIMEOUT       | Integer | Idle timeout for HTTP client connections in ms         |
+| http_client_connection_pool_max_size | GUARDIAN_HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE | Integer | Maximum size of HTTP client connection pool            |
 
 ## Tenant Configuration
 
