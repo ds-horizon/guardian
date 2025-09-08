@@ -16,4 +16,4 @@ insert into oidc_config (tenant_id, issuer, authorization_endpoint, token_endpoi
 
 insert into client (tenant_id, client_id, client_secret, client_name, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, skip_consent) values ('tenant1', 'client-id', 'client-secret', 'Test Client', 'https://test.com', json_array(''), json_array('authorization_code', 'refresh_token'), 'https://test.com/logo.png', 'https://test.com/policy', json_array('https://test.com/callback'), json_array('code'), 0);
 insert into client_scope (tenant_id, client_id, scope) values ('tenant1', 'client-id', 'profile');
-insert into guest_config(tenant_id, is_encrypted, secret_key, allowed_scopes) values ('tenant1', true, '2CmxIQJd8UJWAdn9',JSON_ARRAY('profile', 'email', 'phone'));
+insert into guest_config(tenant_id, is_encrypted, secret_key, allowed_scopes) values ('tenant1', true, '2CmxIQJd8UJWAdm8',JSON_ARRAY('profile', 'email', 'phone'));

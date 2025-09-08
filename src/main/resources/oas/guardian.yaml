@@ -714,8 +714,8 @@ paths:
         - Guest Authentication
       summary: Login Guest User
       description: >
-        Initializes a guest session using a shared secret key encrypted identifier.
-        Shared secret key encryption uses AES (Advanced Encryption Standard) algorithm.
+        Initializes a guest session using a shared secret key encrypted identifier(encryption is optional).
+        Uses AES (Advanced Encryption Standard) algorithm for encryption and decryption of user identifier.
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
