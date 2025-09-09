@@ -3,10 +3,14 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_AMR;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_CLIENT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_JTI;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
@@ -45,6 +49,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.NewCookie;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +130,13 @@ public class AuthorizationService {
         .location(metaInfo.getLocation())
         .source(metaInfo.getSource())
         .build();
+  }
+
+  public Single<String> generateGuestAccessToken(
+      String guestIdentifier, String tenantId, String scope, String clientId) {
+    Map<String, Object> accessTokenClaims =
+        getGuestTokenClaims(guestIdentifier, tenantId, scope, clientId);
+    return tokenIssuer.generateAccessToken(accessTokenClaims, tenantId);
   }
 
   public Single<RefreshTokenResponseDto> refreshTokens(
@@ -301,5 +313,24 @@ public class AuthorizationService {
     commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
     commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
     return commonTokenClaims;
+  }
+
+  private Map<String, Object> getGuestTokenClaims(
+      String guestIdentifier, String tenantId, String scope, String clientId) {
+    Map<String, Object> guestTokenClaims = new HashMap<>();
+    Long iat = getCurrentTimeInSeconds();
+    TenantConfig config = registry.get(tenantId, TenantConfig.class);
+
+    guestTokenClaims.put(JWT_CLAIMS_SUB, guestIdentifier);
+    guestTokenClaims.put(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
+    guestTokenClaims.put(JWT_CLAIMS_IAT, iat);
+    guestTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+    guestTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+    guestTokenClaims.put(JWT_TENANT_ID_CLAIM, tenantId);
+    guestTokenClaims.put(JWT_CLAIMS_SCOPE, scope);
+    guestTokenClaims.put(JWT_CLAIMS_AMR, Collections.emptyList());
+    guestTokenClaims.put(JWT_CLAIMS_CLIENT_ID, clientId);
+
+    return guestTokenClaims;
   }
 }
