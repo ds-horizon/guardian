@@ -49,6 +49,7 @@ public class Constants {
   public static final String RESPONSE_BODY_PARAM_ACCESS_TOKEN = "access_token";
   public static final String RESPONSE_BODY_PARAM_TOKEN_TYPE = "token_type";
   public static final String RESPONSE_BODY_PARAM_EXPIRES_IN = "expires_in";
+  public static final String RESPONSE_HEADER_PARAM_SET_COOKIE = "Set-Cookie";
 
   // User Block Flow Constants
   public static final String BODY_PARAM_USER_IDENTIFIER = "userIdentifier";

@@ -23,6 +23,7 @@ import static com.dreamsportslabs.guardian.Constants.MESSAGE;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_ACCESS_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_EXPIRES_IN;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_TOKEN_TYPE;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_HEADER_PARAM_SET_COOKIE;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PROFILE;
@@ -195,7 +196,12 @@ public class GuestLoginIT {
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, notNullValue())
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, equalTo(900));
+    String setCookieHeader = response.getHeader(RESPONSE_HEADER_PARAM_SET_COOKIE);
+    String atFromCookie = setCookieHeader.split(";")[0].trim().substring(3);
+
     String accessToken = response.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_ACCESS_TOKEN);
+    assertThat(atFromCookie, equalTo(accessToken));
+
     validateAccessTokenClaims(
         accessToken, "abcd12345", "profile email phone", TENANT_1, testClientId1);
   }
@@ -213,11 +219,16 @@ public class GuestLoginIT {
 
     response
         .then()
-        .statusCode(200)
+        .statusCode(SC_OK)
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, notNullValue())
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, equalTo(900));
+    String setCookieHeader = response.getHeader(RESPONSE_HEADER_PARAM_SET_COOKIE);
+    String atFromCookie = setCookieHeader.split(";")[0].trim().substring(3);
+
     String accessToken = response.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_ACCESS_TOKEN);
+    assertThat(atFromCookie, equalTo(accessToken));
+
     validateAccessTokenClaims(accessToken, "test123", "profile", TENANT_2, testClientId2);
   }
 
@@ -384,7 +395,12 @@ public class GuestLoginIT {
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, notNullValue())
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, equalTo(900));
+    String setCookieHeader = response.getHeader(RESPONSE_HEADER_PARAM_SET_COOKIE);
+    String atFromCookie = setCookieHeader.split(";")[0].trim().substring(3);
+
     String accessToken = response.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_ACCESS_TOKEN);
+    assertThat(atFromCookie, equalTo(accessToken));
+
     validateAccessTokenClaims(
         accessToken, validGuestIdentifier, "profile email", TENANT_2, testClientId2);
   }
@@ -405,7 +421,12 @@ public class GuestLoginIT {
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, notNullValue())
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, equalTo(900));
+    String setCookieHeader = response.getHeader(RESPONSE_HEADER_PARAM_SET_COOKIE);
+    String atFromCookie = setCookieHeader.split(";")[0].trim().substring(3);
+
     String accessToken = response.getBody().jsonPath().getString(RESPONSE_BODY_PARAM_ACCESS_TOKEN);
+    assertThat(atFromCookie, equalTo(accessToken));
+
     validateAccessTokenClaims(accessToken, "abcd12345", "profile phone", TENANT_3, testClientId3);
   }
 }

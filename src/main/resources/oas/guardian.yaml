@@ -727,6 +727,13 @@ paths:
       responses:
         '200':
           description: Guest initialization successful
+          headers:
+            Set-Cookie:
+              description: >
+                Access token returned as a cookie.
+                Contains JWT with expiry, domain, path, and security flags.
+              schema:
+                type: string
           content:
             application/json:
               schema:
