@@ -170,21 +170,21 @@ public class UserService {
             })
         .map(
             res -> {
-              JsonObject resBody = res.bodyAsJsonObject();
               if (res.statusCode() / 100 == 2) {
+                JsonObject resBody = res.bodyAsJsonObject();
                 return Utils.convertKeysToSnakeCase(resBody);
               } else if (res.statusCode() / 100 == 4) {
                 log.error(
-                    "Error fetching OIDC user details. Status: {} Response Body: {}",
+                    "Error fetching OIDC user details. Status: {}  Response Body: {}",
                     res.statusCode(),
-                    resBody.toString());
+                    res.bodyAsString());
                 throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonCustomException(
-                    400, resBody.toString());
+                    400, res.bodyAsString());
               } else {
                 log.error(
                     "Error fetching OIDC user details. Status: {} Response Body: {}",
                     res.statusCode(),
-                    resBody.toString());
+                    res.bodyAsString());
                 throw OidcErrorEnum.USER_SERVICE_ERROR.getJsonException();
               }
             });
