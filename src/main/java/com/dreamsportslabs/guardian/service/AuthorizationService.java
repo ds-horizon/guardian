@@ -84,6 +84,11 @@ public class AuthorizationService {
     return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
   }
 
+  public NewCookie[] getGuestAccessTokenCookies(String accessToken, String tenantId) {
+    NewCookie accessTokenCookie = getAccessTokenCookie(accessToken, tenantId);
+    return new NewCookie[] {accessTokenCookie};
+  }
+
   public NewCookie[] getIDPConnectCookies(IdpConnectResponseDto responseDto, String tenantId) {
     NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
     NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
