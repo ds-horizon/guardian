@@ -1,5 +1,9 @@
 package com.dreamsportslabs.guardian.verticle;
 
+import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE;
+import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CLIENT_IDLE_TIMEOUT;
+import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CLIENT_KEEP_ALIVE;
+import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CLIENT_KEEP_ALIVE_TIMEOUT;
 import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CONNECT_TIMEOUT;
 import static com.dreamsportslabs.guardian.constant.Constants.HTTP_READ_TIMEOUT;
 import static com.dreamsportslabs.guardian.constant.Constants.HTTP_WRITE_TIMEOUT;
@@ -110,6 +114,10 @@ public class MainVerticle extends AbstractVerticle {
         new WebClientOptions()
             .setConnectTimeout(Integer.parseInt(config.getString(HTTP_CONNECT_TIMEOUT)))
             .setIdleTimeoutUnit(TimeUnit.MILLISECONDS)
+            .setKeepAlive(config.getBoolean(HTTP_CLIENT_KEEP_ALIVE))
+            .setKeepAliveTimeout(config.getInteger(HTTP_CLIENT_KEEP_ALIVE_TIMEOUT) / 1000)
+            .setIdleTimeout(config.getInteger(HTTP_CLIENT_IDLE_TIMEOUT))
+            .setMaxPoolSize(config.getInteger(HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE))
             .setReadIdleTimeout(Integer.parseInt(config.getString(HTTP_READ_TIMEOUT)))
             .setWriteIdleTimeout(Integer.parseInt(config.getString(HTTP_WRITE_TIMEOUT)));
     this.webClient = WebClient.create(vertx, options);
