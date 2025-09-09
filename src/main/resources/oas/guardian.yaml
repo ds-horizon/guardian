@@ -708,6 +708,87 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /v1/guest/login:
+    post:
+      tags:
+        - Guest Authentication
+      summary: Login Guest User
+      description: >
+        Initializes a guest session using a shared secret key encrypted identifier(encryption is optional).
+        Uses AES (Advanced Encryption Standard) algorithm for encryption and decryption of user identifier.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1GuestLoginRequestBody'
+        required: true
+      responses:
+        '200':
+          description: Guest initialization successful
+          headers:
+            Set-Cookie:
+              description: >
+                Access token returned as a cookie.
+                Contains JWT with expiry, domain, path, and security flags.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestLoginResponse'
+        '400':
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidGuestIdentifier:
+                  summary: Invalid guest identifier (decryption failed)
+                  value:
+                    error:
+                      code: invalid_guest_identifier
+                      message: Invalid guest identifier
+                invalidScopes:
+                  summary: Invalid scopes (not recognized)
+                  value:
+                    error:
+                      code: invalid_scopes
+                      message: scopes sent are invalid
+                invalidClientId:
+                  summary: clientId is null or empty
+                  value:
+                    error:
+                      code: invalid_request
+                      message: clientId cannot be null or empty
+                guestIdentifierEmpty:
+                  summary: guestIdentifier is null or empty
+                  value:
+                    error:
+                      code: invalid_request
+                      message: guestIdentifier cannot be null or empty
+                scopesEmpty:
+                  summary: scopes are null or empty
+                  value:
+                    error:
+                      code: invalid_request
+                      message: scopes cannot be null or empty
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                clientNotFound:
+                  summary: clientId does not exist in DB
+                  value:
+                    error:
+                      code: client_not_found
+                      message: Client not found
+
   /v1/refreshToken:
     post:
       tags:
@@ -3240,6 +3321,43 @@ components:
           type: boolean
           description: Whether this is an OpenID Connect standard scope
           example: true
+
+    V1GuestLoginRequestBody:
+      type: object
+      required:
+        - guest_identifier
+        - client_id
+        - scopes
+      properties:
+        guest_identifier:
+          type: string
+          description: Device or app-instance derived ID.
+          example: device-or-app-instance-derived-id
+        client_id:
+          type: string
+          description: Client ID of the requesting application.
+          example: sample-client-id
+        scopes:
+          type: array
+          description: List of access scopes being requested.
+          items:
+            type: string
+          example: ["read", "write", "profile"]
+
+    GuestLoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Access token
+        token_type:
+          type: string
+          description: Type of token issued
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Expiry of access token in seconds
+          example: 180
 
     UpdateScopeRequest:
       type: object

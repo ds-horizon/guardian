@@ -42,6 +42,15 @@ public class Constants {
   public static final String BODY_PARAM_CONSENT_CHALLENGE = "consent_challenge";
   public static final String BODY_PARAM_CONSENTED_SCOPES = "consented_scopes";
 
+  // Guest Login Constants
+  public static final String BODY_PARAM_CLIENT_ID = "client_id";
+  public static final String BODY_PARAM_GUEST_IDENTIFIER = "guest_identifier";
+  public static final String BODY_PARAM_SCOPES = "scopes";
+  public static final String RESPONSE_BODY_PARAM_ACCESS_TOKEN = "access_token";
+  public static final String RESPONSE_BODY_PARAM_TOKEN_TYPE = "token_type";
+  public static final String RESPONSE_BODY_PARAM_EXPIRES_IN = "expires_in";
+  public static final String RESPONSE_HEADER_PARAM_SET_COOKIE = "Set-Cookie";
+
   // User Block Flow Constants
   public static final String BODY_PARAM_USER_IDENTIFIER = "userIdentifier";
   public static final String BODY_PARAM_BLOCK_FLOWS = "blockFlows";
@@ -81,6 +90,7 @@ public class Constants {
   public static final String SCOPE_PHONE = "phone";
   public static final String SCOPE_EMAIL = "email";
   public static final String SCOPE_ADDRESS = "address";
+  public static final String SCOPE_PROFILE = "profile";
   public static final String DISPLAY_NAME = "display_name";
 
   // Predefined claim names
@@ -160,6 +170,7 @@ public class Constants {
   public static final String JWT_CLAIM_SUB = "sub";
   public static final String JWT_CLAIM_RFT_ID = "rft_id";
   public static final String JWT_CLAIM_TENANT_ID = "tid";
+  public static final String JWT_CLAIMS_AMR = "amr";
 
   // Test Constants for OIDC Client Management
   public static final String TENANT_ID_HEADER = "tenant-id";
@@ -171,6 +182,8 @@ public class Constants {
   public static final String METADATA = "metadata";
   public static final String ERROR_INCORRECT_OTP = "incorrect_otp";
   public static final String ERROR_INVALID_REQUEST = "invalid_request";
+  public static final String INVALID_GUEST_IDENTIFIER = "invalid_guest_identifier";
+  public static final String INVALID_SCOPE = "invalid_scope";
   public static final String ERROR_USER_NOT_EXISTS = "user_not_exists";
   public static final String ERROR_USER_EXISTS = "user_exists";
   public static final String ERROR_RESENDS_NOT_ALLOWED = "resends_not_allowed";
@@ -506,6 +519,7 @@ public class Constants {
   public static final long ID_TOKEN_EXPIRY_SECONDS = 3600L;
   public static final long REFRESH_TOKEN_EXPIRY_SECONDS = 1800L;
   public static final long EXPIRED_TOKEN_OFFSET_SECONDS = -1800L;
+  public static final String SUB_TYPE_GUEST = "guest";
 
   // Test constants for client data checks
   public static final String CHECK_CLIENT = "client";

@@ -10,6 +10,8 @@ public final class Constants {
   public static final String PROVIDER = "provider";
   public static final String IS_NEW_USER = "isNewUser";
   public static final String SCOPE = "scope";
+  public static final String AES_ALGORITHM = "AES";
+  public static final String AES_CBC_NO_PADDING = "AES/CBC/NoPadding";
 
   // HTTP Request Headers
   public static final String AUTHORIZATION = "Authorization";
@@ -70,6 +72,7 @@ public final class Constants {
   public static final String JWT_CLAIMS_RFT_ID = "rft_id";
   public static final String JWT_CLAIMS_SCOPE = "scope";
   public static final String JWT_CLAIMS_SUB = "sub";
+  public static final String JWT_CLAIMS_AMR = "amr";
 
   // JWT Headers
   public static final String JWT_HEADERS_TYP = "typ";
