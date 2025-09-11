@@ -1,14 +1,20 @@
 package com.dreamsportslabs.guardian;
 
+import static com.dreamsportslabs.guardian.constant.Constants.APPLICATION_SHUTDOWN_INTERVAL;
+import static com.dreamsportslabs.guardian.constant.Constants.DEFAULT_SHUTDOWN_GRACE_PERIOD;
+
 import com.dreamsportslabs.guardian.injection.GuiceInjector;
 import com.dreamsportslabs.guardian.injection.MainModule;
+import com.dreamsportslabs.guardian.utils.ApplicationUtil;
 import com.dreamsportslabs.guardian.utils.SharedDataUtils;
+import io.reactivex.rxjava3.core.Completable;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Main extends Launcher {
 
@@ -42,5 +48,19 @@ public class Main extends Launcher {
   private void initializeGuiceInjector(Vertx vertx) {
     GuiceInjector.initialize(List.of(new MainModule(vertx)));
     SharedDataUtils.put(vertx, GuiceInjector.class);
+  }
+
+  @Override
+  public void beforeStoppingVertx(Vertx vertx) {
+    long shutdownDelayInterval =
+        Long.parseLong(
+            System.getenv()
+                .getOrDefault(APPLICATION_SHUTDOWN_INTERVAL, DEFAULT_SHUTDOWN_GRACE_PERIOD));
+
+    Completable.complete()
+        .doOnComplete(() -> ApplicationUtil.setShutdownStatus(vertx))
+        .delay(shutdownDelayInterval, TimeUnit.SECONDS)
+        .doOnComplete(() -> System.out.println("Successfully stopped application"))
+        .blockingSubscribe();
   }
 }

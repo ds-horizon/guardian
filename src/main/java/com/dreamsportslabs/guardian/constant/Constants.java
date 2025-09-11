@@ -12,6 +12,8 @@ public final class Constants {
   public static final String SCOPE = "scope";
   public static final String AES_ALGORITHM = "AES";
   public static final String AES_CBC_NO_PADDING = "AES/CBC/NoPadding";
+  public static final String SHUTDOWN_STATUS = "__shutdown__";
+  public static final String DEFAULT_SHUTDOWN_GRACE_PERIOD = "30"; // in seconds
 
   // HTTP Request Headers
   public static final String AUTHORIZATION = "Authorization";
@@ -65,6 +67,7 @@ public final class Constants {
   public static final String HTTP_CLIENT_IDLE_TIMEOUT = "http_client_idle_timeout";
   public static final String HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE =
       "http_client_connection_pool_max_size";
+  public static final String APPLICATION_SHUTDOWN_INTERVAL = "GUARDIAN_SHUTDOWN_GRACE_PERIOD";
 
   // JWT CLAIMS
   public static final String JWT_CLAIMS_AUD = "aud";
