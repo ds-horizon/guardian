@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 
 public final class Constants {
+  public static final String APPLICATION_CONFIG = "application_config";
   public static final String TENANT_ID = "tenant-id";
   public static final String USERID = "userId";
   public static final String PROVIDER = "provider";
@@ -13,7 +14,6 @@ public final class Constants {
   public static final String AES_ALGORITHM = "AES";
   public static final String AES_CBC_NO_PADDING = "AES/CBC/NoPadding";
   public static final String SHUTDOWN_STATUS = "__shutdown__";
-  public static final String DEFAULT_SHUTDOWN_GRACE_PERIOD = "30"; // in seconds
 
   // HTTP Request Headers
   public static final String AUTHORIZATION = "Authorization";
@@ -67,7 +67,8 @@ public final class Constants {
   public static final String HTTP_CLIENT_IDLE_TIMEOUT = "http_client_idle_timeout";
   public static final String HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE =
       "http_client_connection_pool_max_size";
-  public static final String APPLICATION_SHUTDOWN_INTERVAL = "GUARDIAN_SHUTDOWN_GRACE_PERIOD";
+  public static final String APPLICATION_SHUTDOWN_GRACE_PERIOD =
+      "application_shutdown_grace_period";
 
   // JWT CLAIMS
   public static final String JWT_CLAIMS_AUD = "aud";
