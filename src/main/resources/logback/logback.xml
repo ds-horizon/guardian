@@ -6,15 +6,10 @@
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${log.directory.path}/${log.file.name}</file>
     <append>true</append>
-
-    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-      <fieldNames>
-        <thread>process.thread.name</thread>
-        <level>log.level</level>
-        <logger>log.logger</logger>
-        <stackTrace>error.stack_trace</stackTrace>
-      </fieldNames>
-      <includeCallerData>${includeCallerData:-false}</includeCallerData>
+    <encoder>
+      <pattern>
+        %date %highlight(%+5level) %-26thread %X{dd.trace_id:-0} %X{dd.span_id:-0} %logger{36} [%file:%line] %green(%msg) %n
+      </pattern>
     </encoder>
 
     <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">

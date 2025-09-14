@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.verticle;
 
+import static com.dreamsportslabs.guardian.constant.Constants.APPLICATION_CONFIG;
 import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE;
 import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CLIENT_IDLE_TIMEOUT;
 import static com.dreamsportslabs.guardian.constant.Constants.HTTP_CLIENT_KEEP_ALIVE;
@@ -48,6 +49,7 @@ public class MainVerticle extends AbstractVerticle {
         .map(
             config -> {
               this.config = config;
+              SharedDataUtils.put(vertx.getDelegate(), config, APPLICATION_CONFIG);
               return config;
             })
         .flatMapCompletable(this::initializeClients)
