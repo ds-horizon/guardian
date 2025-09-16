@@ -186,20 +186,25 @@ CREATE TABLE refresh_tokens
 (
     id                BIGINT                     NOT NULL AUTO_INCREMENT,
     tenant_id         CHAR(10)                   NOT NULL,
+    client_id         VARCHAR(100),
     user_id           CHAR(64)                   NOT NULL,
     is_active         BOOLEAN                    NOT NULL DEFAULT TRUE,
     refresh_token     CHAR(32) COLLATE ascii_bin NOT NULL,
     refresh_token_exp BIGINT UNSIGNED NOT NULL,
     source            VARCHAR(50),
+    scope             JSON                       NOT NULL DEFAULT (JSON_ARRAY()),
     device_name       VARCHAR(256),
     location          VARCHAR(256),
     ip                VARBINARY(16),
+    auth_method       JSON                       NOT NULL DEFAULT (JSON_ARRAY()),
     created_at        TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
     KEY               `idx_refresh_token` (`tenant_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
-    KEY               `idx_refresh_token_user` (`tenant_id`, `user_id`)
+    KEY               `idx_refresh_token_user` (`tenant_id`, `user_id`),
+    KEY               `idx_client_id_refresh_token` (`tenant_id`, `client_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
+    CONSTRAINT `fk_refresh_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
@@ -453,6 +458,7 @@ CREATE TABLE sso_token
     refresh_token       CHAR(32) COLLATE ascii_bin NOT NULL,
     sso_token           CHAR(15) COLLATE ascii_bin NOT NULL,
     client_id_used_by   JSON                       NOT NULL DEFAULT (JSON_ARRAY()),
+    auth_methods        JSON                       NOT NULL DEFAULT (JSON_ARRAY()),
     created_at          TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 

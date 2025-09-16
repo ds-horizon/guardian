@@ -71,10 +71,32 @@ public class TokenIssuer {
     return signToken(jwt, tenantId);
   }
 
-  public Single<String> generateAccessToken(Map<String, Object> claims, String tenantId) {
+  public Single<String> generateAccessToken(
+      String refreshToken,
+      long iat,
+      String scope,
+      JsonObject userResponse,
+      List<AuthMethod> authMethods,
+      String clientId,
+      String tenantId,
+      TenantConfig config) {
     JWT jwt = new JWT();
-    for (Map.Entry<String, Object> claim : claims.entrySet()) {
-      jwt.addClaim(claim.getKey(), claim.getValue());
+    jwt.addClaim(JWT_TENANT_ID_CLAIM, tenantId);
+    jwt.addClaim(JWT_CLAIMS_AUD, clientId);
+    jwt.addClaim(JWT_CLAIMS_SUB, userResponse.getString(USERID));
+    jwt.addClaim(JWT_CLAIMS_IAT, iat);
+    jwt.addClaim(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+    jwt.addClaim(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
+    jwt.addClaim(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+    jwt.addClaim(JWT_CLAIMS_CLIENT_ID, clientId);
+    jwt.addClaim(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
+    jwt.addClaim(JWT_CLAIMS_SCOPE, scope);
+    jwt.addClaim(JWT_CLAIMS_AMR, authMethods.stream().map(AuthMethod::getValue).toList());
+    if (shouldSetAccessTokenAdditionalClaims(config)) {
+      config.getTokenConfig().getAccessTokenClaims().stream()
+          .filter(userResponse::containsKey)
+          .toList()
+          .forEach(claim -> jwt.addClaim(claim, userResponse.getValue(claim)));
     }
 
     Map<String, String> tokenHeaders = new HashMap<>();
