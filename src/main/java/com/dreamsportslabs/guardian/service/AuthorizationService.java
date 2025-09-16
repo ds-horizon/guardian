@@ -76,7 +76,7 @@ public class AuthorizationService {
       return generateTokens(user, scopes, authMethods, metaInfo, clientId, tenantId)
           .map(res -> res);
     } else if (responseType.equals(CODE)) {
-      return generateCode(user, metaInfo, tenantId).map(res -> res);
+      return generateCode(user, metaInfo, clientId, tenantId).map(res -> res);
     }
     throw INVALID_REQUEST.getException();
   }
@@ -260,7 +260,7 @@ public class AuthorizationService {
   }
 
   private Single<CodeResponseDto> generateCode(
-      JsonObject user, MetaInfo metaInfo, String tenantId) {
+      JsonObject user, MetaInfo metaInfo, String clientId, String tenantId) {
     AuthCodeConfig config = registry.get(tenantId, TenantConfig.class).getAuthCodeConfig();
     String code = RandomStringUtils.randomAlphanumeric(config.getLength());
     CodeModel codeModel =
@@ -268,6 +268,7 @@ public class AuthorizationService {
             .user(user.getMap())
             .code(code)
             .metaInfo(metaInfo)
+            .clientId(clientId)
             .expiry(config.getTtl())
             .build();
     return codeDao

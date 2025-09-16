@@ -25,6 +25,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
+import static com.dreamsportslabs.guardian.constant.IdentifierType.ID_TOKEN;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_TOKEN;
@@ -32,17 +33,20 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.PROVIDER_TOKENS_E
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
+import com.dreamsportslabs.guardian.cache.DefaultClientScopesCache;
 import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.ClientAuthMethod;
 import com.dreamsportslabs.guardian.constant.Flow;
+import com.dreamsportslabs.guardian.constant.IdentifierType;
 import com.dreamsportslabs.guardian.constant.IdpUserIdentifier;
 import com.dreamsportslabs.guardian.dao.model.IdpCredentials;
 import com.dreamsportslabs.guardian.dto.Provider;
 import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.dto.request.IdpConnectRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2IdpConnectRequestDto;
 import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
 import com.dreamsportslabs.guardian.exception.ErrorEnum;
 import com.dreamsportslabs.guardian.jwtVerifier.TokenVerifier;
@@ -73,9 +77,11 @@ public class IdpConnectService {
   private final WebClient webClient;
   private final Registry registry;
   private final UserFlowBlockService userFlowBlockService;
+  private final ClientService clientService;
+  private final DefaultClientScopesCache defaultClientScopesCache;
 
   public Single<IdpConnectResponseDto> connect(
-      IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
+      V2IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
 
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     String providerName = requestDto.getIdProvider();
@@ -119,13 +125,13 @@ public class IdpConnectService {
               Map<String, String> queryParams =
                   getUserIdentifierDetails(userIdentifier, userDto, requestDto.getIdProvider());
               return processUserBasedOnFlow(
-                      queryParams, userDto, requestDto.getLoginFlow(), headers, tenantId)
+                      queryParams, userDto, requestDto.getFlow(), headers, tenantId)
                   .flatMap(
                       userJson ->
                           authorizationService
                               .generate(
                                   userJson,
-                                  requestDto.getIdpResponseType().getResponseType(),
+                                  requestDto.getResponseType(),
                                   "",
                                   List.of(AuthMethod.THIRD_PARTY_OIDC),
                                   requestDto.getMetaInfo(),
@@ -226,6 +232,36 @@ public class IdpConnectService {
     return queryParams;
   }
 
+  public Single<IdpConnectResponseDto> v1Connect(
+      IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
+    return defaultClientScopesCache
+        .getDefaultClientScopes(tenantId)
+        .map(
+            pair -> {
+              V2IdpConnectRequestDto v2IdpConnectRequestDto = new V2IdpConnectRequestDto();
+              v2IdpConnectRequestDto.setIdProvider(requestDto.getIdProvider());
+              v2IdpConnectRequestDto.setIdentifier(requestDto.getIdentifier());
+              v2IdpConnectRequestDto.setIdentifierType(requestDto.getIdentifierType());
+              v2IdpConnectRequestDto.setResponseType(requestDto.getResponseType());
+              v2IdpConnectRequestDto.setNonce(requestDto.getNonce());
+              v2IdpConnectRequestDto.setCodeVerifier(requestDto.getCodeVerifier());
+              v2IdpConnectRequestDto.setFlow(requestDto.getLoginFlow());
+              v2IdpConnectRequestDto.setMetaInfo(requestDto.getMetaInfo());
+              v2IdpConnectRequestDto.setClientId(pair.getLeft());
+              v2IdpConnectRequestDto.setScopes(pair.getRight());
+              v2IdpConnectRequestDto.setAdditionalInfo(requestDto.getAdditionalInfo());
+              return v2IdpConnectRequestDto;
+            })
+        .flatMap(v2IdpConnectRequestDto -> connect(v2IdpConnectRequestDto, headers, tenantId));
+  }
+
+  public Single<IdpConnectResponseDto> v2Connect(
+      V2IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
+    return clientService
+        .validateFirstPartyClient(requestDto.getClientId(), tenantId, requestDto.getScopes())
+        .andThen(connect(requestDto, headers, tenantId));
+  }
+
   private Single<JsonObject> processUserBasedOnFlow(
       Map<String, String> queryParams,
       UserDto userDto,
@@ -292,41 +328,38 @@ public class IdpConnectService {
   }
 
   private Single<IdpCredentials> verifyIdentifierAndGetProviderTokens(
-      IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
-
-    switch (idpConnectRequestDto.getOidcIdentifierType()) {
+      V2IdpConnectRequestDto requestDto, OidcProviderConfig oidcProviderConfig) {
+    IdentifierType identifierType = IdentifierType.valueOf(requestDto.getIdentifierType());
+    switch (identifierType) {
       case ID_TOKEN:
-        return verifyIdToken(idpConnectRequestDto, oidcProviderConfig);
+        return verifyIdToken(requestDto, oidcProviderConfig);
       case CODE:
-        return exchangeCodeForTokens(idpConnectRequestDto, oidcProviderConfig);
+        return exchangeCodeForTokens(requestDto, oidcProviderConfig);
       default:
         return Single.error(ErrorEnum.INVALID_IDENTIFIER_TYPE.getException());
     }
   }
 
   private Single<IdpCredentials> verifyIdToken(
-      IdpConnectRequestDto idpConnectRequestDto, OidcProviderConfig oidcProviderConfig) {
+      V2IdpConnectRequestDto requestDto, OidcProviderConfig oidcProviderConfig) {
 
     try {
       TokenVerifier tokenVerifier =
           new TokenVerifier(oidcProviderConfig.getJwksUrl(), oidcProviderConfig.getIssuer());
       Map<String, Object> claims =
-          tokenVerifier.verify(
-              idpConnectRequestDto.getIdentifier(), oidcProviderConfig.getClientId());
+          tokenVerifier.verify(requestDto.getIdentifier(), oidcProviderConfig.getClientId());
 
-      verifyNonceClaim(idpConnectRequestDto, claims);
-      return Single.just(
-          IdpCredentials.builder().idToken(idpConnectRequestDto.getIdentifier()).build());
+      verifyNonceClaim(requestDto, claims);
+      return Single.just(IdpCredentials.builder().idToken(requestDto.getIdentifier()).build());
 
     } catch (Exception e) {
       throw INVALID_IDP_TOKEN.getException();
     }
   }
 
-  private void verifyNonceClaim(
-      IdpConnectRequestDto idpConnectRequestDto, Map<String, Object> claims) {
+  private void verifyNonceClaim(V2IdpConnectRequestDto requestDto, Map<String, Object> claims) {
 
-    String requestNonce = idpConnectRequestDto.getNonce();
+    String requestNonce = requestDto.getNonce();
     if (StringUtils.isNotBlank(requestNonce)) {
       Object nonceClaim = claims.get(OIDC_NONCE);
       if (nonceClaim == null || !requestNonce.equals(nonceClaim.toString())) {
@@ -336,7 +369,7 @@ public class IdpConnectService {
   }
 
   public Single<IdpCredentials> exchangeCodeForTokens(
-      IdpConnectRequestDto requestDto, OidcProviderConfig oidcProviderConfig) {
+      V2IdpConnectRequestDto requestDto, OidcProviderConfig oidcProviderConfig) {
 
     MultiMap oidcTokenRequestBody = buildTokenExchangeRequest(requestDto, oidcProviderConfig);
 
@@ -360,7 +393,7 @@ public class IdpConnectService {
   }
 
   public MultiMap buildTokenExchangeRequest(
-      IdpConnectRequestDto requestDto, OidcProviderConfig oidcProviderConfig) {
+      V2IdpConnectRequestDto requestDto, OidcProviderConfig oidcProviderConfig) {
     MultiMap oidcTokenRequestBody = MultiMap.caseInsensitiveMultiMap();
     oidcTokenRequestBody.add(OIDC_GRANT_TYPE, OIDC_AUTHORIZATION_CODE);
     oidcTokenRequestBody.add(OIDC_CODE, requestDto.getIdentifier());

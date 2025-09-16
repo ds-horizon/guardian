@@ -33,7 +33,7 @@ public class AuthFb {
     dto.validate();
     String tenantId = headers.getHeaderString(TENANT_ID);
     return socialAuthService
-        .authFb(dto, headers.getRequestHeaders(), tenantId)
+        .v1AuthFb(dto, headers.getRequestHeaders(), tenantId)
         .map(
             resp -> {
               if (resp instanceof TokenResponseDto tokenResponseDto) {
