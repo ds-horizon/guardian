@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.constant;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,7 +13,10 @@ import org.apache.commons.lang3.StringUtils;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Template {
+  @JsonProperty("name")
   private String name;
+
+  @JsonProperty("params")
   private Map<String, String> params;
 
   public boolean validate() {

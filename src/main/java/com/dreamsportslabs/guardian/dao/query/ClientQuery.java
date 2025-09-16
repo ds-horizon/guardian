@@ -18,16 +18,25 @@ public final class ClientQuery {
       """
       SELECT tenant_id, client_id, client_name, client_secret, client_uri,
              contacts, grant_types, logo_uri, policy_uri, redirect_uris,
-             response_types, skip_consent
+             response_types, skip_consent, client_type, is_default
       FROM client
       WHERE tenant_id = ? AND client_id = ?
       """;
+
+  public static final String GET_DEFAULT_CLIENT =
+      """
+          SELECT tenant_id, client_id, client_name, client_secret, client_uri,
+                 contacts, grant_types, logo_uri, policy_uri, redirect_uris,
+                 response_types, skip_consent, client_type, is_default
+          FROM client
+          WHERE tenant_id = ? AND is_default = 1 AND client_type = "first_party";
+          """;
 
   public static final String GET_CLIENTS =
       """
       SELECT tenant_id, client_id, client_name, client_secret, client_uri,
              contacts, grant_types, logo_uri, policy_uri, redirect_uris,
-             response_types, skip_consent
+             response_types, skip_consent, client_type, is_default
       FROM client
       WHERE tenant_id = ?
       ORDER BY created_at DESC

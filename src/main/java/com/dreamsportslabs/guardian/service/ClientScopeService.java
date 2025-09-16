@@ -80,4 +80,22 @@ public class ClientScopeService {
         .switchIfEmpty(Single.error(INVALID_REQUEST.getCustomException("Client not found")))
         .flatMapCompletable(exists -> clientScopeDao.deleteClientScope(tenantId, clientId, scope));
   }
+
+  public Completable validateClientScopes(
+      String tenantId, String clientId, List<String> requestScopes) {
+    return getClientScopes(clientId, tenantId)
+        .map(
+            clientScopeModels ->
+                clientScopeModels.stream().map(ClientScopeModel::getScope).toList())
+        .flatMapCompletable(
+            clientScopes -> {
+              HashSet<String> scopesSet = new HashSet<>(requestScopes);
+              if (scopesSet.containsAll(requestScopes)) {
+                return Completable.complete();
+              } else {
+                return Completable.error(
+                    INVALID_REQUEST.getCustomException("Some scopes do not exist"));
+              }
+            });
+  }
 }

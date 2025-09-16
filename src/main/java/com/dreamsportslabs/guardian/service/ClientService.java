@@ -4,6 +4,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 
+import com.dreamsportslabs.guardian.constant.ClientType;
 import com.dreamsportslabs.guardian.dao.ClientDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dto.request.CreateClientRequestDto;
@@ -23,6 +24,7 @@ public class ClientService {
   private static final int CLIENT_SECRET_LENGTH = 32;
 
   private final ClientDao clientDao;
+  private final ClientScopeService clientScopeService;
 
   public Single<ClientModel> createClient(CreateClientRequestDto requestDto, String tenantId) {
     String clientId = RandomStringUtils.randomAlphanumeric(CLIENT_ID_LENGTH);
@@ -93,5 +95,26 @@ public class ClientService {
         .onErrorResumeNext(err -> Single.error(INVALID_CLIENT.getException()))
         .filter(clientModel -> clientModel.getClientSecret().equals(clientSecret))
         .switchIfEmpty(Single.error(INVALID_CLIENT.getException()));
+  }
+
+  public Completable validateFirstPartyClient(
+      String clientId, String tenantId, List<String> requestScopes) {
+    return getClient(clientId, tenantId)
+        .onErrorResumeNext(err -> Single.error(INVALID_CLIENT.getException()))
+        .filter(
+            clientModel -> clientModel.getClientType().equals(ClientType.FIRST_PARTY.getValue()))
+        .switchIfEmpty(Single.error(INVALID_CLIENT.getException()))
+        .flatMapCompletable(
+            clientModel ->
+                clientScopeService.validateClientScopes(tenantId, clientId, requestScopes));
+  }
+
+  public Single<String> getDefaultClientId(String tenantId) {
+    return clientDao
+        .getDefaultClient(tenantId)
+        .filter(
+            clientModel -> clientModel.getClientType().equals(ClientType.FIRST_PARTY.getValue()))
+        .switchIfEmpty(Single.error(INVALID_CLIENT.getException()))
+        .map(ClientModel::getClientId);
   }
 }

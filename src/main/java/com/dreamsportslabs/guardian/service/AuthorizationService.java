@@ -28,6 +28,7 @@ import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAddit
 import com.dreamsportslabs.guardian.config.tenant.AuthCodeConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.TokenConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.dao.CodeDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RevocationDao;
@@ -69,9 +70,16 @@ public class AuthorizationService {
   private final UserService userService;
 
   public Single<Object> generate(
-      JsonObject user, String responseType, MetaInfo metaInfo, String tenantId) {
+      JsonObject user,
+      String responseType,
+      String scopes,
+      List<AuthMethod> authMethods,
+      MetaInfo metaInfo,
+      String clientId,
+      String tenantId) {
     if (responseType.equals(TOKEN)) {
-      return generateTokens(user, metaInfo, tenantId).map(res -> res);
+      return generateTokens(user, scopes, authMethods, metaInfo, clientId, tenantId)
+          .map(res -> res);
     } else if (responseType.equals(CODE)) {
       return generateCode(user, metaInfo, tenantId).map(res -> res);
     }
@@ -96,17 +104,22 @@ public class AuthorizationService {
   }
 
   private Single<TokenResponseDto> generateTokens(
-      JsonObject user, MetaInfo metaInfo, String tenantId) {
+      JsonObject user,
+      String scopes,
+      List<AuthMethod> authMethods,
+      MetaInfo metaInfo,
+      String clientId,
+      String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     String refreshToken = tokenIssuer.generateRefreshToken();
     long iat = getCurrentTimeInSeconds();
     Map<String, Object> commonTokenClaims =
         getCommonTokenClaims(user.getString(USERID), iat, config);
-    Map<String, Object> accessTokenClaims = getAccessTokenClaims(user, iat, config, refreshToken);
     Map<String, Object> idTokenClaims = new HashMap<>(commonTokenClaims);
     idTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getIdTokenExpiry());
     return Single.zip(
-            tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()),
+            tokenIssuer.generateAccessToken(
+                refreshToken, iat, scopes, user, authMethods, clientId, tenantId, config),
             tokenIssuer.generateIdToken(idTokenClaims, user, config.getTenantId()),
             (accessToken, idToken) ->
                 new TokenResponseDto(
@@ -138,10 +151,20 @@ public class AuthorizationService {
   }
 
   public Single<String> generateGuestAccessToken(
-      String guestIdentifier, String tenantId, String scope, String clientId) {
-    Map<String, Object> accessTokenClaims =
-        getGuestTokenClaims(guestIdentifier, tenantId, scope, clientId);
-    return tokenIssuer.generateAccessToken(accessTokenClaims, tenantId);
+      String guestIdentifier,
+      String scopes,
+      TenantConfig config,
+      String clientId,
+      String tenantId) {
+    return tokenIssuer.generateAccessToken(
+        "",
+        getCurrentTimeInSeconds(),
+        scopes,
+        new JsonObject(Map.of(USERID, guestIdentifier)),
+        Collections.emptyList(),
+        clientId,
+        tenantId,
+        config);
   }
 
   public Single<RefreshTokenResponseDto> refreshTokens(
@@ -204,7 +227,14 @@ public class AuthorizationService {
         .getCode(dto.getCode(), tenantId)
         .switchIfEmpty(Single.error(INVALID_CODE.getException()))
         .flatMap(
-            model -> generateTokens(new JsonObject(model.getUser()), model.getMetaInfo(), tenantId))
+            model ->
+                generateTokens(
+                    new JsonObject(model.getUser()),
+                    String.join(" ", model.getScopes()),
+                    model.getAuthMethods(),
+                    model.getMetaInfo(),
+                    model.getClientId(),
+                    tenantId))
         .doOnSuccess(res -> codeDao.deleteCode(dto.getCode(), tenantId).subscribe());
   }
 
