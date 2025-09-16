@@ -45,7 +45,12 @@ public class TokenIssuer {
   private final Registry registry;
 
   public Single<String> generateIdToken(
-      long iat, String nonce, JsonObject user, String clientId, String tenantId) {
+      long iat,
+      String nonce,
+      JsonObject user,
+      List<String> idTokenClaims,
+      String clientId,
+      String tenantId) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     JWT jwt = new JWT();
 
@@ -57,7 +62,7 @@ public class TokenIssuer {
     if (nonce != null) {
       jwt.addClaim(JWT_CLAIMS_NONCE, nonce);
     }
-    for (String claim : tenantConfig.getTokenConfig().getIdTokenClaims()) {
+    for (String claim : idTokenClaims) {
       Object value = user.getValue(claim);
       if (value != null) {
         jwt.addClaim(claim, value);
@@ -88,6 +93,7 @@ public class TokenIssuer {
       TenantConfig config) {
     JWT jwt = new JWT();
     jwt.addClaim(JWT_TENANT_ID_CLAIM, tenantId);
+    jwt.addClaim(JWT_CLAIMS_AUD, clientId);
     jwt.addClaim(JWT_CLAIMS_SUB, userResponse.getString(USERID));
     jwt.addClaim(JWT_CLAIMS_IAT, iat);
     jwt.addClaim(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());

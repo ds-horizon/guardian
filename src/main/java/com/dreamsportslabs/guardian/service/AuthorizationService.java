@@ -114,7 +114,13 @@ public class AuthorizationService {
     return Single.zip(
             tokenIssuer.generateAccessToken(
                 refreshToken, iat, scopes, user, authMethods, clientId, tenantId, config),
-            tokenIssuer.generateIdToken(iat, null, user, clientId, config.getTenantId()),
+            tokenIssuer.generateIdToken(
+                iat,
+                null,
+                user,
+                config.getTokenConfig().getIdTokenClaims(),
+                clientId,
+                config.getTenantId()),
             (accessToken, idToken) ->
                 new TokenResponseDto(
                     accessToken,
