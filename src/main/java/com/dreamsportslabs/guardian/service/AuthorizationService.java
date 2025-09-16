@@ -10,6 +10,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.SSO_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
@@ -31,6 +32,7 @@ import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RevocationDao;
 import com.dreamsportslabs.guardian.dao.model.CodeModel;
 import com.dreamsportslabs.guardian.dao.model.OidcRefreshTokenModel;
+import com.dreamsportslabs.guardian.dao.model.SsoTokenModel;
 import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
@@ -47,6 +49,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.NewCookie;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +57,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -87,7 +91,8 @@ public class AuthorizationService {
   public NewCookie[] getCookies(TokenResponseDto responseDto, String tenantId) {
     NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
     NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
-    return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
+    NewCookie ssoTokenTokenCookie = getSsoTokenCookie(responseDto.getSsoToken(), tenantId);
+    return new NewCookie[] {accessTokenCookie, refreshTokenCookie, ssoTokenTokenCookie};
   }
 
   public NewCookie[] getGuestAccessTokenCookies(String accessToken, String tenantId) {
@@ -110,6 +115,7 @@ public class AuthorizationService {
       String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     String refreshToken = tokenIssuer.generateRefreshToken();
+    String ssoToken = tokenIssuer.generateSsoToken();
     long iat = getCurrentTimeInSeconds();
     return Single.zip(
             tokenIssuer.generateAccessToken(
@@ -126,6 +132,7 @@ public class AuthorizationService {
                     accessToken,
                     refreshToken,
                     idToken,
+                    ssoToken,
                     TOKEN_TYPE,
                     config.getTokenConfig().getAccessTokenExpiry(),
                     user.getBoolean(IS_NEW_USER, false)))
@@ -133,7 +140,16 @@ public class AuthorizationService {
             dto ->
                 oidcRefreshTokenDao
                     .saveOidcRefreshToken(
-                        getRefreshTokenDto(refreshToken, user, iat, metaInfo, clientId, config))
+                        getRefreshTokenDto(
+                            refreshToken,
+                            user,
+                            iat,
+                            Arrays.stream(StringUtils.split(scopes, " ")).toList(),
+                            metaInfo,
+                            clientId,
+                            config),
+                        getSsoTokenDto(
+                            user.getString(USERID), ssoToken, iat, refreshToken, clientId, config))
                     .andThen(Single.just(dto)));
   }
 
@@ -141,6 +157,7 @@ public class AuthorizationService {
       String refreshToken,
       JsonObject user,
       Long iat,
+      List<String> scopes,
       MetaInfo metaInfo,
       String clientId,
       TenantConfig config) {
@@ -154,6 +171,24 @@ public class AuthorizationService {
         .ip(metaInfo.getIp())
         .location(metaInfo.getLocation())
         .source(metaInfo.getSource())
+        .scope(scopes)
+        .build();
+  }
+
+  private SsoTokenModel getSsoTokenDto(
+      String userId,
+      String ssoToken,
+      Long iat,
+      String refreshToken,
+      String clientId,
+      TenantConfig config) {
+    return SsoTokenModel.builder()
+        .tenantId(config.getTenantId())
+        .clientIdIssuedTo(clientId)
+        .userId(userId)
+        .refreshToken(refreshToken)
+        .ssoToken(ssoToken)
+        .expiry(iat + config.getTokenConfig().getRefreshTokenExpiry())
         .build();
   }
 
@@ -334,6 +369,14 @@ public class AuthorizationService {
     return buildCookie(
         REFRESH_TOKEN_COOKIE_NAME,
         refreshToken,
+        registry.get(tenantId, TenantConfig.class).getTokenConfig().getRefreshTokenExpiry(),
+        tenantId);
+  }
+
+  public NewCookie getSsoTokenCookie(String ssoToken, String tenantId) {
+    return buildCookie(
+        SSO_TOKEN_COOKIE_NAME,
+        ssoToken,
         registry.get(tenantId, TenantConfig.class).getTokenConfig().getRefreshTokenExpiry(),
         tenantId);
   }
