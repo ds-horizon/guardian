@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.zaxxer.hikari.HikariConfig;
@@ -9,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -456,10 +459,45 @@ public class DbUtils {
     }
   }
 
+  public static String insertSsoToken(
+      String tenantId,
+      String userId,
+      String clientId,
+      long expiryOffset,
+      List<String> authMethods) {
+    String ssoToken = RandomStringUtils.randomAlphanumeric(15);
+    String refreshToken = RandomStringUtils.randomAlphanumeric(32);
+    long expiry = getCurrentTimeInSeconds() + expiryOffset;
+
+    String insertSsoToken =
+        "INSERT INTO sso_token (tenant_id, client_id_issues_to, user_id, refresh_token, sso_token, expiry, auth_methods, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(insertSsoToken)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, userId);
+      stmt.setString(4, refreshToken);
+      stmt.setString(5, ssoToken);
+      stmt.setLong(6, expiry);
+      ArrayNode authMethodsArray = objectMapper.createArrayNode();
+      authMethods.forEach(authMethodsArray::add);
+      stmt.setString(7, objectMapper.writeValueAsString(authMethodsArray));
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error inserting SSO token", e);
+    }
+    return ssoToken;
+  }
+
+  public static String insertExpiredSsoToken(String tenantId, String userId, String clientId) {
+    return insertSsoToken(tenantId, userId, clientId, -1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+  }
+
   public static String addFirstPartyClient(String tenantId) {
     String clientId = RandomStringUtils.randomAlphanumeric(10);
     String addClient =
-        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, client_type, is_default) VALUES (?,?,?,'s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),'first_party',TRUE);";
+        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, skip_consent, is_default) VALUES (?,?,?,'s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),TRUE,TRUE);";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt1 = conn.prepareStatement(addClient)) {

@@ -1,30 +1,37 @@
 package com.dreamsportslabs.guardian.it;
 
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SSO_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_TYPE;
+import static com.dreamsportslabs.guardian.Constants.CODE;
 import static com.dreamsportslabs.guardian.Constants.DEFAULT_CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
+import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.ERROR_FIELD;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
+import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_SSO_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.ERROR_LOGIN_CHALLENGE_REQUIRED;
-import static com.dreamsportslabs.guardian.Constants.ERROR_REFRESH_TOKEN_REQUIRED;
+import static com.dreamsportslabs.guardian.Constants.ERROR_NO_VALID_SESSION_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.ERROR_UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.Constants.HEADER_LOCATION;
 import static com.dreamsportslabs.guardian.Constants.INVALID_TENANT;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.IS_DEFAULT;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
+import static com.dreamsportslabs.guardian.Constants.MESSAGE;
 import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.PARTIAL_CONSENT_USER_ID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
+import static com.dreamsportslabs.guardian.Constants.SKIP_CONSENT;
+import static com.dreamsportslabs.guardian.Constants.SKIP_CONSENT_CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.SOURCE_VALUE;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
@@ -36,11 +43,14 @@ import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.loginAccept;
 import static com.dreamsportslabs.guardian.utils.DbUtils.authorizeSessionExists;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanUpScopes;
 import static com.dreamsportslabs.guardian.utils.DbUtils.cleanupClients;
+import static com.dreamsportslabs.guardian.utils.DbUtils.insertExpiredSsoToken;
 import static com.dreamsportslabs.guardian.utils.DbUtils.insertRefreshToken;
+import static com.dreamsportslabs.guardian.utils.DbUtils.insertSsoToken;
 import static com.dreamsportslabs.guardian.utils.DbUtils.insertUserConsent;
 import static com.dreamsportslabs.guardian.utils.OidcUtils.createValidAuthorizeRequest;
 import static com.dreamsportslabs.guardian.utils.OidcUtils.extractLoginChallenge;
 import static com.dreamsportslabs.guardian.utils.OidcUtils.validateLoginAcceptResponse;
+import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_MOVED_TEMPORARILY;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
@@ -127,8 +137,9 @@ public class LoginAcceptIT {
     response
         .then()
         .statusCode(SC_BAD_REQUEST)
-        .body(ERROR_FIELD, equalTo(ERROR_INVALID_REQUEST))
-        .body(ERROR_DESCRIPTION, equalTo(ERROR_LOGIN_CHALLENGE_REQUIRED));
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST))
+        .body(MESSAGE, equalTo(ERROR_LOGIN_CHALLENGE_REQUIRED));
   }
 
   @ParameterizedTest
@@ -143,9 +154,9 @@ public class LoginAcceptIT {
 
     response
         .then()
-        .statusCode(SC_BAD_REQUEST)
-        .body(ERROR_FIELD, equalTo(ERROR_INVALID_REQUEST))
-        .body(ERROR_DESCRIPTION, equalTo(ERROR_REFRESH_TOKEN_REQUIRED));
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
+        .body(ERROR_DESCRIPTION, equalTo(ERROR_NO_VALID_SESSION_TOKEN));
   }
 
   @Test
@@ -215,8 +226,8 @@ public class LoginAcceptIT {
   }
 
   @Test
-  @DisplayName("Should handle client with is_default=true")
-  public void testLoginAcceptWithDefaultClient() {
+  @DisplayName("Should handle client with skip_consent=true (first party client)")
+  public void testLoginAcceptWithFirstPartyClient() {
     Map<String, Object> clientRequest = ClientUtils.createValidClientRequest();
     clientRequest.put(CLIENT_NAME, DEFAULT_CLIENT_NAME);
     clientRequest.put(CLIENT_TYPE, "first_party");
@@ -460,6 +471,176 @@ public class LoginAcceptIT {
     // The response should be successful, but this test ensures the error handling
     // in LoginAccept.java is covered for unexpected response types
     response.then().statusCode(SC_MOVED_TEMPORARILY);
+  }
+
+  @Test
+  @DisplayName("Should accept login successfully with valid SSO token")
+  public void testLoginAcceptWithValidSsoToken() {
+    String validSsoToken =
+        insertSsoToken(
+            tenant1, TEST_USER_ID, validClientId, 1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+
+    Map<String, Object> requestBody =
+        Map.of(
+            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge, BODY_PARAM_SSO_TOKEN, validSsoToken);
+
+    Response response = loginAccept(tenant1, requestBody);
+
+    validateLoginAcceptResponse(response, tenant1, validLoginChallenge, TEST_USER_ID);
+  }
+
+  @Test
+  @DisplayName("Should return error when SSO token is invalid")
+  public void testLoginAcceptInvalidSsoToken() {
+    String invalidSsoToken = "invalid_sso_token_" + RandomStringUtils.randomAlphanumeric(10);
+
+    Map<String, Object> requestBody =
+        Map.of(
+            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge, BODY_PARAM_SSO_TOKEN, invalidSsoToken);
+
+    Response response = loginAccept(tenant1, requestBody);
+
+    response
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
+        .body(ERROR_DESCRIPTION, equalTo(ERROR_INVALID_SSO_TOKEN));
+  }
+
+  @Test
+  @DisplayName("Should return error when SSO token is expired")
+  public void testLoginAcceptExpiredSsoToken() {
+    String expiredSsoToken = insertExpiredSsoToken(tenant1, TEST_USER_ID, validClientId);
+
+    Map<String, Object> requestBody =
+        Map.of(
+            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge, BODY_PARAM_SSO_TOKEN, expiredSsoToken);
+
+    Response response = loginAccept(tenant1, requestBody);
+
+    response.then().statusCode(SC_UNAUTHORIZED).body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED));
+  }
+
+  @Test
+  @DisplayName("Should handle SSO token from cookie")
+  public void testLoginAcceptWithCookieSsoToken() {
+    String validSsoToken =
+        insertSsoToken(
+            tenant1, TEST_USER_ID, validClientId, 1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge);
+
+    Response response = loginAcceptWithSsoTokenCookie(tenant1, requestBody, validSsoToken);
+
+    validateLoginAcceptResponse(response, tenant1, validLoginChallenge, TEST_USER_ID);
+  }
+
+  @Test
+  @DisplayName("Should prioritize request body SSO token over cookie")
+  public void testSsoTokenPriorityOverCookie() {
+    String validSsoToken =
+        insertSsoToken(
+            tenant1, TEST_USER_ID, validClientId, 1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+    String cookieSsoToken =
+        insertSsoToken(
+            tenant1, "different_user", validClientId, 1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+
+    Map<String, Object> requestBody =
+        Map.of(
+            BODY_PARAM_LOGIN_CHALLENGE, validLoginChallenge, BODY_PARAM_SSO_TOKEN, validSsoToken);
+
+    Response response = loginAcceptWithSsoTokenCookie(tenant1, requestBody, cookieSsoToken);
+
+    validateLoginAcceptResponse(response, tenant1, validLoginChallenge, TEST_USER_ID);
+  }
+
+  @Test
+  @DisplayName("Should prioritize SSO token over refresh token when both provided")
+  public void testSsoTokenPriorityOverRefreshToken() {
+    String validSsoToken =
+        insertSsoToken(
+            tenant1, TEST_USER_ID, validClientId, 1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+    String differentUserRefreshToken =
+        insertRefreshToken(
+            tenant1,
+            "different_user",
+            1800L,
+            SOURCE_VALUE,
+            DEVICE_VALUE,
+            LOCATION_VALUE,
+            IP_ADDRESS);
+
+    Map<String, Object> requestBody =
+        Map.of(
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            BODY_PARAM_SSO_TOKEN,
+            validSsoToken,
+            OIDC_BODY_PARAM_REFRESH_TOKEN,
+            differentUserRefreshToken);
+
+    Response response = loginAccept(tenant1, requestBody);
+
+    validateLoginAcceptResponse(response, tenant1, validLoginChallenge, TEST_USER_ID);
+  }
+
+  @Test
+  @DisplayName("Should handle cross-tenant SSO token validation")
+  public void testSsoTokenCrossTenantValidation() {
+    String crossTenantSsoToken =
+        insertSsoToken(
+            tenant2, TEST_USER_ID, validClientId, 1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+
+    Map<String, Object> requestBody =
+        Map.of(
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            BODY_PARAM_SSO_TOKEN,
+            crossTenantSsoToken);
+
+    Response response = loginAccept(tenant1, requestBody);
+
+    response
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
+        .body(ERROR_DESCRIPTION, equalTo(ERROR_INVALID_SSO_TOKEN));
+  }
+
+  @Test
+  @DisplayName("Should handle malformed SSO token")
+  public void testLoginAcceptMalformedSsoToken() {
+    String malformedSsoToken = "malformed_sso_token_with_special_chars_!@#$%^&*()";
+
+    Map<String, Object> requestBody =
+        Map.of(
+            BODY_PARAM_LOGIN_CHALLENGE,
+            validLoginChallenge,
+            BODY_PARAM_SSO_TOKEN,
+            malformedSsoToken);
+
+    Response response = loginAccept(tenant1, requestBody);
+
+    response
+        .then()
+        .statusCode(SC_UNAUTHORIZED)
+        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
+        .body(ERROR_DESCRIPTION, equalTo(ERROR_INVALID_SSO_TOKEN));
+  }
+
+  private Response loginAcceptWithSsoTokenCookie(
+      String tenantId, Map<String, Object> requestBody, String ssoToken) {
+    return given()
+        .header("Content-Type", "application/json")
+        .header("tenant-id", tenantId)
+        .cookie("SSOT", ssoToken)
+        .body(requestBody)
+        .when()
+        .post("/login-accept")
+        .then()
+        .extract()
+        .response();
   }
 
   private Response createTestClient() {

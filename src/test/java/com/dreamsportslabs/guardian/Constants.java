@@ -388,6 +388,9 @@ public class Constants {
   public static final String ERROR_REDIRECT_URI_REQUIRED = "redirect_uri is required";
   public static final String ERROR_LOGIN_CHALLENGE_REQUIRED = "loginChallenge is required";
   public static final String ERROR_REFRESH_TOKEN_REQUIRED = "refreshToken is required";
+  public static final String ERROR_NO_VALID_SESSION_TOKEN = "No valid session token found";
+  public static final String ERROR_INVALID_SSO_TOKEN = "Invalid sso token";
+  public static final String BODY_PARAM_SSO_TOKEN = "sso_token";
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_CODE_CHALLENGE_TOGETHER =
       "code_challenge and code_challenge_method must be provided together";

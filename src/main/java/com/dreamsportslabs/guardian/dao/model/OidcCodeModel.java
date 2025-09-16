@@ -31,5 +31,6 @@ public class OidcCodeModel {
         session.getCodeChallengeMethod() != null
             ? session.getCodeChallengeMethod().getValue()
             : null;
+    this.authMethods = session.getAuthMethods();
   }
 }

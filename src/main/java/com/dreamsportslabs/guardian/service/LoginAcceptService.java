@@ -4,7 +4,6 @@ import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.ClientType;
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
-import com.dreamsportslabs.guardian.dao.V1RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
 import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
 import com.dreamsportslabs.guardian.dao.model.UserConsentModel;
@@ -28,23 +27,23 @@ import org.apache.commons.lang3.RandomStringUtils;
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class LoginAcceptService {
   private final AuthorizeSessionDao authorizeSessionDao;
+  private final SsoTokenService ssoTokenService;
   private final OidcCodeService oidcCodeService;
-  private final OidcTokenService oidcTokenService;
   private final UserConsentDao userConsentDao;
-  private final V1RefreshTokenDao v1RefreshTokenDao;
   private final Registry registry;
 
   public Single<Object> loginAccept(LoginAcceptRequestDto requestDto, String tenantId) {
 
-    return oidcTokenService
-        .validateRefreshToken(requestDto.getRefreshToken(), tenantId)
+    return ssoTokenService
+        .validateUserSession(requestDto, tenantId)
         .flatMap(
-            userId ->
+            ssoToken ->
                 authorizeSessionDao
                     .getAuthorizeSession(requestDto.getLoginChallenge(), tenantId)
                     .flatMap(
                         authorizeSession -> {
-                          authorizeSession.setUserId(userId);
+                          authorizeSession.setUserId(ssoToken.getUserId());
+                          authorizeSession.setAuthMethods(ssoToken.getAuthMethods());
 
                           if (authorizeSession
                               .getClient()
@@ -54,7 +53,9 @@ public class LoginAcceptService {
                           }
 
                           return getUserConsentedScopes(
-                                  authorizeSession.getClient().getClientId(), userId, tenantId)
+                                  authorizeSession.getClient().getClientId(),
+                                  ssoToken.getUserId(),
+                                  tenantId)
                               .flatMap(
                                   consentedScopes -> {
                                     List<String> commonScopesList =
