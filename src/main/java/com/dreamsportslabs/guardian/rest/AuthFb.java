@@ -2,7 +2,7 @@ package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
-import com.dreamsportslabs.guardian.dto.request.V1AuthFbRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1AuthFbRequestDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.dreamsportslabs.guardian.service.SocialAuthService;

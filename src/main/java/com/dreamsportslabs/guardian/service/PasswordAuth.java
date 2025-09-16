@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.dto.request.V1SignInRequestDto;
@@ -35,7 +36,13 @@ public class PasswordAuth {
         .flatMap(
             user ->
                 authorizationService.generate(
-                    user, dto.getResponseType(), dto.getMetaInfo(), tenantId));
+                    user,
+                    dto.getResponseType(),
+                    "",
+                    List.of(AuthMethod.PASSWORD),
+                    dto.getMetaInfo(),
+                    null,
+                    tenantId));
   }
 
   public Single<Object> signUp(
@@ -54,6 +61,12 @@ public class PasswordAuth {
         .flatMap(
             user ->
                 authorizationService.generate(
-                    user, dto.getResponseType(), dto.getMetaInfo(), tenantId));
+                    user,
+                    dto.getResponseType(),
+                    "",
+                    List.of(AuthMethod.PASSWORD),
+                    dto.getMetaInfo(),
+                    null,
+                    tenantId));
   }
 }

@@ -19,12 +19,13 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVI
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.dto.Provider;
 import com.dreamsportslabs.guardian.dto.UserDto;
-import com.dreamsportslabs.guardian.dto.request.V1AuthFbRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1AuthGoogleRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1AuthFbRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1AuthGoogleRequestDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.service.impl.idproviders.FacebookIdProvider;
 import com.dreamsportslabs.guardian.service.impl.idproviders.GoogleIdProvider;
@@ -113,7 +114,13 @@ public class SocialAuthService {
         .flatMap(
             user ->
                 authorizationService.generate(
-                    user, dto.getResponseType(), dto.getMetaInfo(), tenantId));
+                    user,
+                    dto.getResponseType(),
+                    "",
+                    List.of(AuthMethod.THIRD_PARTY_OIDC),
+                    dto.getMetaInfo(),
+                    null,
+                    tenantId));
   }
 
   private UserDto getUserDtoFromFbUserData(JsonObject fbUserData, String accessToken) {
@@ -200,7 +207,13 @@ public class SocialAuthService {
         .flatMap(
             user ->
                 authorizationService.generate(
-                    user, dto.getResponseType().getResponseType(), dto.getMetaInfo(), tenantId));
+                    user,
+                    dto.getResponseType().getResponseType(),
+                    "",
+                    List.of(AuthMethod.THIRD_PARTY_OIDC),
+                    dto.getMetaInfo(),
+                    null,
+                    tenantId));
   }
 
   private UserDto getUserDtoFromGoogleUserData(JsonObject googleUserData, String idToken) {

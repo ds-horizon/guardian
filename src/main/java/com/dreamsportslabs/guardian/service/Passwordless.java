@@ -13,15 +13,18 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESEND_NOT_ALLOWE
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RETRIES_EXHAUSTED;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 
+import com.dreamsportslabs.guardian.cache.DefaultClientScopesCache;
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.Channel;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.dao.PasswordlessDao;
 import com.dreamsportslabs.guardian.dao.model.PasswordlessModel;
 import com.dreamsportslabs.guardian.dto.UserDto;
-import com.dreamsportslabs.guardian.dto.request.V1PasswordlessCompleteRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1PasswordlessInitRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1PasswordlessCompleteRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1PasswordlessInitRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2PasswordlessInitRequestDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.OtpUtils;
 import com.google.inject.Inject;
@@ -46,9 +49,35 @@ public class Passwordless {
   private final AuthorizationService authorizationService;
   private final Registry registry;
   private final UserFlowBlockService userFlowBlockService;
+  private final ClientService clientService;
+  private final DefaultClientScopesCache defaultClientScopesCache;
+
+  public Single<PasswordlessModel> initV1(
+      V1PasswordlessInitRequestDto requestDto,
+      MultivaluedMap<String, String> headers,
+      String tenantId) {
+    return defaultClientScopesCache
+        .getDefaultClientScopes(tenantId)
+        .map(
+            pair -> {
+              V2PasswordlessInitRequestDto v2PasswordlessInitRequestDto =
+                  new V2PasswordlessInitRequestDto();
+              v2PasswordlessInitRequestDto.setClientId(pair.getLeft());
+              v2PasswordlessInitRequestDto.setScopes(pair.getRight());
+              v2PasswordlessInitRequestDto.setMetaInfo(requestDto.getMetaInfo());
+              v2PasswordlessInitRequestDto.setAdditionalInfo(requestDto.getAdditionalInfo());
+              v2PasswordlessInitRequestDto.setFlow(requestDto.getFlow());
+              v2PasswordlessInitRequestDto.setContacts(requestDto.getContacts());
+              v2PasswordlessInitRequestDto.setState(requestDto.getState());
+              v2PasswordlessInitRequestDto.setResponseType(requestDto.getResponseType());
+              return v2PasswordlessInitRequestDto;
+            })
+        .flatMap(
+            v2PasswordlessInitRequestDto -> init(v2PasswordlessInitRequestDto, headers, tenantId));
+  }
 
   public Single<PasswordlessModel> init(
-      V1PasswordlessInitRequestDto requestDto,
+      V2PasswordlessInitRequestDto requestDto,
       MultivaluedMap<String, String> headers,
       String tenantId) {
     String state = requestDto.getState();
@@ -61,7 +90,9 @@ public class Passwordless {
       passwordlessModel = this.createPasswordlessModel(requestDto, headers, tenantId);
     }
 
-    return passwordlessModel
+    return clientService
+        .validateFirstPartyClient(requestDto.getClientId(), tenantId, requestDto.getScopes())
+        .andThen(passwordlessModel)
         .flatMap(
             model ->
                 userFlowBlockService
@@ -94,7 +125,7 @@ public class Passwordless {
         .flatMap(model -> passwordlessDao.setPasswordlessModel(model, tenantId));
   }
 
-  private void updateDefaultTemplate(V1PasswordlessInitRequestDto requestDto, String tenantId) {
+  private void updateDefaultTemplate(V2PasswordlessInitRequestDto requestDto, String tenantId) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     for (Contact contact : requestDto.getContacts()) {
       OtpUtils.updateContactTemplate(
@@ -117,7 +148,7 @@ public class Passwordless {
   }
 
   private Single<PasswordlessModel> createPasswordlessModel(
-      V1PasswordlessInitRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+      V2PasswordlessInitRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     Map<String, String> userFilters = new HashMap<>();
     for (Contact contact : dto.getContacts()) {
       if (contact.getChannel() == Channel.EMAIL) {
@@ -152,6 +183,8 @@ public class Passwordless {
                   .metaInfo(dto.getMetaInfo())
                   .additionalInfo(dto.getAdditionalInfo())
                   .expiry(getCurrentTimeInSeconds() + config.getOtpValidity())
+                  .scopes(dto.getScopes())
+                  .clientId(dto.getClientId())
                   .build();
             });
   }
@@ -195,6 +228,7 @@ public class Passwordless {
                 builder.phoneNumber(contact.getIdentifier());
               }
               builder.additionalInfo(model.getAdditionalInfo());
+              builder.clientId(model.getClientId());
 
               MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
               model.getHeaders().forEach(headers::add);
@@ -212,7 +246,10 @@ public class Passwordless {
                 authorizationService.generate(
                     new JsonObject(model.getUser()),
                     model.getResponseType(),
+                    String.join(" ", model.getScopes()),
+                    List.of(AuthMethod.ONE_TIME_PASSWORD),
                     model.getMetaInfo(),
+                    model.getClientId(),
                     tenantId))
         .doOnSuccess(res -> passwordlessDao.deletePasswordlessModel(dto.getState(), tenantId));
   }

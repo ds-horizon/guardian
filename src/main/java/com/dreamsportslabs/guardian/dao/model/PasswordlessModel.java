@@ -22,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Jacksonized
 public class PasswordlessModel {
+  private String clientId;
+  private List<String> scopes;
   private String state;
   private String otp;
   @Builder.Default private Boolean isOtpMocked = false;
@@ -45,6 +47,8 @@ public class PasswordlessModel {
   private Map<String, Object> additionalInfo;
 
   PasswordlessModel(
+      String clientId,
+      List<String> scopes,
       String state,
       String otp,
       Boolean isOtpMocked,
@@ -70,6 +74,8 @@ public class PasswordlessModel {
     if (flow.equals(Flow.SIGNIN) && user.get(USERID) == null) {
       throw USER_NOT_EXISTS.getException();
     }
+    this.clientId = clientId;
+    this.scopes = scopes;
     this.state = state;
     this.otp = otp;
     this.isOtpMocked = isOtpMocked;

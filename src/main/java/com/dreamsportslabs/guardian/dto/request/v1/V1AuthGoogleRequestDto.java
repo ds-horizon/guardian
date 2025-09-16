@@ -1,9 +1,10 @@
-package com.dreamsportslabs.guardian.dto.request;
+package com.dreamsportslabs.guardian.dto.request.v1;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
-import com.dreamsportslabs.guardian.constant.Constants;
 import com.dreamsportslabs.guardian.constant.Flow;
+import com.dreamsportslabs.guardian.constant.ResponseType;
+import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -12,16 +13,16 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
 @Setter
-public class V1AuthFbRequestDto {
-  private String accessToken;
-  private String responseType;
+@Getter
+public class V1AuthGoogleRequestDto {
+  private String idToken;
+  private ResponseType responseType;
   private Flow flow;
   private MetaInfo metaInfo;
   @JsonIgnore private Map<String, Object> additionalInfo;
 
-  public V1AuthFbRequestDto() {
+  public V1AuthGoogleRequestDto() {
     this.flow = Flow.SIGNINUP;
     this.metaInfo = new MetaInfo();
     this.additionalInfo = new HashMap<>();
@@ -38,16 +39,12 @@ public class V1AuthFbRequestDto {
   }
 
   public void validate() {
-    if (responseType == null) {
+    if (this.responseType == null) {
       throw INVALID_REQUEST.getCustomException("Invalid response type");
     }
 
-    if (accessToken == null) {
-      throw INVALID_REQUEST.getCustomException("Invalid access token");
-    }
-
-    if (!Constants.fbAuthResponseTypes.contains(responseType)) {
-      throw INVALID_REQUEST.getCustomException("Invalid response type");
+    if (idToken == null) {
+      throw INVALID_REQUEST.getCustomException("Invalid id token");
     }
   }
 }

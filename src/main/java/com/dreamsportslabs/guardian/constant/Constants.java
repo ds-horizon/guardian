@@ -104,6 +104,7 @@ public final class Constants {
   public static final String JWT_TENANT_ID_CLAIM = "tid";
 
   public static final ImmutableList<String> fbAuthResponseTypes = ImmutableList.of(CODE, TOKEN);
+  public static final ImmutableList<String> googleAuthResponseTypes = ImmutableList.of(CODE, TOKEN);
   public static final ImmutableList<String> passwordlessAuthResponseTypes =
       ImmutableList.of(CODE, TOKEN);
   public static final ImmutableList<String> registerResponseTypes = ImmutableList.of(CODE, TOKEN);

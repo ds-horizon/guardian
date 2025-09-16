@@ -83,7 +83,6 @@ import static com.dreamsportslabs.guardian.Constants.TEST_CODE_VERIFIER_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_DEVICE_NAME;
 import static com.dreamsportslabs.guardian.Constants.TEST_IP_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER;
-import static com.dreamsportslabs.guardian.Constants.TEST_ISSUER_URL;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID_2;
 import static com.dreamsportslabs.guardian.Constants.TEST_USER_ID_3;
@@ -1820,7 +1819,7 @@ public class OidcTokenIT {
 
     // Standard claims should still be present
     assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
-    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1911,7 +1910,7 @@ public class OidcTokenIT {
 
     // Standard claims should still be present
     assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
-    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -1987,7 +1986,7 @@ public class OidcTokenIT {
 
     // Standard claims should still be present
     assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
-    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER));
 
     wireMockServer.removeStub(stubMapping);
   }
@@ -2064,7 +2063,7 @@ public class OidcTokenIT {
 
     // Standard claims should still be present
     assertThat(claims.get(JWT_CLAIM_SUB), equalTo(MOCK_USER_ID));
-    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER_URL));
+    assertThat(claims.get(JWT_CLAIM_ISS), equalTo(TEST_ISSUER));
 
     wireMockServer.removeStub(stubMapping);
   }

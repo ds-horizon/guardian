@@ -1,4 +1,4 @@
-package com.dreamsportslabs.guardian.dto.request;
+package com.dreamsportslabs.guardian.dto.request.v1;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
@@ -6,6 +6,7 @@ import com.dreamsportslabs.guardian.constant.Channel;
 import com.dreamsportslabs.guardian.constant.Constants;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.constant.Flow;
+import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;

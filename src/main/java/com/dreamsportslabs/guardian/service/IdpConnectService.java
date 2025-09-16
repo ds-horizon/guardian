@@ -34,6 +34,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
 import com.dreamsportslabs.guardian.config.tenant.OidcProviderConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.ClientAuthMethod;
 import com.dreamsportslabs.guardian.constant.Flow;
@@ -125,7 +126,10 @@ public class IdpConnectService {
                               .generate(
                                   userJson,
                                   requestDto.getIdpResponseType().getResponseType(),
+                                  "",
+                                  List.of(AuthMethod.THIRD_PARTY_OIDC),
                                   requestDto.getMetaInfo(),
+                                  null,
                                   tenantId)
                               .map(
                                   responseDto -> {

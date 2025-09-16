@@ -13,7 +13,7 @@ public final class ClientScopeQuery {
 
   public static final String GET_CLIENT_SCOPES =
       """
-      SELECT tenant_id, scope, client_id
+      SELECT tenant_id, scope, client_id, is_default
       FROM client_scope
       WHERE tenant_id = ? AND client_id = ?
       ORDER BY created_at ASC

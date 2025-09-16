@@ -17,4 +17,6 @@ public class OidcRefreshTokenModel {
   private List<String> scope;
   private String deviceName;
   private String ip;
+  private String location;
+  private String source;
 }
