@@ -3,14 +3,10 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_AMR;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_CLIENT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_JTI;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
@@ -30,10 +26,11 @@ import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.TokenConfig;
 import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.dao.CodeDao;
+import com.dreamsportslabs.guardian.dao.OidcRefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RevocationDao;
 import com.dreamsportslabs.guardian.dao.model.CodeModel;
-import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
+import com.dreamsportslabs.guardian.dao.model.OidcRefreshTokenModel;
 import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
@@ -65,6 +62,7 @@ public class AuthorizationService {
   private final TokenIssuer tokenIssuer;
 
   private final RefreshTokenDao refreshTokenDao;
+  private final OidcRefreshTokenDao oidcRefreshTokenDao;
   private final CodeDao codeDao;
   private final RevocationDao revocationDao;
   private final UserService userService;
@@ -113,14 +111,10 @@ public class AuthorizationService {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     String refreshToken = tokenIssuer.generateRefreshToken();
     long iat = getCurrentTimeInSeconds();
-    Map<String, Object> commonTokenClaims =
-        getCommonTokenClaims(user.getString(USERID), iat, config);
-    Map<String, Object> idTokenClaims = new HashMap<>(commonTokenClaims);
-    idTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getIdTokenExpiry());
     return Single.zip(
             tokenIssuer.generateAccessToken(
                 refreshToken, iat, scopes, user, authMethods, clientId, tenantId, config),
-            tokenIssuer.generateIdToken(idTokenClaims, user, config.getTenantId()),
+            tokenIssuer.generateIdToken(iat, null, user, clientId, config.getTenantId()),
             (accessToken, idToken) ->
                 new TokenResponseDto(
                     accessToken,
@@ -131,15 +125,22 @@ public class AuthorizationService {
                     user.getBoolean(IS_NEW_USER, false)))
         .flatMap(
             dto ->
-                refreshTokenDao
-                    .saveRefreshToken(getRefreshTokenDto(refreshToken, user, iat, metaInfo, config))
+                oidcRefreshTokenDao
+                    .saveOidcRefreshToken(
+                        getRefreshTokenDto(refreshToken, user, iat, metaInfo, clientId, config))
                     .andThen(Single.just(dto)));
   }
 
-  private RefreshTokenModel getRefreshTokenDto(
-      String refreshToken, JsonObject user, Long iat, MetaInfo metaInfo, TenantConfig config) {
-    return RefreshTokenModel.builder()
+  private OidcRefreshTokenModel getRefreshTokenDto(
+      String refreshToken,
+      JsonObject user,
+      Long iat,
+      MetaInfo metaInfo,
+      String clientId,
+      TenantConfig config) {
+    return OidcRefreshTokenModel.builder()
         .tenantId(config.getTenantId())
+        .clientId(clientId)
         .userId(user.getString(USERID))
         .refreshToken(refreshToken)
         .refreshTokenExp(iat + config.getTokenConfig().getRefreshTokenExpiry())
@@ -348,24 +349,5 @@ public class AuthorizationService {
     commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
     commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
     return commonTokenClaims;
-  }
-
-  private Map<String, Object> getGuestTokenClaims(
-      String guestIdentifier, String tenantId, String scope, String clientId) {
-    Map<String, Object> guestTokenClaims = new HashMap<>();
-    Long iat = getCurrentTimeInSeconds();
-    TenantConfig config = registry.get(tenantId, TenantConfig.class);
-
-    guestTokenClaims.put(JWT_CLAIMS_SUB, guestIdentifier);
-    guestTokenClaims.put(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
-    guestTokenClaims.put(JWT_CLAIMS_IAT, iat);
-    guestTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
-    guestTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
-    guestTokenClaims.put(JWT_TENANT_ID_CLAIM, tenantId);
-    guestTokenClaims.put(JWT_CLAIMS_SCOPE, scope);
-    guestTokenClaims.put(JWT_CLAIMS_AMR, Collections.emptyList());
-    guestTokenClaims.put(JWT_CLAIMS_CLIENT_ID, clientId);
-
-    return guestTokenClaims;
   }
 }

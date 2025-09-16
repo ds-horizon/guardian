@@ -351,10 +351,11 @@ public class OidcTokenService {
                     tokenIssuer.generateAccessToken(
                         accessTokenClaimsWithAdditionalInfo, generateOidcTokenDto.getTenantId()),
                     tokenIssuer.generateIdToken(
-                        idTokenClaims,
+                        generateOidcTokenDto.getIat(),
+                        generateOidcTokenDto.getNonce(),
                         generateOidcTokenDto.getUserResponse(),
-                        generateOidcTokenDto.getTenantId(),
-                        claims),
+                        generateOidcTokenDto.getClientId(),
+                        generateOidcTokenDto.getTenantId()),
                     (accessToken, idToken) ->
                         buildTokenResponse(
                             accessToken,
