@@ -12,6 +12,7 @@ public enum ErrorEnum {
   INVALID_REQUEST("invalid_request", "Invalid request params", 400),
   UNAUTHORIZED(UNAUTHORIZED_ERROR_CODE, "Unauthorized", 401),
   INTERNAL_SERVER_ERROR("internal_server_error", "Something went wrong", 500),
+  USER_SERVICE_ERROR_400("user_service_error", "User service error", 400),
   USER_SERVICE_ERROR("user_service_error", "User service error", 500),
   SMS_SERVICE_ERROR("sms_service_error", "SMS service error", 500),
   EMAIL_SERVICE_ERROR("email_service_error", "Email service error", 500),
@@ -102,15 +103,6 @@ public enum ErrorEnum {
     return new WebApplicationException(response);
   }
 
-  public WebApplicationException getCustomException(int statusCode, Map<String, Object> data) {
-    Response response =
-        Response.status(statusCode)
-            .header("Content-Type", "application/json")
-            .entity(new ErrorEntity(this.code, this.message, data))
-            .build();
-    return new WebApplicationException(response);
-  }
-
   public WebApplicationException getCustomException(String message, Map<String, Object> data) {
     message = message == null ? this.message : message;
 
@@ -149,6 +141,7 @@ public enum ErrorEnum {
       final String code;
       final String message;
       final Map<String, Object> metadata;
+      final Map<String, Object> meta_data;
 
       Error(String code, String message) {
         this(code, message, null);
@@ -158,6 +151,7 @@ public enum ErrorEnum {
         this.code = code;
         this.message = message;
         this.metadata = metadata;
+        this.meta_data = metadata;
       }
     }
   }

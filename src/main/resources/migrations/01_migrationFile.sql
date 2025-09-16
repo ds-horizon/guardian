@@ -348,9 +348,11 @@ CREATE TABLE client
     policy_uri     VARCHAR(2083),
     redirect_uris  JSON         NOT NULL,
     response_types JSON         NOT NULL,
-    skip_consent   BOOLEAN   DEFAULT FALSE,
-    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    skip_consent   BOOLEAN               DEFAULT FALSE,
+    client_type    CHAR(11)     NOT NULL DEFAULT "first_party",
+    is_default     BOOLEAN      NOT NULL DEFAULT FALSE,
+    updated_at     TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at     TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (tenant_id, client_id),
     UNIQUE KEY unique_tenant_client_name (tenant_id, client_name)
 ) ENGINE=InnoDB
@@ -364,8 +366,9 @@ CREATE TABLE client_scope
     tenant_id  CHAR(10)     NOT NULL,
     scope      VARCHAR(100) NOT NULL,
     client_id  VARCHAR(100) NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_default BOOLEAN      NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY unique_tenant_client_scope (tenant_id, client_id, scope),
     FOREIGN KEY (tenant_id, client_id) REFERENCES client (tenant_id, client_id) ON DELETE CASCADE,
@@ -415,6 +418,7 @@ CREATE TABLE oidc_refresh_token
     PRIMARY KEY (id),
     KEY               `idx_oidc_refresh_token` (`tenant_id`, `client_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
     KEY               `idx_oidc_refresh_token_user` (`tenant_id`, `user_id`),
+    KEY               `idx_oidc_refresh_token_no_client` (`tenant_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
     CONSTRAINT `fk_oidc_refresh_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_oidc_refresh_token_client` FOREIGN KEY (`tenant_id`, `client_id`) REFERENCES `client` (`tenant_id`, `client_id`) ON DELETE CASCADE
 ) ENGINE = InnoDB

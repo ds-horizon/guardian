@@ -5,6 +5,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.PROVIDER;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_SERVICE_ERROR;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_SERVICE_ERROR_400;
 
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.UserConfig;
@@ -51,7 +52,7 @@ public class UserService {
                 resBody.put(IS_NEW_USER, resBody.getString(USERID) == null);
                 return resBody;
               } else if (res.statusCode() / 100 == 4) {
-                throw USER_SERVICE_ERROR.getCustomException(400, resBody.getMap());
+                throw USER_SERVICE_ERROR_400.getCustomException(resBody.getMap());
               } else {
                 throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
               }

@@ -53,7 +53,7 @@ public class GuestLoginService {
     return validateClientScopes(requestDto.getClientId(), tenantId, scopes)
         .andThen(
             authorizationService.generateGuestAccessToken(
-                guestIdentifier, tenantId, scope, requestDto.getClientId()))
+                guestIdentifier, scope, config, requestDto.getClientId(), tenantId))
         .map(
             accessToken ->
                 GuestLoginResponseDto.builder()

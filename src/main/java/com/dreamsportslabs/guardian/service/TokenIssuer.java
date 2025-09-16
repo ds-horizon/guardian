@@ -1,11 +1,27 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_AMR;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_AUD;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_CLIENT_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_JTI;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_NONCE;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_HEADERS_KID;
 import static com.dreamsportslabs.guardian.constant.Constants.JWT_HEADERS_TYP;
+import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.TYP_JWT_ACCESS_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
+import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
+import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
 
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.fusionauth.jwt.JWTEncoder;
@@ -29,17 +45,22 @@ public class TokenIssuer {
   private final Registry registry;
 
   public Single<String> generateIdToken(
-      Map<String, Object> claims, JsonObject user, String tenantId) {
+      long iat,
+      String nonce,
+      JsonObject user,
+      List<String> idTokenClaims,
+      String clientId,
+      String tenantId) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
-    return generateIdToken(
-        claims, user, tenantId, tenantConfig.getTokenConfig().getIdTokenClaims());
-  }
-
-  public Single<String> generateIdToken(
-      Map<String, Object> claims, JsonObject user, String tenantId, List<String> idTokenClaims) {
     JWT jwt = new JWT();
-    for (Map.Entry<String, Object> claim : claims.entrySet()) {
-      jwt.addClaim(claim.getKey(), claim.getValue());
+
+    jwt.addClaim(JWT_CLAIMS_AUD, clientId);
+    jwt.addClaim(JWT_CLAIMS_EXP, iat + tenantConfig.getTokenConfig().getIdTokenExpiry());
+    jwt.addClaim(JWT_CLAIMS_SUB, user.getString(USERID));
+    jwt.addClaim(JWT_CLAIMS_IAT, iat);
+    jwt.addClaim(JWT_CLAIMS_ISS, tenantConfig.getTokenConfig().getIssuer());
+    if (nonce != null) {
+      jwt.addClaim(JWT_CLAIMS_NONCE, nonce);
     }
     for (String claim : idTokenClaims) {
       Object value = user.getValue(claim);
@@ -54,6 +75,39 @@ public class TokenIssuer {
     JWT jwt = new JWT();
     for (Map.Entry<String, Object> claim : claims.entrySet()) {
       jwt.addClaim(claim.getKey(), claim.getValue());
+    }
+
+    Map<String, String> tokenHeaders = new HashMap<>();
+    tokenHeaders.put(JWT_HEADERS_TYP, TYP_JWT_ACCESS_TOKEN);
+    return signToken(jwt, tenantId, tokenHeaders);
+  }
+
+  public Single<String> generateAccessToken(
+      String refreshToken,
+      long iat,
+      String scope,
+      JsonObject userResponse,
+      List<AuthMethod> authMethods,
+      String clientId,
+      String tenantId,
+      TenantConfig config) {
+    JWT jwt = new JWT();
+    jwt.addClaim(JWT_TENANT_ID_CLAIM, tenantId);
+    jwt.addClaim(JWT_CLAIMS_AUD, clientId);
+    jwt.addClaim(JWT_CLAIMS_SUB, userResponse.getString(USERID));
+    jwt.addClaim(JWT_CLAIMS_IAT, iat);
+    jwt.addClaim(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
+    jwt.addClaim(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
+    jwt.addClaim(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
+    jwt.addClaim(JWT_CLAIMS_CLIENT_ID, clientId);
+    jwt.addClaim(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
+    jwt.addClaim(JWT_CLAIMS_SCOPE, scope);
+    jwt.addClaim(JWT_CLAIMS_AMR, authMethods.stream().map(AuthMethod::getValue).toList());
+    if (shouldSetAccessTokenAdditionalClaims(config)) {
+      config.getTokenConfig().getAccessTokenClaims().stream()
+          .filter(userResponse::containsKey)
+          .toList()
+          .forEach(claim -> jwt.addClaim(claim, userResponse.getValue(claim)));
     }
 
     Map<String, String> tokenHeaders = new HashMap<>();

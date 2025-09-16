@@ -2,6 +2,9 @@ package com.dreamsportslabs.guardian.it.userBlockFlow;
 
 import static com.dreamsportslabs.guardian.Constants.*;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.*;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addDefaultClientScopes;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addFirstPartyClient;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addScope;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
@@ -17,14 +20,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 
+@Order(1)
 public class UserBlockFlowsIT {
 
   private static final String TENANT_ID = "tenant1";
+  private static final String TEST_SCOPE_1 = "testScope1";
   private static final String EMAIL_CONTACT =
       randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
   private static final String PASSWORD = "password@123";
@@ -34,6 +41,13 @@ public class UserBlockFlowsIT {
   private static final String PASSWORD_FLOW = "password";
   private static final Long UNBLOCKED_AT = Instant.now().plusSeconds(3600).toEpochMilli() / 1000;
   private WireMockServer wireMockServer;
+
+  @BeforeAll
+  static void setup() {
+    addScope(TENANT_ID, TEST_SCOPE_1);
+    String client1 = addFirstPartyClient(TENANT_ID);
+    addDefaultClientScopes(TENANT_ID, client1, TEST_SCOPE_1);
+  }
 
   private Map<String, Object> generateBlockRequestBody(
       String userIdentifier, String[] blockFlows, String reason, Long unblockedAt) {

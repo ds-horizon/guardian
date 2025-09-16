@@ -1,12 +1,13 @@
-package com.dreamsportslabs.guardian.rest;
+package com.dreamsportslabs.guardian.rest.v2;
 
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
-import com.dreamsportslabs.guardian.dto.request.v1.V1PasswordlessInitRequestDto;
-import com.dreamsportslabs.guardian.dto.response.V1PasswordlessInitResponseDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2PasswordlessInitRequestDto;
+import com.dreamsportslabs.guardian.dto.response.v2.V2PasswordlessInitResponseDto;
 import com.dreamsportslabs.guardian.service.Passwordless;
 import com.google.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -21,22 +22,22 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-@Path("/v1/passwordless/init")
-public class PasswordlessInit {
+@Path("/v2/passwordless/init")
+public class V2PasswordlessInit {
   private final Passwordless passwordless;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> init(
-      @Context HttpHeaders headers, V1PasswordlessInitRequestDto requestDto) {
-    requestDto.validate();
+      @Context HttpHeaders headers, @Valid V2PasswordlessInitRequestDto requestDto) {
+
     return passwordless
-        .initV1(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
+        .init(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
         .map(
             model ->
                 Response.ok(
-                        V1PasswordlessInitResponseDto.builder()
+                        V2PasswordlessInitResponseDto.builder()
                             .tries(model.getTries())
                             .retriesLeft(model.getMaxTries() - model.getTries())
                             .resends(model.getResends())

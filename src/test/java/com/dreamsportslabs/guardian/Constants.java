@@ -508,7 +508,7 @@ public class Constants {
   public static final String JWT_ALGORITHM_RS256 = "RS256";
   public static final String JWT_TYPE_ACCESS_TOKEN = "at+jwt";
   public static final String TEST_KID = "test-kid";
-  public static final String TEST_ISSUER = "https://auth.example.com";
+  public static final String TEST_ISSUER = "https://test.com";
   public static final String TEST_PUBLIC_KEY_PATH =
       "src/test/resources/test-data/tenant1-public-key.pem";
 

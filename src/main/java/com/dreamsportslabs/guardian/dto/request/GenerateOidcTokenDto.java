@@ -2,7 +2,10 @@ package com.dreamsportslabs.guardian.dto.request;
 
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import io.vertx.core.json.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
@@ -19,5 +22,6 @@ public class GenerateOidcTokenDto {
   private JsonObject userResponse;
   @Builder.Default private long iat = getCurrentTimeInSeconds();
   private String deviceName;
+  @Builder.Default private List<AuthMethod> authMethods = new ArrayList<>();
   private String ip;
 }

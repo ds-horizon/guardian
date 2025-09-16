@@ -13,6 +13,9 @@ import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_TOTAL_C
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.blockUserFlows;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.getBlockedFlows;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.unblockUserFlows;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addDefaultClientScopes;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addFirstPartyClient;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addScope;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -25,12 +28,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
+@Order(2)
 public class UserGetBlockedFlowsIT {
 
   private static final String TENANT_ID = "tenant1";
+  private static final String TEST_SCOPE_1 = "testScope1";
   private static final String EMAIL_CONTACT =
       randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
   private static final String PASSWORDLESS = "passwordless";
@@ -46,6 +53,16 @@ public class UserGetBlockedFlowsIT {
     requestBody.put(BODY_PARAM_UNBLOCKED_AT, unblockedAt);
 
     return requestBody;
+  }
+
+  @BeforeAll
+  static void setup() {
+
+    addScope(TENANT_ID, TEST_SCOPE_1);
+
+    String client1 = addFirstPartyClient(TENANT_ID);
+
+    addDefaultClientScopes(TENANT_ID, client1, TEST_SCOPE_1);
   }
 
   @Test
