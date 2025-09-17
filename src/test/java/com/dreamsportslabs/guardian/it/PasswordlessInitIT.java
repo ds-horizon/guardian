@@ -53,6 +53,9 @@ import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_RETRIES
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_TRIES;
 import static com.dreamsportslabs.guardian.utils.ApplicationIoUtils.passwordlessInit;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addDefaultClientScopes;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addFirstPartyClient;
+import static com.dreamsportslabs.guardian.utils.DbUtils.addScope;
 import static com.dreamsportslabs.guardian.utils.DbUtils.createState;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -81,13 +84,31 @@ import java.util.Map;
 import java.util.Random;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.core.CombinableMatcher;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
+@Order(4)
 public class PasswordlessInitIT {
   public static String tenant1 = "tenant1"; // OTP is mocked for this tenant
   public static String tenant2 = "tenant2"; // OTP is not mocked for this tenant
+  private static final String TEST_SCOPE_1 = "scope1";
+  private static final String TEST_SCOPE_2 = "scope2";
   private WireMockServer wireMockServer;
+
+  @BeforeAll
+  static void setup() {
+
+    addScope(tenant1, TEST_SCOPE_1);
+    addScope(tenant2, TEST_SCOPE_2);
+
+    String client1 = addFirstPartyClient(tenant1);
+    String client2 = addFirstPartyClient(tenant2);
+
+    addDefaultClientScopes(tenant1, client1, TEST_SCOPE_1);
+    addDefaultClientScopes(tenant2, client2, TEST_SCOPE_2);
+  }
 
   @Test
   @DisplayName("Should return error when phone number is not provided")

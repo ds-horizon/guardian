@@ -416,6 +416,23 @@ public class DbUtils {
     }
   }
 
+  public static String addFirstPartyClient(String tenantId) {
+    String clientId = RandomStringUtils.randomAlphanumeric(10);
+    String addClient =
+        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, skip_consent, client_type, is_default) VALUES (?,?,'Test Client App','s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),TRUE,'first_party',TRUE);";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(addClient)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.setString(2, clientId);
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up scopes", e);
+    }
+    return clientId;
+  }
+
   // Client-Scope relationship utilities
   public static void cleanupClientScopes(String tenantId) {
     String deleteQuery = "DELETE FROM client_scope WHERE tenant_id = ?";
@@ -426,6 +443,22 @@ public class DbUtils {
       stmt.executeUpdate();
     } catch (Exception e) {
       log.error("Error while cleaning up client scopes", e);
+    }
+  }
+
+  public static void addDefaultClientScopes(String tenantId, String clientId, String scope) {
+    String addClientScope =
+        "insert into client_scope (tenant_id, client_id, scope, is_default) values (?, ?, ?, TRUE);";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(addClientScope)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.setString(2, clientId);
+      stmt1.setString(3, scope);
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while adding client scopes", e);
     }
   }
 

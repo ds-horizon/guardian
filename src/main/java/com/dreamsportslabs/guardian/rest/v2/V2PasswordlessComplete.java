@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Path("/v1/passwordless/complete")
+@Path("/v2/passwordless/complete")
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
 public class V2PasswordlessComplete {
