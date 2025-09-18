@@ -3,10 +3,12 @@ package com.dreamsportslabs.guardian.dao;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.GET_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.REVOKE_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.SAVE_OIDC_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.SAVE_SSO_TOKEN;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INTERNAL_SERVER_ERROR;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
 import com.dreamsportslabs.guardian.dao.model.OidcRefreshTokenModel;
+import com.dreamsportslabs.guardian.dao.model.SsoTokenModel;
 import com.dreamsportslabs.guardian.utils.JsonUtils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
@@ -23,21 +25,43 @@ public class OidcRefreshTokenDao {
   private final MysqlClient mysqlClient;
 
   public Completable saveOidcRefreshToken(OidcRefreshTokenModel refreshTokenModel) {
-    Tuple params = Tuple.tuple();
-    params.addString(refreshTokenModel.getTenantId());
-    params.addString(refreshTokenModel.getClientId());
-    params.addString(refreshTokenModel.getUserId());
-    params.addString(refreshTokenModel.getRefreshToken());
-    params.addLong(refreshTokenModel.getRefreshTokenExp());
-    params.addJsonArray(new JsonArray(refreshTokenModel.getScope()));
-    params.addString(refreshTokenModel.getDeviceName());
-    params.addString(refreshTokenModel.getIp());
+    return saveOidcRefreshToken(refreshTokenModel, null);
+  }
+
+  public Completable saveOidcRefreshToken(
+      OidcRefreshTokenModel refreshTokenModel, SsoTokenModel ssoTokenModel) {
+    Tuple refreshTokenParams = Tuple.tuple();
+    refreshTokenParams.addString(refreshTokenModel.getTenantId());
+    refreshTokenParams.addString(refreshTokenModel.getClientId());
+    refreshTokenParams.addString(refreshTokenModel.getUserId());
+    refreshTokenParams.addString(refreshTokenModel.getRefreshToken());
+    refreshTokenParams.addLong(refreshTokenModel.getRefreshTokenExp());
+    refreshTokenParams.addJsonArray(new JsonArray(refreshTokenModel.getScope()));
+    refreshTokenParams.addString(refreshTokenModel.getDeviceName());
+    refreshTokenParams.addString(refreshTokenModel.getIp());
+
+    Tuple ssoTokenParams = Tuple.tuple();
+    if (ssoTokenModel != null) {
+      ssoTokenParams.addString(ssoTokenModel.getTenantId());
+      ssoTokenParams.addString(ssoTokenModel.getClientIdIssuedTo());
+      ssoTokenParams.addString(ssoTokenModel.getUserId());
+      ssoTokenParams.addString(ssoTokenModel.getRefreshToken());
+      ssoTokenParams.addString(ssoTokenModel.getSsoToken());
+      ssoTokenParams.addLong(ssoTokenModel.getExpiry());
+    }
 
     return mysqlClient
         .getWriterPool()
-        .preparedQuery(SAVE_OIDC_REFRESH_TOKEN)
-        .rxExecute(params)
-        .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException()))
+        .rxWithTransaction(
+            client ->
+                client
+                    .preparedQuery(SAVE_OIDC_REFRESH_TOKEN)
+                    .rxExecute(refreshTokenParams)
+                    .filter(rows -> ssoTokenModel != null)
+                    .flatMapSingle(
+                        resp -> client.preparedQuery(SAVE_SSO_TOKEN).rxExecute(ssoTokenParams)))
+        .doOnSuccess(v -> log.info("Token saved successfully"))
+        .doOnError(err -> log.error("Error saving refreshToken or ssoToken"))
         .ignoreElement();
   }
 
