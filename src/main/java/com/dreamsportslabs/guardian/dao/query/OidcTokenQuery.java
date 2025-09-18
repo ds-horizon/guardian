@@ -25,4 +25,7 @@ public class OidcTokenQuery {
         SET is_active = false
         WHERE tenant_id = ? AND client_id = ? AND refresh_token = ?;
       """;
+
+  public static final String VALIDATE_OIDC_REFRESH_TOKEN =
+      "SELECT user_id FROM oidc_refresh_token WHERE tenant_id = ? AND refresh_token = ? AND is_active = 1 AND refresh_token_exp > UNIX_TIMESTAMP()";
 }

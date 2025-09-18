@@ -1,9 +1,9 @@
-package com.dreamsportslabs.guardian.rest;
+package com.dreamsportslabs.guardian.rest.v2;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
 
-import com.dreamsportslabs.guardian.dto.request.v1.V1RefreshTokenRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.exception.ErrorEnum.ErrorEntity;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.google.inject.Inject;
@@ -20,19 +20,19 @@ import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-@Path("/v1/refreshToken")
-public class RefreshToken {
+@Path("/v2/refresh/token")
+public class V2RefreshToken {
   private final AuthorizationService authorizationService;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> refreshTokens(
-      @Context HttpHeaders headers, V1RefreshTokenRequestDto requestDto) {
+      @Context HttpHeaders headers, V2RefreshTokenRequestDto requestDto) {
     String tenantId = headers.getHeaderString(TENANT_ID);
     requestDto.validate();
     return authorizationService
-        .v1RefreshTokens(requestDto, headers.getRequestHeaders(), tenantId)
+        .refreshTokens(requestDto, headers.getRequestHeaders(), tenantId)
         .map(
             resp ->
                 Response.ok(resp)

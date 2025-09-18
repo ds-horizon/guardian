@@ -34,7 +34,8 @@ import com.dreamsportslabs.guardian.dao.model.OidcRefreshTokenModel;
 import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1RefreshTokenRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1RefreshTokenRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
 import com.dreamsportslabs.guardian.dto.response.RefreshTokenResponseDto;
@@ -66,6 +67,7 @@ public class AuthorizationService {
   private final CodeDao codeDao;
   private final RevocationDao revocationDao;
   private final UserService userService;
+  private final ClientService clientService;
 
   public Single<Object> generate(
       JsonObject user,
@@ -174,11 +176,48 @@ public class AuthorizationService {
         config);
   }
 
-  public Single<RefreshTokenResponseDto> refreshTokens(
+  public Single<RefreshTokenResponseDto> v1RefreshTokens(
       V1RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     return refreshTokenDao
         .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .flatMap(
+            userId -> {
+              if (shouldSetAccessTokenAdditionalClaims(config)) {
+                return userService
+                    .getUser(Map.of(USERID, userId), headers, tenantId)
+                    .map(
+                        userResp ->
+                            getAccessTokenClaims(
+                                userResp,
+                                getCurrentTimeInSeconds(),
+                                config,
+                                dto.getRefreshToken()));
+              } else {
+                return Single.just(
+                    getAccessTokenClaims(
+                        new JsonObject(Map.of(USERID, userId)),
+                        getCurrentTimeInSeconds(),
+                        config,
+                        dto.getRefreshToken()));
+              }
+            })
+        .flatMap(
+            accessTokenClaims ->
+                tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()))
+        .map(
+            accessToken ->
+                new RefreshTokenResponseDto(
+                    accessToken, TOKEN_TYPE, config.getTokenConfig().getAccessTokenExpiry()));
+  }
+
+  public Single<RefreshTokenResponseDto> refreshTokens(
+      V2RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    TenantConfig config = registry.get(tenantId, TenantConfig.class);
+    return clientService
+        .validateFirstPartyClient(dto.getClientId(), tenantId, dto.getScopes())
+        .andThen(oidcRefreshTokenDao.getUserIdFromOidcRefreshToken(dto.getRefreshToken(), tenantId))
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
             userId -> {

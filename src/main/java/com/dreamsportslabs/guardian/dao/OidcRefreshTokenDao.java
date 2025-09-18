@@ -3,6 +3,7 @@ package com.dreamsportslabs.guardian.dao;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.GET_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.REVOKE_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.SAVE_OIDC_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.VALIDATE_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INTERNAL_SERVER_ERROR;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
@@ -59,6 +60,15 @@ public class OidcRefreshTokenDao {
         .filter(result -> result.size() > 0)
         .switchIfEmpty(Maybe.empty())
         .map(result -> JsonUtils.rowSetToList(result, OidcRefreshTokenModel.class).get(0));
+  }
+
+  public Maybe<String> getUserIdFromOidcRefreshToken(String refreshToken, String tenantId) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(VALIDATE_OIDC_REFRESH_TOKEN)
+        .rxExecute(Tuple.of(tenantId, refreshToken))
+        .filter(rowSet -> rowSet.size() > 0)
+        .map(rowSet -> JsonUtils.rowSetToList(rowSet, String.class).get(0));
   }
 
   public Single<Boolean> revokeOidcRefreshToken(

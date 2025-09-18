@@ -1,4 +1,4 @@
-package com.dreamsportslabs.guardian.dto.request;
+package com.dreamsportslabs.guardian.dto.request.v1;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 
