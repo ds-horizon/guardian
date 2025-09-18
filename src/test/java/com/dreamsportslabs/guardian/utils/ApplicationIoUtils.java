@@ -1,6 +1,8 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ACCESS_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ADDITIONAL_INFO;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONTACTS;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_FLOW;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_META_INFO;
@@ -201,6 +203,20 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/auth/fb"));
   }
 
+  public static Response authFbV2(
+      String tenantId, String clientId, String accessToken, String flow, String responseType) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put(BODY_PARAM_CLIENT_ID, clientId);
+    body.put(BODY_PARAM_ACCESS_TOKEN, accessToken);
+    body.put(BODY_PARAM_FLOW, flow);
+    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/auth/fb"));
+  }
+
   public static Response authGoogle(
       String tenantId, String idToken, String flow, String responseType) {
     Map<String, String> headers = new HashMap<>();
@@ -212,6 +228,20 @@ public class ApplicationIoUtils {
     body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/auth/google"));
+  }
+
+  public static Response authGoogleV2(
+      String tenantId, String clientId, String idToken, String flow, String responseType) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("client_id", clientId);
+    body.put("id_token", idToken);
+    body.put(BODY_PARAM_FLOW, flow);
+    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/auth/google"));
   }
 
   public static Response getJwks(String tenantId) {

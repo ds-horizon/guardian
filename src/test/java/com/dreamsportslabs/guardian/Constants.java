@@ -41,11 +41,11 @@ public class Constants {
   public static final String BODY_PARAM_LOGIN_CHALLENGE = "login_challenge";
   public static final String BODY_PARAM_CONSENT_CHALLENGE = "consent_challenge";
   public static final String BODY_PARAM_CONSENTED_SCOPES = "consented_scopes";
-
-  // Guest Login Constants
+  public static final String BODY_PARAM_ACCESS_TOKEN = "access_token";
   public static final String BODY_PARAM_CLIENT_ID = "client_id";
   public static final String BODY_PARAM_GUEST_IDENTIFIER = "guest_identifier";
   public static final String BODY_PARAM_SCOPES = "scopes";
+
   public static final String RESPONSE_BODY_PARAM_ACCESS_TOKEN = "access_token";
   public static final String RESPONSE_BODY_PARAM_TOKEN_TYPE = "token_type";
   public static final String RESPONSE_BODY_PARAM_EXPIRES_IN = "expires_in";
