@@ -89,7 +89,7 @@ public class ClientScopeService {
                 clientScopeModels.stream().map(ClientScopeModel::getScope).toList())
         .flatMapCompletable(
             clientScopes -> {
-              HashSet<String> scopesSet = new HashSet<>(requestScopes);
+              HashSet<String> scopesSet = new HashSet<>(clientScopes);
               if (scopesSet.containsAll(requestScopes)) {
                 return Completable.complete();
               } else {
