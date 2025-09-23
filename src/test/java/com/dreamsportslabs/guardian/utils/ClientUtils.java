@@ -19,7 +19,8 @@ public class ClientUtils {
     requestBody.put(RESPONSE_TYPES, Arrays.asList(AUTH_RESPONSE_TYPE_CODE));
     requestBody.put(LOGO_URI, EXAMPLE_LOGO);
     requestBody.put(POLICY_URI, EXAMPLE_POLICY);
-    requestBody.put(SKIP_CONSENT, AUTH_SKIP_CONSENT_FALSE);
+    requestBody.put(CLIENT_TYPE, "third_party");
+    requestBody.put(IS_DEFAULT, AUTH_IS_DEFAULT_FALSE);
     return requestBody;
   }
 

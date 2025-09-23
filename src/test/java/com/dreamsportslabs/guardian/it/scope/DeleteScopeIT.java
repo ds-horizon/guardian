@@ -149,7 +149,8 @@ public class DeleteScopeIT {
     requestBody.put("redirect_uris", Arrays.asList("https://example.com/callback"));
     requestBody.put("logo_uri", "https://example.com/logo.png");
     requestBody.put("policy_uri", "https://example.com/policy");
-    requestBody.put("skip_consent", false);
+    requestBody.put("client_type", "third_party");
+    requestBody.put("is_default", false);
 
     Response response = createClient(tenantId, requestBody);
     response.then().statusCode(SC_CREATED);
