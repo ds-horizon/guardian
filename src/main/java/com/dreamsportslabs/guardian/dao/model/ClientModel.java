@@ -26,7 +26,6 @@ public class ClientModel {
   private String policyUri;
   private List<String> redirectUris;
   private List<OidcResponseType> responseTypes;
-  private Boolean skipConsent;
   private String clientType;
   private Boolean isDefault;
 }

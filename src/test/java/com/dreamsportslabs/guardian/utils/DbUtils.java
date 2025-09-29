@@ -377,7 +377,8 @@ public class DbUtils {
       response.put("response_types", rs.getString("response_types"));
       response.put("logo_uri", rs.getString("logo_uri"));
       response.put("policy_uri", rs.getString("policy_uri"));
-      response.put("skip_consent", rs.getBoolean("skip_consent"));
+      response.put("client_type", rs.getString("client_type"));
+      response.put("is_default", rs.getBoolean("is_default"));
       stmt.close();
       return response;
     } catch (Exception e) {
@@ -419,7 +420,7 @@ public class DbUtils {
   public static String addFirstPartyClient(String tenantId) {
     String clientId = RandomStringUtils.randomAlphanumeric(10);
     String addClient =
-        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, skip_consent, client_type, is_default) VALUES (?,?,'Test Client App','s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),TRUE,'first_party',TRUE);";
+        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, client_type, is_default) VALUES (?,?,'Test Client App','s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),'first_party',TRUE);";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt1 = conn.prepareStatement(addClient)) {

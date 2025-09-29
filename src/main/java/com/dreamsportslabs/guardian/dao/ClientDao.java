@@ -48,7 +48,8 @@ public class ClientDao {
         .addString(client.getPolicyUri())
         .addString(serializeToJsonString(client.getRedirectUris(), objectMapper))
         .addString(serializeToJsonString(client.getResponseTypes(), objectMapper))
-        .addBoolean(client.getSkipConsent());
+        .addString(client.getClientType())
+        .addBoolean(client.getIsDefault());
     return mysqlClient
         .getWriterPool()
         .preparedQuery(CREATE_CLIENT)

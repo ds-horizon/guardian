@@ -127,7 +127,8 @@ public class ClientResource {
         .policyUri(model.getPolicyUri())
         .redirectUris(model.getRedirectUris())
         .responseTypes(model.getResponseTypes())
-        .skipConsent(model.getSkipConsent())
+        .clientType(model.getClientType())
+        .isDefault(model.getIsDefault())
         .build();
   }
 }

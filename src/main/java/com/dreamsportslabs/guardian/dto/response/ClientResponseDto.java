@@ -40,6 +40,9 @@ public class ClientResponseDto {
   @JsonProperty("response_types")
   private List<OidcResponseType> responseTypes;
 
-  @JsonProperty("skip_consent")
-  private Boolean skipConsent;
+  @JsonProperty("client_type")
+  private String clientType;
+
+  @JsonProperty("is_default")
+  private Boolean isDefault;
 }

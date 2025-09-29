@@ -43,7 +43,8 @@ public class ClientService {
             .policyUri(requestDto.getPolicyUri())
             .redirectUris(requestDto.getRedirectUris())
             .responseTypes(requestDto.getResponseTypes())
-            .skipConsent(requestDto.getSkipConsent())
+            .clientType(requestDto.getClientType().getValue())
+            .isDefault(requestDto.getIsDefault())
             .build();
 
     return clientDao.createClient(clientModel);
