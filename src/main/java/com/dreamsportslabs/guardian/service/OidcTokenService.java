@@ -1,16 +1,5 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_AUD;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_CLIENT_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_JTI;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_NONCE;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.OIDC_USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
@@ -29,14 +18,15 @@ import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAddit
 
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.TokenConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod;
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
-import com.dreamsportslabs.guardian.dao.OidcRefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
+import com.dreamsportslabs.guardian.dao.V1RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dao.model.ClientScopeModel;
 import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
-import com.dreamsportslabs.guardian.dao.model.OidcRefreshTokenModel;
+import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
 import com.dreamsportslabs.guardian.dao.model.ScopeModel;
 import com.dreamsportslabs.guardian.dto.request.GenerateOidcTokenDto;
 import com.dreamsportslabs.guardian.dto.request.RevokeTokenRequestDto;
@@ -63,7 +53,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -75,9 +64,9 @@ public class OidcTokenService {
   private final ScopeService scopeService;
   private final UserService userService;
   private final TokenIssuer tokenIssuer;
-  private final RefreshTokenDao refreshTokenDao;
+  private final V1RefreshTokenDao v1RefreshTokenDao;
 
-  private final OidcRefreshTokenDao oidcRefreshTokenDao;
+  private final RefreshTokenDao refreshTokenDao;
   private final AuthorizationService authorizationService;
 
   private final Registry registry;
@@ -100,7 +89,7 @@ public class OidcTokenService {
     return authenticateClientUsingHeader(authorizationHeader, tenantId)
         .flatMap(
             clientModel ->
-                oidcRefreshTokenDao.revokeOidcRefreshToken(
+                refreshTokenDao.revokeOidcRefreshToken(
                     tenantId, clientModel.getClientId(), requestDto.getToken()))
         .flatMapCompletable(
             result -> {
@@ -112,7 +101,7 @@ public class OidcTokenService {
   }
 
   public Single<String> validateRefreshToken(String refreshToken, String tenantId) {
-    return refreshTokenDao
+    return v1RefreshTokenDao
         .getUserIdFromRefreshToken(refreshToken, tenantId)
         .onErrorResumeNext(
             err ->
@@ -152,8 +141,8 @@ public class OidcTokenService {
                 generateOidcTokensForAuthorizationCodeFlow(generateOidcTokenDto)
                     .flatMap(
                         tokenResponseDto ->
-                            oidcRefreshTokenDao
-                                .saveOidcRefreshToken(
+                            refreshTokenDao
+                                .saveRefreshToken(
                                     getOidcRefreshTokenModel(
                                         tokenResponseDto, generateOidcTokenDto))
                                 .toSingleDefault(tokenResponseDto)));
@@ -189,23 +178,27 @@ public class OidcTokenService {
             })
         .flatMap(clientId -> getOidcRefreshToken(requestDto, tenantId))
         .flatMap(
-            oidcRefreshTokenModel -> {
+            refreshTokenModel -> {
               String scopes =
                   getValidScopes(
-                      String.join(" ", oidcRefreshTokenModel.getScope()), requestDto.getScope());
+                      String.join(" ", refreshTokenModel.getScope()), requestDto.getScope());
               if (shouldSetAccessTokenAdditionalClaims(tenantConfig)) {
                 return userService
-                    .getOidcUser(
-                        Map.of(USERID, oidcRefreshTokenModel.getUserId()), headers, tenantId)
+                    .getOidcUser(Map.of(USERID, refreshTokenModel.getUserId()), headers, tenantId)
                     .map(
                         oidcUserResponse ->
                             getGenerateOidcTokenDto(
-                                requestDto.getClientId(), oidcUserResponse, tenantId, scopes));
+                                requestDto.getClientId(),
+                                oidcUserResponse,
+                                refreshTokenModel.getAuthMethod(),
+                                tenantId,
+                                scopes));
               } else {
                 return Single.just(
                     getGenerateOidcTokenDto(
                         requestDto.getClientId(),
-                        JsonObject.of(OIDC_USERID, oidcRefreshTokenModel.getUserId()),
+                        JsonObject.of(OIDC_USERID, refreshTokenModel.getUserId()),
+                        refreshTokenModel.getAuthMethod(),
                         tenantId,
                         scopes));
               }
@@ -261,15 +254,15 @@ public class OidcTokenService {
             Single.error(INVALID_GRANT.getJsonCustomException("code_verifier is invalid")));
   }
 
-  private Single<OidcRefreshTokenModel> getOidcRefreshToken(
+  private Single<RefreshTokenModel> getOidcRefreshToken(
       TokenRequestDto requestDto, String tenantId) {
-    return oidcRefreshTokenDao
-        .getOidcRefreshToken(tenantId, requestDto.getClientId(), requestDto.getRefreshToken())
+    return refreshTokenDao
+        .getRefreshToken(tenantId, requestDto.getClientId(), requestDto.getRefreshToken())
         .switchIfEmpty(
             Single.error(INVALID_GRANT.getJsonCustomException("refresh_token is invalid")))
         .filter(
-            oidcRefreshTokenModel ->
-                oidcRefreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
+            refreshTokenModel ->
+                refreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
         .switchIfEmpty(
             Single.error(INVALID_GRANT.getJsonCustomException("refresh_token is expired")));
   }
@@ -463,6 +456,7 @@ public class OidcTokenService {
         .iat(getCurrentTimeInSeconds())
         .deviceName(tokenRequestDto.getDeviceName())
         .ip(tokenRequestDto.getIp())
+        .authMethods(oidcCodeModel.getAuthMethods())
         .build();
   }
 
@@ -478,25 +472,30 @@ public class OidcTokenService {
   }
 
   private GenerateOidcTokenDto getGenerateOidcTokenDto(
-      String clientId, JsonObject userResponse, String tenantId, String scopes) {
+      String clientId,
+      JsonObject userResponse,
+      List<AuthMethod> authMethods,
+      String tenantId,
+      String scopes) {
     return GenerateOidcTokenDto.builder()
         .clientId(clientId)
         .userId(userResponse.getString(OIDC_USERID))
         .tenantId(tenantId)
         .iat(getCurrentTimeInSeconds())
         .scope(scopes)
+        .authMethods(authMethods)
         .userResponse(userResponse)
         .build();
   }
 
-  private OidcRefreshTokenModel getOidcRefreshTokenModel(
+  private RefreshTokenModel getOidcRefreshTokenModel(
       OidcTokenResponseDto tokenResponseDto, GenerateOidcTokenDto generateOidcTokenDto) {
 
     TenantConfig tenantConfig =
         registry.get(generateOidcTokenDto.getTenantId(), TenantConfig.class);
     TokenConfig tokenConfig = tenantConfig.getTokenConfig();
 
-    return OidcRefreshTokenModel.builder()
+    return RefreshTokenModel.builder()
         .tenantId(generateOidcTokenDto.getTenantId())
         .clientId(generateOidcTokenDto.getClientId())
         .userId(generateOidcTokenDto.getUserId())
@@ -505,44 +504,8 @@ public class OidcTokenService {
         .scope(Arrays.asList(generateOidcTokenDto.getScope().trim().split("\\s+")))
         .deviceName(generateOidcTokenDto.getDeviceName())
         .ip(generateOidcTokenDto.getIp())
+        .authMethod(generateOidcTokenDto.getAuthMethods())
         .build();
-  }
-
-  private Map<String, Object> getAccessTokenClaims(
-      String aud,
-      String clientId,
-      long exp,
-      long iat,
-      String iss,
-      String rftId,
-      String scope,
-      String sub,
-      String tenantId) {
-    Map<String, Object> accessTokenClaims = getCommonJwtClaims(aud, exp, iat, iss, sub);
-    accessTokenClaims.put(JWT_CLAIMS_CLIENT_ID, clientId);
-    accessTokenClaims.put(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
-    accessTokenClaims.put(JWT_CLAIMS_RFT_ID, rftId);
-    accessTokenClaims.put(JWT_CLAIMS_SCOPE, scope);
-    accessTokenClaims.put(JWT_TENANT_ID_CLAIM, tenantId);
-    return accessTokenClaims;
-  }
-
-  private Map<String, Object> getIdTokenClaims(
-      String aud, long exp, long iat, String iss, String nonce, String sub) {
-    Map<String, Object> idTokenClaims = getCommonJwtClaims(aud, exp, iat, iss, sub);
-    idTokenClaims.put(JWT_CLAIMS_NONCE, nonce);
-    return idTokenClaims;
-  }
-
-  private Map<String, Object> getCommonJwtClaims(
-      String aud, long exp, long iat, String iss, String sub) {
-    Map<String, Object> commonClaims = new HashMap<>();
-    commonClaims.put(JWT_CLAIMS_AUD, aud);
-    commonClaims.put(JWT_CLAIMS_EXP, exp);
-    commonClaims.put(JWT_CLAIMS_IAT, iat);
-    commonClaims.put(JWT_CLAIMS_ISS, iss);
-    commonClaims.put(JWT_CLAIMS_SUB, sub);
-    return commonClaims;
   }
 
   private Map<String, String> getUserFilters(OidcCodeModel oidcCodeModel) {

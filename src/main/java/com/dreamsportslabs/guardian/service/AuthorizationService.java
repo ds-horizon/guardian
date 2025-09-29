@@ -3,12 +3,6 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.SSO_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
@@ -17,7 +11,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
-import static com.dreamsportslabs.guardian.utils.Utils.appendAdditionalAccessTokenClaims;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
 import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
@@ -27,16 +20,16 @@ import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.TokenConfig;
 import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.dao.CodeDao;
-import com.dreamsportslabs.guardian.dao.OidcRefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RevocationDao;
+import com.dreamsportslabs.guardian.dao.V1RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.model.CodeModel;
-import com.dreamsportslabs.guardian.dao.model.OidcRefreshTokenModel;
+import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
 import com.dreamsportslabs.guardian.dao.model.SsoTokenModel;
 import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1RefreshTokenRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
 import com.dreamsportslabs.guardian.dto.response.RefreshTokenResponseDto;
@@ -51,13 +44,13 @@ import jakarta.ws.rs.core.NewCookie;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -65,8 +58,8 @@ public class AuthorizationService {
   private final Registry registry;
   private final TokenIssuer tokenIssuer;
 
+  private final V1RefreshTokenDao v1RefreshTokenDao;
   private final RefreshTokenDao refreshTokenDao;
-  private final OidcRefreshTokenDao oidcRefreshTokenDao;
   private final CodeDao codeDao;
   private final RevocationDao revocationDao;
   private final UserService userService;
@@ -138,30 +131,38 @@ public class AuthorizationService {
                     user.getBoolean(IS_NEW_USER, false)))
         .flatMap(
             dto ->
-                oidcRefreshTokenDao
-                    .saveOidcRefreshToken(
+                refreshTokenDao
+                    .saveRefreshToken(
                         getRefreshTokenDto(
                             refreshToken,
                             user,
                             iat,
                             Arrays.stream(StringUtils.split(scopes, " ")).toList(),
+                            authMethods,
                             metaInfo,
                             clientId,
                             config),
                         getSsoTokenDto(
-                            user.getString(USERID), ssoToken, iat, refreshToken, clientId, config))
+                            user.getString(USERID),
+                            ssoToken,
+                            iat,
+                            refreshToken,
+                            authMethods,
+                            clientId,
+                            config))
                     .andThen(Single.just(dto)));
   }
 
-  private OidcRefreshTokenModel getRefreshTokenDto(
+  private RefreshTokenModel getRefreshTokenDto(
       String refreshToken,
       JsonObject user,
       Long iat,
       List<String> scopes,
+      List<AuthMethod> authMethods,
       MetaInfo metaInfo,
       String clientId,
       TenantConfig config) {
-    return OidcRefreshTokenModel.builder()
+    return RefreshTokenModel.builder()
         .tenantId(config.getTenantId())
         .clientId(clientId)
         .userId(user.getString(USERID))
@@ -172,6 +173,7 @@ public class AuthorizationService {
         .location(metaInfo.getLocation())
         .source(metaInfo.getSource())
         .scope(scopes)
+        .authMethod(authMethods)
         .build();
   }
 
@@ -180,6 +182,7 @@ public class AuthorizationService {
       String ssoToken,
       Long iat,
       String refreshToken,
+      List<AuthMethod> authMethods,
       String clientId,
       TenantConfig config) {
     return SsoTokenModel.builder()
@@ -189,6 +192,7 @@ public class AuthorizationService {
         .refreshToken(refreshToken)
         .ssoToken(ssoToken)
         .expiry(iat + config.getTokenConfig().getRefreshTokenExpiry())
+        .authMethods(authMethods)
         .build();
   }
 
@@ -210,35 +214,45 @@ public class AuthorizationService {
   }
 
   public Single<RefreshTokenResponseDto> refreshTokens(
-      V1RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+      V2RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     return refreshTokenDao
-        .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
+        .getRefreshToken(tenantId, dto.getRefreshToken())
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel -> {
+              if (StringUtils.isNotBlank(dto.getClientId())) {
+                return refreshTokenModel.getClientId().equals(dto.getClientId());
+              }
+              return true;
+            })
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel ->
+                refreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
-            userId -> {
+            refreshTokenModel -> {
               if (shouldSetAccessTokenAdditionalClaims(config)) {
                 return userService
-                    .getUser(Map.of(USERID, userId), headers, tenantId)
-                    .map(
-                        userResp ->
-                            getAccessTokenClaims(
-                                userResp,
-                                getCurrentTimeInSeconds(),
-                                config,
-                                dto.getRefreshToken()));
+                    .getUser(Map.of(USERID, refreshTokenModel.getUserId()), headers, tenantId)
+                    .map(userResp -> Pair.of(userResp, refreshTokenModel));
               } else {
-                return Single.just(
-                    getAccessTokenClaims(
-                        new JsonObject(Map.of(USERID, userId)),
-                        getCurrentTimeInSeconds(),
-                        config,
-                        dto.getRefreshToken()));
+                return Single.just(new JsonObject(Map.of(USERID, refreshTokenModel.getUserId())))
+                    .map(userResp -> Pair.of(userResp, refreshTokenModel));
               }
             })
         .flatMap(
-            accessTokenClaims ->
-                tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()))
+            pair ->
+                tokenIssuer.generateAccessToken(
+                    dto.getRefreshToken(),
+                    getCurrentTimeInSeconds(),
+                    String.join(" ", pair.getRight().getScope()),
+                    pair.getLeft(),
+                    pair.getRight().getAuthMethod(),
+                    pair.getRight().getClientId(),
+                    tenantId,
+                    config))
         .map(
             accessToken ->
                 new RefreshTokenResponseDto(
@@ -285,11 +299,11 @@ public class AuthorizationService {
   }
 
   public Completable adminLogout(String userId, String tenantId) {
-    return refreshTokenDao
+    return v1RefreshTokenDao
         .getRefreshTokens(userId, tenantId)
         .flatMap(
             list ->
-                refreshTokenDao
+                v1RefreshTokenDao
                     .invalidateAllRefreshTokensForUser(userId, tenantId)
                     .andThen(Single.just(list)))
         .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
@@ -297,23 +311,23 @@ public class AuthorizationService {
   }
 
   private Completable invalidateRefreshToken(V1LogoutRequestDto dto, String tenantId) {
-    return refreshTokenDao
+    return v1RefreshTokenDao
         .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMapCompletable(
             userId -> {
               if (dto.getIsUniversalLogout()) {
-                return refreshTokenDao
+                return v1RefreshTokenDao
                     .getRefreshTokens(userId, tenantId)
                     .flatMap(
                         list ->
-                            refreshTokenDao
+                            v1RefreshTokenDao
                                 .invalidateAllRefreshTokensForUser(userId, tenantId)
                                 .andThen(Single.just(list)))
                     .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
                     .ignoreElement();
               } else {
-                return refreshTokenDao
+                return v1RefreshTokenDao
                     .invalidateRefreshToken(dto.getRefreshToken(), tenantId)
                     .doOnComplete(
                         () -> updateRevocations(List.of(dto.getRefreshToken()), tenantId));
@@ -379,24 +393,5 @@ public class AuthorizationService {
         ssoToken,
         registry.get(tenantId, TenantConfig.class).getTokenConfig().getRefreshTokenExpiry(),
         tenantId);
-  }
-
-  private Map<String, Object> getAccessTokenClaims(
-      JsonObject userResponse, long iat, TenantConfig config, String refreshToken) {
-    Map<String, Object> commonTokenClaims =
-        getCommonTokenClaims(userResponse.getString(USERID), iat, config);
-    Map<String, Object> accessTokenClaims = new HashMap<>(commonTokenClaims);
-    accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
-    accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
-    accessTokenClaims.put(JWT_TENANT_ID_CLAIM, config.getTenantId());
-    return appendAdditionalAccessTokenClaims(accessTokenClaims, userResponse, config);
-  }
-
-  private Map<String, Object> getCommonTokenClaims(String userId, long iat, TenantConfig config) {
-    Map<String, Object> commonTokenClaims = new HashMap<>();
-    commonTokenClaims.put(JWT_CLAIMS_SUB, userId);
-    commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
-    commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
-    return commonTokenClaims;
   }
 }

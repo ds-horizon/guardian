@@ -1,13 +1,14 @@
-package com.dreamsportslabs.guardian.rest;
+package com.dreamsportslabs.guardian.rest.v2;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
 
-import com.dreamsportslabs.guardian.dto.request.V1RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
+import com.dreamsportslabs.guardian.dto.response.v2.V2RefreshTokenResponseDto;
 import com.dreamsportslabs.guardian.exception.ErrorEnum.ErrorEntity;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.google.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -21,27 +22,28 @@ import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-@Path("/v1/refreshToken")
-public class RefreshToken {
+@Path("/v2/refreshToken")
+public class V2RefreshToken {
   private final AuthorizationService authorizationService;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> refreshTokens(
-      @Context HttpHeaders headers, V1RefreshTokenRequestDto requestDto) {
+      @Context HttpHeaders headers, @Valid V2RefreshTokenRequestDto requestDto) {
     String tenantId = headers.getHeaderString(TENANT_ID);
-    requestDto.validate();
-    V2RefreshTokenRequestDto refreshTokenRequestDto = new V2RefreshTokenRequestDto();
-    refreshTokenRequestDto.setRefreshToken(requestDto.getRefreshToken());
     return authorizationService
-        .refreshTokens(refreshTokenRequestDto, headers.getRequestHeaders(), tenantId)
+        .refreshTokens(requestDto, headers.getRequestHeaders(), tenantId)
         .map(
-            resp ->
-                Response.ok(resp)
-                    .cookie(
-                        authorizationService.getAccessTokenCookie(resp.getAccessToken(), tenantId))
-                    .build())
+            resp -> {
+              V2RefreshTokenResponseDto v2RefreshTokenResponseDto =
+                  new V2RefreshTokenResponseDto(
+                      resp.getAccessToken(), resp.getTokenType(), resp.getExpiresIn());
+              return Response.ok(v2RefreshTokenResponseDto)
+                  .cookie(
+                      authorizationService.getAccessTokenCookie(resp.getAccessToken(), tenantId))
+                  .build();
+            })
         .onErrorReturn(
             err -> {
               if (err instanceof WebApplicationException webAppEx
