@@ -234,7 +234,7 @@ public class IdpConnectService {
         .flatMap(
             user -> {
               boolean userExists = user.getString(USERID) != null;
-              boolean requireProviderEndpoint =
+              boolean sendProviderDetails =
                   registry
                       .get(tenantId, TenantConfig.class)
                       .getUserConfig()
@@ -245,7 +245,7 @@ public class IdpConnectService {
                   if (!userExists) {
                     return Single.error(USER_NOT_EXISTS.getCustomException("User does not exist"));
                   }
-                  if (requireProviderEndpoint) {
+                  if (sendProviderDetails) {
                     return userService
                         .addProvider(
                             user.getString(USERID), headers, userDto.getProvider(), tenantId)
@@ -262,7 +262,7 @@ public class IdpConnectService {
 
                 case SIGNINUP:
                   if (userExists) {
-                    if (requireProviderEndpoint) {
+                    if (sendProviderDetails) {
                       return userService
                           .addProvider(
                               user.getString(USERID), headers, userDto.getProvider(), tenantId)
@@ -275,7 +275,7 @@ public class IdpConnectService {
                   }
 
                 default:
-                  if (requireProviderEndpoint) {
+                  if (sendProviderDetails) {
                     return userService
                         .addProvider(
                             user.getString(USERID), headers, userDto.getProvider(), tenantId)
