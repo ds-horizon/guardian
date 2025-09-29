@@ -440,3 +440,28 @@ CREATE TABLE guest_config
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE sso_token
+(
+    id                  BIGINT                     NOT NULL AUTO_INCREMENT,
+    tenant_id           CHAR(10)                   NOT NULL,
+    user_id             CHAR(64)                   NOT NULL,
+    client_id_issues_to VARCHAR(100)               NOT NULL,
+    is_active           BOOLEAN                    NOT NULL DEFAULT TRUE,
+    expiry              BIGINT UNSIGNED NOT NULL,
+    refresh_token       CHAR(32) COLLATE ascii_bin NOT NULL,
+    sso_token           CHAR(15) COLLATE ascii_bin NOT NULL,
+    client_id_used_by   JSON                       NOT NULL DEFAULT (JSON_ARRAY()),
+    created_at          TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    KEY                 `idx_sso_token` (`tenant_id`, `sso_token`, `is_active`, `expiry`, `user_id`),
+    KEY                 `idx_sso_token_user` (`tenant_id`, `user_id`),
+    KEY                 `idx_sso_token_client_user` (`tenant_id`, `client_id_issues_to`, `user_id`, `sso_token`),
+    CONSTRAINT `fk_sso_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_sso_token_client` FOREIGN KEY (`tenant_id`, `client_id_issues_to`) REFERENCES `client` (`tenant_id`, `client_id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;

@@ -9,6 +9,7 @@ public class TokenResponseDto {
   private String accessToken;
   private String refreshToken;
   private String idToken;
+  private String ssoToken;
   private String tokenType;
   private Integer expiresIn;
   private Boolean isNewUser;

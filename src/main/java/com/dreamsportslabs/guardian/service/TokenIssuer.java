@@ -119,6 +119,10 @@ public class TokenIssuer {
     return RandomStringUtils.randomAlphanumeric(32);
   }
 
+  public String generateSsoToken() {
+    return RandomStringUtils.randomAlphanumeric(15);
+  }
+
   private Single<String> signToken(JWT jwt, String tenantId) {
     return signToken(jwt, tenantId, new HashMap<>());
   }

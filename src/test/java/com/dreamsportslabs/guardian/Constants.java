@@ -10,11 +10,13 @@ public class Constants {
   public static final String OIDC_BODY_PARAM_REFRESH_TOKEN = "refresh_token";
   public static final String BODY_PARAM_REFRESH_TOKEN = "refreshToken";
   public static final String BODY_PARAM_RESPONSE_TYPE = "responseType";
+  public static final String BODY_PARAM_RESPONSE_TYPE_V2 = "response_type";
   public static final String BODY_PARAM_RESPONSE_TYPE_TOKEN = "token";
   public static final String BODY_PARAM_FLOW = "flow";
   public static final String BODY_PARAM_CONTACTS = "contacts";
   public static final String BODY_PARAM_CONTACT = "contact";
   public static final String BODY_PARAM_META_INFO = "metaInfo";
+  public static final String BODY_PARAM_META_INFO_V2 = "meta_info";
   public static final String BODY_PARAM_ADDITIONAL_INFO = "additionalInfo";
   public static final String BODY_PARAM_STATE = "state";
   public static final String BODY_PARAM_CHANNEL = "channel";
@@ -199,11 +201,16 @@ public class Constants {
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
   public static final String RESPONSE_BODY_PARAM_TRIES = "tries";
   public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT = "retriesLeft";
+  public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_V2 = "retries_left";
   public static final String RESPONSE_BODY_PARAM_RESENDS = "resends";
   public static final String RESPONSE_BODY_PARAM_RESENDS_LEFT = "resendsLeft";
+  public static final String RESPONSE_BODY_PARAM_RESENDS_LEFT_V2 = "resends_left";
   public static final String RESPONSE_BODY_PARAM_RESEND_AFTER = "resendAfter";
+  public static final String RESPONSE_BODY_PARAM_RESEND_AFTER_V2 = "resend_after";
   public static final String RESPONSE_BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String RESPONSE_BODY_PARAM_IS_NEW_USER_V2 = "is_new_user";
   public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA = "retriesLeft";
+  public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA_V2 = "retries_left";
 
   public static final String PASSWORDLESS_MODEL_IS_NEW_USER = "isNewUser";
   public static final String PASSWORDLESS_MODEL_TRIES = "tries";
