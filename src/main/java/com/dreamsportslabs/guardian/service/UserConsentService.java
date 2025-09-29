@@ -1,7 +1,5 @@
 package com.dreamsportslabs.guardian.service;
 
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_TOKEN;
-
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
@@ -21,27 +19,18 @@ public class UserConsentService {
 
   private final AuthorizeSessionDao authorizeSessionDao;
   private final UserConsentDao userConsentDao;
-  private final OidcTokenService oidcTokenService;
 
   public Single<UserConsentResponseDto> getUserConsentForClient(
       UserConsentRequestDto userConsentRequestDto, String tenantId) {
-    return oidcTokenService
-        .validateRefreshToken(userConsentRequestDto.getRefreshToken(), tenantId)
+    return authorizeSessionDao
+        .getAuthorizeSession(userConsentRequestDto.getConsentChallenge(), tenantId)
         .flatMap(
-            userId ->
-                authorizeSessionDao
-                    .getAuthorizeSession(userConsentRequestDto.getConsentChallenge(), tenantId)
-                    .filter(authorizeSession -> userId.equals(authorizeSession.getUserId()))
-                    .switchIfEmpty(Single.error(INVALID_TOKEN.getException()))
-                    .flatMap(
-                        authorizeSession -> {
-                          String clientId = authorizeSession.getClient().getClientId();
-                          return userConsentDao
-                              .getUserConsents(tenantId, clientId, userId)
-                              .map(
-                                  userConsents ->
-                                      buildUserConsentResponse(authorizeSession, userConsents));
-                        }));
+            authorizeSession -> {
+              String clientId = authorizeSession.getClient().getClientId();
+              return userConsentDao
+                  .getUserConsents(tenantId, clientId, authorizeSession.getUserId())
+                  .map(userConsents -> buildUserConsentResponse(authorizeSession, userConsents));
+            });
   }
 
   private UserConsentResponseDto buildUserConsentResponse(

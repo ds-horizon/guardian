@@ -52,6 +52,7 @@ public class RefreshToken {
                       .entity(errorEntity)
                       .cookie(authorizationService.getAccessTokenCookie(null, tenantId))
                       .cookie(authorizationService.getRefreshTokenCookie(null, tenantId))
+                      .cookie(authorizationService.getSsoTokenCookie(null, tenantId))
                       .build();
                 }
                 return webAppEx.getResponse();

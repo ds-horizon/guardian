@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.SSO_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
 
@@ -9,6 +10,7 @@ import com.dreamsportslabs.guardian.dto.response.AuthCodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.LoginAcceptResponseDto;
 import com.dreamsportslabs.guardian.service.LoginAcceptService;
 import com.google.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.HeaderParam;
@@ -31,11 +33,13 @@ public class LoginAccept {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> loginAccept(
-      LoginAcceptRequestDto requestDto,
+      @Valid LoginAcceptRequestDto requestDto,
       @HeaderParam(TENANT_ID) String tenantId,
-      @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String cookieRefreshToken) {
+      @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String cookieRefreshToken,
+      @CookieParam(SSO_TOKEN_COOKIE_NAME) String cookieSsoToken) {
     requestDto.setRefreshTokenFromCookie(cookieRefreshToken);
-    requestDto.validate();
+    requestDto.setSsoTokenFromCookie(cookieSsoToken);
+
     return loginAcceptService
         .loginAccept(requestDto, tenantId)
         .map(

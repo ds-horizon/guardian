@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.dao.model;
 
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod;
 import com.dreamsportslabs.guardian.constant.OidcPrompt;
 import com.dreamsportslabs.guardian.constant.OidcResponseType;
@@ -26,4 +27,5 @@ public class AuthorizeSessionModel {
   private OidcPrompt prompt;
   private String loginHint;
   private String userId;
+  private List<AuthMethod> authMethods;
 }

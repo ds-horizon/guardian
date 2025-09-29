@@ -10,8 +10,6 @@ import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIEN
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_GRANT;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_SCOPE;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.SERVER_ERROR;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED_CLIENT;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
@@ -37,7 +35,6 @@ import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.WebApplicationException;
@@ -98,16 +95,6 @@ public class OidcTokenService {
               }
               return Completable.complete();
             });
-  }
-
-  public Single<String> validateRefreshToken(String refreshToken, String tenantId) {
-    return v1RefreshTokenDao
-        .getUserIdFromRefreshToken(refreshToken, tenantId)
-        .onErrorResumeNext(
-            err ->
-                Maybe.error(
-                    SERVER_ERROR.getJsonCustomException("Unable to validate refresh token")))
-        .switchIfEmpty(Single.error(UNAUTHORIZED.getJsonCustomException("Invalid refresh token")));
   }
 
   private Single<OidcTokenResponseDto> authorizationCodeFlow(
