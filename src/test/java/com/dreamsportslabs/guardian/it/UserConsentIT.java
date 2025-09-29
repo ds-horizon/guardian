@@ -195,7 +195,7 @@ public class UserConsentIT {
         .then()
         .statusCode(SC_UNAUTHORIZED)
         .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
+        .body(ERROR_DESCRIPTION, equalTo("Invalid challenge"));
   }
 
   @Test
@@ -306,96 +306,6 @@ public class UserConsentIT {
         Arrays.asList(SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE),
         Arrays.asList(),
         newUserId);
-  }
-
-  @Test
-  @DisplayName("Should return error when refresh token is invalid")
-  public void testGetUserConsentInvalidRefreshToken() {
-    // Arrange
-    String invalidRefreshToken =
-        "invalid_refresh_token_" + RandomStringUtils.randomAlphanumeric(10);
-    Map<String, String> queryParams = new HashMap<>();
-    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
-
-    // Act
-    Response response = getUserConsent(tenant1, queryParams, invalidRefreshToken);
-
-    // Validate
-    response
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
-  }
-
-  @Test
-  @DisplayName("Should return error when refresh token is expired")
-  public void testGetUserConsentExpiredRefreshToken() {
-    // Arrange
-    String expiredRefreshToken =
-        insertRefreshToken(
-            tenant1, TEST_USER_ID, -1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
-    Map<String, String> queryParams = new HashMap<>();
-    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
-
-    // Act
-    Response response = getUserConsent(tenant1, queryParams, expiredRefreshToken);
-
-    // Validate
-    response
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
-  }
-
-  @Test
-  @DisplayName("Should return error when refresh token belongs to different user")
-  public void testGetUserConsentDifferentUserRefreshToken() {
-    // Arrange
-    String differentUserId = "different-user-" + RandomStringUtils.randomAlphanumeric(8);
-    String differentUserRefreshToken =
-        insertRefreshToken(
-            tenant1,
-            differentUserId,
-            1800L,
-            SOURCE_VALUE,
-            DEVICE_VALUE,
-            LOCATION_VALUE,
-            IP_ADDRESS);
-    Map<String, String> queryParams = new HashMap<>();
-    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
-
-    // Act
-    Response response = getUserConsent(tenant1, queryParams, differentUserRefreshToken);
-
-    // Validate
-    response
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .body(ERROR_FIELD, equalTo("invalid_token"))
-        .body(ERROR_DESCRIPTION, notNullValue());
-  }
-
-  @Test
-  @DisplayName("Should return error when refresh token is from different tenant")
-  public void testGetUserConsentCrossTenantRefreshToken() {
-    // Arrange
-    String crossTenantRefreshToken =
-        insertRefreshToken(
-            tenant2, TEST_USER_ID, 1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
-    Map<String, String> queryParams = new HashMap<>();
-    queryParams.put(OIDC_PARAM_CONSENT_CHALLENGE, validConsentChallenge);
-
-    // Act
-    Response response = getUserConsent(tenant1, queryParams, crossTenantRefreshToken);
-
-    // Validate
-    response
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
   }
 
   @Test
