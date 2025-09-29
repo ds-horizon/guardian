@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.service;
 
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.constant.ClientType;
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
@@ -45,7 +46,10 @@ public class LoginAcceptService {
                         authorizeSession -> {
                           authorizeSession.setUserId(userId);
 
-                          if (authorizeSession.getClient().getSkipConsent()) {
+                          if (authorizeSession
+                              .getClient()
+                              .getClientType()
+                              .equals(ClientType.FIRST_PARTY.getValue())) {
                             return handleSkipConsentFlow(authorizeSession, tenantId);
                           }
 

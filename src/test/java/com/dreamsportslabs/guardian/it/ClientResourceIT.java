@@ -16,6 +16,7 @@ import static com.dreamsportslabs.guardian.Constants.CLIENT_NAME_REQUIRED;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_NOT_FOUND;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_NOT_FOUND_MSG;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_SECRET;
+import static com.dreamsportslabs.guardian.Constants.CLIENT_TYPE;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_URI;
 import static com.dreamsportslabs.guardian.Constants.CODE;
 import static com.dreamsportslabs.guardian.Constants.CONTACTS;
@@ -35,6 +36,7 @@ import static com.dreamsportslabs.guardian.Constants.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.Constants.INVALID_RESPONSE_TYPE;
 import static com.dreamsportslabs.guardian.Constants.INVALID_RESPONSE_TYPES_MSG;
 import static com.dreamsportslabs.guardian.Constants.INVALID_TENANT;
+import static com.dreamsportslabs.guardian.Constants.IS_DEFAULT;
 import static com.dreamsportslabs.guardian.Constants.LOGO_URI;
 import static com.dreamsportslabs.guardian.Constants.MESSAGE;
 import static com.dreamsportslabs.guardian.Constants.MINIMAL_CLIENT_PREFIX;
@@ -52,7 +54,6 @@ import static com.dreamsportslabs.guardian.Constants.REDIRECT_URIS_REQUIRED;
 import static com.dreamsportslabs.guardian.Constants.REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_TYPES;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_TYPES_REQUIRED;
-import static com.dreamsportslabs.guardian.Constants.SKIP_CONSENT;
 import static com.dreamsportslabs.guardian.Constants.SUPPORT_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.TEST_CLIENT_PREFIX;
 import static com.dreamsportslabs.guardian.Constants.UPDATED_CLIENT_NAME;
@@ -130,7 +131,8 @@ public class ClientResourceIT {
         .body("response_types[0]", equalTo("CODE"))
         .body(LOGO_URI, equalTo(EXAMPLE_LOGO))
         .body(POLICY_URI, equalTo(EXAMPLE_POLICY))
-        .body(SKIP_CONSENT, equalTo(false));
+        .body(CLIENT_TYPE, equalTo("third_party"))
+        .body(IS_DEFAULT, equalTo(false));
     assertThat(
         response.jsonPath().getString(CLIENT_SECRET).length(),
         greaterThanOrEqualTo(MIN_SECRET_LENGTH));
@@ -157,7 +159,8 @@ public class ClientResourceIT {
     assertThat(resultSet.getString(RESPONSE_TYPES), equalTo("[\"CODE\"]"));
     assertThat(resultSet.getString(LOGO_URI), equalTo(EXAMPLE_LOGO));
     assertThat(resultSet.getString(POLICY_URI), equalTo(EXAMPLE_POLICY));
-    assertThat(resultSet.getBoolean(SKIP_CONSENT), equalTo(false));
+    assertThat(resultSet.getString(CLIENT_TYPE), equalTo("third_party"));
+    assertThat(resultSet.getBoolean(IS_DEFAULT), equalTo(false));
   }
 
   @Test
@@ -816,7 +819,8 @@ public class ClientResourceIT {
     Map<String, Object> requestBody = createValidClientRequest();
     requestBody.put(LOGO_URI, EXAMPLE_LOGO);
     requestBody.put(POLICY_URI, EXAMPLE_POLICY);
-    requestBody.put(SKIP_CONSENT, true);
+    requestBody.put(CLIENT_TYPE, "first_party");
+    requestBody.put(IS_DEFAULT, true);
 
     // Act
     Response response = createClient(tenant1, requestBody);
@@ -827,7 +831,8 @@ public class ClientResourceIT {
         .statusCode(SC_CREATED)
         .body(LOGO_URI, equalTo(EXAMPLE_LOGO))
         .body(POLICY_URI, equalTo(EXAMPLE_POLICY))
-        .body(SKIP_CONSENT, equalTo(true));
+        .body(CLIENT_TYPE, equalTo("first_party"))
+        .body(IS_DEFAULT, equalTo(true));
   }
 
   @Test
@@ -850,7 +855,8 @@ public class ClientResourceIT {
         .body(CLIENT_ID, isA(String.class))
         .body(CLIENT_SECRET, isA(String.class))
         .body(CLIENT_NAME, equalTo(requestBody.get(CLIENT_NAME)))
-        .body(SKIP_CONSENT, equalTo(false)); // Default value
+        .body(CLIENT_TYPE, equalTo("third_party")) // Default value
+        .body(IS_DEFAULT, equalTo(false)); // Default value
   }
 
   @Test
@@ -906,7 +912,8 @@ public class ClientResourceIT {
     requestBody.put(REDIRECT_URIS, Arrays.asList(EXAMPLE_CALLBACK));
     requestBody.put(LOGO_URI, EXAMPLE_LOGO);
     requestBody.put(POLICY_URI, EXAMPLE_POLICY);
-    requestBody.put(SKIP_CONSENT, false);
+    requestBody.put(CLIENT_TYPE, "third_party");
+    requestBody.put(IS_DEFAULT, false);
     return requestBody;
   }
 
@@ -920,7 +927,8 @@ public class ClientResourceIT {
     requestBody.put(REDIRECT_URIS, clientResponse.jsonPath().getList(REDIRECT_URIS));
     requestBody.put(LOGO_URI, clientResponse.jsonPath().getString(LOGO_URI));
     requestBody.put(POLICY_URI, clientResponse.jsonPath().getString(POLICY_URI));
-    requestBody.put(SKIP_CONSENT, clientResponse.jsonPath().getBoolean(SKIP_CONSENT));
+    requestBody.put(CLIENT_TYPE, clientResponse.jsonPath().getString(CLIENT_TYPE));
+    requestBody.put(IS_DEFAULT, clientResponse.jsonPath().getBoolean(IS_DEFAULT));
     requestBody.put(CLIENT_ID, clientResponse.jsonPath().getString(CLIENT_ID));
     requestBody.put(CLIENT_SECRET, clientResponse.jsonPath().getString(CLIENT_SECRET));
     return requestBody;

@@ -274,7 +274,8 @@ public class Constants {
   public static final String RESPONSE_TYPES = "response_types";
   public static final String LOGO_URI = "logo_uri";
   public static final String POLICY_URI = "policy_uri";
-  public static final String SKIP_CONSENT = "skip_consent";
+  public static final String CLIENT_TYPE = "client_type";
+  public static final String IS_DEFAULT = "is_default";
   public static final String PAGE = "page";
   public static final String PAGE_SIZE = "pageSize";
   public static final String CLIENTS = "clients";
@@ -405,7 +406,7 @@ public class Constants {
   public static final String INVALID_CLIENT_SECRET = "invalid_client_secret";
 
   // Authorization Test Boolean Values
-  public static final boolean AUTH_SKIP_CONSENT_FALSE = false;
+  public static final boolean AUTH_IS_DEFAULT_FALSE = false;
 
   // Authorization Test Special Values
   public static final String AUTH_STATE_SPECIAL_CHARS = "state_with_special_chars_!@#$%^&*()";
@@ -440,7 +441,7 @@ public class Constants {
   public static final String PARTIAL_CONSENT_USER_ID = "partial_consent_user";
   public static final String FULL_CONSENT_USER_ID = "full_consent_user";
   public static final String DETAILED_VALIDATION_USER_ID = "detailed_validation_user";
-  public static final String SKIP_CONSENT_CLIENT_NAME = "Skip Consent Client";
+  public static final String DEFAULT_CLIENT_NAME = "Default Client";
   public static final String SOURCE_VALUE = "source";
   public static final String DEVICE_VALUE = "device1";
   public static final String LOCATION_VALUE = "location";
@@ -530,7 +531,8 @@ public class Constants {
   public static final String CHECK_GRANT_TYPES = "client.grantTypes";
   public static final String CHECK_REDIRECT_URIS = "client.redirectUris";
   public static final String CHECK_RESPONSE_TYPES = "client.responseTypes";
-  public static final String CHECK_SKIP_CONSENT = "client.skipConsent";
+  public static final String CHECK_CLIENT_TYPE = "client.clientType";
+  public static final String CHECK_IS_DEFAULT = "client.isDefault";
 
   // Mock user data constants
   public static final String MOCK_USER_NAME = "John Doe";

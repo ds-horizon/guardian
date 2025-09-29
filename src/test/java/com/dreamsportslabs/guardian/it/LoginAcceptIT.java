@@ -3,6 +3,8 @@ package com.dreamsportslabs.guardian.it;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_LOGIN_CHALLENGE;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_NAME;
+import static com.dreamsportslabs.guardian.Constants.CLIENT_TYPE;
+import static com.dreamsportslabs.guardian.Constants.DEFAULT_CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.DEVICE_VALUE;
 import static com.dreamsportslabs.guardian.Constants.ERROR_DESCRIPTION;
 import static com.dreamsportslabs.guardian.Constants.ERROR_FIELD;
@@ -15,6 +17,7 @@ import static com.dreamsportslabs.guardian.Constants.ERROR_UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.Constants.HEADER_LOCATION;
 import static com.dreamsportslabs.guardian.Constants.INVALID_TENANT;
 import static com.dreamsportslabs.guardian.Constants.IP_ADDRESS;
+import static com.dreamsportslabs.guardian.Constants.IS_DEFAULT;
 import static com.dreamsportslabs.guardian.Constants.LOCATION_VALUE;
 import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.PARTIAL_CONSENT_USER_ID;
@@ -22,8 +25,6 @@ import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
-import static com.dreamsportslabs.guardian.Constants.SKIP_CONSENT;
-import static com.dreamsportslabs.guardian.Constants.SKIP_CONSENT_CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.SOURCE_VALUE;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
@@ -214,35 +215,36 @@ public class LoginAcceptIT {
   }
 
   @Test
-  @DisplayName("Should handle client with skip_consent=true")
-  public void testLoginAcceptWithSkipConsent() {
+  @DisplayName("Should handle client with is_default=true")
+  public void testLoginAcceptWithDefaultClient() {
     Map<String, Object> clientRequest = ClientUtils.createValidClientRequest();
-    clientRequest.put(CLIENT_NAME, SKIP_CONSENT_CLIENT_NAME);
-    clientRequest.put(SKIP_CONSENT, true);
+    clientRequest.put(CLIENT_NAME, DEFAULT_CLIENT_NAME);
+    clientRequest.put(CLIENT_TYPE, "first_party");
+    clientRequest.put(IS_DEFAULT, true);
     Response clientResponse = createClient(tenant1, clientRequest);
-    String skipConsentClientId = clientResponse.jsonPath().getString(CLIENT_ID);
+    String defaultClientId = clientResponse.jsonPath().getString(CLIENT_ID);
 
     createClientScope(
         tenant1,
-        skipConsentClientId,
+        defaultClientId,
         ClientUtils.createClientScopeRequest(
             SCOPE_OPENID, SCOPE_EMAIL, SCOPE_ADDRESS, SCOPE_PHONE));
 
-    Map<String, String> queryParams = createValidAuthorizeRequest(skipConsentClientId);
+    Map<String, String> queryParams = createValidAuthorizeRequest(defaultClientId);
     Response authorizeResponse = authorize(tenant1, queryParams);
-    String skipConsentLoginChallenge =
+    String defaultLoginChallenge =
         extractLoginChallenge(authorizeResponse.getHeader(HEADER_LOCATION));
 
-    String skipConsentRefreshToken =
+    String defaultRefreshToken =
         insertRefreshToken(
             tenant1, TEST_USER_ID, 1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
 
     Map<String, Object> requestBody =
         Map.of(
             BODY_PARAM_LOGIN_CHALLENGE,
-            skipConsentLoginChallenge,
+            defaultLoginChallenge,
             OIDC_BODY_PARAM_REFRESH_TOKEN,
-            skipConsentRefreshToken);
+            defaultRefreshToken);
 
     Response response = loginAccept(tenant1, requestBody);
 
@@ -253,7 +255,7 @@ public class LoginAcceptIT {
         .header(HEADER_LOCATION, containsString("code="))
         .header(HEADER_LOCATION, containsString("state="));
 
-    assertThat(authorizeSessionExists(tenant1, skipConsentLoginChallenge), equalTo(false));
+    assertThat(authorizeSessionExists(tenant1, defaultLoginChallenge), equalTo(false));
   }
 
   @Test
