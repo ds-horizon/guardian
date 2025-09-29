@@ -102,13 +102,20 @@ public class SocialAuthService {
                 return userService.createUser(
                     getUserDtoFromFbUserData(fbUserData, dto.getAccessToken()), headers, tenantId);
               } else {
-                return userService
-                    .addProvider(
-                        userRes.getString(USERID),
-                        headers,
-                        getFbProviderData(fbUserData, dto.getAccessToken()),
-                        tenantId)
-                    .andThen(Single.just(userRes));
+                TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
+                boolean requireProviderEndpoint =
+                    tenantConfig.getUserConfig().getIsProviderEndpointRequired();
+                if (requireProviderEndpoint) {
+                  return userService
+                      .addProvider(
+                          userRes.getString(USERID),
+                          headers,
+                          getFbProviderData(fbUserData, dto.getAccessToken()),
+                          tenantId)
+                      .andThen(Single.just(userRes));
+                } else {
+                  return Single.just(userRes);
+                }
               }
             })
         .flatMap(
