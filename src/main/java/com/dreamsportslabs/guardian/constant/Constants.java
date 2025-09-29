@@ -151,6 +151,7 @@ public final class Constants {
 
   public static final String ACCESS_TOKEN_COOKIE_NAME = "AT";
   public static final String REFRESH_TOKEN_COOKIE_NAME = "RT";
+  public static final String SSO_TOKEN_COOKIE_NAME = "SSOT";
 
   public static final String SCOPE_EMAIL = "email";
   public static final String CLAIM_EMAIL = "email";
