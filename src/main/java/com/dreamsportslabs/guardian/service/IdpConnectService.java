@@ -238,7 +238,7 @@ public class IdpConnectService {
                   registry
                       .get(tenantId, TenantConfig.class)
                       .getUserConfig()
-                      .getIsProviderEndpointRequired();
+                      .getSendProviderDetails();
 
               switch (flow) {
                 case SIGNIN:

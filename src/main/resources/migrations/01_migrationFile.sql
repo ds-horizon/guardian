@@ -18,17 +18,17 @@ CREATE TABLE tenant
 
 CREATE TABLE user_config
 (
-    tenant_id                     CHAR(10) PRIMARY KEY,
-    is_ssl_enabled                BOOLEAN               DEFAULT FALSE,
-    host                          VARCHAR(256) NOT NULL,
-    port                          INT          NOT NULL DEFAULT 80,
-    get_user_path                 VARCHAR(256) NOT NULL,
-    create_user_path              VARCHAR(256) NOT NULL,
-    authenticate_user_path        VARCHAR(256) NOT NULL,
-    add_provider_path             VARCHAR(256) NOT NULL,
-    is_provider_endpoint_required BOOLEAN      NOT NULL DEFAULT TRUE,
-    created_at                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    tenant_id              CHAR(10) PRIMARY KEY,
+    is_ssl_enabled         BOOLEAN               DEFAULT FALSE,
+    host                   VARCHAR(256) NOT NULL,
+    port                   INT          NOT NULL DEFAULT 80,
+    get_user_path          VARCHAR(256) NOT NULL,
+    create_user_path       VARCHAR(256) NOT NULL,
+    authenticate_user_path VARCHAR(256) NOT NULL,
+    add_provider_path      VARCHAR(256) NOT NULL,
+    send_provider_details  BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_tenant_user_config FOREIGN KEY (tenant_id)
         REFERENCES tenant (id) ON DELETE CASCADE,

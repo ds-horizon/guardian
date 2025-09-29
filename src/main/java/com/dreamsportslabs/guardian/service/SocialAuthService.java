@@ -104,7 +104,7 @@ public class SocialAuthService {
               } else {
                 TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
                 boolean requireProviderEndpoint =
-                    tenantConfig.getUserConfig().getIsProviderEndpointRequired();
+                    tenantConfig.getUserConfig().getSendProviderDetails();
                 if (requireProviderEndpoint) {
                   return userService
                       .addProvider(
@@ -198,7 +198,7 @@ public class SocialAuthService {
               } else {
                 TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
                 boolean requireProviderEndpoint =
-                    tenantConfig.getUserConfig().getIsProviderEndpointRequired();
+                    tenantConfig.getUserConfig().getSendProviderDetails();
                 if (requireProviderEndpoint) {
                   return userService
                       .addProvider(
