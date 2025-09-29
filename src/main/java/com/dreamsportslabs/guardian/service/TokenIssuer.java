@@ -71,17 +71,6 @@ public class TokenIssuer {
     return signToken(jwt, tenantId);
   }
 
-  public Single<String> generateAccessToken(Map<String, Object> claims, String tenantId) {
-    JWT jwt = new JWT();
-    for (Map.Entry<String, Object> claim : claims.entrySet()) {
-      jwt.addClaim(claim.getKey(), claim.getValue());
-    }
-
-    Map<String, String> tokenHeaders = new HashMap<>();
-    tokenHeaders.put(JWT_HEADERS_TYP, TYP_JWT_ACCESS_TOKEN);
-    return signToken(jwt, tenantId, tokenHeaders);
-  }
-
   public Single<String> generateAccessToken(
       String refreshToken,
       long iat,

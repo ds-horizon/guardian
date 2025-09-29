@@ -302,4 +302,21 @@ public class RefreshTokenIT {
                     .withHeader("Content-Type", "application/json")
                     .withJsonBody(jsonNode)));
   }
+
+  @Test()
+  @DisplayName("Should handle completely malformed refresh token gracefully")
+  public void testMalformedRefreshTokenHandling() {
+    // Arrange - malformed token that doesn't exist in DB
+    String refreshToken = "malformed-token-xyz-123";
+
+    // Act
+    Response response = refreshToken(tenant1, refreshToken);
+
+    // Validate error response and cookie clearing
+    response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+    assertThat(response.getCookies().containsKey(ACCESS_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookies().containsKey(REFRESH_TOKEN_COOKIE_NAME), is(true));
+    assertThat(response.getCookie(ACCESS_TOKEN_COOKIE_NAME), equalTo(""));
+    assertThat(response.getCookie(REFRESH_TOKEN_COOKIE_NAME), equalTo(""));
+  }
 }

@@ -3,8 +3,8 @@ package com.dreamsportslabs.guardian.service;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.ClientType;
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
-import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
+import com.dreamsportslabs.guardian.dao.V1RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
 import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
 import com.dreamsportslabs.guardian.dao.model.UserConsentModel;
@@ -31,7 +31,7 @@ public class LoginAcceptService {
   private final OidcCodeService oidcCodeService;
   private final OidcTokenService oidcTokenService;
   private final UserConsentDao userConsentDao;
-  private final RefreshTokenDao refreshTokenDao;
+  private final V1RefreshTokenDao v1RefreshTokenDao;
   private final Registry registry;
 
   public Single<Object> loginAccept(LoginAcceptRequestDto requestDto, String tenantId) {

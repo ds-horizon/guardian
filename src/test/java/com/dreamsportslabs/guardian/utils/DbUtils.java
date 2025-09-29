@@ -25,6 +25,9 @@ public class DbUtils {
   private static final String INSERT_REFRESH_TOKEN =
       "INSERT INTO refresh_tokens (tenant_id, user_id, refresh_token, refresh_token_exp, source, device_name, location, ip) VALUES (?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
 
+  private static final String INSERT_REFRESH_TOKEN_ALL_VALUES =
+      "INSERT INTO refresh_tokens (tenant_id, client_id, user_id, refresh_token, refresh_token_exp, scope, device_name, ip, source, location, auth_method) VALUES (?, ?, ?, ?, ?, ?, ?, INET6_ATON(?), ?, ?, ?)";
+
   private static final String INSERT_USER_CONSENT =
       "INSERT INTO consent (tenant_id, client_id, user_id, scope, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())";
 
@@ -32,7 +35,7 @@ public class DbUtils {
       "SELECT name, display_name, description, claims, tenant_id, icon_url, is_oidc FROM scope WHERE tenant_id = ? AND name = ?";
 
   private static final String INSERT_OIDC_REFRESH_TOKEN =
-      "INSERT INTO oidc_refresh_token (tenant_id, client_id, user_id, refresh_token, refresh_token_exp, scope, is_active, device_name, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
+      "INSERT INTO refresh_tokens (tenant_id, client_id, user_id, refresh_token, refresh_token_exp, scope, is_active, device_name, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
 
   public static void initializeRedisConnectionPool(String host, int port) {
     if (redisConnectionPool != null) {
@@ -115,6 +118,42 @@ public class DbUtils {
       stmt.executeUpdate();
     } catch (Exception e) {
       log.error("Error while inserting refresh token", e);
+      return null;
+    }
+
+    return refreshToken;
+  }
+
+  public static String insertOidcRefreshToken(
+      String tenantId,
+      String clientId,
+      String userId,
+      long exp,
+      String scope,
+      String deviceName,
+      String ip,
+      String source,
+      String location,
+      String authMethod) {
+    String refreshToken = RandomStringUtils.randomAlphanumeric(32);
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(INSERT_REFRESH_TOKEN_ALL_VALUES)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, userId);
+      stmt.setString(4, refreshToken);
+      stmt.setLong(5, Instant.now().getEpochSecond() + exp);
+      stmt.setString(6, scope);
+      stmt.setString(7, deviceName);
+      stmt.setString(8, ip);
+      stmt.setString(9, source);
+      stmt.setString(10, location);
+      stmt.setString(11, authMethod);
+
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while inserting OIDC refresh token", e);
       return null;
     }
 
@@ -611,7 +650,7 @@ public class DbUtils {
   }
 
   public static void cleanupOidcRefreshTokens(String tenantId) {
-    String deleteQuery = "DELETE FROM oidc_refresh_token WHERE tenant_id = ?";
+    String deleteQuery = "DELETE FROM refresh_tokens WHERE tenant_id = ?";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
@@ -625,7 +664,7 @@ public class DbUtils {
   public static boolean isOidcRefreshTokenActive(
       String tenantId, String clientId, String refreshToken) {
     String deleteQuery =
-        "SELECT is_active FROM oidc_refresh_token WHERE tenant_id = ? and client_id = ? and refresh_token = ?";
+        "SELECT is_active FROM refresh_tokens WHERE tenant_id = ? and client_id = ? and refresh_token = ?";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {

@@ -9,7 +9,9 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
+import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
 import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -79,6 +81,19 @@ public class ApplicationIoUtils {
     body.put(BODY_PARAM_REFRESH_TOKEN, refreshToken);
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/refreshToken"));
+  }
+
+  public static Response v2RefreshToken(String tenantId, String refreshToken, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    if (clientId != null) {
+      body.put(CLIENT_ID, clientId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/refreshToken"));
   }
 
   public static Response passwordlessInit(
