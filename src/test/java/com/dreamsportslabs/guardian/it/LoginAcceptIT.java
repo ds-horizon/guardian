@@ -30,8 +30,6 @@ import static com.dreamsportslabs.guardian.Constants.SCOPE_ADDRESS;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.Constants.SCOPE_PHONE;
-import static com.dreamsportslabs.guardian.Constants.SKIP_CONSENT;
-import static com.dreamsportslabs.guardian.Constants.SKIP_CONSENT_CLIENT_NAME;
 import static com.dreamsportslabs.guardian.Constants.SOURCE_VALUE;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.Constants.TENANT_2;
