@@ -19,6 +19,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVI
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
+import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.dto.Provider;
@@ -188,13 +189,20 @@ public class SocialAuthService {
                     headers,
                     tenantId);
               } else {
-                return userService
-                    .addProvider(
-                        userRes.getString(USERID),
-                        headers,
-                        getGoogleProviderData(googleUserData, dto.getIdToken()),
-                        tenantId)
-                    .andThen(Single.just(userRes));
+                TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
+                boolean requireProviderEndpoint =
+                    tenantConfig.getUserConfig().getIsProviderEndpointRequired();
+                if (requireProviderEndpoint) {
+                  return userService
+                      .addProvider(
+                          userRes.getString(USERID),
+                          headers,
+                          getGoogleProviderData(googleUserData, dto.getIdToken()),
+                          tenantId)
+                      .andThen(Single.just(userRes));
+                } else {
+                  return Single.just(userRes);
+                }
               }
             })
         .flatMap(
