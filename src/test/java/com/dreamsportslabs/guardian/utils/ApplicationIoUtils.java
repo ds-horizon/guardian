@@ -528,4 +528,23 @@ public class ApplicationIoUtils {
 
     return execute(body, headers, null, spec -> spec.post("/v1/guest/login"));
   }
+
+  public static Response v2Logout(
+      String tenantId, Map<String, Object> body, String cookieRefreshToken) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> {
+          if (cookieRefreshToken != null) {
+            spec.cookie("RT", cookieRefreshToken);
+          }
+          return spec.post("/v2/logout");
+        });
+  }
 }

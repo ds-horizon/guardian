@@ -98,16 +98,19 @@ public class ClientService {
         .switchIfEmpty(Single.error(INVALID_CLIENT.getException()));
   }
 
-  public Completable validateFirstPartyClient(
-      String clientId, String tenantId, List<String> requestScopes) {
+  public Completable validateFirstPartyClient(String tenantId, String clientId) {
     return getClient(clientId, tenantId)
         .onErrorResumeNext(err -> Single.error(INVALID_CLIENT.getException()))
         .filter(
             clientModel -> clientModel.getClientType().equals(ClientType.FIRST_PARTY.getValue()))
         .switchIfEmpty(Single.error(INVALID_CLIENT.getException()))
-        .flatMapCompletable(
-            clientModel ->
-                clientScopeService.validateClientScopes(tenantId, clientId, requestScopes));
+        .ignoreElement();
+  }
+
+  public Completable validateFirstPartyClientAndClientScopes(
+      String tenantId, String clientId, List<String> requestScopes) {
+    return validateFirstPartyClient(tenantId, clientId)
+        .andThen(clientScopeService.validateClientScopes(tenantId, clientId, requestScopes));
   }
 
   public Single<String> getDefaultClientId(String tenantId) {

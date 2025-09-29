@@ -203,7 +203,8 @@ CREATE TABLE refresh_tokens
     PRIMARY KEY (id),
     KEY               `idx_refresh_token` (`tenant_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
     KEY               `idx_refresh_token_user` (`tenant_id`, `user_id`),
-    KEY               `idx_client_id_refresh_token` (`tenant_id`, `client_id`, `refresh_token`, `is_active`, `refresh_token_exp`, `user_id`),
+    KEY               `idx_client_id_refresh_token` (`tenant_id`, `client_id`, `refresh_token`),
+    KEY               `idx_client_id_user` (`tenant_id`, `client_id`, `user_id`),
     CONSTRAINT `fk_refresh_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4

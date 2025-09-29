@@ -20,7 +20,6 @@ import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.OidcCodeChallengeMethod;
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
-import com.dreamsportslabs.guardian.dao.V1RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dao.model.ClientScopeModel;
 import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
@@ -61,8 +60,6 @@ public class OidcTokenService {
   private final ScopeService scopeService;
   private final UserService userService;
   private final TokenIssuer tokenIssuer;
-  private final V1RefreshTokenDao v1RefreshTokenDao;
-
   private final RefreshTokenDao refreshTokenDao;
   private final AuthorizationService authorizationService;
 
@@ -86,7 +83,7 @@ public class OidcTokenService {
     return authenticateClientUsingHeader(authorizationHeader, tenantId)
         .flatMap(
             clientModel ->
-                refreshTokenDao.revokeOidcRefreshToken(
+                refreshTokenDao.revokeToken(
                     tenantId, clientModel.getClientId(), requestDto.getToken()))
         .flatMapCompletable(
             result -> {
