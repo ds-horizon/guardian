@@ -19,6 +19,8 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVI
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
+import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
+import com.dreamsportslabs.guardian.config.tenant.UserConfig;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.dto.Provider;
@@ -101,13 +103,18 @@ public class SocialAuthService {
                 return userService.createUser(
                     getUserDtoFromFbUserData(fbUserData, dto.getAccessToken()), headers, tenantId);
               } else {
-                return userService
-                    .addProvider(
-                        userRes.getString(USERID),
-                        headers,
-                        getFbProviderData(fbUserData, dto.getAccessToken()),
-                        tenantId)
-                    .andThen(Single.just(userRes));
+                UserConfig userConfig = registry.get(tenantId, TenantConfig.class).getUserConfig();
+                if (userConfig.getSendProviderDetails()) {
+                  return userService
+                      .addProvider(
+                          userRes.getString(USERID),
+                          headers,
+                          getFbProviderData(fbUserData, dto.getAccessToken()),
+                          tenantId)
+                      .andThen(Single.just(userRes));
+                } else {
+                  return Single.just(userRes);
+                }
               }
             })
         .flatMap(
@@ -188,13 +195,18 @@ public class SocialAuthService {
                     headers,
                     tenantId);
               } else {
-                return userService
-                    .addProvider(
-                        userRes.getString(USERID),
-                        headers,
-                        getGoogleProviderData(googleUserData, dto.getIdToken()),
-                        tenantId)
-                    .andThen(Single.just(userRes));
+                UserConfig userConfig = registry.get(tenantId, TenantConfig.class).getUserConfig();
+                if (userConfig.getSendProviderDetails()) {
+                  return userService
+                      .addProvider(
+                          userRes.getString(USERID),
+                          headers,
+                          getGoogleProviderData(googleUserData, dto.getIdToken()),
+                          tenantId)
+                      .andThen(Single.just(userRes));
+                } else {
+                  return Single.just(userRes);
+                }
               }
             })
         .flatMap(

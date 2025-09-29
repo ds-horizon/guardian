@@ -234,15 +234,25 @@ public class IdpConnectService {
         .flatMap(
             user -> {
               boolean userExists = user.getString(USERID) != null;
+              boolean sendProviderDetails =
+                  registry
+                      .get(tenantId, TenantConfig.class)
+                      .getUserConfig()
+                      .getSendProviderDetails();
 
               switch (flow) {
                 case SIGNIN:
                   if (!userExists) {
                     return Single.error(USER_NOT_EXISTS.getCustomException("User does not exist"));
                   }
-                  return userService
-                      .addProvider(user.getString(USERID), headers, userDto.getProvider(), tenantId)
-                      .andThen(Single.just(user));
+                  if (sendProviderDetails) {
+                    return userService
+                        .addProvider(
+                            user.getString(USERID), headers, userDto.getProvider(), tenantId)
+                        .andThen(Single.just(user));
+                  } else {
+                    return Single.just(user);
+                  }
 
                 case SIGNUP:
                   if (userExists) {
@@ -252,18 +262,27 @@ public class IdpConnectService {
 
                 case SIGNINUP:
                   if (userExists) {
-                    return userService
-                        .addProvider(
-                            user.getString(USERID), headers, userDto.getProvider(), tenantId)
-                        .andThen(Single.just(user));
+                    if (sendProviderDetails) {
+                      return userService
+                          .addProvider(
+                              user.getString(USERID), headers, userDto.getProvider(), tenantId)
+                          .andThen(Single.just(user));
+                    } else {
+                      return Single.just(user);
+                    }
                   } else {
                     return userService.createUser(userDto, headers, tenantId);
                   }
 
                 default:
-                  return userService
-                      .addProvider(user.getString(USERID), headers, userDto.getProvider(), tenantId)
-                      .andThen(Single.just(user));
+                  if (sendProviderDetails) {
+                    return userService
+                        .addProvider(
+                            user.getString(USERID), headers, userDto.getProvider(), tenantId)
+                        .andThen(Single.just(user));
+                  } else {
+                    return Single.just(user);
+                  }
               }
             });
   }

@@ -26,6 +26,7 @@ CREATE TABLE user_config
     create_user_path       VARCHAR(256) NOT NULL,
     authenticate_user_path VARCHAR(256) NOT NULL,
     add_provider_path      VARCHAR(256) NOT NULL,
+    send_provider_details  BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
