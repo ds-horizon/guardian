@@ -92,7 +92,7 @@ public class IdpConnectService {
         .map(
             idpTokens -> {
               Provider provider = createProviderFromTokens(idpTokens, providerName);
-              UserDto userDto = createUserDtoFromTokens(provider);
+              UserDto userDto = createUserDtoFromTokens(provider, requestDto);
               return Pair.of(idpTokens, userDto);
             })
         .flatMap(
@@ -168,7 +168,8 @@ public class IdpConnectService {
     }
   }
 
-  private UserDto createUserDtoFromTokens(Provider provider) {
+  private UserDto createUserDtoFromTokens(
+      Provider provider, IdpConnectRequestDto idpConnectRequestDto) {
     Map<String, Object> claims = provider.getData();
 
     UserDto.UserDtoBuilder userDtoBuilder = UserDto.builder();
@@ -189,7 +190,10 @@ public class IdpConnectService {
     }
     userDtoBuilder.provider(provider);
 
-    return userDtoBuilder.build();
+    UserDto userDto = userDtoBuilder.build();
+    userDto.setAdditionalInfo(idpConnectRequestDto.getAdditionalInfo());
+
+    return userDto;
   }
 
   private Map<String, String> getUserIdentifierDetails(

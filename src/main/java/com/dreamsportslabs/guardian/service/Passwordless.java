@@ -194,13 +194,15 @@ public class Passwordless {
               } else {
                 builder.phoneNumber(contact.getIdentifier());
               }
-              builder.additionalInfo(model.getAdditionalInfo());
+
+              UserDto userDto = builder.build();
+              userDto.setAdditionalInfo(model.getAdditionalInfo());
 
               MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
               model.getHeaders().forEach(headers::add);
 
               return userService
-                  .createUser(builder.build(), headers, tenantId)
+                  .createUser(userDto, headers, tenantId)
                   .map(
                       user -> {
                         model.setUser(user.getMap());
