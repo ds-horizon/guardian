@@ -36,13 +36,12 @@ public class V2Logout {
 
     return authorizationService
         .logout(requestDto, tenantId)
-        .andThen(
-            io.reactivex.rxjava3.core.Single.just(
-                Response.noContent()
-                    .cookie(authorizationService.getAccessTokenCookie(null, tenantId))
-                    .cookie(authorizationService.getRefreshTokenCookie(null, tenantId))
-                    .cookie(authorizationService.getSsoTokenCookie(null, tenantId))
-                    .build()))
+        .toSingleDefault(
+            Response.noContent()
+                .cookie(authorizationService.getAccessTokenCookie(null, tenantId))
+                .cookie(authorizationService.getRefreshTokenCookie(null, tenantId))
+                .cookie(authorizationService.getSsoTokenCookie(null, tenantId))
+                .build())
         .toCompletionStage();
   }
 }

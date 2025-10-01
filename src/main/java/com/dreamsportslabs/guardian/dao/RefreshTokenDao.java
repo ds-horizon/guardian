@@ -1,13 +1,13 @@
 package com.dreamsportslabs.guardian.dao;
 
-import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.GET_ACTIVE_REFRESH_TOKEN;
-import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.GET_OIDC_REFRESH_TOKEN;
-import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.REVOKE_OIDC_REFRESH_TOKEN;
-import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.SAVE_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.GET_ALL_REFRESH_TOKENS_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.GET_ALL_REFRESH_TOKENS_FOR_USER_AND_CLIENT;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.GET_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.GET_REFRESH_TOKEN_WITH_CLIENT_ID;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_ALL_REFRESH_TOKENS_FOR_USER;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.SAVE_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.SAVE_SSO_TOKEN;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INTERNAL_SERVER_ERROR;
 
@@ -65,7 +65,7 @@ public class RefreshTokenDao {
         .rxWithTransaction(
             client ->
                 client
-                    .preparedQuery(SAVE_OIDC_REFRESH_TOKEN)
+                    .preparedQuery(SAVE_REFRESH_TOKEN)
                     .rxExecute(refreshTokenParams)
                     .filter(rows -> ssoTokenModel != null)
                     .flatMapSingle(
@@ -81,7 +81,7 @@ public class RefreshTokenDao {
     params.addString(refreshToken);
     return mysqlClient
         .getReaderPool()
-        .preparedQuery(GET_ACTIVE_REFRESH_TOKEN)
+        .preparedQuery(GET_REFRESH_TOKEN)
         .rxExecute(params)
         .onErrorResumeNext(
             err -> {
@@ -101,7 +101,7 @@ public class RefreshTokenDao {
     params.addString(refreshToken);
     return mysqlClient
         .getReaderPool()
-        .preparedQuery(GET_OIDC_REFRESH_TOKEN)
+        .preparedQuery(GET_REFRESH_TOKEN_WITH_CLIENT_ID)
         .rxExecute(params)
         .onErrorResumeNext(
             err -> {
@@ -133,7 +133,7 @@ public class RefreshTokenDao {
     Tuple params = Tuple.of(tenantId, clientId, refreshToken);
     return mysqlClient
         .getWriterPool()
-        .preparedQuery(REVOKE_OIDC_REFRESH_TOKEN)
+        .preparedQuery(INVALIDATE_REFRESH_TOKEN)
         .rxExecute(params)
         .onErrorResumeNext(
             err -> {
