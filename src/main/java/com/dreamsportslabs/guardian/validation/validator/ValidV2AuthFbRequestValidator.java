@@ -5,12 +5,13 @@ import com.dreamsportslabs.guardian.dto.request.v2.V2AuthFbRequestDto;
 import com.dreamsportslabs.guardian.validation.annotation.ValidV2AuthFbRequest;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.apache.commons.lang3.StringUtils;
 
 public class ValidV2AuthFbRequestValidator
     implements ConstraintValidator<ValidV2AuthFbRequest, V2AuthFbRequestDto> {
 
   private boolean isValidAccessToken(String accessToken, ConstraintValidatorContext context) {
-    if (accessToken == null) {
+    if (StringUtils.isBlank(accessToken)) {
       context
           .buildConstraintViolationWithTemplate("access_token cannot be null")
           .addConstraintViolation();
@@ -20,7 +21,7 @@ public class ValidV2AuthFbRequestValidator
   }
 
   private boolean isValidResponseType(String responseType, ConstraintValidatorContext context) {
-    if (responseType == null) {
+    if (StringUtils.isBlank(responseType)) {
       context
           .buildConstraintViolationWithTemplate("response_type cannot be null")
           .addConstraintViolation();

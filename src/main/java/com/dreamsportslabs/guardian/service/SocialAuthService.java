@@ -155,10 +155,10 @@ public class SocialAuthService {
                 authorizationService.generate(
                     user,
                     dto.getResponseType(),
-                    "",
+                    String.join(" ", dto.getScopes()),
                     List.of(AuthMethod.THIRD_PARTY_OIDC),
                     dto.getMetaInfo(),
-                    null,
+                    dto.getClientId(),
                     tenantId));
   }
 
@@ -221,6 +221,8 @@ public class SocialAuthService {
         dto.getResponseType(),
         dto.getMetaInfo(),
         headers,
+        dto.getScopes(),
+        dto.getClientId(),
         tenantId);
   }
 
@@ -230,6 +232,8 @@ public class SocialAuthService {
       String responseType,
       MetaInfo metaInfo,
       MultivaluedMap<String, String> headers,
+      List<String> scopes,
+      String clientId,
       String tenantId) {
     return registry
         .get(tenantId, GoogleIdProvider.class)
@@ -293,10 +297,10 @@ public class SocialAuthService {
                 authorizationService.generate(
                     user,
                     responseType,
-                    "",
+                    String.join(" ", scopes),
                     List.of(AuthMethod.THIRD_PARTY_OIDC),
                     metaInfo,
-                    null,
+                    clientId,
                     tenantId));
   }
 

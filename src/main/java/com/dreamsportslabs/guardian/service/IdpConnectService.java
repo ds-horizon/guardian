@@ -132,10 +132,10 @@ public class IdpConnectService {
                               .generate(
                                   userJson,
                                   requestDto.getResponseType(),
-                                  "",
+                                  String.join(" ", requestDto.getScopes()),
                                   List.of(AuthMethod.THIRD_PARTY_OIDC),
                                   requestDto.getMetaInfo(),
-                                  null,
+                                  requestDto.getClientId(),
                                   tenantId)
                               .map(
                                   responseDto -> {

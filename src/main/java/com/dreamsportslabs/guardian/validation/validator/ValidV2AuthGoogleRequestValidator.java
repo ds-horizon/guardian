@@ -11,7 +11,7 @@ public class ValidV2AuthGoogleRequestValidator
     implements ConstraintValidator<ValidV2AuthGoogleRequest, V2AuthGoogleRequestDto> {
 
   private boolean isValidIdToken(String idToken, ConstraintValidatorContext context) {
-    if (StringUtils.isEmpty(idToken)) {
+    if (StringUtils.isBlank(idToken)) {
       context
           .buildConstraintViolationWithTemplate("id_token cannot be null or empty")
           .addConstraintViolation();
@@ -21,7 +21,7 @@ public class ValidV2AuthGoogleRequestValidator
   }
 
   private boolean isValidResponseType(String responseType, ConstraintValidatorContext context) {
-    if (StringUtils.isEmpty(responseType)) {
+    if (StringUtils.isBlank(responseType)) {
       context
           .buildConstraintViolationWithTemplate("response_type cannot be null or empty")
           .addConstraintViolation();
