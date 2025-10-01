@@ -4,6 +4,10 @@ import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.GET_ACTIVE_R
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.GET_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.REVOKE_OIDC_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.OidcTokenQuery.SAVE_OIDC_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.GET_ALL_REFRESH_TOKENS_FOR_USER;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.GET_ALL_REFRESH_TOKENS_FOR_USER_AND_CLIENT;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_ALL_REFRESH_TOKENS_FOR_USER;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.SAVE_SSO_TOKEN;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INTERNAL_SERVER_ERROR;
 
@@ -17,6 +21,7 @@ import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.rxjava3.sqlclient.Tuple;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -108,8 +113,23 @@ public class RefreshTokenDao {
         .map(result -> JsonUtils.rowSetToList(result, RefreshTokenModel.class).get(0));
   }
 
-  public Single<Boolean> revokeOidcRefreshToken(
-      String tenantId, String clientId, String refreshToken) {
+  public Single<List<String>> getRefreshTokens(String tenantId, String clientId, String userId) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(GET_ALL_REFRESH_TOKENS_FOR_USER_AND_CLIENT)
+        .rxExecute(Tuple.of(tenantId, clientId, userId))
+        .map(rows -> JsonUtils.rowSetToList(rows, String.class));
+  }
+
+  public Single<List<String>> getRefreshTokens(String tenantId, String userId) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(GET_ALL_REFRESH_TOKENS_FOR_USER)
+        .rxExecute(Tuple.of(tenantId, userId))
+        .map(rows -> JsonUtils.rowSetToList(rows, String.class));
+  }
+
+  public Single<Boolean> revokeToken(String tenantId, String clientId, String refreshToken) {
     Tuple params = Tuple.of(tenantId, clientId, refreshToken);
     return mysqlClient
         .getWriterPool()
@@ -125,5 +145,33 @@ public class RefreshTokenDao {
         .filter(result -> result.rowCount() > 0)
         .map(__ -> true)
         .switchIfEmpty(Single.just(false));
+  }
+
+  public Completable revokeTokens(String tenantId, String clientId, String userId) {
+    Tuple params = Tuple.of(tenantId, clientId, userId);
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER)
+        .rxExecute(params)
+        .onErrorResumeNext(
+            err -> {
+              log.error("Failed to revoke tokens", err);
+              return Single.error(INTERNAL_SERVER_ERROR.getJsonCustomException("Failed to revoke"));
+            })
+        .ignoreElement();
+  }
+
+  public Completable revokeTokens(String tenantId, String userId) {
+    Tuple params = Tuple.of(tenantId, userId);
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(INVALIDATE_ALL_REFRESH_TOKENS_FOR_USER)
+        .rxExecute(params)
+        .onErrorResumeNext(
+            err -> {
+              log.error("Failed to revoke tokens", err);
+              return Single.error(INTERNAL_SERVER_ERROR.getJsonCustomException("Failed to revoke"));
+            })
+        .ignoreElement();
   }
 }

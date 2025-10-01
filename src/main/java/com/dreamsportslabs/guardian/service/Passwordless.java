@@ -91,7 +91,8 @@ public class Passwordless {
     }
 
     return clientService
-        .validateFirstPartyClient(requestDto.getClientId(), tenantId, requestDto.getScopes())
+        .validateFirstPartyClientAndClientScopes(
+            tenantId, requestDto.getClientId(), requestDto.getScopes())
         .andThen(passwordlessModel)
         .flatMap(
             model ->

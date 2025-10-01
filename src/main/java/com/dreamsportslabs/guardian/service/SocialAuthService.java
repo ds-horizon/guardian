@@ -19,9 +19,9 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVI
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
-import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.UserConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.dto.Provider;

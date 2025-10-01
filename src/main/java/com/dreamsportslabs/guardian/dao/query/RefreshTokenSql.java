@@ -15,4 +15,10 @@ public class RefreshTokenSql {
 
   public static final String INVALIDATE_ALL_REFRESH_TOKENS_FOR_USER =
       "UPDATE refresh_tokens SET is_active = 0 WHERE tenant_id = ? AND user_id = ?";
+
+  public static final String GET_ALL_REFRESH_TOKENS_FOR_USER_AND_CLIENT =
+      "SELECT refresh_token AS refreshToken FROM refresh_tokens WHERE tenant_id = ? AND client_id = ? AND is_active = 1 AND user_id = ?";
+
+  public static final String INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER =
+      "UPDATE refresh_tokens SET is_active = 0 WHERE tenant_id = ? AND client_id = ? AND user_id = ?";
 }

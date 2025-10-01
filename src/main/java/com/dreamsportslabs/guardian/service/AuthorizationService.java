@@ -22,13 +22,13 @@ import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.dao.CodeDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RevocationDao;
-import com.dreamsportslabs.guardian.dao.V1RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.model.CodeModel;
 import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
 import com.dreamsportslabs.guardian.dao.model.SsoTokenModel;
 import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2LogoutRequestDto;
 import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
@@ -58,10 +58,10 @@ public class AuthorizationService {
   private final Registry registry;
   private final TokenIssuer tokenIssuer;
 
-  private final V1RefreshTokenDao v1RefreshTokenDao;
   private final RefreshTokenDao refreshTokenDao;
   private final CodeDao codeDao;
   private final RevocationDao revocationDao;
+  private final ClientService clientService;
   private final UserService userService;
 
   public Single<Object> generate(
@@ -298,40 +298,109 @@ public class AuthorizationService {
     return invalidateRefreshToken(requestDto, tenantId);
   }
 
+  public Completable logout(V2LogoutRequestDto requestDto, String tenantId) {
+    if (StringUtils.isBlank(requestDto.getRefreshToken())) {
+      return Completable.error(UNAUTHORIZED.getCustomException("Invalid refresh token"));
+    }
+    return invalidateRefreshToken(requestDto, tenantId);
+  }
+
   public Completable adminLogout(String userId, String tenantId) {
-    return v1RefreshTokenDao
-        .getRefreshTokens(userId, tenantId)
-        .flatMap(
-            list ->
-                v1RefreshTokenDao
-                    .invalidateAllRefreshTokensForUser(userId, tenantId)
-                    .andThen(Single.just(list)))
+    return refreshTokenDao
+        .getRefreshTokens(tenantId, userId)
+        .flatMap(list -> refreshTokenDao.revokeTokens(tenantId, userId).andThen(Single.just(list)))
         .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
         .ignoreElement();
   }
 
   private Completable invalidateRefreshToken(V1LogoutRequestDto dto, String tenantId) {
-    return v1RefreshTokenDao
-        .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
+    return refreshTokenDao
+        .getRefreshToken(tenantId, dto.getRefreshToken())
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMapCompletable(
-            userId -> {
+            refreshTokenModel -> {
               if (dto.getIsUniversalLogout()) {
-                return v1RefreshTokenDao
-                    .getRefreshTokens(userId, tenantId)
+                return refreshTokenDao
+                    .getRefreshTokens(tenantId, refreshTokenModel.getUserId())
                     .flatMap(
                         list ->
-                            v1RefreshTokenDao
-                                .invalidateAllRefreshTokensForUser(userId, tenantId)
+                            refreshTokenDao
+                                .revokeTokens(tenantId, refreshTokenModel.getUserId())
                                 .andThen(Single.just(list)))
                     .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
                     .ignoreElement();
               } else {
-                return v1RefreshTokenDao
-                    .invalidateRefreshToken(dto.getRefreshToken(), tenantId)
+                return refreshTokenDao
+                    .revokeTokens(
+                        tenantId,
+                        refreshTokenModel.getClientId(),
+                        refreshTokenModel.getRefreshToken())
                     .doOnComplete(
                         () -> updateRevocations(List.of(dto.getRefreshToken()), tenantId));
               }
+            });
+  }
+
+  private Completable invalidateRefreshToken(V2LogoutRequestDto dto, String tenantId) {
+    return refreshTokenDao
+        .getRefreshToken(tenantId, dto.getRefreshToken())
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel -> {
+              if (StringUtils.isNotBlank(dto.getClientId())) {
+                return refreshTokenModel.getClientId().equals(dto.getClientId());
+              }
+              return true;
+            })
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel ->
+                refreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .flatMapCompletable(
+            refreshTokenModel -> {
+              switch (dto.getLogoutType()) {
+                case TOKEN -> {
+                  return refreshTokenDao
+                      .revokeToken(tenantId, refreshTokenModel.getClientId(), dto.getRefreshToken())
+                      .doOnSuccess(
+                          __ -> updateRevocations(List.of(dto.getRefreshToken()), tenantId))
+                      .ignoreElement();
+                }
+                case CLIENT -> {
+                  return refreshTokenDao
+                      .getRefreshTokens(
+                          tenantId, refreshTokenModel.getClientId(), refreshTokenModel.getUserId())
+                      .flatMap(
+                          list ->
+                              refreshTokenDao
+                                  .revokeTokens(
+                                      tenantId,
+                                      refreshTokenModel.getClientId(),
+                                      refreshTokenModel.getUserId())
+                                  .andThen(Single.just(list)))
+                      .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
+                      .ignoreElement();
+                }
+                case TENANT -> {
+                  return clientService
+                      .validateFirstPartyClient(tenantId, refreshTokenModel.getClientId())
+                      .onErrorResumeNext(
+                          err ->
+                              Completable.error(
+                                  UNAUTHORIZED.getCustomException("Invalid refresh token")))
+                      .andThen(
+                          refreshTokenDao.getRefreshTokens(tenantId, refreshTokenModel.getUserId()))
+                      .flatMap(
+                          list ->
+                              refreshTokenDao
+                                  .revokeTokens(tenantId, refreshTokenModel.getUserId())
+                                  .andThen(Single.just(list)))
+                      .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
+                      .ignoreElement();
+                }
+              }
+              return Completable.complete();
             });
   }
 
