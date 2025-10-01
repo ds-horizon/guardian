@@ -258,7 +258,8 @@ public class IdpConnectService {
   public Single<IdpConnectResponseDto> v2Connect(
       V2IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
     return clientService
-        .validateFirstPartyClient(requestDto.getClientId(), tenantId, requestDto.getScopes())
+        .validateFirstPartyClientAndClientScopes(
+            requestDto.getClientId(), tenantId, requestDto.getScopes())
         .andThen(connect(requestDto, headers, tenantId));
   }
 

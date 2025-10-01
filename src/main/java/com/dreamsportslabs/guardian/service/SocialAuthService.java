@@ -20,6 +20,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
 import com.dreamsportslabs.guardian.cache.DefaultClientScopesCache;
+import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.UserConfig;
 import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
@@ -86,7 +87,7 @@ public class SocialAuthService {
   public Single<Object> v2AuthFb(
       V2AuthFbRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return clientService
-        .validateFirstPartyClient(dto.getClientId(), tenantId, dto.getScopes())
+        .validateFirstPartyClientAndClientScopes(dto.getClientId(), tenantId, dto.getScopes())
         .andThen(authFb(dto, headers, tenantId));
   }
 
@@ -208,7 +209,7 @@ public class SocialAuthService {
   public Single<Object> v2AuthGoogle(
       V2AuthGoogleRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return clientService
-        .validateFirstPartyClient(dto.getClientId(), tenantId, dto.getScopes())
+        .validateFirstPartyClientAndClientScopes(dto.getClientId(), tenantId, dto.getScopes())
         .andThen(authGoogle(dto, headers, tenantId));
   }
 
@@ -279,7 +280,7 @@ public class SocialAuthService {
                       .addProvider(
                           userRes.getString(USERID),
                           headers,
-                          getGoogleProviderData(googleUserData, dto.getIdToken()),
+                          getGoogleProviderData(googleUserData, idToken),
                           tenantId)
                       .andThen(Single.just(userRes));
                 } else {
