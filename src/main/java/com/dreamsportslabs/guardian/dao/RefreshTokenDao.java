@@ -8,6 +8,9 @@ import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.SAVE_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_ALL_SSO_TOKENS_FOR_USER;
+import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_SSO_TOKENS_OF_CLIENT_FOR_USER;
+import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_SSO_TOKEN_BY_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.SAVE_SSO_TOKEN;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INTERNAL_SERVER_ERROR;
 
@@ -130,48 +133,63 @@ public class RefreshTokenDao {
   }
 
   public Single<Boolean> revokeToken(String tenantId, String clientId, String refreshToken) {
-    Tuple params = Tuple.of(tenantId, clientId, refreshToken);
+    Tuple refreshTokenParams = Tuple.of(tenantId, clientId, refreshToken);
+    Tuple ssoParams = Tuple.of(tenantId, clientId, refreshToken);
     return mysqlClient
         .getWriterPool()
-        .preparedQuery(INVALIDATE_REFRESH_TOKEN)
-        .rxExecute(params)
-        .onErrorResumeNext(
-            err -> {
-              log.error("Failed to revoke OIDC refresh token", err);
-              return Single.error(
-                  INTERNAL_SERVER_ERROR.getJsonCustomException(
-                      "Failed to revoke OIDC refresh token"));
-            })
-        .filter(result -> result.rowCount() > 0)
-        .map(__ -> true)
+        .rxWithTransaction(
+            client ->
+                client
+                    .preparedQuery(INVALIDATE_SSO_TOKEN_BY_REFRESH_TOKEN)
+                    .rxExecute(ssoParams)
+                    .flatMapMaybe(
+                        __ ->
+                            client
+                                .preparedQuery(INVALIDATE_REFRESH_TOKEN)
+                                .rxExecute(refreshTokenParams)
+                                .filter(result -> result.rowCount() > 0)
+                                .map(rows -> true)))
         .switchIfEmpty(Single.just(false));
   }
 
   public Completable revokeTokens(String tenantId, String clientId, String userId) {
-    Tuple params = Tuple.of(tenantId, clientId, userId);
+    Tuple refreshTokenParams = Tuple.of(tenantId, clientId, userId);
+    Tuple ssoParams = Tuple.of(tenantId, clientId, userId);
+
     return mysqlClient
         .getWriterPool()
-        .preparedQuery(INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER)
-        .rxExecute(params)
-        .onErrorResumeNext(
-            err -> {
-              log.error("Failed to revoke tokens", err);
-              return Single.error(INTERNAL_SERVER_ERROR.getJsonCustomException("Failed to revoke"));
-            })
+        .rxWithTransaction(
+            client ->
+                client
+                    .preparedQuery(INVALIDATE_SSO_TOKENS_OF_CLIENT_FOR_USER)
+                    .rxExecute(ssoParams)
+                    .flatMapMaybe(
+                        __ ->
+                            client
+                                .preparedQuery(INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER)
+                                .rxExecute(refreshTokenParams)
+                                .filter(result -> result.rowCount() > 0)
+                                .map(rows -> true)))
         .ignoreElement();
   }
 
   public Completable revokeTokens(String tenantId, String userId) {
-    Tuple params = Tuple.of(tenantId, userId);
+    Tuple refreshTokenParams = Tuple.of(tenantId, userId);
+    Tuple ssoParams = Tuple.of(tenantId, userId);
     return mysqlClient
         .getWriterPool()
-        .preparedQuery(INVALIDATE_ALL_REFRESH_TOKENS_FOR_USER)
-        .rxExecute(params)
-        .onErrorResumeNext(
-            err -> {
-              log.error("Failed to revoke tokens", err);
-              return Single.error(INTERNAL_SERVER_ERROR.getJsonCustomException("Failed to revoke"));
-            })
+        .rxWithTransaction(
+            client ->
+                client
+                    .preparedQuery(INVALIDATE_ALL_SSO_TOKENS_FOR_USER)
+                    .rxExecute(ssoParams)
+                    .flatMapMaybe(
+                        __ ->
+                            client
+                                .preparedQuery(INVALIDATE_ALL_REFRESH_TOKENS_FOR_USER)
+                                .rxExecute(refreshTokenParams)
+                                .filter(result -> result.rowCount() > 0)
+                                .map(rows -> true)))
         .ignoreElement();
   }
 }

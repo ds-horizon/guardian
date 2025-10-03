@@ -9,6 +9,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.vertx.core.json.JsonObject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -335,6 +336,23 @@ public class DbUtils {
     return revocations.contains(rftId);
   }
 
+  public static boolean isSsoTokenRevoked(String refreshToken, String tenantId) {
+    String checkSsoToken =
+        "SELECT is_active FROM sso_token WHERE tenant_id = ? AND refresh_token = ?";
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(checkSsoToken)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, refreshToken);
+      ResultSet rs = stmt.executeQuery();
+      if (rs.next()) {
+        return !rs.getBoolean("is_active");
+      }
+    } catch (Exception e) {
+      log.error("Error checking SSO token status", e);
+    }
+    return false;
+  }
+
   public static long getStateTtl(String state, String tenantId) {
     String key = "STATE" + "_" + tenantId + "_" + state;
 
@@ -486,6 +504,30 @@ public class DbUtils {
       stmt.executeUpdate();
     } catch (Exception e) {
       log.error("Error inserting SSO token", e);
+    }
+    return ssoToken;
+  }
+
+  public static String insertSsoTokenWithRefreshToken(
+      String tenantId, String clientId, String userId, String refreshToken, long expiryOffset) {
+    String ssoToken = RandomStringUtils.randomAlphanumeric(15);
+    long expiry = getCurrentTimeInSeconds() + expiryOffset;
+
+    String insertSsoToken =
+        "INSERT INTO sso_token (tenant_id, client_id_issues_to, user_id, refresh_token, sso_token, expiry, auth_methods, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(insertSsoToken)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, userId);
+      stmt.setString(4, refreshToken);
+      stmt.setString(5, ssoToken);
+      stmt.setLong(6, expiry);
+      stmt.setString(7, "[\"PASSWORD\"]");
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error inserting SSO token with refresh token", e);
     }
     return ssoToken;
   }

@@ -67,6 +67,9 @@ class V2LogoutIT {
             "test-location",
             "[\"PASSWORD\"]");
 
+    // Insert corresponding SSO token
+    DbUtils.insertSsoTokenWithRefreshToken(tenant1, client1, VALID_USER_ID, refreshToken, 1800L);
+
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("refresh_token", refreshToken);
     requestBody.put("logout_type", "TOKEN");
@@ -84,6 +87,11 @@ class V2LogoutIT {
     assertThat(
         "Refresh token should be revoked",
         DbUtils.isRefreshTokenRevoked(refreshToken, tenant1),
+        equalTo(true));
+
+    assertThat(
+        "SSO token should be revoked",
+        DbUtils.isSsoTokenRevoked(refreshToken, tenant1),
         equalTo(true));
   }
 
@@ -163,6 +171,11 @@ class V2LogoutIT {
             "test-location",
             "[\"PASSWORD\"]");
 
+    // Insert corresponding SSO tokens
+    DbUtils.insertSsoTokenWithRefreshToken(tenant1, client1, VALID_USER_ID, refreshToken, 1800L);
+    DbUtils.insertSsoTokenWithRefreshToken(tenant1, client1, VALID_USER_ID, refreshToken2, 1800L);
+    DbUtils.insertSsoTokenWithRefreshToken(tenant1, client2, VALID_USER_ID, refreshToken3, 1800L);
+
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("refresh_token", refreshToken);
     requestBody.put("logout_type", "CLIENT");
@@ -191,6 +204,22 @@ class V2LogoutIT {
     assertThat(
         "Refresh token should not be revoked",
         DbUtils.isRefreshTokenRevoked(refreshToken3, tenant1),
+        equalTo(false));
+
+    // Verify SSO tokens
+    assertThat(
+        "SSO token should be revoked",
+        DbUtils.isSsoTokenRevoked(refreshToken, tenant1),
+        equalTo(true));
+
+    assertThat(
+        "SSO token should be revoked",
+        DbUtils.isSsoTokenRevoked(refreshToken2, tenant1),
+        equalTo(true));
+
+    assertThat(
+        "SSO token should not be revoked",
+        DbUtils.isSsoTokenRevoked(refreshToken3, tenant1),
         equalTo(false));
   }
 
@@ -224,6 +253,10 @@ class V2LogoutIT {
             "test-location",
             "[\"PASSWORD\"]");
 
+    // Insert corresponding SSO tokens
+    DbUtils.insertSsoTokenWithRefreshToken(tenant1, client1, VALID_USER_ID, refreshToken, 1800L);
+    DbUtils.insertSsoTokenWithRefreshToken(tenant1, client2, VALID_USER_ID, refreshToken2, 1800L);
+
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("refresh_token", refreshToken);
     requestBody.put("logout_type", "TENANT");
@@ -246,6 +279,17 @@ class V2LogoutIT {
     assertThat(
         "Refresh token should be revoked",
         DbUtils.isRefreshTokenRevoked(refreshToken2, tenant1),
+        equalTo(true));
+
+    // Verify SSO tokens
+    assertThat(
+        "SSO token should be revoked",
+        DbUtils.isSsoTokenRevoked(refreshToken, tenant1),
+        equalTo(true));
+
+    assertThat(
+        "SSO token should be revoked",
+        DbUtils.isSsoTokenRevoked(refreshToken2, tenant1),
         equalTo(true));
   }
 

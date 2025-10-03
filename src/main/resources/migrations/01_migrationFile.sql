@@ -467,6 +467,7 @@ CREATE TABLE sso_token
     PRIMARY KEY (id),
     KEY                 `idx_sso_token` (`tenant_id`, `sso_token`, `is_active`, `expiry`, `user_id`),
     KEY                 `idx_sso_token_user` (`tenant_id`, `user_id`),
+    KEY                 `idx_sso_token_client_refresh_token` (`tenant_id`, `client_id_issues_to`, `refresh_token`, `user_id`),
     KEY                 `idx_sso_token_client_user` (`tenant_id`, `client_id_issues_to`, `user_id`, `sso_token`),
     CONSTRAINT `fk_sso_token_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_sso_token_client` FOREIGN KEY (`tenant_id`, `client_id_issues_to`) REFERENCES `client` (`tenant_id`, `client_id`) ON DELETE CASCADE
