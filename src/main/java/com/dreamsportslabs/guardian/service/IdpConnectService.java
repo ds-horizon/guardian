@@ -25,7 +25,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVIDER_USER_ID;
-import static com.dreamsportslabs.guardian.constant.IdentifierType.ID_TOKEN;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_IDP_TOKEN;
@@ -259,7 +258,7 @@ public class IdpConnectService {
       V2IdpConnectRequestDto requestDto, MultivaluedMap<String, String> headers, String tenantId) {
     return clientService
         .validateFirstPartyClientAndClientScopes(
-            requestDto.getClientId(), tenantId, requestDto.getScopes())
+            tenantId, requestDto.getClientId(), requestDto.getScopes())
         .andThen(connect(requestDto, headers, tenantId));
   }
 

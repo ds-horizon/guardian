@@ -87,7 +87,7 @@ public class SocialAuthService {
   public Single<Object> v2AuthFb(
       V2AuthFbRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return clientService
-        .validateFirstPartyClientAndClientScopes(dto.getClientId(), tenantId, dto.getScopes())
+        .validateFirstPartyClientAndClientScopes(tenantId, dto.getClientId(), dto.getScopes())
         .andThen(authFb(dto, headers, tenantId));
   }
 
