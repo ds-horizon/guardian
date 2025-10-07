@@ -95,7 +95,7 @@ public class ApplicationIoUtils {
       body.put(CLIENT_ID, clientId);
     }
 
-    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/refreshToken"));
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/refresh-token"));
   }
 
   public static Response passwordlessInit(

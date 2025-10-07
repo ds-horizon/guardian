@@ -22,7 +22,7 @@ import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
-@Path("/v2/refreshToken")
+@Path("/v2/refresh-token")
 public class V2RefreshToken {
   private final AuthorizationService authorizationService;
 
