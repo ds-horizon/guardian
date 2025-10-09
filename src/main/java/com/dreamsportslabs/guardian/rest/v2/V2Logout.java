@@ -32,6 +32,9 @@ public class V2Logout {
       @HeaderParam(TENANT_ID) String tenantId,
       @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String cookieRefreshToken,
       V2LogoutRequestDto requestDto) {
+    if (requestDto == null) {
+      requestDto = new V2LogoutRequestDto();
+    }
     requestDto.setRefreshTokenFromCookie(cookieRefreshToken);
 
     return authorizationService

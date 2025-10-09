@@ -5,7 +5,9 @@ import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import com.dreamsportslabs.guardian.dto.request.v2.V2IdpConnectRequestDto;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.dreamsportslabs.guardian.service.IdpConnectService;
+import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
+import io.vertx.core.json.JsonObject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
@@ -40,9 +42,10 @@ public class V2IdpConnect {
         .map(
             response -> {
               if (StringUtils.isNotBlank(response.getCode())) {
-                return Response.ok(response).build();
+                return Response.ok(Utils.convertKeysToSnakeCase(JsonObject.mapFrom(response)))
+                    .build();
               } else {
-                return Response.ok(response)
+                return Response.ok(Utils.convertKeysToSnakeCase(JsonObject.mapFrom(response)))
                     .cookie(authorizationService.getIDPConnectCookies(response, tenantId))
                     .build();
               }

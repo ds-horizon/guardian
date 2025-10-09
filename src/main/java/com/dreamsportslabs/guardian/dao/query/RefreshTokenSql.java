@@ -12,14 +12,14 @@ public class RefreshTokenSql {
 
   public static final String GET_REFRESH_TOKEN_WITH_CLIENT_ID =
       """
-      SELECT tenant_id, client_id, user_id, is_active, refresh_token, refresh_token_exp, scope
+      SELECT tenant_id, client_id, user_id, is_active, refresh_token, refresh_token_exp, scope, auth_method
       FROM refresh_tokens
       WHERE tenant_id = ? AND client_id = ? AND refresh_token = ? AND is_active = true
       """;
 
   public static final String GET_REFRESH_TOKEN =
       """
-          SELECT tenant_id, client_id, user_id, is_active, refresh_token, refresh_token_exp, scope
+          SELECT tenant_id, client_id, user_id, is_active, refresh_token, refresh_token_exp, scope, auth_method
           FROM refresh_tokens
           WHERE tenant_id = ? AND refresh_token = ? AND is_active = true
       """;

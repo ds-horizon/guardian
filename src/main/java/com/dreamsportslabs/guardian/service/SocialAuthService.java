@@ -209,7 +209,7 @@ public class SocialAuthService {
   public Single<Object> v2AuthGoogle(
       V2AuthGoogleRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return clientService
-        .validateFirstPartyClientAndClientScopes(dto.getClientId(), tenantId, dto.getScopes())
+        .validateFirstPartyClientAndClientScopes(tenantId, dto.getClientId(), dto.getScopes())
         .andThen(authGoogle(dto, headers, tenantId));
   }
 

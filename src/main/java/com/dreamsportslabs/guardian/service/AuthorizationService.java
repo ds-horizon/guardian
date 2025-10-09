@@ -76,7 +76,7 @@ public class AuthorizationService {
       return generateTokens(user, scopes, authMethods, metaInfo, clientId, tenantId)
           .map(res -> res);
     } else if (responseType.equals(CODE)) {
-      return generateCode(user, metaInfo, clientId, tenantId).map(res -> res);
+      return generateCode(user, scopes, authMethods, metaInfo, clientId, tenantId).map(res -> res);
     }
     throw INVALID_REQUEST.getException();
   }
@@ -216,6 +216,9 @@ public class AuthorizationService {
   public Single<RefreshTokenResponseDto> refreshTokens(
       V2RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
+    if (StringUtils.isBlank(dto.getRefreshToken())) {
+      return Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token"));
+    }
     return refreshTokenDao
         .getRefreshToken(tenantId, dto.getRefreshToken())
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
@@ -260,13 +263,20 @@ public class AuthorizationService {
   }
 
   private Single<CodeResponseDto> generateCode(
-      JsonObject user, MetaInfo metaInfo, String clientId, String tenantId) {
+      JsonObject user,
+      String scopes,
+      List<AuthMethod> authMethods,
+      MetaInfo metaInfo,
+      String clientId,
+      String tenantId) {
     AuthCodeConfig config = registry.get(tenantId, TenantConfig.class).getAuthCodeConfig();
     String code = RandomStringUtils.randomAlphanumeric(config.getLength());
     CodeModel codeModel =
         CodeModel.builder()
             .user(user.getMap())
             .code(code)
+            .scopes(Arrays.stream(scopes.split("\\s+")).toList())
+            .authMethods(authMethods)
             .metaInfo(metaInfo)
             .clientId(clientId)
             .expiry(config.getTtl())

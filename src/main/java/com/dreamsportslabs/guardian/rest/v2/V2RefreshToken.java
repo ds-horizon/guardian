@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.rest.v2;
 
+import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
 
@@ -8,8 +9,8 @@ import com.dreamsportslabs.guardian.dto.response.v2.V2RefreshTokenResponseDto;
 import com.dreamsportslabs.guardian.exception.ErrorEnum.ErrorEntity;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.google.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -30,8 +31,11 @@ public class V2RefreshToken {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public CompletionStage<Response> refreshTokens(
-      @Context HttpHeaders headers, @Valid V2RefreshTokenRequestDto requestDto) {
+      @Context HttpHeaders headers,
+      @CookieParam(REFRESH_TOKEN_COOKIE_NAME) String cookieRefreshToken,
+      V2RefreshTokenRequestDto requestDto) {
     String tenantId = headers.getHeaderString(TENANT_ID);
+    requestDto.setRefreshTokenFromCookie(cookieRefreshToken);
     return authorizationService
         .refreshTokens(requestDto, headers.getRequestHeaders(), tenantId)
         .map(

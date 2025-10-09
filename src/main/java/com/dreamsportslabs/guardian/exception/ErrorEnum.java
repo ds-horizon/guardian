@@ -45,7 +45,7 @@ public enum ErrorEnum {
   INVALID_IDENTIFIER_TYPE("invalid_identifier_type", "Invalid identifier type", 400),
   FLOW_BLOCKED("flow_blocked", "API is blocked for this userIdentifier", 403),
   SCOPE_ALREADY_EXISTS("scope_already_exists", "scope already exists", 400),
-
+  INVALID_CLIENT("invalid_client", "Client authentication failed", 401),
   CLIENT_NOT_FOUND("client_not_found", "Client not found", 404),
   CLIENT_ALREADY_EXISTS("client_already_exists", "Client already exists", 400),
   UNPROCESSABLE_ENTITIES("unprocessable_entities", "Unprocessable entities", 422),

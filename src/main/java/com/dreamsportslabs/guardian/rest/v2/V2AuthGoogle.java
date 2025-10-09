@@ -6,7 +6,9 @@ import com.dreamsportslabs.guardian.dto.request.v2.V2AuthGoogleRequestDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.dreamsportslabs.guardian.service.SocialAuthService;
+import com.dreamsportslabs.guardian.utils.Utils;
 import com.google.inject.Inject;
+import io.vertx.core.json.JsonObject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -38,11 +40,12 @@ public class V2AuthGoogle {
         .map(
             resp -> {
               if (resp instanceof TokenResponseDto tokenResponseDto) {
-                return Response.ok(tokenResponseDto)
+                return Response.ok(
+                        Utils.convertKeysToSnakeCase(JsonObject.mapFrom(tokenResponseDto)))
                     .cookie(authorizationService.getCookies(tokenResponseDto, tenantId))
                     .build();
               }
-              return Response.ok(resp).build();
+              return Response.ok(Utils.convertKeysToSnakeCase(JsonObject.mapFrom(resp))).build();
             })
         .toCompletionStage();
   }

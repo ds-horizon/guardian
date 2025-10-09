@@ -1,8 +1,8 @@
 package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 
 import com.dreamsportslabs.guardian.constant.ClientType;
 import com.dreamsportslabs.guardian.dao.ClientDao;
