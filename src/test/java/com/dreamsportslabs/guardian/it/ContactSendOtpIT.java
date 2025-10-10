@@ -537,7 +537,7 @@ public class ContactSendOtpIT {
     // Validate
     response
         .then()
-        .statusCode(SC_INTERNAL_SERVER_ERROR)
+        .statusCode(SC_BAD_REQUEST)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_SMS_SERVICE));
 

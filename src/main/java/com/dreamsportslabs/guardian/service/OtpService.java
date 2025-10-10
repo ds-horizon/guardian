@@ -63,10 +63,13 @@ public class OtpService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              if (res.statusCode() / 100 != 2) {
+              if (res.statusCode() / 100 == 2) {
+                return res;
+              } else if (res.statusCode() / 100 == 4) {
+                throw SMS_SERVICE_ERROR.getCustomException(400, res.bodyAsJsonObject().getMap());
+              } else {
                 throw SMS_SERVICE_ERROR.getCustomException(res.bodyAsJsonObject().getMap());
               }
-              return res;
             })
         .ignoreElement();
   }
@@ -87,10 +90,13 @@ public class OtpService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              if (res.statusCode() / 100 != 2) {
+              if (res.statusCode() / 100 == 2) {
+                return res;
+              } else if (res.statusCode() / 100 == 4) {
+                throw EMAIL_SERVICE_ERROR.getCustomException(400, res.bodyAsJsonObject().getMap());
+              } else {
                 throw EMAIL_SERVICE_ERROR.getCustomException(res.bodyAsJsonObject().getMap());
               }
-              return res;
             })
         .ignoreElement();
   }
