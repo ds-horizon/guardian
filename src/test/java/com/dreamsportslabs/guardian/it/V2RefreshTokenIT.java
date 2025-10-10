@@ -302,7 +302,7 @@ public class V2RefreshTokenIT {
             "1.2.3.4",
             "app",
             "location",
-            "[\"PASSWORDLESS\", \"OTP\"]");
+            "[\"ONE_TIME_PASSWORD\"]");
 
     // Act
     Response response = v2RefreshToken(tenant1, refreshToken, clientId);
@@ -350,7 +350,7 @@ public class V2RefreshTokenIT {
     Response response = v2RefreshToken(tenant1, refreshToken, clientId);
 
     // Validate
-    response.then().statusCode(HttpStatus.SC_BAD_REQUEST);
+    response.then().statusCode(HttpStatus.SC_UNAUTHORIZED);
   }
 
   @Test()

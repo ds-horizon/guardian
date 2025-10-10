@@ -9,6 +9,7 @@ import com.dreamsportslabs.guardian.dao.ClientDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dto.request.CreateClientRequestDto;
 import com.dreamsportslabs.guardian.dto.request.UpdateClientRequestDto;
+import com.dreamsportslabs.guardian.exception.OidcErrorEnum;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -93,9 +94,9 @@ public class ClientService {
   public Single<ClientModel> authenticateClient(
       String clientId, String clientSecret, String tenantId) {
     return getClient(clientId, tenantId)
-        .onErrorResumeNext(err -> Single.error(INVALID_CLIENT.getException()))
+        .onErrorResumeNext(err -> Single.error(OidcErrorEnum.INVALID_CLIENT.getException()))
         .filter(clientModel -> clientModel.getClientSecret().equals(clientSecret))
-        .switchIfEmpty(Single.error(INVALID_CLIENT.getException()));
+        .switchIfEmpty(Single.error(OidcErrorEnum.INVALID_CLIENT.getException()));
   }
 
   public Completable validateFirstPartyClient(String tenantId, String clientId) {
