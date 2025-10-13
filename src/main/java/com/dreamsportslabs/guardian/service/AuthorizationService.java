@@ -342,10 +342,11 @@ public class AuthorizationService {
                     .ignoreElement();
               } else {
                 return refreshTokenDao
-                    .revokeTokens(
+                    .revokeToken(
                         tenantId,
                         refreshTokenModel.getClientId(),
                         refreshTokenModel.getRefreshToken())
+                    .ignoreElement()
                     .doOnComplete(
                         () -> updateRevocations(List.of(dto.getRefreshToken()), tenantId));
               }
