@@ -178,7 +178,7 @@ public class IdpConnectService {
   }
 
   private UserDto createUserDtoFromTokens(
-      Provider provider, IdpConnectRequestDto idpConnectRequestDto) {
+      Provider provider, V2IdpConnectRequestDto idpConnectRequestDto) {
     Map<String, Object> claims = provider.getData();
 
     UserDto.UserDtoBuilder userDtoBuilder = UserDto.builder();
