@@ -2,16 +2,13 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.SCOPE_OPENID;
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_REQUEST;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.UNAUTHORIZED;
 
 import com.dreamsportslabs.guardian.dao.AuthorizeSessionDao;
-import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.UserConsentDao;
 import com.dreamsportslabs.guardian.dao.model.AuthorizeSessionModel;
 import com.dreamsportslabs.guardian.dao.model.OidcCodeModel;
 import com.dreamsportslabs.guardian.dto.request.ConsentAcceptRequestDto;
 import com.dreamsportslabs.guardian.dto.response.AuthCodeResponseDto;
-import com.dreamsportslabs.guardian.registry.Registry;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Single;
 import java.util.ArrayList;
@@ -28,25 +25,13 @@ public class ConsentAcceptService {
 
   private final AuthorizeSessionDao authorizeSessionDao;
   private final OidcCodeService oidcCodeService;
-  private final OidcTokenService oidcTokenService;
-  private final RefreshTokenDao refreshTokenDao;
   private final UserConsentDao userConsentDao;
-  private final Registry registry;
 
   public Single<AuthCodeResponseDto> consentAccept(
       ConsentAcceptRequestDto requestDto, String tenantId) {
 
-    return oidcTokenService
-        .validateRefreshToken(requestDto.getRefreshToken(), tenantId)
-        .flatMap(
-            userId ->
-                authorizeSessionDao
-                    .getAuthorizeSession(requestDto.getConsentChallenge(), tenantId)
-                    .filter(authorizeSession -> userId.equals(authorizeSession.getUserId()))
-                    .switchIfEmpty(
-                        Single.error(
-                            UNAUTHORIZED.getJsonCustomException(
-                                "Refresh token does not match session user"))))
+    return authorizeSessionDao
+        .getAuthorizeSession(requestDto.getConsentChallenge(), tenantId)
         .flatMap(
             authorizeSession -> {
               List<String> allConsentedScopes =

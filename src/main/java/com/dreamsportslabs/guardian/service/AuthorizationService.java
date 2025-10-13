@@ -3,24 +3,14 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_AMR;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_CLIENT_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_EXP;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_IAT;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_ISS;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_JTI;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_RFT_ID;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SCOPE;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_CLAIMS_SUB;
-import static com.dreamsportslabs.guardian.constant.Constants.JWT_TENANT_ID_CLAIM;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.SSO_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
-import static com.dreamsportslabs.guardian.utils.Utils.appendAdditionalAccessTokenClaims;
 import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
 import static com.dreamsportslabs.guardian.utils.Utils.getRftId;
 import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAdditionalClaims;
@@ -28,15 +18,18 @@ import static com.dreamsportslabs.guardian.utils.Utils.shouldSetAccessTokenAddit
 import com.dreamsportslabs.guardian.config.tenant.AuthCodeConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.TokenConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.dao.CodeDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RevocationDao;
 import com.dreamsportslabs.guardian.dao.model.CodeModel;
 import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
+import com.dreamsportslabs.guardian.dao.model.SsoTokenModel;
 import com.dreamsportslabs.guardian.dto.request.MetaInfo;
 import com.dreamsportslabs.guardian.dto.request.V1CodeTokenExchangeRequestDto;
 import com.dreamsportslabs.guardian.dto.request.V1LogoutRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1RefreshTokenRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2LogoutRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
 import com.dreamsportslabs.guardian.dto.response.RefreshTokenResponseDto;
@@ -49,13 +42,15 @@ import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.NewCookie;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -66,14 +61,22 @@ public class AuthorizationService {
   private final RefreshTokenDao refreshTokenDao;
   private final CodeDao codeDao;
   private final RevocationDao revocationDao;
+  private final ClientService clientService;
   private final UserService userService;
 
   public Single<Object> generate(
-      JsonObject user, String responseType, MetaInfo metaInfo, String tenantId) {
+      JsonObject user,
+      String responseType,
+      String scopes,
+      List<AuthMethod> authMethods,
+      MetaInfo metaInfo,
+      String clientId,
+      String tenantId) {
     if (responseType.equals(TOKEN)) {
-      return generateTokens(user, metaInfo, tenantId).map(res -> res);
+      return generateTokens(user, scopes, authMethods, metaInfo, clientId, tenantId)
+          .map(res -> res);
     } else if (responseType.equals(CODE)) {
-      return generateCode(user, metaInfo, tenantId).map(res -> res);
+      return generateCode(user, scopes, authMethods, metaInfo, clientId, tenantId).map(res -> res);
     }
     throw INVALID_REQUEST.getException();
   }
@@ -81,7 +84,8 @@ public class AuthorizationService {
   public NewCookie[] getCookies(TokenResponseDto responseDto, String tenantId) {
     NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
     NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
-    return new NewCookie[] {accessTokenCookie, refreshTokenCookie};
+    NewCookie ssoTokenTokenCookie = getSsoTokenCookie(responseDto.getSsoToken(), tenantId);
+    return new NewCookie[] {accessTokenCookie, refreshTokenCookie, ssoTokenTokenCookie};
   }
 
   public NewCookie[] getGuestAccessTokenCookies(String accessToken, String tenantId) {
@@ -96,37 +100,71 @@ public class AuthorizationService {
   }
 
   private Single<TokenResponseDto> generateTokens(
-      JsonObject user, MetaInfo metaInfo, String tenantId) {
+      JsonObject user,
+      String scopes,
+      List<AuthMethod> authMethods,
+      MetaInfo metaInfo,
+      String clientId,
+      String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     String refreshToken = tokenIssuer.generateRefreshToken();
+    String ssoToken = tokenIssuer.generateSsoToken();
     long iat = getCurrentTimeInSeconds();
-    Map<String, Object> commonTokenClaims =
-        getCommonTokenClaims(user.getString(USERID), iat, config);
-    Map<String, Object> accessTokenClaims = getAccessTokenClaims(user, iat, config, refreshToken);
-    Map<String, Object> idTokenClaims = new HashMap<>(commonTokenClaims);
-    idTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getIdTokenExpiry());
     return Single.zip(
-            tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()),
-            tokenIssuer.generateIdToken(idTokenClaims, user, config.getTenantId()),
+            tokenIssuer.generateAccessToken(
+                refreshToken, iat, scopes, user, authMethods, clientId, tenantId, config),
+            tokenIssuer.generateIdToken(
+                iat,
+                null,
+                user,
+                config.getTokenConfig().getIdTokenClaims(),
+                clientId,
+                config.getTenantId()),
             (accessToken, idToken) ->
                 new TokenResponseDto(
                     accessToken,
                     refreshToken,
                     idToken,
+                    ssoToken,
                     TOKEN_TYPE,
                     config.getTokenConfig().getAccessTokenExpiry(),
                     user.getBoolean(IS_NEW_USER, false)))
         .flatMap(
             dto ->
                 refreshTokenDao
-                    .saveRefreshToken(getRefreshTokenDto(refreshToken, user, iat, metaInfo, config))
+                    .saveRefreshToken(
+                        getRefreshTokenDto(
+                            refreshToken,
+                            user,
+                            iat,
+                            Arrays.stream(StringUtils.split(scopes, " ")).toList(),
+                            authMethods,
+                            metaInfo,
+                            clientId,
+                            config),
+                        getSsoTokenDto(
+                            user.getString(USERID),
+                            ssoToken,
+                            iat,
+                            refreshToken,
+                            authMethods,
+                            clientId,
+                            config))
                     .andThen(Single.just(dto)));
   }
 
   private RefreshTokenModel getRefreshTokenDto(
-      String refreshToken, JsonObject user, Long iat, MetaInfo metaInfo, TenantConfig config) {
+      String refreshToken,
+      JsonObject user,
+      Long iat,
+      List<String> scopes,
+      List<AuthMethod> authMethods,
+      MetaInfo metaInfo,
+      String clientId,
+      TenantConfig config) {
     return RefreshTokenModel.builder()
         .tenantId(config.getTenantId())
+        .clientId(clientId)
         .userId(user.getString(USERID))
         .refreshToken(refreshToken)
         .refreshTokenExp(iat + config.getTokenConfig().getRefreshTokenExpiry())
@@ -134,46 +172,90 @@ public class AuthorizationService {
         .ip(metaInfo.getIp())
         .location(metaInfo.getLocation())
         .source(metaInfo.getSource())
+        .scope(scopes)
+        .authMethod(authMethods)
+        .build();
+  }
+
+  private SsoTokenModel getSsoTokenDto(
+      String userId,
+      String ssoToken,
+      Long iat,
+      String refreshToken,
+      List<AuthMethod> authMethods,
+      String clientId,
+      TenantConfig config) {
+    return SsoTokenModel.builder()
+        .tenantId(config.getTenantId())
+        .clientIdIssuedTo(clientId)
+        .userId(userId)
+        .refreshToken(refreshToken)
+        .ssoToken(ssoToken)
+        .expiry(iat + config.getTokenConfig().getRefreshTokenExpiry())
+        .authMethods(authMethods)
         .build();
   }
 
   public Single<String> generateGuestAccessToken(
-      String guestIdentifier, String tenantId, String scope, String clientId) {
-    Map<String, Object> accessTokenClaims =
-        getGuestTokenClaims(guestIdentifier, tenantId, scope, clientId);
-    return tokenIssuer.generateAccessToken(accessTokenClaims, tenantId);
+      String guestIdentifier,
+      String scopes,
+      TenantConfig config,
+      String clientId,
+      String tenantId) {
+    return tokenIssuer.generateAccessToken(
+        "",
+        getCurrentTimeInSeconds(),
+        scopes,
+        new JsonObject(Map.of(USERID, guestIdentifier)),
+        Collections.emptyList(),
+        clientId,
+        tenantId,
+        config);
   }
 
   public Single<RefreshTokenResponseDto> refreshTokens(
-      V1RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+      V2RefreshTokenRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
+    if (StringUtils.isBlank(dto.getRefreshToken())) {
+      return Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token"));
+    }
     return refreshTokenDao
-        .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
+        .getRefreshToken(tenantId, dto.getRefreshToken())
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel -> {
+              if (StringUtils.isNotBlank(dto.getClientId())) {
+                return refreshTokenModel.getClientId().equals(dto.getClientId());
+              }
+              return true;
+            })
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel ->
+                refreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMap(
-            userId -> {
+            refreshTokenModel -> {
               if (shouldSetAccessTokenAdditionalClaims(config)) {
                 return userService
-                    .getUser(Map.of(USERID, userId), headers, tenantId)
-                    .map(
-                        userResp ->
-                            getAccessTokenClaims(
-                                userResp,
-                                getCurrentTimeInSeconds(),
-                                config,
-                                dto.getRefreshToken()));
+                    .getUser(Map.of(USERID, refreshTokenModel.getUserId()), headers, tenantId)
+                    .map(userResp -> Pair.of(userResp, refreshTokenModel));
               } else {
-                return Single.just(
-                    getAccessTokenClaims(
-                        new JsonObject(Map.of(USERID, userId)),
-                        getCurrentTimeInSeconds(),
-                        config,
-                        dto.getRefreshToken()));
+                return Single.just(new JsonObject(Map.of(USERID, refreshTokenModel.getUserId())))
+                    .map(userResp -> Pair.of(userResp, refreshTokenModel));
               }
             })
         .flatMap(
-            accessTokenClaims ->
-                tokenIssuer.generateAccessToken(accessTokenClaims, config.getTenantId()))
+            pair ->
+                tokenIssuer.generateAccessToken(
+                    dto.getRefreshToken(),
+                    getCurrentTimeInSeconds(),
+                    String.join(" ", pair.getRight().getScope()),
+                    pair.getLeft(),
+                    pair.getRight().getAuthMethod(),
+                    pair.getRight().getClientId(),
+                    tenantId,
+                    config))
         .map(
             accessToken ->
                 new RefreshTokenResponseDto(
@@ -181,14 +263,22 @@ public class AuthorizationService {
   }
 
   private Single<CodeResponseDto> generateCode(
-      JsonObject user, MetaInfo metaInfo, String tenantId) {
+      JsonObject user,
+      String scopes,
+      List<AuthMethod> authMethods,
+      MetaInfo metaInfo,
+      String clientId,
+      String tenantId) {
     AuthCodeConfig config = registry.get(tenantId, TenantConfig.class).getAuthCodeConfig();
     String code = RandomStringUtils.randomAlphanumeric(config.getLength());
     CodeModel codeModel =
         CodeModel.builder()
             .user(user.getMap())
             .code(code)
+            .scopes(Arrays.stream(scopes.split("\\s+")).toList())
+            .authMethods(authMethods)
             .metaInfo(metaInfo)
+            .clientId(clientId)
             .expiry(config.getTtl())
             .build();
     return codeDao
@@ -204,7 +294,14 @@ public class AuthorizationService {
         .getCode(dto.getCode(), tenantId)
         .switchIfEmpty(Single.error(INVALID_CODE.getException()))
         .flatMap(
-            model -> generateTokens(new JsonObject(model.getUser()), model.getMetaInfo(), tenantId))
+            model ->
+                generateTokens(
+                    new JsonObject(model.getUser()),
+                    String.join(" ", model.getScopes()),
+                    model.getAuthMethods(),
+                    model.getMetaInfo(),
+                    model.getClientId(),
+                    tenantId))
         .doOnSuccess(res -> codeDao.deleteCode(dto.getCode(), tenantId).subscribe());
   }
 
@@ -212,40 +309,110 @@ public class AuthorizationService {
     return invalidateRefreshToken(requestDto, tenantId);
   }
 
+  public Completable logout(V2LogoutRequestDto requestDto, String tenantId) {
+    if (StringUtils.isBlank(requestDto.getRefreshToken())) {
+      return Completable.error(UNAUTHORIZED.getCustomException("Invalid refresh token"));
+    }
+    return invalidateRefreshToken(requestDto, tenantId);
+  }
+
   public Completable adminLogout(String userId, String tenantId) {
     return refreshTokenDao
-        .getRefreshTokens(userId, tenantId)
-        .flatMap(
-            list ->
-                refreshTokenDao
-                    .invalidateAllRefreshTokensForUser(userId, tenantId)
-                    .andThen(Single.just(list)))
+        .getRefreshTokens(tenantId, userId)
+        .flatMap(list -> refreshTokenDao.revokeTokens(tenantId, userId).andThen(Single.just(list)))
         .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
         .ignoreElement();
   }
 
   private Completable invalidateRefreshToken(V1LogoutRequestDto dto, String tenantId) {
     return refreshTokenDao
-        .getUserIdFromRefreshToken(dto.getRefreshToken(), tenantId)
+        .getRefreshToken(tenantId, dto.getRefreshToken())
         .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
         .flatMapCompletable(
-            userId -> {
+            refreshTokenModel -> {
               if (dto.getIsUniversalLogout()) {
                 return refreshTokenDao
-                    .getRefreshTokens(userId, tenantId)
+                    .getRefreshTokens(tenantId, refreshTokenModel.getUserId())
                     .flatMap(
                         list ->
                             refreshTokenDao
-                                .invalidateAllRefreshTokensForUser(userId, tenantId)
+                                .revokeTokens(tenantId, refreshTokenModel.getUserId())
                                 .andThen(Single.just(list)))
                     .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
                     .ignoreElement();
               } else {
                 return refreshTokenDao
-                    .invalidateRefreshToken(dto.getRefreshToken(), tenantId)
+                    .revokeToken(
+                        tenantId,
+                        refreshTokenModel.getClientId(),
+                        refreshTokenModel.getRefreshToken())
+                    .ignoreElement()
                     .doOnComplete(
                         () -> updateRevocations(List.of(dto.getRefreshToken()), tenantId));
               }
+            });
+  }
+
+  private Completable invalidateRefreshToken(V2LogoutRequestDto dto, String tenantId) {
+    return refreshTokenDao
+        .getRefreshToken(tenantId, dto.getRefreshToken())
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel -> {
+              if (StringUtils.isNotBlank(dto.getClientId())) {
+                return refreshTokenModel.getClientId().equals(dto.getClientId());
+              }
+              return true;
+            })
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel ->
+                refreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .flatMapCompletable(
+            refreshTokenModel -> {
+              switch (dto.getLogoutType()) {
+                case TOKEN -> {
+                  return refreshTokenDao
+                      .revokeToken(tenantId, refreshTokenModel.getClientId(), dto.getRefreshToken())
+                      .doOnSuccess(
+                          __ -> updateRevocations(List.of(dto.getRefreshToken()), tenantId))
+                      .ignoreElement();
+                }
+                case CLIENT -> {
+                  return refreshTokenDao
+                      .getRefreshTokens(
+                          tenantId, refreshTokenModel.getClientId(), refreshTokenModel.getUserId())
+                      .flatMap(
+                          list ->
+                              refreshTokenDao
+                                  .revokeTokens(
+                                      tenantId,
+                                      refreshTokenModel.getClientId(),
+                                      refreshTokenModel.getUserId())
+                                  .andThen(Single.just(list)))
+                      .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
+                      .ignoreElement();
+                }
+                case TENANT -> {
+                  return clientService
+                      .validateFirstPartyClient(tenantId, refreshTokenModel.getClientId())
+                      .onErrorResumeNext(
+                          err ->
+                              Completable.error(
+                                  UNAUTHORIZED.getCustomException("Invalid refresh token")))
+                      .andThen(
+                          refreshTokenDao.getRefreshTokens(tenantId, refreshTokenModel.getUserId()))
+                      .flatMap(
+                          list ->
+                              refreshTokenDao
+                                  .revokeTokens(tenantId, refreshTokenModel.getUserId())
+                                  .andThen(Single.just(list)))
+                      .doOnSuccess(tokens -> updateRevocations(tokens, tenantId))
+                      .ignoreElement();
+                }
+              }
+              return Completable.complete();
             });
   }
 
@@ -301,41 +468,11 @@ public class AuthorizationService {
         tenantId);
   }
 
-  private Map<String, Object> getAccessTokenClaims(
-      JsonObject userResponse, long iat, TenantConfig config, String refreshToken) {
-    Map<String, Object> commonTokenClaims =
-        getCommonTokenClaims(userResponse.getString(USERID), iat, config);
-    Map<String, Object> accessTokenClaims = new HashMap<>(commonTokenClaims);
-    accessTokenClaims.put(JWT_CLAIMS_RFT_ID, getRftId(refreshToken));
-    accessTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
-    accessTokenClaims.put(JWT_TENANT_ID_CLAIM, config.getTenantId());
-    return appendAdditionalAccessTokenClaims(accessTokenClaims, userResponse, config);
-  }
-
-  private Map<String, Object> getCommonTokenClaims(String userId, long iat, TenantConfig config) {
-    Map<String, Object> commonTokenClaims = new HashMap<>();
-    commonTokenClaims.put(JWT_CLAIMS_SUB, userId);
-    commonTokenClaims.put(JWT_CLAIMS_IAT, iat);
-    commonTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
-    return commonTokenClaims;
-  }
-
-  private Map<String, Object> getGuestTokenClaims(
-      String guestIdentifier, String tenantId, String scope, String clientId) {
-    Map<String, Object> guestTokenClaims = new HashMap<>();
-    Long iat = getCurrentTimeInSeconds();
-    TenantConfig config = registry.get(tenantId, TenantConfig.class);
-
-    guestTokenClaims.put(JWT_CLAIMS_SUB, guestIdentifier);
-    guestTokenClaims.put(JWT_CLAIMS_JTI, RandomStringUtils.randomAlphanumeric(32));
-    guestTokenClaims.put(JWT_CLAIMS_IAT, iat);
-    guestTokenClaims.put(JWT_CLAIMS_EXP, iat + config.getTokenConfig().getAccessTokenExpiry());
-    guestTokenClaims.put(JWT_CLAIMS_ISS, config.getTokenConfig().getIssuer());
-    guestTokenClaims.put(JWT_TENANT_ID_CLAIM, tenantId);
-    guestTokenClaims.put(JWT_CLAIMS_SCOPE, scope);
-    guestTokenClaims.put(JWT_CLAIMS_AMR, Collections.emptyList());
-    guestTokenClaims.put(JWT_CLAIMS_CLIENT_ID, clientId);
-
-    return guestTokenClaims;
+  public NewCookie getSsoTokenCookie(String ssoToken, String tenantId) {
+    return buildCookie(
+        SSO_TOKEN_COOKIE_NAME,
+        ssoToken,
+        registry.get(tenantId, TenantConfig.class).getTokenConfig().getRefreshTokenExpiry(),
+        tenantId);
   }
 }

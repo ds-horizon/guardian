@@ -4,6 +4,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 import static com.dreamsportslabs.guardian.constant.Constants.UNAUTHORIZED_ERROR_CODE;
 
 import com.dreamsportslabs.guardian.dto.request.V1RefreshTokenRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.exception.ErrorEnum.ErrorEntity;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.google.inject.Inject;
@@ -31,8 +32,10 @@ public class RefreshToken {
       @Context HttpHeaders headers, V1RefreshTokenRequestDto requestDto) {
     String tenantId = headers.getHeaderString(TENANT_ID);
     requestDto.validate();
+    V2RefreshTokenRequestDto refreshTokenRequestDto = new V2RefreshTokenRequestDto();
+    refreshTokenRequestDto.setRefreshToken(requestDto.getRefreshToken());
     return authorizationService
-        .refreshTokens(requestDto, headers.getRequestHeaders(), tenantId)
+        .refreshTokens(refreshTokenRequestDto, headers.getRequestHeaders(), tenantId)
         .map(
             resp ->
                 Response.ok(resp)
@@ -49,6 +52,7 @@ public class RefreshToken {
                       .entity(errorEntity)
                       .cookie(authorizationService.getAccessTokenCookie(null, tenantId))
                       .cookie(authorizationService.getRefreshTokenCookie(null, tenantId))
+                      .cookie(authorizationService.getSsoTokenCookie(null, tenantId))
                       .build();
                 }
                 return webAppEx.getResponse();

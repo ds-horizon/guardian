@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.utils.Utils.getCurrentTimeInSeconds;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.zaxxer.hikari.HikariConfig;
@@ -7,8 +9,10 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.vertx.core.json.JsonObject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +29,9 @@ public class DbUtils {
   private static final String INSERT_REFRESH_TOKEN =
       "INSERT INTO refresh_tokens (tenant_id, user_id, refresh_token, refresh_token_exp, source, device_name, location, ip) VALUES (?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
 
+  private static final String INSERT_REFRESH_TOKEN_ALL_VALUES =
+      "INSERT INTO refresh_tokens (tenant_id, client_id, user_id, refresh_token, refresh_token_exp, scope, device_name, ip, source, location, auth_method) VALUES (?, ?, ?, ?, ?, ?, ?, INET6_ATON(?), ?, ?, ?)";
+
   private static final String INSERT_USER_CONSENT =
       "INSERT INTO consent (tenant_id, client_id, user_id, scope, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())";
 
@@ -32,7 +39,7 @@ public class DbUtils {
       "SELECT name, display_name, description, claims, tenant_id, icon_url, is_oidc FROM scope WHERE tenant_id = ? AND name = ?";
 
   private static final String INSERT_OIDC_REFRESH_TOKEN =
-      "INSERT INTO oidc_refresh_token (tenant_id, client_id, user_id, refresh_token, refresh_token_exp, scope, is_active, device_name, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
+      "INSERT INTO refresh_tokens (tenant_id, client_id, user_id, refresh_token, refresh_token_exp, scope, is_active, device_name, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, INET6_ATON(?))";
 
   public static void initializeRedisConnectionPool(String host, int port) {
     if (redisConnectionPool != null) {
@@ -115,6 +122,42 @@ public class DbUtils {
       stmt.executeUpdate();
     } catch (Exception e) {
       log.error("Error while inserting refresh token", e);
+      return null;
+    }
+
+    return refreshToken;
+  }
+
+  public static String insertOidcRefreshToken(
+      String tenantId,
+      String clientId,
+      String userId,
+      long exp,
+      String scope,
+      String deviceName,
+      String ip,
+      String source,
+      String location,
+      String authMethod) {
+    String refreshToken = RandomStringUtils.randomAlphanumeric(32);
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(INSERT_REFRESH_TOKEN_ALL_VALUES)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, userId);
+      stmt.setString(4, refreshToken);
+      stmt.setLong(5, Instant.now().getEpochSecond() + exp);
+      stmt.setString(6, scope);
+      stmt.setString(7, deviceName);
+      stmt.setString(8, ip);
+      stmt.setString(9, source);
+      stmt.setString(10, location);
+      stmt.setString(11, authMethod);
+
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while inserting OIDC refresh token", e);
       return null;
     }
 
@@ -293,6 +336,23 @@ public class DbUtils {
     return revocations.contains(rftId);
   }
 
+  public static boolean isSsoTokenRevoked(String refreshToken, String tenantId) {
+    String checkSsoToken =
+        "SELECT is_active FROM sso_token WHERE tenant_id = ? AND refresh_token = ?";
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(checkSsoToken)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, refreshToken);
+      ResultSet rs = stmt.executeQuery();
+      if (rs.next()) {
+        return !rs.getBoolean("is_active");
+      }
+    } catch (Exception e) {
+      log.error("Error checking SSO token status", e);
+    }
+    return false;
+  }
+
   public static long getStateTtl(String state, String tenantId) {
     String key = "STATE" + "_" + tenantId + "_" + state;
 
@@ -377,7 +437,8 @@ public class DbUtils {
       response.put("response_types", rs.getString("response_types"));
       response.put("logo_uri", rs.getString("logo_uri"));
       response.put("policy_uri", rs.getString("policy_uri"));
-      response.put("skip_consent", rs.getBoolean("skip_consent"));
+      response.put("client_type", rs.getString("client_type"));
+      response.put("is_default", rs.getBoolean("is_default"));
       stmt.close();
       return response;
     } catch (Exception e) {
@@ -416,6 +477,101 @@ public class DbUtils {
     }
   }
 
+  public static String insertSsoToken(
+      String tenantId,
+      String userId,
+      String clientId,
+      long expiryOffset,
+      List<String> authMethods) {
+    String ssoToken = RandomStringUtils.randomAlphanumeric(15);
+    String refreshToken = RandomStringUtils.randomAlphanumeric(32);
+    long expiry = getCurrentTimeInSeconds() + expiryOffset;
+
+    String insertSsoToken =
+        "INSERT INTO sso_token (tenant_id, client_id_issues_to, user_id, refresh_token, sso_token, expiry, auth_methods, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(insertSsoToken)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, userId);
+      stmt.setString(4, refreshToken);
+      stmt.setString(5, ssoToken);
+      stmt.setLong(6, expiry);
+      ArrayNode authMethodsArray = objectMapper.createArrayNode();
+      authMethods.forEach(authMethodsArray::add);
+      stmt.setString(7, objectMapper.writeValueAsString(authMethodsArray));
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error inserting SSO token", e);
+    }
+    return ssoToken;
+  }
+
+  public static String insertSsoTokenWithRefreshToken(
+      String tenantId, String clientId, String userId, String refreshToken, long expiryOffset) {
+    String ssoToken = RandomStringUtils.randomAlphanumeric(15);
+    long expiry = getCurrentTimeInSeconds() + expiryOffset;
+
+    String insertSsoToken =
+        "INSERT INTO sso_token (tenant_id, client_id_issues_to, user_id, refresh_token, sso_token, expiry, auth_methods, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(insertSsoToken)) {
+      stmt.setString(1, tenantId);
+      stmt.setString(2, clientId);
+      stmt.setString(3, userId);
+      stmt.setString(4, refreshToken);
+      stmt.setString(5, ssoToken);
+      stmt.setLong(6, expiry);
+      stmt.setString(7, "[\"PASSWORD\"]");
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error inserting SSO token with refresh token", e);
+    }
+    return ssoToken;
+  }
+
+  public static String insertExpiredSsoToken(String tenantId, String userId, String clientId) {
+    return insertSsoToken(tenantId, userId, clientId, -1800L, Arrays.asList("ONE_TIME_PASSWORD"));
+  }
+
+  public static String addFirstPartyClient(String tenantId) {
+    String clientId = RandomStringUtils.randomAlphanumeric(10);
+    String addClient =
+        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, client_type, is_default) VALUES (?,?,?,'s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),'first_party',TRUE);";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(addClient)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.setString(2, clientId);
+      stmt1.setString(3, clientId);
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up scopes", e);
+    }
+    return clientId;
+  }
+
+  public static String addThirdPartyClient(String tenantId) {
+    String clientId = RandomStringUtils.randomAlphanumeric(10);
+    String addClient =
+        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, client_type, is_default) VALUES (?,?,?,'s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),'third_party',FALSE);";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(addClient)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.setString(2, clientId);
+      stmt1.setString(3, clientId);
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while cleaning up scopes", e);
+    }
+    return clientId;
+  }
+
   // Client-Scope relationship utilities
   public static void cleanupClientScopes(String tenantId) {
     String deleteQuery = "DELETE FROM client_scope WHERE tenant_id = ?";
@@ -426,6 +582,22 @@ public class DbUtils {
       stmt.executeUpdate();
     } catch (Exception e) {
       log.error("Error while cleaning up client scopes", e);
+    }
+  }
+
+  public static void addDefaultClientScopes(String tenantId, String clientId, String scope) {
+    String addClientScope =
+        "insert into client_scope (tenant_id, client_id, scope, is_default) values (?, ?, ?, TRUE);";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt1 = conn.prepareStatement(addClientScope)) {
+
+      stmt1.setString(1, tenantId);
+      stmt1.setString(2, clientId);
+      stmt1.setString(3, scope);
+      stmt1.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while adding client scopes", e);
     }
   }
 
@@ -576,7 +748,7 @@ public class DbUtils {
   }
 
   public static void cleanupOidcRefreshTokens(String tenantId) {
-    String deleteQuery = "DELETE FROM oidc_refresh_token WHERE tenant_id = ?";
+    String deleteQuery = "DELETE FROM refresh_tokens WHERE tenant_id = ?";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
@@ -590,7 +762,7 @@ public class DbUtils {
   public static boolean isOidcRefreshTokenActive(
       String tenantId, String clientId, String refreshToken) {
     String deleteQuery =
-        "SELECT is_active FROM oidc_refresh_token WHERE tenant_id = ? and client_id = ? and refresh_token = ?";
+        "SELECT is_active FROM refresh_tokens WHERE tenant_id = ? and client_id = ? and refresh_token = ?";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {

@@ -36,7 +36,7 @@ public class IdpConnect {
       IdpConnectRequestDto requestDto) {
     requestDto.validate();
     return idpConnectService
-        .connect(requestDto, headers.getRequestHeaders(), tenantId)
+        .v1Connect(requestDto, headers.getRequestHeaders(), tenantId)
         .map(
             response -> {
               if (StringUtils.isNotBlank(response.getCode())) {

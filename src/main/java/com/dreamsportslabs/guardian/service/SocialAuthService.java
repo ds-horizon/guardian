@@ -19,14 +19,19 @@ import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PROVI
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_EXISTS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_NOT_EXISTS;
 
+import com.dreamsportslabs.guardian.cache.DefaultClientScopesCache;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.UserConfig;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Flow;
 import com.dreamsportslabs.guardian.dto.Provider;
 import com.dreamsportslabs.guardian.dto.UserDto;
-import com.dreamsportslabs.guardian.dto.request.V1AuthFbRequestDto;
-import com.dreamsportslabs.guardian.dto.request.V1AuthGoogleRequestDto;
+import com.dreamsportslabs.guardian.dto.request.MetaInfo;
+import com.dreamsportslabs.guardian.dto.request.v1.V1AuthFbRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1AuthGoogleRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2AuthFbRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v2.V2AuthGoogleRequestDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.service.impl.idproviders.FacebookIdProvider;
 import com.dreamsportslabs.guardian.service.impl.idproviders.GoogleIdProvider;
@@ -47,6 +52,8 @@ public class SocialAuthService {
   private final AuthorizationService authorizationService;
   private final Registry registry;
   private final UserFlowBlockService userFlowBlockService;
+  private final ClientService clientService;
+  private final DefaultClientScopesCache defaultClientScopesCache;
 
   private static final String FACEBOOK_FIELDS_EMAIL = "email";
   private static final String FACEBOOK_FIELDS_USER_ID = "id";
@@ -58,8 +65,34 @@ public class SocialAuthService {
   private static final String FACEBOOK_FIELDS_PICTURE_DATA = "data";
   private static final String FACEBOOK_FIELDS_PICTURE_DATA_URL = "url";
 
-  public Single<Object> authFb(
+  public Single<Object> v1AuthFb(
       V1AuthFbRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    return defaultClientScopesCache
+        .getDefaultClientScopes(tenantId)
+        .map(
+            pair -> {
+              V2AuthFbRequestDto v2AuthFbRequestDto = new V2AuthFbRequestDto();
+              v2AuthFbRequestDto.setAccessToken(dto.getAccessToken());
+              v2AuthFbRequestDto.setFlow(dto.getFlow());
+              v2AuthFbRequestDto.setResponseType(dto.getResponseType());
+              v2AuthFbRequestDto.setMetaInfo(dto.getMetaInfo());
+              v2AuthFbRequestDto.setClientId(pair.getLeft());
+              v2AuthFbRequestDto.setScopes(pair.getRight());
+              v2AuthFbRequestDto.setAdditionalInfo(dto.getAdditionalInfo());
+              return v2AuthFbRequestDto;
+            })
+        .flatMap(v2AuthFbRequestDto -> authFb(v2AuthFbRequestDto, headers, tenantId));
+  }
+
+  public Single<Object> v2AuthFb(
+      V2AuthFbRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    return clientService
+        .validateFirstPartyClientAndClientScopes(tenantId, dto.getClientId(), dto.getScopes())
+        .andThen(authFb(dto, headers, tenantId));
+  }
+
+  private Single<Object> authFb(
+      V2AuthFbRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
     return registry
         .get(tenantId, FacebookIdProvider.class)
         .getUserIdentity(dto.getAccessToken())
@@ -120,7 +153,13 @@ public class SocialAuthService {
         .flatMap(
             user ->
                 authorizationService.generate(
-                    user, dto.getResponseType(), dto.getMetaInfo(), tenantId));
+                    user,
+                    dto.getResponseType(),
+                    String.join(" ", dto.getScopes()),
+                    List.of(AuthMethod.THIRD_PARTY_OIDC),
+                    dto.getMetaInfo(),
+                    dto.getClientId(),
+                    tenantId));
   }
 
   private UserDto getUserDtoFromFbUserData(JsonObject fbUserData, String accessToken) {
@@ -148,11 +187,57 @@ public class SocialAuthService {
         .build();
   }
 
-  public Single<Object> authGoogle(
+  public Single<Object> v1AuthGoogle(
       V1AuthGoogleRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    return defaultClientScopesCache
+        .getDefaultClientScopes(tenantId)
+        .map(
+            pair -> {
+              V2AuthGoogleRequestDto v2AuthGoogleRequestDto = new V2AuthGoogleRequestDto();
+              v2AuthGoogleRequestDto.setIdToken(dto.getIdToken());
+              v2AuthGoogleRequestDto.setFlow(dto.getFlow());
+              v2AuthGoogleRequestDto.setResponseType(dto.getResponseType().getResponseType());
+              v2AuthGoogleRequestDto.setMetaInfo(dto.getMetaInfo());
+              v2AuthGoogleRequestDto.setClientId(pair.getLeft());
+              v2AuthGoogleRequestDto.setScopes(pair.getRight());
+              v2AuthGoogleRequestDto.setAdditionalInfo(dto.getAdditionalInfo());
+              return v2AuthGoogleRequestDto;
+            })
+        .flatMap(v2AuthGoogleRequestDto -> authGoogle(v2AuthGoogleRequestDto, headers, tenantId));
+  }
+
+  public Single<Object> v2AuthGoogle(
+      V2AuthGoogleRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    return clientService
+        .validateFirstPartyClientAndClientScopes(tenantId, dto.getClientId(), dto.getScopes())
+        .andThen(authGoogle(dto, headers, tenantId));
+  }
+
+  private Single<Object> authGoogle(
+      V2AuthGoogleRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    return authGoogleCommon(
+        dto.getIdToken(),
+        dto.getFlow(),
+        dto.getResponseType(),
+        dto.getMetaInfo(),
+        headers,
+        dto.getScopes(),
+        dto.getClientId(),
+        tenantId);
+  }
+
+  private Single<Object> authGoogleCommon(
+      String idToken,
+      Flow flow,
+      String responseType,
+      MetaInfo metaInfo,
+      MultivaluedMap<String, String> headers,
+      List<String> scopes,
+      String clientId,
+      String tenantId) {
     return registry
         .get(tenantId, GoogleIdProvider.class)
-        .getUserIdentity(dto.getIdToken())
+        .getUserIdentity(idToken)
         .flatMap(
             googleUserData -> {
               String email = googleUserData.getString(OIDC_CLAIMS_EMAIL);
@@ -183,17 +268,15 @@ public class SocialAuthService {
               JsonObject userRes = userDetails.getRight();
 
               boolean userExists = userRes.getString(USERID) != null;
-              if (dto.getFlow() == Flow.SIGNIN && !userExists) {
+              if (flow == Flow.SIGNIN && !userExists) {
                 return Single.error(USER_NOT_EXISTS.getException());
-              } else if (dto.getFlow() == Flow.SIGNUP && userExists) {
+              } else if (flow == Flow.SIGNUP && userExists) {
                 return Single.error(USER_EXISTS.getException());
               }
 
               if (!userExists) {
                 return userService.createUser(
-                    getUserDtoFromGoogleUserData(googleUserData, dto.getIdToken()),
-                    headers,
-                    tenantId);
+                    getUserDtoFromGoogleUserData(googleUserData, idToken), headers, tenantId);
               } else {
                 UserConfig userConfig = registry.get(tenantId, TenantConfig.class).getUserConfig();
                 if (userConfig.getSendProviderDetails()) {
@@ -201,7 +284,7 @@ public class SocialAuthService {
                       .addProvider(
                           userRes.getString(USERID),
                           headers,
-                          getGoogleProviderData(googleUserData, dto.getIdToken()),
+                          getGoogleProviderData(googleUserData, idToken),
                           tenantId)
                       .andThen(Single.just(userRes));
                 } else {
@@ -212,7 +295,13 @@ public class SocialAuthService {
         .flatMap(
             user ->
                 authorizationService.generate(
-                    user, dto.getResponseType().getResponseType(), dto.getMetaInfo(), tenantId));
+                    user,
+                    responseType,
+                    String.join(" ", scopes),
+                    List.of(AuthMethod.THIRD_PARTY_OIDC),
+                    metaInfo,
+                    clientId,
+                    tenantId));
   }
 
   private UserDto getUserDtoFromGoogleUserData(JsonObject googleUserData, String idToken) {

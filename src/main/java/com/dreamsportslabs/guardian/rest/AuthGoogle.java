@@ -2,7 +2,7 @@ package com.dreamsportslabs.guardian.rest;
 
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
-import com.dreamsportslabs.guardian.dto.request.V1AuthGoogleRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1AuthGoogleRequestDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.dreamsportslabs.guardian.service.AuthorizationService;
 import com.dreamsportslabs.guardian.service.SocialAuthService;
@@ -35,7 +35,7 @@ public class AuthGoogle {
 
     String tenantId = headers.getHeaderString(TENANT_ID);
     return socialAuthService
-        .authGoogle(dto, headers.getRequestHeaders(), tenantId)
+        .v1AuthGoogle(dto, headers.getRequestHeaders(), tenantId)
         .map(
             resp -> {
               if (resp instanceof TokenResponseDto tokenResponseDto) {

@@ -1,13 +1,15 @@
 package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_NOT_FOUND;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
-import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INVALID_CLIENT;
 
+import com.dreamsportslabs.guardian.constant.ClientType;
 import com.dreamsportslabs.guardian.dao.ClientDao;
 import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dto.request.CreateClientRequestDto;
 import com.dreamsportslabs.guardian.dto.request.UpdateClientRequestDto;
+import com.dreamsportslabs.guardian.exception.OidcErrorEnum;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -23,6 +25,7 @@ public class ClientService {
   private static final int CLIENT_SECRET_LENGTH = 32;
 
   private final ClientDao clientDao;
+  private final ClientScopeService clientScopeService;
 
   public Single<ClientModel> createClient(CreateClientRequestDto requestDto, String tenantId) {
     String clientId = RandomStringUtils.randomAlphanumeric(CLIENT_ID_LENGTH);
@@ -41,7 +44,8 @@ public class ClientService {
             .policyUri(requestDto.getPolicyUri())
             .redirectUris(requestDto.getRedirectUris())
             .responseTypes(requestDto.getResponseTypes())
-            .skipConsent(requestDto.getSkipConsent())
+            .clientType(requestDto.getClientType().getValue())
+            .isDefault(requestDto.getIsDefault())
             .build();
 
     return clientDao.createClient(clientModel);
@@ -90,8 +94,32 @@ public class ClientService {
   public Single<ClientModel> authenticateClient(
       String clientId, String clientSecret, String tenantId) {
     return getClient(clientId, tenantId)
-        .onErrorResumeNext(err -> Single.error(INVALID_CLIENT.getException()))
+        .onErrorResumeNext(err -> Single.error(OidcErrorEnum.INVALID_CLIENT.getException()))
         .filter(clientModel -> clientModel.getClientSecret().equals(clientSecret))
-        .switchIfEmpty(Single.error(INVALID_CLIENT.getException()));
+        .switchIfEmpty(Single.error(OidcErrorEnum.INVALID_CLIENT.getException()));
+  }
+
+  public Completable validateFirstPartyClient(String tenantId, String clientId) {
+    return getClient(clientId, tenantId)
+        .onErrorResumeNext(err -> Single.error(INVALID_CLIENT.getException()))
+        .filter(
+            clientModel -> clientModel.getClientType().equals(ClientType.FIRST_PARTY.getValue()))
+        .switchIfEmpty(Single.error(INVALID_CLIENT.getException()))
+        .ignoreElement();
+  }
+
+  public Completable validateFirstPartyClientAndClientScopes(
+      String tenantId, String clientId, List<String> requestScopes) {
+    return validateFirstPartyClient(tenantId, clientId)
+        .andThen(clientScopeService.validateClientScopes(tenantId, clientId, requestScopes));
+  }
+
+  public Single<String> getDefaultClientId(String tenantId) {
+    return clientDao
+        .getDefaultClient(tenantId)
+        .filter(
+            clientModel -> clientModel.getClientType().equals(ClientType.FIRST_PARTY.getValue()))
+        .switchIfEmpty(Single.error(INVALID_CLIENT.getException()))
+        .map(ClientModel::getClientId);
   }
 }

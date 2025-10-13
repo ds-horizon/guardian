@@ -11,4 +11,5 @@ public class ClientScopeModel {
   private String tenantId;
   private String scope;
   private String clientId;
+  private Boolean isDefault;
 }

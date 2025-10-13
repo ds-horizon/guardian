@@ -25,6 +25,7 @@ public class UserDto {
   private String email;
   private String phoneNumber;
   private Provider provider;
+  private String clientId;
 
   @JsonIgnore @Builder.Default private Map<String, Object> additionalInfo = new HashMap<>();
 

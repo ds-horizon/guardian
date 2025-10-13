@@ -102,7 +102,8 @@ public class ConsentAcceptIT {
     clientRequest.put("redirect_uris", Arrays.asList("https://example.com/callback"));
     clientRequest.put("grant_types", Arrays.asList("authorization_code", "refresh_token"));
     clientRequest.put("response_types", Arrays.asList("code"));
-    clientRequest.put("skip_consent", false);
+    clientRequest.put("client_type", "third_party");
+    clientRequest.put("is_default", false);
 
     return createClient(tenant1, clientRequest);
   }
@@ -203,21 +204,6 @@ public class ConsentAcceptIT {
         .body(ERROR_DESCRIPTION, equalTo("Invalid challenge"));
   }
 
-  @Test
-  @DisplayName("Should return error when refresh_token is invalid")
-  public void testConsentAcceptInvalidRefreshToken() {
-    Map<String, Object> requestBody =
-        createRequestBody(validConsentChallenge, Arrays.asList(SCOPE_EMAIL), "invalid_token");
-
-    Response response = consentAccept(tenant1, requestBody);
-
-    response
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
-  }
-
   @ParameterizedTest
   @NullAndEmptySource
   @DisplayName("Should handle null/empty consented_scopes")
@@ -308,51 +294,6 @@ public class ConsentAcceptIT {
         .statusCode(SC_UNAUTHORIZED)
         .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
         .body(ERROR_DESCRIPTION, equalTo("Invalid challenge"));
-  }
-
-  @Test
-  @DisplayName("Should handle user mismatch")
-  public void testConsentAcceptUserMismatch() {
-    String differentUserRefreshToken =
-        insertRefreshToken(
-            tenant1,
-            "different_user",
-            3600L,
-            SOURCE_VALUE,
-            DEVICE_VALUE,
-            LOCATION_VALUE,
-            IP_ADDRESS);
-
-    Map<String, Object> requestBody =
-        createRequestBody(
-            validConsentChallenge, Arrays.asList(SCOPE_EMAIL), differentUserRefreshToken);
-
-    Response response = consentAccept(tenant1, requestBody);
-
-    response
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Refresh token does not match session user"));
-  }
-
-  @Test
-  @DisplayName("Should handle expired refresh token")
-  public void testConsentAcceptExpiredRefreshToken() {
-    String expiredRefreshToken =
-        insertRefreshToken(
-            tenant1, TEST_USER_ID, -1800L, SOURCE_VALUE, DEVICE_VALUE, LOCATION_VALUE, IP_ADDRESS);
-
-    Map<String, Object> requestBody =
-        createRequestBody(validConsentChallenge, Arrays.asList(SCOPE_EMAIL), expiredRefreshToken);
-
-    Response response = consentAccept(tenant1, requestBody);
-
-    response
-        .then()
-        .statusCode(SC_UNAUTHORIZED)
-        .body(ERROR_FIELD, equalTo(ERROR_UNAUTHORIZED))
-        .body(ERROR_DESCRIPTION, equalTo("Invalid refresh token"));
   }
 
   @Test
@@ -511,7 +452,8 @@ public class ConsentAcceptIT {
     clientRequest.put("redirect_uris", Arrays.asList("https://example.com/callback"));
     clientRequest.put("grant_types", Arrays.asList("authorization_code", "refresh_token"));
     clientRequest.put("response_types", Arrays.asList("code"));
-    clientRequest.put("skip_consent", false);
+    clientRequest.put("client_type", "third_party");
+    clientRequest.put("is_default", false);
 
     Response clientResponse = createClient(tenant2, clientRequest);
     String tenant2ClientId = clientResponse.jsonPath().getString(CLIENT_ID);

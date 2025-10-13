@@ -1,6 +1,8 @@
 package com.dreamsportslabs.guardian.utils;
 
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ACCESS_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ADDITIONAL_INFO;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONTACTS;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_FLOW;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_META_INFO;
@@ -9,7 +11,9 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
+import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.OIDC_BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.QUERY_PARAM_NAME;
 import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -79,6 +83,19 @@ public class ApplicationIoUtils {
     body.put(BODY_PARAM_REFRESH_TOKEN, refreshToken);
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/refreshToken"));
+  }
+
+  public static Response v2RefreshToken(String tenantId, String refreshToken, String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    if (clientId != null) {
+      body.put(CLIENT_ID, clientId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/refresh-token"));
   }
 
   public static Response passwordlessInit(
@@ -201,6 +218,20 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/auth/fb"));
   }
 
+  public static Response authFbV2(
+      String tenantId, String clientId, String accessToken, String flow, String responseType) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put(BODY_PARAM_CLIENT_ID, clientId);
+    body.put(BODY_PARAM_ACCESS_TOKEN, accessToken);
+    body.put(BODY_PARAM_FLOW, flow);
+    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/auth/fb"));
+  }
+
   public static Response authGoogle(
       String tenantId, String idToken, String flow, String responseType) {
     Map<String, String> headers = new HashMap<>();
@@ -212,6 +243,20 @@ public class ApplicationIoUtils {
     body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/auth/google"));
+  }
+
+  public static Response authGoogleV2(
+      String tenantId, String clientId, String idToken, String flow, String responseType) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("client_id", clientId);
+    body.put("id_token", idToken);
+    body.put(BODY_PARAM_FLOW, flow);
+    body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/auth/google"));
   }
 
   public static Response getJwks(String tenantId) {
@@ -512,5 +557,24 @@ public class ApplicationIoUtils {
     headers.put(HEADER_TENANT_ID, tenantId);
 
     return execute(body, headers, null, spec -> spec.post("/v1/guest/login"));
+  }
+
+  public static Response v2Logout(
+      String tenantId, Map<String, Object> body, String cookieRefreshToken) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(
+        body,
+        headers,
+        new HashMap<>(),
+        spec -> {
+          if (cookieRefreshToken != null) {
+            spec.cookie("RT", cookieRefreshToken);
+          }
+          return spec.post("/v2/logout");
+        });
   }
 }

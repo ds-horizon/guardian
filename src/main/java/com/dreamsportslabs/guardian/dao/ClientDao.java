@@ -4,6 +4,7 @@ import static com.dreamsportslabs.guardian.dao.query.ClientQuery.CREATE_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.DELETE_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.GET_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.GET_CLIENTS;
+import static com.dreamsportslabs.guardian.dao.query.ClientQuery.GET_DEFAULT_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.UPDATE_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.UPDATE_CLIENT_SECRET;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.CLIENT_ALREADY_EXISTS;
@@ -47,7 +48,8 @@ public class ClientDao {
         .addString(client.getPolicyUri())
         .addString(serializeToJsonString(client.getRedirectUris(), objectMapper))
         .addString(serializeToJsonString(client.getResponseTypes(), objectMapper))
-        .addBoolean(client.getSkipConsent());
+        .addString(client.getClientType())
+        .addBoolean(client.getIsDefault());
     return mysqlClient
         .getWriterPool()
         .preparedQuery(CREATE_CLIENT)
@@ -71,6 +73,21 @@ public class ClientDao {
         .getReaderPool()
         .preparedQuery(GET_CLIENT)
         .rxExecute(Tuple.of(tenantId, clientId))
+        .flatMapMaybe(
+            result -> {
+              if (result.size() == 0) {
+                return Maybe.empty();
+              }
+              return Maybe.just(JsonUtils.rowSetToList(result, ClientModel.class).get(0));
+            })
+        .onErrorResumeNext(err -> Maybe.error(INTERNAL_SERVER_ERROR.getException(err)));
+  }
+
+  public Maybe<ClientModel> getDefaultClient(String tenantId) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(GET_DEFAULT_CLIENT)
+        .rxExecute(Tuple.of(tenantId))
         .flatMapMaybe(
             result -> {
               if (result.size() == 0) {

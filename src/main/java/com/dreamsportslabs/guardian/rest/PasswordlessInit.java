@@ -3,7 +3,7 @@ package com.dreamsportslabs.guardian.rest;
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
 import static com.dreamsportslabs.guardian.constant.Constants.TENANT_ID;
 
-import com.dreamsportslabs.guardian.dto.request.V1PasswordlessInitRequestDto;
+import com.dreamsportslabs.guardian.dto.request.v1.V1PasswordlessInitRequestDto;
 import com.dreamsportslabs.guardian.dto.response.V1PasswordlessInitResponseDto;
 import com.dreamsportslabs.guardian.service.Passwordless;
 import com.google.inject.Inject;
@@ -32,7 +32,7 @@ public class PasswordlessInit {
       @Context HttpHeaders headers, V1PasswordlessInitRequestDto requestDto) {
     requestDto.validate();
     return passwordless
-        .init(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
+        .initV1(requestDto, headers.getRequestHeaders(), headers.getHeaderString(TENANT_ID))
         .map(
             model ->
                 Response.ok(

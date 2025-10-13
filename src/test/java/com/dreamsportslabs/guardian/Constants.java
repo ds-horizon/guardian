@@ -10,11 +10,13 @@ public class Constants {
   public static final String OIDC_BODY_PARAM_REFRESH_TOKEN = "refresh_token";
   public static final String BODY_PARAM_REFRESH_TOKEN = "refreshToken";
   public static final String BODY_PARAM_RESPONSE_TYPE = "responseType";
+  public static final String BODY_PARAM_RESPONSE_TYPE_V2 = "response_type";
   public static final String BODY_PARAM_RESPONSE_TYPE_TOKEN = "token";
   public static final String BODY_PARAM_FLOW = "flow";
   public static final String BODY_PARAM_CONTACTS = "contacts";
   public static final String BODY_PARAM_CONTACT = "contact";
   public static final String BODY_PARAM_META_INFO = "metaInfo";
+  public static final String BODY_PARAM_META_INFO_V2 = "meta_info";
   public static final String BODY_PARAM_ADDITIONAL_INFO = "additionalInfo";
   public static final String BODY_PARAM_STATE = "state";
   public static final String BODY_PARAM_CHANNEL = "channel";
@@ -41,11 +43,11 @@ public class Constants {
   public static final String BODY_PARAM_LOGIN_CHALLENGE = "login_challenge";
   public static final String BODY_PARAM_CONSENT_CHALLENGE = "consent_challenge";
   public static final String BODY_PARAM_CONSENTED_SCOPES = "consented_scopes";
-
-  // Guest Login Constants
+  public static final String BODY_PARAM_ACCESS_TOKEN = "access_token";
   public static final String BODY_PARAM_CLIENT_ID = "client_id";
   public static final String BODY_PARAM_GUEST_IDENTIFIER = "guest_identifier";
   public static final String BODY_PARAM_SCOPES = "scopes";
+
   public static final String RESPONSE_BODY_PARAM_ACCESS_TOKEN = "access_token";
   public static final String RESPONSE_BODY_PARAM_TOKEN_TYPE = "token_type";
   public static final String RESPONSE_BODY_PARAM_EXPIRES_IN = "expires_in";
@@ -199,11 +201,16 @@ public class Constants {
   public static final String RESPONSE_BODY_PARAM_STATE = "state";
   public static final String RESPONSE_BODY_PARAM_TRIES = "tries";
   public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT = "retriesLeft";
+  public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_V2 = "retries_left";
   public static final String RESPONSE_BODY_PARAM_RESENDS = "resends";
   public static final String RESPONSE_BODY_PARAM_RESENDS_LEFT = "resendsLeft";
+  public static final String RESPONSE_BODY_PARAM_RESENDS_LEFT_V2 = "resends_left";
   public static final String RESPONSE_BODY_PARAM_RESEND_AFTER = "resendAfter";
+  public static final String RESPONSE_BODY_PARAM_RESEND_AFTER_V2 = "resend_after";
   public static final String RESPONSE_BODY_PARAM_IS_NEW_USER = "isNewUser";
+  public static final String RESPONSE_BODY_PARAM_IS_NEW_USER_V2 = "is_new_user";
   public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA = "retriesLeft";
+  public static final String RESPONSE_BODY_PARAM_RETRIES_LEFT_METADATA_V2 = "retries_left";
 
   public static final String PASSWORDLESS_MODEL_IS_NEW_USER = "isNewUser";
   public static final String PASSWORDLESS_MODEL_TRIES = "tries";
@@ -274,7 +281,8 @@ public class Constants {
   public static final String RESPONSE_TYPES = "response_types";
   public static final String LOGO_URI = "logo_uri";
   public static final String POLICY_URI = "policy_uri";
-  public static final String SKIP_CONSENT = "skip_consent";
+  public static final String CLIENT_TYPE = "client_type";
+  public static final String IS_DEFAULT = "is_default";
   public static final String PAGE = "page";
   public static final String PAGE_SIZE = "pageSize";
   public static final String CLIENTS = "clients";
@@ -380,6 +388,9 @@ public class Constants {
   public static final String ERROR_REDIRECT_URI_REQUIRED = "redirect_uri is required";
   public static final String ERROR_LOGIN_CHALLENGE_REQUIRED = "loginChallenge is required";
   public static final String ERROR_REFRESH_TOKEN_REQUIRED = "refreshToken is required";
+  public static final String ERROR_NO_VALID_SESSION_TOKEN = "No valid session token found";
+  public static final String ERROR_INVALID_SSO_TOKEN = "Invalid sso token";
+  public static final String BODY_PARAM_SSO_TOKEN = "sso_token";
   public static final String ERROR_UNAUTHORIZED = "unauthorized";
   public static final String ERROR_CODE_CHALLENGE_TOGETHER =
       "code_challenge and code_challenge_method must be provided together";
@@ -405,7 +416,7 @@ public class Constants {
   public static final String INVALID_CLIENT_SECRET = "invalid_client_secret";
 
   // Authorization Test Boolean Values
-  public static final boolean AUTH_SKIP_CONSENT_FALSE = false;
+  public static final boolean AUTH_IS_DEFAULT_FALSE = false;
 
   // Authorization Test Special Values
   public static final String AUTH_STATE_SPECIAL_CHARS = "state_with_special_chars_!@#$%^&*()";
@@ -440,7 +451,7 @@ public class Constants {
   public static final String PARTIAL_CONSENT_USER_ID = "partial_consent_user";
   public static final String FULL_CONSENT_USER_ID = "full_consent_user";
   public static final String DETAILED_VALIDATION_USER_ID = "detailed_validation_user";
-  public static final String SKIP_CONSENT_CLIENT_NAME = "Skip Consent Client";
+  public static final String DEFAULT_CLIENT_NAME = "Default Client";
   public static final String SOURCE_VALUE = "source";
   public static final String DEVICE_VALUE = "device1";
   public static final String LOCATION_VALUE = "location";
@@ -508,7 +519,7 @@ public class Constants {
   public static final String JWT_ALGORITHM_RS256 = "RS256";
   public static final String JWT_TYPE_ACCESS_TOKEN = "at+jwt";
   public static final String TEST_KID = "test-kid";
-  public static final String TEST_ISSUER = "https://auth.example.com";
+  public static final String TEST_ISSUER = "https://test.com";
   public static final String TEST_PUBLIC_KEY_PATH =
       "src/test/resources/test-data/tenant1-public-key.pem";
 
@@ -530,7 +541,8 @@ public class Constants {
   public static final String CHECK_GRANT_TYPES = "client.grantTypes";
   public static final String CHECK_REDIRECT_URIS = "client.redirectUris";
   public static final String CHECK_RESPONSE_TYPES = "client.responseTypes";
-  public static final String CHECK_SKIP_CONSENT = "client.skipConsent";
+  public static final String CHECK_CLIENT_TYPE = "client.clientType";
+  public static final String CHECK_IS_DEFAULT = "client.isDefault";
 
   // Mock user data constants
   public static final String MOCK_USER_NAME = "John Doe";

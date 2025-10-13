@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.dto.request;
 
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
+import com.dreamsportslabs.guardian.constant.ClientType;
 import com.dreamsportslabs.guardian.constant.OidcGrantType;
 import com.dreamsportslabs.guardian.constant.OidcResponseType;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,8 +35,11 @@ public class UpdateClientRequestDto {
   @JsonProperty("response_types")
   private List<OidcResponseType> responseTypes;
 
-  @JsonProperty("skip_consent")
-  private Boolean skipConsent;
+  @JsonProperty("client_type")
+  private ClientType clientType;
+
+  @JsonProperty("is_default")
+  private Boolean isDefault;
 
   public void validate() {
     if (clientName != null && StringUtils.isBlank(clientName)) {
