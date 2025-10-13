@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
 import static com.dreamsportslabs.guardian.constant.Constants.PROVIDER;
+import static com.dreamsportslabs.guardian.constant.Constants.RESPONSE_BODY_STATUS_CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.USER_SERVICE_ERROR;
@@ -79,7 +80,7 @@ public class UserService {
                 } catch (Exception e) {
                   resBody = new JsonObject();
                 }
-                throw USER_SERVICE_ERROR.getCustomException(res.statusCode(), resBody.getMap());
+                throw USER_SERVICE_ERROR_400.getCustomException(resBody.getMap());
               } else {
                 resBody = res.bodyAsJsonObject();
                 if (!resBody.containsKey(USERID)) {
@@ -112,7 +113,11 @@ public class UserService {
                 } catch (Exception e) {
                   resBody = new JsonObject();
                 }
-                throw USER_SERVICE_ERROR.getCustomException(res.statusCode(), resBody.getMap());
+                resBody.put(RESPONSE_BODY_STATUS_CODE, statusCode);
+                if (statusCode / 100 == 4) {
+                  throw USER_SERVICE_ERROR_400.getCustomException(resBody.getMap());
+                }
+                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
               } else {
                 resBody = res.bodyAsJsonObject();
                 if (!resBody.containsKey(USERID)) {
@@ -143,7 +148,11 @@ public class UserService {
                 } catch (Exception e) {
                   resBody = new JsonObject();
                 }
-                throw USER_SERVICE_ERROR.getCustomException(res.statusCode(), resBody.getMap());
+                resBody.put(RESPONSE_BODY_STATUS_CODE, statusCode);
+                if (statusCode / 100 == 4) {
+                  throw USER_SERVICE_ERROR_400.getCustomException(resBody.getMap());
+                }
+                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
               }
               return res;
             })
