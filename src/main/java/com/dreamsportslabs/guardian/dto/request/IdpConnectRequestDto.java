@@ -95,8 +95,8 @@ public class IdpConnectRequestDto {
   }
 
   private void validateIdentifierType() {
-    if (StringUtils.isBlank(idProvider)) {
-      throw INVALID_REQUEST.getCustomException("idProvider is required");
+    if (StringUtils.isBlank(identifierType)) {
+      throw INVALID_REQUEST.getCustomException("identifierType is required");
     }
     identifierType = String.valueOf(IdentifierType.fromString(identifierType));
   }
