@@ -60,6 +60,7 @@ public class IdpConnectRequestDto {
       throw INVALID_REQUEST.getCustomException("response type is required");
     }
 
+    validateIdentifierType();
     setIdpResponseType();
     setLoginFlow();
     setOidcIdentifierType();
@@ -91,5 +92,12 @@ public class IdpConnectRequestDto {
       throw INVALID_REQUEST.getCustomException(
           "Unsupported identifierType: '" + identifierType + "'");
     }
+  }
+
+  private void validateIdentifierType() {
+    if (StringUtils.isBlank(idProvider)) {
+      throw INVALID_REQUEST.getCustomException("idProvider is required");
+    }
+    identifierType = String.valueOf(IdentifierType.fromString(identifierType));
   }
 }

@@ -329,7 +329,7 @@ public class IdpConnectService {
 
   private Single<IdpCredentials> verifyIdentifierAndGetProviderTokens(
       V2IdpConnectRequestDto requestDto, OidcProviderConfig oidcProviderConfig) {
-    IdentifierType identifierType = IdentifierType.valueOf(requestDto.getIdentifierType());
+    IdentifierType identifierType = IdentifierType.fromString(requestDto.getIdentifierType());
     switch (identifierType) {
       case ID_TOKEN:
         return verifyIdToken(requestDto, oidcProviderConfig);
