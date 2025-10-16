@@ -96,8 +96,9 @@ public class IdpConnectRequestDto {
 
   private void validateIdentifierType() {
     if (StringUtils.isBlank(identifierType)) {
-      throw INVALID_REQUEST.getCustomException("identifierType is required");
+      identifierType = IdentifierType.CODE.getValue();
+    } else {
+      identifierType = IdentifierType.fromString(identifierType).getValue();
     }
-    identifierType = String.valueOf(IdentifierType.fromString(identifierType));
   }
 }
