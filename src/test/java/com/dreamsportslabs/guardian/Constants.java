@@ -180,6 +180,7 @@ public class Constants {
   // Error Response
   public static final String ERROR = "error";
   public static final String CODE = "code";
+  public static final String HTTP_STATUS_CODE = "http_status_code";
   public static final String MESSAGE = "message";
   public static final String METADATA = "metadata";
   public static final String ERROR_INCORRECT_OTP = "incorrect_otp";

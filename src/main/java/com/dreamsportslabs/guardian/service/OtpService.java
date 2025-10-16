@@ -5,9 +5,12 @@ import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_N
 import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_PARAMS;
 import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_PARAMS_OTP;
 import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TO;
+import static com.dreamsportslabs.guardian.constant.Constants.RESPONSE_BODY_STATUS_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.EMAIL_SERVICE_ERROR;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.EMAIL_SERVICE_ERROR_400;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.SMS_SERVICE_ERROR;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.SMS_SERVICE_ERROR_400;
 
 import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
 import com.dreamsportslabs.guardian.config.tenant.SmsConfig;
@@ -63,8 +66,20 @@ public class OtpService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              if (res.statusCode() / 100 != 2) {
-                throw SMS_SERVICE_ERROR.getCustomException(res.bodyAsJsonObject().getMap());
+              int statusCode = res.statusCode();
+              JsonObject resBody;
+
+              if (statusCode / 100 != 2) {
+                try {
+                  resBody = new JsonObject(res.bodyAsString());
+                } catch (Exception e) {
+                  resBody = new JsonObject();
+                }
+                resBody.put(RESPONSE_BODY_STATUS_CODE, statusCode);
+                if (statusCode / 100 == 4) {
+                  throw SMS_SERVICE_ERROR_400.getCustomException(resBody.getMap());
+                }
+                throw SMS_SERVICE_ERROR.getCustomException(resBody.getMap());
               }
               return res;
             })
@@ -87,8 +102,20 @@ public class OtpService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              if (res.statusCode() / 100 != 2) {
-                throw EMAIL_SERVICE_ERROR.getCustomException(res.bodyAsJsonObject().getMap());
+              int statusCode = res.statusCode();
+              JsonObject resBody;
+
+              if (statusCode / 100 != 2) {
+                try {
+                  resBody = new JsonObject(res.bodyAsString());
+                } catch (Exception e) {
+                  resBody = new JsonObject();
+                }
+                resBody.put(RESPONSE_BODY_STATUS_CODE, statusCode);
+                if (statusCode / 100 == 4) {
+                  throw EMAIL_SERVICE_ERROR_400.getCustomException(resBody.getMap());
+                }
+                throw EMAIL_SERVICE_ERROR.getCustomException(resBody.getMap());
               }
               return res;
             })
