@@ -80,7 +80,7 @@ These ports are required for the application to run without conflicts.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/dream-sports-labs/guardian.git
+git clone https://github.com/ds-horizon/guardian.git
 cd guardian
 ```
 
@@ -132,7 +132,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 👥 Community
 
-- [GitHub Discussions](https://github.com/dream-sports-labs/guardian/discussions)
+- [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions)
 
 ## 📄 License
 
