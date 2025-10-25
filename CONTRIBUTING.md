@@ -58,7 +58,7 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ## Community
 
-* Participate in [GitHub Discussions](https://github.com/dream-sports-labs/guardian/discussions)
+* Participate in [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions)
 
 ## Questions?
 
