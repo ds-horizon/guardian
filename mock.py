@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 # In-memory user store
 users = {
-    "1": {"name": "John Doe", "email": "john.doe@test.com", "phoneNumber": "777777777", "userId": "1", "username": "user1", "password": "pass1"},
-    "2": {"name": "Jane Doe", "email": "jane.doe@test.com", "phoneNumber": "888888888", "userId": "2", "username": "user2", "password": "pass2"}
+    "1": {"name": "John Doe", "email": "john.doe@test.com", "phoneNumber": "777777777", "userId": "1", "username": "user1", "password": "pass1", "pin": "1234"},
+    "2": {"name": "Jane Doe", "email": "jane.doe@test.com", "phoneNumber": "888888888", "userId": "2", "username": "user2", "password": "pass2", "pin": "4321"}
 }
 
 def get_user_by_field(field, value):
@@ -76,11 +76,14 @@ def create_user():
     data = request.json
     logger.info("POST /user with data: %s", data)
 
-    username, password = data.get("username"), data.get("password")
-    phone, email = data.get("phoneNumber"), data.get("email")
+    username = data.get("username")
+    password = data.get("password")
+    pin = data.get("pin")
+    phone = data.get("phoneNumber")
+    email = data.get("email")
     provider = data.get("provider")
 
-    if not ((username and password) or phone or email or provider):
+    if not ((username and (password or pin)) or phone or email or provider):
         return jsonify({"error": {"message": "Invalid request"}}), 400
 
     for field, message in [("username", "Username taken"), ("phoneNumber", "phone taken"), ("email", "email taken")]:
@@ -92,6 +95,7 @@ def create_user():
         "userId": user_id,
         "username": username,
         "password": password,
+        "pin": pin,
         "phoneNumber": phone,
         "email": email,
         "name": data.get("name"),
@@ -113,13 +117,42 @@ def authenticate_user():
     data = request.json
     logger.info("POST /authenticateUser with data: %s", data)
 
-    username, password = data.get("username"), data.get("password")
-    if not username or not password:
-        return jsonify({"error": {"message": "Invalid request"}}), 400
+    username = data.get("username")
+    phone_number = data.get("phoneNumber")
+    email = data.get("email")
+    password = data.get("password")
+    pin = data.get("pin")
 
-    user = get_user_by_field("username", username)
-    if not user or user.get("password") != password:
-        return jsonify({"error": {"message": "User does not exist, Incorrect Password"}}), 400
+    # Validate exactly one identifier is provided
+    identifiers = [username, phone_number, email]
+    provided_identifiers = [i for i in identifiers if i is not None]
+    if len(provided_identifiers) != 1:
+        return jsonify({"error": {"message": "Exactly one identifier required"}}), 400
+
+    # Validate exactly one credential is provided
+    credentials = [password, pin]
+    provided_credentials = [c for c in credentials if c is not None]
+    if len(provided_credentials) != 1:
+        return jsonify({"error": {"message": "Exactly one credential required"}}), 400
+
+    # Find user by identifier
+    user = None
+    if username:
+        user = get_user_by_field("username", username)
+    elif phone_number:
+        user = get_user_by_field("phoneNumber", phone_number)
+    elif email:
+        user = get_user_by_field("email", email)
+
+    # Check if user exists
+    if not user or not user.get("userId"):
+        return jsonify({"error": {"message": "User does not exist"}}), 404
+
+    # Validate credentials
+    if password and user.get("password") != password:
+        return jsonify({"error": {"message": "Unauthorized"}}), 401
+    elif pin and user.get("pin") != pin:
+        return jsonify({"error": {"message": "Unauthorized"}}), 401
 
     return jsonify(user), 200
 

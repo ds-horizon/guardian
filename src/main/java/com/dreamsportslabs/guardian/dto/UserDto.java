@@ -17,6 +17,7 @@ import lombok.Getter;
 public class UserDto {
   private String username;
   private String password;
+  private String pin;
   private String name;
   private String firstName;
   private String middleName;

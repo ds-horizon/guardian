@@ -4,11 +4,17 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ACCESS_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_ADDITIONAL_INFO;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CLIENT_ID;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_CONTACTS;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_EMAIL;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_FLOW;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_META_INFO;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_META_INFO_V2;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_PASSWORD;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_PHONE_NUMBER_V2;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_PIN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_RESPONSE_TYPE_V2;
+import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_SCOPES;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_STATE;
 import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
 import static com.dreamsportslabs.guardian.Constants.CLIENT_ID;
@@ -73,6 +79,86 @@ public class ApplicationIoUtils {
     body.put(BODY_PARAM_RESPONSE_TYPE, responseType);
 
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/signup"));
+  }
+
+  public static Response v2SignIn(
+      String tenantId,
+      String username,
+      String phoneNumber,
+      String email,
+      String password,
+      String pin,
+      String responseType,
+      List<String> scopes,
+      Map<String, Object> metaInfo,
+      String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    if (username != null) {
+      body.put(BODY_PARAM_USERNAME, username);
+    }
+    if (phoneNumber != null) {
+      body.put(BODY_PARAM_PHONE_NUMBER_V2, phoneNumber);
+    }
+    if (email != null) {
+      body.put(BODY_PARAM_EMAIL, email);
+    }
+    if (password != null) {
+      body.put(BODY_PARAM_PASSWORD, password);
+    }
+    if (pin != null) {
+      body.put(BODY_PARAM_PIN, pin);
+    }
+    body.put(BODY_PARAM_RESPONSE_TYPE_V2, responseType);
+    body.put(BODY_PARAM_SCOPES, scopes);
+    body.put(BODY_PARAM_META_INFO_V2, metaInfo);
+    if (clientId != null) {
+      body.put(BODY_PARAM_CLIENT_ID, clientId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/signin"));
+  }
+
+  public static Response v2SignUp(
+      String tenantId,
+      String username,
+      String phoneNumber,
+      String email,
+      String password,
+      String pin,
+      String responseType,
+      List<String> scopes,
+      Map<String, Object> metaInfo,
+      String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    if (username != null) {
+      body.put(BODY_PARAM_USERNAME, username);
+    }
+    if (phoneNumber != null) {
+      body.put(BODY_PARAM_PHONE_NUMBER_V2, phoneNumber);
+    }
+    if (email != null) {
+      body.put(BODY_PARAM_EMAIL, email);
+    }
+    if (password != null) {
+      body.put(BODY_PARAM_PASSWORD, password);
+    }
+    if (pin != null) {
+      body.put(BODY_PARAM_PIN, pin);
+    }
+    body.put(BODY_PARAM_RESPONSE_TYPE_V2, responseType);
+    body.put(BODY_PARAM_SCOPES, scopes);
+    body.put(BODY_PARAM_META_INFO_V2, metaInfo);
+    if (clientId != null) {
+      body.put(BODY_PARAM_CLIENT_ID, clientId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/signup"));
   }
 
   public static Response refreshToken(String tenantId, String refreshToken) {
