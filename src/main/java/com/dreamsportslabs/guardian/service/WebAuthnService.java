@@ -288,17 +288,14 @@ public class WebAuthnService {
     String assertChallenge = generateChallenge();
 
     WebAuthnStateModel assertStateModel =
-        WebAuthnStateModel.builder()
-            .state(assertState)
-            .tenantId(tenantId)
-            .clientId(context.getClientId())
-            .userId(context.getUserId())
-            .challenge(assertChallenge)
-            .type(WEBAUTHN_STATE_TYPE_ASSERT)
-            .deviceMetadata(requestDto.getDeviceMetadata())
-            .additionalInfo(new HashMap<>())
-            .expiry(getCurrentTimeInSeconds() + STATE_TTL_SECONDS)
-            .build();
+        createWebAuthnStateModel(
+            assertState,
+            tenantId,
+            context.getClientId(),
+            context.getUserId(),
+            assertChallenge,
+            WEBAUTHN_STATE_TYPE_ASSERT,
+            requestDto.getDeviceMetadata());
 
     return webauthnStateDao
         .setWebAuthnState(assertStateModel, tenantId)
@@ -325,17 +322,14 @@ public class WebAuthnService {
     String enrollChallenge = generateChallenge();
 
     WebAuthnStateModel enrollStateModel =
-        WebAuthnStateModel.builder()
-            .state(enrollState)
-            .tenantId(tenantId)
-            .clientId(context.getClientId())
-            .userId(context.getUserId())
-            .challenge(enrollChallenge)
-            .type(WEBAUTHN_STATE_TYPE_ENROLL)
-            .deviceMetadata(requestDto.getDeviceMetadata())
-            .additionalInfo(new HashMap<>())
-            .expiry(getCurrentTimeInSeconds() + STATE_TTL_SECONDS)
-            .build();
+        createWebAuthnStateModel(
+            enrollState,
+            tenantId,
+            context.getClientId(),
+            context.getUserId(),
+            enrollChallenge,
+            WEBAUTHN_STATE_TYPE_ENROLL,
+            requestDto.getDeviceMetadata());
 
     return webauthnStateDao
         .setWebAuthnState(enrollStateModel, tenantId)
@@ -349,6 +343,39 @@ public class WebAuthnService {
                       context.getCredentials());
               return EnrollBlock.builder().state(enrollState).options(enrollOptions).build();
             });
+  }
+
+  /**
+   * Creates a WebAuthn state model with the provided parameters.
+   *
+   * @param state the state string
+   * @param tenantId the tenant identifier
+   * @param clientId the client identifier
+   * @param userId the user identifier
+   * @param challenge the challenge string
+   * @param type the state type (enrollment or assertion)
+   * @param deviceMetadata the device metadata
+   * @return the WebAuthn state model
+   */
+  private WebAuthnStateModel createWebAuthnStateModel(
+      String state,
+      String tenantId,
+      String clientId,
+      String userId,
+      String challenge,
+      String type,
+      com.dreamsportslabs.guardian.dto.request.DeviceMetadata deviceMetadata) {
+    return WebAuthnStateModel.builder()
+        .state(state)
+        .tenantId(tenantId)
+        .clientId(clientId)
+        .userId(userId)
+        .challenge(challenge)
+        .type(type)
+        .deviceMetadata(deviceMetadata)
+        .additionalInfo(new HashMap<>())
+        .expiry(getCurrentTimeInSeconds() + STATE_TTL_SECONDS)
+        .build();
   }
 
   /**
@@ -392,19 +419,7 @@ public class WebAuthnService {
     options.put(WEBAUTHN_KEY_TIMEOUT, WEBAUTHN_TIMEOUT_MS);
 
     List<Map<String, Object>> allowCredentials =
-        credentials.stream()
-            .map(
-                cred -> {
-                  Map<String, Object> credMap = new HashMap<>();
-                  credMap.put(WEBAUTHN_KEY_TYPE, WEBAUTHN_VALUE_PUBLIC_KEY);
-                  credMap.put(WEBAUTHN_KEY_ID, cred.getCredentialId());
-                  if (config.getAllowedTransports() != null
-                      && !config.getAllowedTransports().isEmpty()) {
-                    credMap.put(WEBAUTHN_KEY_TRANSPORTS, config.getAllowedTransports());
-                  }
-                  return credMap;
-                })
-            .toList();
+        credentials.stream().map(cred -> buildCredentialMap(cred, config)).toList();
     options.put(WEBAUTHN_KEY_ALLOW_CREDENTIALS, allowCredentials);
 
     return options;
@@ -511,19 +526,25 @@ public class WebAuthnService {
    */
   private List<Map<String, Object>> buildExcludeCredentials(
       List<CredentialModel> existingCredentials, WebAuthnConfigModel config) {
-    return existingCredentials.stream()
-        .map(
-            cred -> {
-              Map<String, Object> credMap = new HashMap<>();
-              credMap.put(WEBAUTHN_KEY_TYPE, WEBAUTHN_VALUE_PUBLIC_KEY);
-              credMap.put(WEBAUTHN_KEY_ID, cred.getCredentialId());
-              if (config.getAllowedTransports() != null
-                  && !config.getAllowedTransports().isEmpty()) {
-                credMap.put(WEBAUTHN_KEY_TRANSPORTS, config.getAllowedTransports());
-              }
-              return credMap;
-            })
-        .toList();
+    return existingCredentials.stream().map(cred -> buildCredentialMap(cred, config)).toList();
+  }
+
+  /**
+   * Builds a credential map for WebAuthn options (used in allowCredentials and excludeCredentials).
+   *
+   * @param credential the credential model
+   * @param config the WebAuthn configuration
+   * @return the credential map
+   */
+  private Map<String, Object> buildCredentialMap(
+      CredentialModel credential, WebAuthnConfigModel config) {
+    Map<String, Object> credMap = new HashMap<>();
+    credMap.put(WEBAUTHN_KEY_TYPE, WEBAUTHN_VALUE_PUBLIC_KEY);
+    credMap.put(WEBAUTHN_KEY_ID, credential.getCredentialId());
+    if (config.getAllowedTransports() != null && !config.getAllowedTransports().isEmpty()) {
+      credMap.put(WEBAUTHN_KEY_TRANSPORTS, config.getAllowedTransports());
+    }
+    return credMap;
   }
 
   /**
@@ -533,28 +554,12 @@ public class WebAuthnService {
    * the authenticator. Platform authenticators may return fmt="none" with non-zero AAGUID, which
    * violates the WebAuthn spec.
    *
+   * <p>Currently always returns "direct" to ensure AAGUID is available for validation.
+   *
    * @param config WebAuthn configuration
    * @return attestation preference string ("direct")
    */
   private String determineAttestationPreference(WebAuthnConfigModel config) {
-    if (config.getBlockedAaguids() != null && !config.getBlockedAaguids().isEmpty()) {
-      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
-    }
-
-    String policyMode = config.getAaguidPolicyMode();
-    if (WEBAUTHN_AAGUID_POLICY_MODE_ALLOWLIST.equals(policyMode)
-        || WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED.equals(policyMode)) {
-      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
-    }
-
-    if (config.getAllowedAaguids() != null && !config.getAllowedAaguids().isEmpty()) {
-      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
-    }
-
-    if (config.getRequireDeviceBound() != null && config.getRequireDeviceBound()) {
-      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
-    }
-
     return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
   }
 
@@ -701,6 +706,166 @@ public class WebAuthnService {
   }
 
   /**
+   * Handles enrollment verification errors, including AAGUID validation workarounds.
+   *
+   * @param err the error that occurred during verification
+   * @param context the finish context with config
+   * @param requestDto the finish request DTO
+   * @param config the WebAuthn configuration
+   * @param tenantId the tenant identifier
+   * @param state the WebAuthn state
+   * @param headers HTTP headers
+   * @param credentialId the credential ID
+   * @return Single containing the verified context if error can be handled, or error otherwise
+   */
+  private Single<FinishContextWithConfig> handleEnrollmentError(
+      Throwable err,
+      FinishContextWithConfig context,
+      V2WebAuthnFinishRequestDto requestDto,
+      WebAuthnConfigModel config,
+      String tenantId,
+      WebAuthnStateModel state,
+      HttpHeaders headers,
+      String credentialId) {
+    log.error("WebAuthn enrollment verification failed", err);
+
+    String errorMessage = err.getMessage();
+    String errorClass = err.getClass().getName();
+
+    if (isAaguidError(errorClass, errorMessage)) {
+      return handleAaguidError(
+          errorClass, errorMessage, context, requestDto, config, tenantId, state, headers);
+    }
+
+    if (isDuplicateCredentialError(errorMessage)) {
+      log.warn(
+          "Duplicate credential detected by WebAuthn library. Credential ID: {}", credentialId);
+      return Single.error(
+          INVALID_REQUEST.getCustomException(
+              WEBAUTHN_ERROR_DUPLICATE_CREDENTIAL
+                  + ". This credential is already registered. "
+                  + "Credential ID: "
+                  + credentialId));
+    }
+
+    return Single.error(
+        INVALID_REQUEST.getCustomException(
+            WEBAUTHN_ERROR_VERIFICATION_FAILED + ": " + errorMessage));
+  }
+
+  /**
+   * Checks if an error is an AAGUID-related error.
+   *
+   * @param errorClass the error class name
+   * @param errorMessage the error message
+   * @return true if the error is AAGUID-related
+   */
+  private boolean isAaguidError(String errorClass, String errorMessage) {
+    if (errorClass != null && errorClass.contains("AttestationException")) {
+      log.debug("Detected AttestationException by class name: {}", errorClass);
+      return true;
+    }
+    if (errorMessage != null
+        && (errorMessage.contains("AAGUID is not 00000000-0000-0000-0000-000000000000")
+            || errorMessage.contains("AAGUID")
+            || errorMessage.contains("00000000-0000-0000-0000-000000000000"))) {
+      log.debug("Detected AAGUID error by message: {}", errorMessage);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Checks if an error is a duplicate credential error.
+   *
+   * @param errorMessage the error message
+   * @return true if the error is duplicate credential-related
+   */
+  private boolean isDuplicateCredentialError(String errorMessage) {
+    return errorMessage != null
+        && (errorMessage.contains("already registered")
+            || errorMessage.contains("duplicate")
+            || errorMessage.contains("excludeCredentials"));
+  }
+
+  /**
+   * Handles AAGUID validation errors, potentially bypassing validation for platform authenticators.
+   *
+   * @param errorClass the error class name
+   * @param errorMessage the error message
+   * @param context the finish context with config
+   * @param requestDto the finish request DTO
+   * @param config the WebAuthn configuration
+   * @param tenantId the tenant identifier
+   * @param state the WebAuthn state
+   * @param headers HTTP headers
+   * @return Single containing the verified context if bypass is allowed, or error otherwise
+   */
+  private Single<FinishContextWithConfig> handleAaguidError(
+      String errorClass,
+      String errorMessage,
+      FinishContextWithConfig context,
+      V2WebAuthnFinishRequestDto requestDto,
+      WebAuthnConfigModel config,
+      String tenantId,
+      WebAuthnStateModel state,
+      HttpHeaders headers) {
+    log.warn(
+        "Platform authenticator returned fmt='none' with non-zero AAGUID. "
+            + "This violates WebAuthn spec but is common with Touch ID/Face ID. "
+            + "Error class: {}, Error message: {}, "
+            + "AAGUID policy mode: {}, Allowed AAGUIDs: {}, Blocked AAGUIDs: {}",
+        errorClass,
+        errorMessage,
+        config.getAaguidPolicyMode(),
+        config.getAllowedAaguids(),
+        config.getBlockedAaguids());
+
+    String policyMode = config.getAaguidPolicyMode();
+    boolean hasRestrictions = hasAaguidRestrictions(config, policyMode);
+
+    log.info(
+        "AAGUID error detected. Policy mode: {}, Has restrictions: {}, "
+            + "Policy mode equals ANY: {}",
+        policyMode,
+        hasRestrictions,
+        WEBAUTHN_AAGUID_POLICY_MODE_ANY.equals(policyMode));
+
+    if (WEBAUTHN_AAGUID_POLICY_MODE_ANY.equals(policyMode) && !hasRestrictions) {
+      log.info(
+          "AAGUID check disabled (policy: any). Bypassing library validation "
+              + "and performing minimal custom validation for platform authenticator.");
+      return bypassAaguidValidationAndEnroll(context, requestDto, config, tenantId, state, headers)
+          .flatMap(Single::just);
+    } else {
+      return Single.error(
+          INVALID_REQUEST.getCustomException(
+              "Attestation validation failed: Platform authenticator returned "
+                  + "fmt='none' with non-zero AAGUID. AAGUID validation is required by your "
+                  + "configuration (policy: "
+                  + policyMode
+                  + ", hasRestrictions: "
+                  + hasRestrictions
+                  + "). "
+                  + "Please try a different authenticator or adjust your AAGUID policy."));
+    }
+  }
+
+  /**
+   * Checks if AAGUID restrictions are configured.
+   *
+   * @param config the WebAuthn configuration
+   * @param policyMode the AAGUID policy mode
+   * @return true if restrictions are configured
+   */
+  private boolean hasAaguidRestrictions(WebAuthnConfigModel config, String policyMode) {
+    return (config.getBlockedAaguids() != null && !config.getBlockedAaguids().isEmpty())
+        || (config.getAllowedAaguids() != null && !config.getAllowedAaguids().isEmpty())
+        || WEBAUTHN_AAGUID_POLICY_MODE_ALLOWLIST.equals(policyMode)
+        || WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED.equals(policyMode);
+  }
+
+  /**
    * Verifies enrollment (attestation) by verifying challenge is bound by public key, then saves to
    * DB.
    *
@@ -772,103 +937,16 @@ public class WebAuthnService {
                                       .andThen(Single.just(ctx));
                                 })
                             .onErrorResumeNext(
-                                err -> {
-                                  log.error("WebAuthn enrollment verification failed", err);
-
-                                  String errorMessage = err.getMessage();
-                                  String errorClass = err.getClass().getName();
-
-                                  boolean isAaguidError = false;
-                                  if (errorClass != null
-                                      && errorClass.contains("AttestationException")) {
-                                    isAaguidError = true;
-                                    log.debug(
-                                        "Detected AttestationException by class name: {}",
-                                        errorClass);
-                                  }
-                                  if (errorMessage != null
-                                      && (errorMessage.contains(
-                                              "AAGUID is not 00000000-0000-0000-0000-000000000000")
-                                          || errorMessage.contains("AAGUID")
-                                          || errorMessage.contains(
-                                              "00000000-0000-0000-0000-000000000000"))) {
-                                    isAaguidError = true;
-                                    log.debug("Detected AAGUID error by message: {}", errorMessage);
-                                  }
-
-                                  if (isAaguidError) {
-                                    log.warn(
-                                        "Platform authenticator returned fmt='none' with non-zero AAGUID. "
-                                            + "This violates WebAuthn spec but is common with Touch ID/Face ID. "
-                                            + "Error class: {}, Error message: {}, "
-                                            + "AAGUID policy mode: {}, Allowed AAGUIDs: {}, Blocked AAGUIDs: {}",
-                                        errorClass,
-                                        errorMessage,
-                                        config.getAaguidPolicyMode(),
-                                        config.getAllowedAaguids(),
-                                        config.getBlockedAaguids());
-
-                                    String policyMode = config.getAaguidPolicyMode();
-                                    boolean hasRestrictions =
-                                        (config.getBlockedAaguids() != null
-                                                && !config.getBlockedAaguids().isEmpty())
-                                            || (config.getAllowedAaguids() != null
-                                                && !config.getAllowedAaguids().isEmpty())
-                                            || WEBAUTHN_AAGUID_POLICY_MODE_ALLOWLIST.equals(
-                                                policyMode)
-                                            || WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED.equals(
-                                                policyMode);
-
-                                    log.info(
-                                        "AAGUID error detected. Policy mode: {}, Has restrictions: {}, "
-                                            + "Policy mode equals ANY: {}",
-                                        policyMode,
-                                        hasRestrictions,
-                                        WEBAUTHN_AAGUID_POLICY_MODE_ANY.equals(policyMode));
-
-                                    if (WEBAUTHN_AAGUID_POLICY_MODE_ANY.equals(policyMode)
-                                        && !hasRestrictions) {
-                                      log.info(
-                                          "AAGUID check disabled (policy: any). Bypassing library validation "
-                                              + "and performing minimal custom validation for platform authenticator.");
-                                      return bypassAaguidValidationAndEnroll(
-                                              ctx, requestDto, config, tenantId, state, headers)
-                                          .flatMap(Single::just);
-                                    } else {
-                                      return Single.error(
-                                          INVALID_REQUEST.getCustomException(
-                                              "Attestation validation failed: Platform authenticator returned "
-                                                  + "fmt='none' with non-zero AAGUID. AAGUID validation is required by your "
-                                                  + "configuration (policy: "
-                                                  + policyMode
-                                                  + ", hasRestrictions: "
-                                                  + hasRestrictions
-                                                  + "). "
-                                                  + "Please try a different authenticator or adjust your AAGUID policy."));
-                                    }
-                                  }
-
-                                  if (errorMessage != null
-                                      && (errorMessage.contains("already registered")
-                                          || errorMessage.contains("duplicate")
-                                          || errorMessage.contains("excludeCredentials"))) {
-                                    log.warn(
-                                        "Duplicate credential detected by WebAuthn library. Credential ID: {}",
-                                        credentialId);
-                                    return Single.error(
-                                        INVALID_REQUEST.getCustomException(
-                                            WEBAUTHN_ERROR_DUPLICATE_CREDENTIAL
-                                                + ". This credential is already registered. "
-                                                + "Credential ID: "
-                                                + credentialId));
-                                  }
-
-                                  return Single.error(
-                                      INVALID_REQUEST.getCustomException(
-                                          WEBAUTHN_ERROR_VERIFICATION_FAILED
-                                              + ": "
-                                              + errorMessage));
-                                });
+                                err ->
+                                    handleEnrollmentError(
+                                        err,
+                                        ctx,
+                                        requestDto,
+                                        config,
+                                        tenantId,
+                                        state,
+                                        headers,
+                                        credentialId));
                       });
             });
   }
@@ -1316,9 +1394,6 @@ public class WebAuthnService {
         extractDataFromAuthenticatorData(authenticatorDataBytes, webauthnData);
       }
 
-      // Try to extract transport from Authenticator object if available
-      if (authenticator != null) {}
-
       log.debug("Extracted WebAuthn data: {}", webauthnData.encodePrettily());
       return webauthnData.isEmpty() ? null : webauthnData;
     } catch (Exception e) {
@@ -1574,17 +1649,10 @@ public class WebAuthnService {
    * @param clientId the client identifier
    * @param refreshToken the refresh token string
    * @param authMethods the list of authentication methods to update
-   * @param config the WebAuthn configuration
-   * @param webauthnData the WebAuthn data JSON object
    * @return Completable that completes when the update is done
    */
   private Completable updateRefreshTokenAuthMethod(
-      String tenantId,
-      String clientId,
-      String refreshToken,
-      List<AuthMethod> authMethods,
-      WebAuthnConfigModel config,
-      JsonObject webauthnData) {
+      String tenantId, String clientId, String refreshToken, List<AuthMethod> authMethods) {
     List<String> authMethodValues =
         authMethods.stream().map(AuthMethod::getValue).distinct().toList();
     return refreshTokenDao.updateRefreshTokenAuthMethod(
@@ -1670,13 +1738,15 @@ public class WebAuthnService {
   /**
    * Processes the WebAuthn result after successful verification.
    *
-   * <p>Extracts WebAuthn data (including PIN detection) from attestation object. Gets user
-   * information and builds authentication methods list, adding WebAuthn (hwk) if not already
-   * present.
+   * <p>Gets user information and builds authentication methods list, adding WebAuthn (hwk) if not
+   * already present.
    *
    * <p>For enrollment: updates existing refresh token AMR, then issues access token and ID token.
    * For assertion: updates refresh token AMR and issues new access token (returns the same refresh
    * token).
+   *
+   * <p>Note: WebAuthn requirements (UV flag, transports, AAGUID) are validated earlier in the flow
+   * during verification, so no additional validation is needed here.
    *
    * @param context the finish context with config
    * @param requestDto the finish request DTO
@@ -1693,95 +1763,173 @@ public class WebAuthnService {
     WebAuthnStateModel state = context.getState();
     RefreshTokenContext tokenContext = context.getTokenContext();
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
-    WebAuthnConfigModel webauthnConfig = context.getWebAuthnContext().getConfig();
-
-    JsonObject webauthnData = extractWebAuthnDataFromAuthenticator(null, requestDto);
 
     return userService
         .getUser(Map.of("userId", tokenContext.getUserId()), requestHeaders, tenantId)
         .flatMap(
             user -> {
               RefreshTokenModel refreshToken = tokenContext.getRefreshToken();
-              String scopes =
-                  refreshToken.getScope() != null ? String.join(" ", refreshToken.getScope()) : "";
-
-              List<AuthMethod> authMethods = new ArrayList<>(refreshToken.getAuthMethod());
-              if (!authMethods.contains(AuthMethod.HARDWARE_KEY_PROOF)) {
-                authMethods.add(AuthMethod.HARDWARE_KEY_PROOF);
-              }
-
+              String scopes = buildScopesFromRefreshToken(refreshToken);
+              List<AuthMethod> authMethods = buildAuthMethodsWithWebAuthn(refreshToken);
               long iat = getCurrentTimeInSeconds();
 
               if (WEBAUTHN_STATE_TYPE_ENROLL.equals(state.getType())) {
-                String existingRefreshToken = refreshToken.getRefreshToken();
-                return updateRefreshTokenAuthMethod(
-                        tenantId,
-                        requestDto.getClientId(),
-                        existingRefreshToken,
-                        authMethods,
-                        webauthnConfig,
-                        webauthnData)
-                    .andThen(
-                        Single.zip(
-                            tokenIssuer.generateAccessToken(
-                                existingRefreshToken,
-                                iat,
-                                scopes,
-                                user,
-                                authMethods,
-                                requestDto.getClientId(),
-                                tenantId,
-                                config),
-                            tokenIssuer.generateIdToken(
-                                iat,
-                                null,
-                                user,
-                                config.getTokenConfig().getIdTokenClaims(),
-                                requestDto.getClientId(),
-                                config.getTenantId()),
-                            (accessToken, idToken) -> {
-                              Map<String, Object> response = new HashMap<>();
-                              response.put(WEBAUTHN_JSON_KEY_ACCESS_TOKEN, accessToken);
-                              response.put(WEBAUTHN_JSON_KEY_REFRESH_TOKEN, existingRefreshToken);
-                              response.put(WEBAUTHN_JSON_KEY_ID_TOKEN, idToken);
-                              response.put(WEBAUTHN_JSON_KEY_TOKEN_TYPE, TOKEN_TYPE);
-                              response.put(
-                                  WEBAUTHN_JSON_KEY_EXPIRES_IN,
-                                  config.getTokenConfig().getAccessTokenExpiry());
-                              return response;
-                            }));
+                return processEnrollmentResult(
+                    requestDto, tenantId, config, refreshToken, user, authMethods, scopes, iat);
               } else {
-                String existingRefreshToken = refreshToken.getRefreshToken();
-                return updateRefreshTokenAuthMethod(
-                        tenantId,
-                        requestDto.getClientId(),
-                        existingRefreshToken,
-                        authMethods,
-                        webauthnConfig,
-                        webauthnData)
-                    .andThen(
-                        tokenIssuer.generateAccessToken(
-                            existingRefreshToken,
-                            iat,
-                            scopes,
-                            user,
-                            authMethods,
-                            requestDto.getClientId(),
-                            tenantId,
-                            config))
-                    .map(
-                        accessToken -> {
-                          Map<String, Object> response = new HashMap<>();
-                          response.put(WEBAUTHN_JSON_KEY_ACCESS_TOKEN, accessToken);
-                          response.put(WEBAUTHN_JSON_KEY_REFRESH_TOKEN, existingRefreshToken);
-                          response.put(WEBAUTHN_JSON_KEY_TOKEN_TYPE, TOKEN_TYPE);
-                          response.put(
-                              WEBAUTHN_JSON_KEY_EXPIRES_IN,
-                              config.getTokenConfig().getAccessTokenExpiry());
-                          return response;
-                        });
+                return processAssertionResult(
+                    requestDto, tenantId, config, refreshToken, user, authMethods, scopes, iat);
               }
             });
+  }
+
+  /**
+   * Builds scopes string from refresh token.
+   *
+   * @param refreshToken the refresh token model
+   * @return the scopes string, empty if no scopes
+   */
+  private String buildScopesFromRefreshToken(RefreshTokenModel refreshToken) {
+    return refreshToken.getScope() != null ? String.join(" ", refreshToken.getScope()) : "";
+  }
+
+  /**
+   * Builds authentication methods list with WebAuthn added if not already present.
+   *
+   * @param refreshToken the refresh token model
+   * @return the list of authentication methods including WebAuthn
+   */
+  private List<AuthMethod> buildAuthMethodsWithWebAuthn(RefreshTokenModel refreshToken) {
+    List<AuthMethod> authMethods = new ArrayList<>(refreshToken.getAuthMethod());
+    if (!authMethods.contains(AuthMethod.HARDWARE_KEY_PROOF)) {
+      authMethods.add(AuthMethod.HARDWARE_KEY_PROOF);
+    }
+    return authMethods;
+  }
+
+  /**
+   * Processes enrollment result: updates refresh token AMR and issues access token and ID token.
+   *
+   * @param requestDto the finish request DTO
+   * @param tenantId the tenant identifier
+   * @param config the tenant configuration
+   * @param refreshToken the refresh token model
+   * @param user the user JSON object
+   * @param authMethods the list of authentication methods
+   * @param scopes the scopes string
+   * @param iat the issued at time in seconds
+   * @return Single containing the response map with access token, refresh token, and ID token
+   */
+  private Single<Map<String, Object>> processEnrollmentResult(
+      V2WebAuthnFinishRequestDto requestDto,
+      String tenantId,
+      TenantConfig config,
+      RefreshTokenModel refreshToken,
+      JsonObject user,
+      List<AuthMethod> authMethods,
+      String scopes,
+      long iat) {
+    String existingRefreshToken = refreshToken.getRefreshToken();
+
+    return updateRefreshTokenAuthMethod(
+            tenantId, requestDto.getClientId(), existingRefreshToken, authMethods)
+        .andThen(
+            Single.zip(
+                tokenIssuer.generateAccessToken(
+                    existingRefreshToken,
+                    iat,
+                    scopes,
+                    user,
+                    authMethods,
+                    requestDto.getClientId(),
+                    tenantId,
+                    config),
+                tokenIssuer.generateIdToken(
+                    iat,
+                    null,
+                    user,
+                    config.getTokenConfig().getIdTokenClaims(),
+                    requestDto.getClientId(),
+                    config.getTenantId()),
+                (accessToken, idToken) ->
+                    buildEnrollmentResponse(accessToken, existingRefreshToken, idToken, config)));
+  }
+
+  /**
+   * Processes assertion result: updates refresh token AMR and issues new access token.
+   *
+   * @param requestDto the finish request DTO
+   * @param tenantId the tenant identifier
+   * @param config the tenant configuration
+   * @param refreshToken the refresh token model
+   * @param user the user JSON object
+   * @param authMethods the list of authentication methods
+   * @param scopes the scopes string
+   * @param iat the issued at time in seconds
+   * @return Single containing the response map with access token and refresh token
+   */
+  private Single<Map<String, Object>> processAssertionResult(
+      V2WebAuthnFinishRequestDto requestDto,
+      String tenantId,
+      TenantConfig config,
+      RefreshTokenModel refreshToken,
+      JsonObject user,
+      List<AuthMethod> authMethods,
+      String scopes,
+      long iat) {
+    String existingRefreshToken = refreshToken.getRefreshToken();
+
+    return updateRefreshTokenAuthMethod(
+            tenantId, requestDto.getClientId(), existingRefreshToken, authMethods)
+        .andThen(
+            tokenIssuer.generateAccessToken(
+                existingRefreshToken,
+                iat,
+                scopes,
+                user,
+                authMethods,
+                requestDto.getClientId(),
+                tenantId,
+                config))
+        .map(accessToken -> buildAssertionResponse(accessToken, existingRefreshToken, config));
+  }
+
+  /**
+   * Builds enrollment response map with access token, refresh token, ID token, and metadata.
+   *
+   * @param accessToken the access token
+   * @param refreshToken the refresh token
+   * @param idToken the ID token
+   * @param config the tenant configuration
+   * @return the response map
+   */
+  private Map<String, Object> buildEnrollmentResponse(
+      String accessToken, String refreshToken, String idToken, TenantConfig config) {
+    Map<String, Object> response = new HashMap<>();
+    response.put(WEBAUTHN_JSON_KEY_ACCESS_TOKEN, accessToken);
+    response.put(WEBAUTHN_JSON_KEY_REFRESH_TOKEN, refreshToken);
+    response.put(WEBAUTHN_JSON_KEY_ID_TOKEN, idToken);
+    response.put(WEBAUTHN_JSON_KEY_TOKEN_TYPE, TOKEN_TYPE);
+    response.put(WEBAUTHN_JSON_KEY_EXPIRES_IN, config.getTokenConfig().getAccessTokenExpiry());
+    return response;
+  }
+
+  /**
+   * Builds assertion response map with access token, refresh token, and metadata.
+   *
+   * @param accessToken the access token
+   * @param refreshToken the refresh token
+   * @param config the tenant configuration
+   * @return the response map
+   */
+  private Map<String, Object> buildAssertionResponse(
+      String accessToken, String refreshToken, TenantConfig config) {
+    Map<String, Object> response = new HashMap<>();
+    response.put(WEBAUTHN_JSON_KEY_ACCESS_TOKEN, accessToken);
+    response.put(WEBAUTHN_JSON_KEY_REFRESH_TOKEN, refreshToken);
+    response.put(WEBAUTHN_JSON_KEY_TOKEN_TYPE, TOKEN_TYPE);
+    response.put(WEBAUTHN_JSON_KEY_EXPIRES_IN, config.getTokenConfig().getAccessTokenExpiry());
+    return response;
   }
 
   // Helper classes for context passing
