@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
+import com.dreamsportslabs.guardian.cache.DefaultClientScopesCache;
 import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.dto.UserDto;
@@ -18,6 +19,7 @@ public class PasswordAuth {
   private final UserService userService;
   private final AuthorizationService authorizationService;
   private final UserFlowBlockService userFlowBlockService;
+  private final DefaultClientScopesCache defaultClientScopesCache;
 
   public Single<Object> signIn(
       V1SignInRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
@@ -35,14 +37,21 @@ public class PasswordAuth {
                 tenantId))
         .flatMap(
             user ->
-                authorizationService.generate(
-                    user,
-                    dto.getResponseType(),
-                    "",
-                    List.of(AuthMethod.PASSWORD),
-                    dto.getMetaInfo(),
-                    null,
-                    tenantId));
+                defaultClientScopesCache
+                    .getDefaultClientScopes(tenantId)
+                    .flatMap(
+                        pair -> {
+                          String clientId = pair.getLeft();
+                          String scopes = String.join(" ", pair.getRight());
+                          return authorizationService.generate(
+                              user,
+                              dto.getResponseType(),
+                              scopes,
+                              List.of(AuthMethod.PASSWORD),
+                              dto.getMetaInfo(),
+                              clientId,
+                              tenantId);
+                        }));
   }
 
   public Single<Object> signUp(
@@ -60,13 +69,20 @@ public class PasswordAuth {
                 tenantId))
         .flatMap(
             user ->
-                authorizationService.generate(
-                    user,
-                    dto.getResponseType(),
-                    "",
-                    List.of(AuthMethod.PASSWORD),
-                    dto.getMetaInfo(),
-                    null,
-                    tenantId));
+                defaultClientScopesCache
+                    .getDefaultClientScopes(tenantId)
+                    .flatMap(
+                        pair -> {
+                          String clientId = pair.getLeft();
+                          String scopes = String.join(" ", pair.getRight());
+                          return authorizationService.generate(
+                              user,
+                              dto.getResponseType(),
+                              scopes,
+                              List.of(AuthMethod.PASSWORD),
+                              dto.getMetaInfo(),
+                              clientId,
+                              tenantId);
+                        }));
   }
 }
