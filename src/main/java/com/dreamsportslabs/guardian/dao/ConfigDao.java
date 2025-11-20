@@ -47,12 +47,15 @@ public class ConfigDao {
 
   public Single<TenantConfig> getTenantConfig(String tenantId) {
     TenantConfig.TenantConfigBuilder builder = TenantConfig.builder().tenantId(tenantId);
-    List<Completable> configSources =
+    // Mandatory configs - will fail if missing
+    List<Completable> mandatoryConfigSources =
+        List.of(appendUserConfig(tenantId, builder), appendTokenConfig(tenantId, builder));
+
+    // Optional configs - will not fail if missing
+    List<Completable> optionalConfigSources =
         List.of(
             appendAuthCodeConfig(tenantId, builder),
             appendEmailConfig(tenantId, builder),
-            appendUserConfig(tenantId, builder),
-            appendTokenConfig(tenantId, builder),
             appendFbConfig(tenantId, builder),
             appendGoogleConfig(tenantId, builder),
             appendSmsConfig(tenantId, builder),
@@ -60,35 +63,36 @@ public class ConfigDao {
             appendContactVerifyConfig(tenantId, builder),
             appendOidcProviderConfig(tenantId, builder),
             appendAdminConfig(tenantId, builder),
-            appendContactVerifyConfig(tenantId, builder),
             appendOidcConfig(tenantId, builder),
             appendGuestConfig(tenantId, builder));
-    return Completable.merge(configSources)
+
+    return Completable.merge(mandatoryConfigSources)
+        .andThen(Completable.merge(optionalConfigSources).onErrorComplete())
         .andThen(Single.defer(() -> Single.just(builder.build())));
   }
 
   private Completable appendAuthCodeConfig(
       String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, AuthCodeConfig.class, AUTH_CODE_CONFIG)
+    return getOptionalConfigFromDb(tenantId, AuthCodeConfig.class, AUTH_CODE_CONFIG)
         .map(builder::authCodeConfig)
         .ignoreElement();
   }
 
   private Completable appendEmailConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, EmailConfig.class, EMAIL_CONFIG)
+    return getOptionalConfigFromDb(tenantId, EmailConfig.class, EMAIL_CONFIG)
         .map(builder::emailConfig)
         .ignoreElement();
   }
 
   private Completable appendOtpConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, OtpConfig.class, OTP_CONFIG)
+    return getOptionalConfigFromDb(tenantId, OtpConfig.class, OTP_CONFIG)
         .map(builder::otpConfig)
         .ignoreElement();
   }
 
   private Completable appendContactVerifyConfig(
       String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, ContactVerifyConfig.class, CONTACT_VERIFY_CONFIG)
+    return getOptionalConfigFromDb(tenantId, ContactVerifyConfig.class, CONTACT_VERIFY_CONFIG)
         .map(builder::contactVerifyConfig)
         .ignoreElement();
   }
@@ -106,45 +110,45 @@ public class ConfigDao {
   }
 
   private Completable appendFbConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, FbConfig.class, FB_AUTH_CONFIG)
+    return getOptionalConfigFromDb(tenantId, FbConfig.class, FB_AUTH_CONFIG)
         .map(builder::fbConfig)
         .ignoreElement();
   }
 
   private Completable appendGoogleConfig(
       String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, GoogleConfig.class, GOOGLE_AUTH_CONFIG)
+    return getOptionalConfigFromDb(tenantId, GoogleConfig.class, GOOGLE_AUTH_CONFIG)
         .map(builder::googleConfig)
         .ignoreElement();
   }
 
   private Completable appendGuestConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, GuestConfig.class, GUEST_CONFIG)
+    return getOptionalConfigFromDb(tenantId, GuestConfig.class, GUEST_CONFIG)
         .map(builder::guestConfig)
         .ignoreElement();
   }
 
   private Completable appendSmsConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, SmsConfig.class, SMS_CONFIG)
+    return getOptionalConfigFromDb(tenantId, SmsConfig.class, SMS_CONFIG)
         .map(builder::smsConfig)
         .ignoreElement();
   }
 
   private Completable appendOidcConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, OidcConfig.class, OIDC_CONFIG)
+    return getOptionalConfigFromDb(tenantId, OidcConfig.class, OIDC_CONFIG)
         .map(builder::oidcConfig)
         .ignoreElement();
   }
 
   private Completable appendAdminConfig(String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getConfigFromDb(tenantId, AdminConfig.class, ADMIN_CONFIG)
+    return getOptionalConfigFromDb(tenantId, AdminConfig.class, ADMIN_CONFIG)
         .map(builder::adminConfig)
         .ignoreElement();
   }
 
   private Completable appendOidcProviderConfig(
       String tenantId, TenantConfig.TenantConfigBuilder builder) {
-    return getMultipleConfigFromDb(tenantId, OidcProviderConfig.class, OIDC_PROVIDER_CONFIG)
+    return getOptionalMultipleConfigFromDb(tenantId, OidcProviderConfig.class, OIDC_PROVIDER_CONFIG)
         .map(
             configs ->
                 configs.stream()
@@ -152,15 +156,6 @@ public class ConfigDao {
                         Collectors.toMap(OidcProviderConfig::getProviderName, config -> config)))
         .map(builder::oidcProviderConfig)
         .ignoreElement();
-  }
-
-  private <T> Single<List<T>> getMultipleConfigFromDb(
-      String tenantId, Class<T> configType, String query) {
-    return mysqlClient
-        .getReaderPool()
-        .preparedQuery(query)
-        .execute(Tuple.of(tenantId))
-        .map(rows -> JsonUtils.rowSetToList(rows, configType));
   }
 
   private <T> Single<T> getConfigFromDb(String tenantId, Class<T> configType, String query) {
@@ -171,5 +166,30 @@ public class ConfigDao {
         .filter(rowSet -> rowSet.size() > 0)
         .switchIfEmpty(Single.error(INVALID_REQUEST.getCustomException("No config found")))
         .map(rows -> JsonUtils.rowSetToList(rows, configType).get(0));
+  }
+
+  private <T> Single<T> getOptionalConfigFromDb(
+      String tenantId, Class<T> configType, String query) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(query)
+        .execute(Tuple.of(tenantId))
+        .flatMap(
+            rows -> {
+              if (rows.size() > 0) {
+                return Single.just(JsonUtils.rowSetToList(rows, configType).get(0));
+              }
+              return Single.never();
+            });
+  }
+
+  private <T> Single<List<T>> getOptionalMultipleConfigFromDb(
+      String tenantId, Class<T> configType, String query) {
+    return mysqlClient
+        .getReaderPool()
+        .preparedQuery(query)
+        .execute(Tuple.of(tenantId))
+        .map(rows -> JsonUtils.rowSetToList(rows, configType))
+        .onErrorReturnItem(List.of());
   }
 }

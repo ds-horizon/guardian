@@ -8,6 +8,7 @@ import static com.dreamsportslabs.guardian.constant.Constants.SSO_TOKEN_COOKIE_N
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.AUTH_CODE_NOT_CONFIGURED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CODE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
@@ -270,6 +271,9 @@ public class AuthorizationService {
       String clientId,
       String tenantId) {
     AuthCodeConfig config = registry.get(tenantId, TenantConfig.class).getAuthCodeConfig();
+    if (config == null) {
+      return Single.error(AUTH_CODE_NOT_CONFIGURED.getException());
+    }
     String code = RandomStringUtils.randomAlphanumeric(config.getLength());
     CodeModel codeModel =
         CodeModel.builder()
