@@ -1,5 +1,79 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.TOKEN_TYPE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_AAGUID_POLICY_MODE_ALLOWLIST;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_AAGUID_POLICY_MODE_ANY;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_BINDING_TYPE_WEBAUTHN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_CLIENT_DATA_TYPE_CREATE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_CLIENT_NOT_FOUND;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_CREDENTIAL_NOT_FOUND;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_DUPLICATE_CREDENTIAL;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_INVALID_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_INVALID_STATE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_INVALID_STATE_TYPE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_INVALID_TRANSPORT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_MFA_REQUIRED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_MISSING_AUTH_HEADER;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_NOT_CONFIGURED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_REFRESH_TOKEN_EXPIRED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_SIGN_COUNT_REPLAY;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_STATE_CLIENT_MISMATCH;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_STATE_EXPIRED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_STATE_USER_MISMATCH;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_USER_VERIFICATION_REQUIRED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_VERIFICATION_FAILED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_AAGUID;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_ACCESS_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_ATTESTATION_OBJECT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_AUTHENTICATOR_DATA;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_CHALLENGE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_CLIENT_DATA_JSON;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_DOMAIN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_EXPIRES_IN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_ID_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_ORIGIN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_RAW_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_RESPONSE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_SIGNATURE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_TOKEN_TYPE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_TRANSPORT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_TYPE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_USERNAME;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_USER_HANDLE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_UV;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_JSON_KEY_WEBAUTHN;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_ALG;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_ALLOW_CREDENTIALS;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_ATTESTATION;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_AUTHENTICATOR_ATTACHMENT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_AUTHENTICATOR_SELECTION;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_CHALLENGE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_DISPLAY_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_EXCLUDE_CREDENTIALS;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_NAME;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_PUB_KEY_CRED_PARAMS;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_RESIDENT_KEY;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_RP;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_RP_ID;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_TIMEOUT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_TRANSPORTS;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_TYPE;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_USER;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_KEY_USER_VERIFICATION;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_MFA_POLICY_MANDATORY;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_RECOMMENDED_MODE_ASSERT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_RECOMMENDED_MODE_ENROLL;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_STATE_TYPE_ASSERT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_STATE_TYPE_ENROLL;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_VALUE_ATTESTATION_DIRECT;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_VALUE_PLATFORM;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_VALUE_PREFERRED;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_VALUE_PUBLIC_KEY;
+import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_VALUE_REQUIRED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.utils.Utils.getAccessTokenFromAuthHeader;
@@ -70,114 +144,22 @@ public class WebAuthnService {
   private final Registry registry;
   private final Vertx vertx;
 
-  // Constants
   private static final int CHALLENGE_BYTES = 32;
-  private static final int STATE_TTL_SECONDS = 300; // 5 minutes
-  private static final int WEBAUTHN_TIMEOUT_MS =
-      60000; // 60 seconds (WebAuthn standard recommendation)
+  private static final int STATE_TTL_SECONDS = 300;
+  private static final int WEBAUTHN_TIMEOUT_MS = 60000;
   private static final int STATE_RANDOM_LENGTH = 16;
 
-  // State type constants
-  private static final String STATE_TYPE_ASSERT = "assert";
-  private static final String STATE_TYPE_ENROLL = "enroll";
-  private static final String RECOMMENDED_MODE_ASSERT = "assert";
-  private static final String RECOMMENDED_MODE_ENROLL = "enroll";
-
-  // WebAuthn option keys
-  private static final String KEY_CHALLENGE = "challenge";
-  private static final String KEY_RP_ID = "rpId";
-  private static final String KEY_USER_VERIFICATION = "userVerification";
-  private static final String KEY_TIMEOUT = "timeout";
-  private static final String KEY_ALLOW_CREDENTIALS = "allowCredentials";
-  private static final String KEY_TYPE = "type";
-  private static final String KEY_ID = "id";
-  private static final String KEY_RP = "rp";
-  private static final String KEY_USER = "user";
-  private static final String KEY_NAME = "name";
-  private static final String KEY_DISPLAY_NAME = "displayName";
-  private static final String KEY_PUB_KEY_CRED_PARAMS = "pubKeyCredParams";
-  private static final String KEY_AUTHENTICATOR_SELECTION = "authenticatorSelection";
-  private static final String KEY_ATTESTATION = "attestation";
-  private static final String KEY_EXCLUDE_CREDENTIALS = "excludeCredentials";
-  private static final String KEY_AUTHENTICATOR_ATTACHMENT = "authenticatorAttachment";
-  private static final String KEY_RESIDENT_KEY = "residentKey";
-  private static final String KEY_ALG = "alg";
-  private static final String KEY_TRANSPORTS = "transports";
-
-  // WebAuthn values
-  private static final String VALUE_PUBLIC_KEY = "public-key";
-  private static final String VALUE_REQUIRED = "required";
-  private static final String VALUE_PREFERRED = "preferred";
-  private static final String VALUE_PLATFORM = "platform";
-  private static final String VALUE_ATTESTATION_NONE = "none";
-  private static final String VALUE_ATTESTATION_INDIRECT = "indirect";
-  private static final String VALUE_ATTESTATION_DIRECT = "direct";
-
-  // AAGUID policy mode values
-  private static final String AAGUID_POLICY_MODE_ANY = "any";
-  private static final String AAGUID_POLICY_MODE_ALLOWLIST = "allowlist";
-  private static final String AAGUID_POLICY_MODE_MDS_ENFORCED = "mds_enforced";
-
-  // Error messages
-  private static final String ERROR_MISSING_AUTH_HEADER = "Missing Authorization header";
-  private static final String ERROR_INVALID_REFRESH_TOKEN = "Invalid refresh token";
-  private static final String ERROR_REFRESH_TOKEN_EXPIRED = "Refresh token expired";
-  private static final String ERROR_WEBAUTHN_NOT_CONFIGURED =
-      "WebAuthn not configured for this client";
-  private static final String ERROR_INVALID_STATE = "Invalid or expired state";
-  private static final String ERROR_MFA_REQUIRED =
-      "MFA is mandatory and refresh token has only one AMR";
-  private static final String ERROR_WEBAUTHN_VERIFICATION_FAILED = "WebAuthn verification failed";
-  private static final String ERROR_INVALID_STATE_TYPE = "Invalid state type: %s";
-  private static final String ERROR_CREDENTIAL_NOT_FOUND = "Credential not found for assertion";
-  private static final String ERROR_CLIENT_NOT_FOUND = "Client not found";
-  private static final String ERROR_USER_VERIFICATION_REQUIRED =
-      "User verification required but not performed";
-  private static final String ERROR_INVALID_TRANSPORT = "Invalid transport used";
-  private static final String ERROR_WEBAUTHN_DATA_NOT_FOUND =
-      "WebAuthn data not found in verification result";
-  private static final String ERROR_STATE_EXPIRED = "State has expired";
-  private static final String ERROR_STATE_USER_MISMATCH =
-      "State user ID does not match refresh token user ID";
-  private static final String ERROR_STATE_CLIENT_MISMATCH =
-      "State client ID does not match request client ID";
-  private static final String ERROR_DUPLICATE_CREDENTIAL = "Credential already exists";
-  private static final String ERROR_SIGN_COUNT_REPLAY =
-      "Sign count validation failed - possible replay attack";
-
-  // JSON keys for WebAuthn request/response
-  private static final String JSON_KEY_USERNAME = "username";
-  private static final String JSON_KEY_CHALLENGE = "challenge";
-  private static final String JSON_KEY_WEBAUTHN = "webauthn";
-  private static final String JSON_KEY_ORIGIN = "origin";
-  private static final String JSON_KEY_DOMAIN = "domain";
-  private static final String JSON_KEY_ID = "id";
-  private static final String JSON_KEY_RAW_ID = "rawId";
-  private static final String JSON_KEY_TYPE = "type";
-  private static final String JSON_KEY_RESPONSE = "response";
-  private static final String JSON_KEY_ATTESTATION_OBJECT = "attestationObject";
-  private static final String JSON_KEY_CLIENT_DATA_JSON = "clientDataJSON";
-  private static final String JSON_KEY_AUTHENTICATOR_DATA = "authenticatorData";
-  private static final String JSON_KEY_SIGNATURE = "signature";
-  private static final String JSON_KEY_USER_HANDLE = "userHandle";
-  private static final String JSON_KEY_UV = "uv";
-  private static final String JSON_KEY_TRANSPORT = "transport";
-
-  // MFA policy values
-  private static final String MFA_POLICY_MANDATORY = "mandatory";
-
-  // Binding type
-  private static final String BINDING_TYPE_WEBAUTHN = "webauthn";
-
-  // COSE Algorithm IDs
   private static final int COSE_ALG_ES256 = -7;
   private static final int COSE_ALG_RS256 = -257;
   private static final int COSE_ALG_EDDSA = -8;
 
   /**
-   * Start WebAuthn flow - returns assertion and/or enrollment options. rpId (Relying Party ID) is
-   * the domain/identifier of the service that the user is authenticating with. It's used for origin
-   * validation in WebAuthn to prevent phishing attacks.
+   * Starts the WebAuthn flow by returning assertion and/or enrollment options.
+   *
+   * @param requestDto the start request containing client ID
+   * @param headers HTTP headers containing the refresh token
+   * @param tenantId the tenant identifier
+   * @return Single containing the WebAuthn start response with assertion and/or enrollment options
    */
   public Single<V2WebAuthnStartResponseDto> start(
       V2WebAuthnStartRequestDto requestDto, HttpHeaders headers, String tenantId) {
@@ -186,19 +168,29 @@ public class WebAuthnService {
         .flatMap(context -> buildWebAuthnStartResponse(context, requestDto, tenantId));
   }
 
+  /**
+   * Validates and retrieves the refresh token from the Authorization header.
+   *
+   * @param headers HTTP headers containing the Authorization header
+   * @param tenantId the tenant identifier
+   * @param clientId the client identifier
+   * @return Single containing the refresh token context
+   */
   private Single<RefreshTokenContext> validateAndGetRefreshToken(
       HttpHeaders headers, String tenantId, String clientId) {
     String authHeader = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
     if (StringUtils.isBlank(authHeader)) {
-      return Single.error(UNAUTHORIZED.getCustomException(ERROR_MISSING_AUTH_HEADER));
+      return Single.error(UNAUTHORIZED.getCustomException(WEBAUTHN_ERROR_MISSING_AUTH_HEADER));
     }
 
     String refreshToken = getAccessTokenFromAuthHeader(authHeader);
     return refreshTokenDao
         .getRefreshToken(tenantId, clientId, refreshToken)
-        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException(ERROR_INVALID_REFRESH_TOKEN)))
+        .switchIfEmpty(
+            Single.error(UNAUTHORIZED.getCustomException(WEBAUTHN_ERROR_INVALID_REFRESH_TOKEN)))
         .filter(tokenModel -> tokenModel.getRefreshTokenExp() > getCurrentTimeInSeconds())
-        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException(ERROR_REFRESH_TOKEN_EXPIRED)))
+        .switchIfEmpty(
+            Single.error(UNAUTHORIZED.getCustomException(WEBAUTHN_ERROR_REFRESH_TOKEN_EXPIRED)))
         .map(
             tokenModel ->
                 RefreshTokenContext.builder()
@@ -208,21 +200,28 @@ public class WebAuthnService {
                     .build());
   }
 
+  /**
+   * Retrieves WebAuthn configuration and active credentials for the user.
+   *
+   * @param tenantId the tenant identifier
+   * @param tokenContext the refresh token context containing user and client information
+   * @return Single containing the WebAuthn context with config and credentials
+   */
   private Single<WebAuthnContext> getWebAuthnConfigAndCredentials(
       String tenantId, RefreshTokenContext tokenContext) {
     TenantConfig tenantConfig = registry.get(tenantId, TenantConfig.class);
     if (tenantConfig == null) {
-      return Single.error(INVALID_REQUEST.getCustomException(ERROR_WEBAUTHN_NOT_CONFIGURED));
+      return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_NOT_CONFIGURED));
     }
 
     Map<String, WebAuthnConfigModel> webauthnConfigs = tenantConfig.getWebauthnConfig();
     if (webauthnConfigs == null || webauthnConfigs.isEmpty()) {
-      return Single.error(INVALID_REQUEST.getCustomException(ERROR_WEBAUTHN_NOT_CONFIGURED));
+      return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_NOT_CONFIGURED));
     }
 
     WebAuthnConfigModel config = webauthnConfigs.get(tokenContext.getClientId());
     if (config == null) {
-      return Single.error(INVALID_REQUEST.getCustomException(ERROR_WEBAUTHN_NOT_CONFIGURED));
+      return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_NOT_CONFIGURED));
     }
 
     return credentialDao
@@ -238,12 +237,20 @@ public class WebAuthnService {
                     .build());
   }
 
+  /**
+   * Builds the WebAuthn start response with assertion and/or enrollment blocks.
+   *
+   * @param context the WebAuthn context containing config and credentials
+   * @param requestDto the start request DTO
+   * @param tenantId the tenant identifier
+   * @return Single containing the WebAuthn start response
+   */
   private Single<V2WebAuthnStartResponseDto> buildWebAuthnStartResponse(
       WebAuthnContext context, V2WebAuthnStartRequestDto requestDto, String tenantId) {
     String recommendedMode =
-        context.getCredentials().isEmpty() ? RECOMMENDED_MODE_ENROLL : RECOMMENDED_MODE_ASSERT;
-
-    // Generate assert block if credentials exist, otherwise always generate enroll block
+        context.getCredentials().isEmpty()
+            ? WEBAUTHN_RECOMMENDED_MODE_ENROLL
+            : WEBAUTHN_RECOMMENDED_MODE_ASSERT;
     if (!context.getCredentials().isEmpty()) {
       return createAssertBlock(context, requestDto, tenantId)
           .flatMap(
@@ -257,7 +264,6 @@ public class WebAuthnService {
                                   .enrollBlock(enrollBlock)
                                   .build()));
     } else {
-      // Only enroll block needed
       return createEnrollBlock(context, requestDto, tenantId)
           .map(
               enrollBlock ->
@@ -268,9 +274,17 @@ public class WebAuthnService {
     }
   }
 
+  /**
+   * Creates an assertion block for WebAuthn authentication.
+   *
+   * @param context the WebAuthn context
+   * @param requestDto the start request DTO
+   * @param tenantId the tenant identifier
+   * @return Single containing the assertion block with state and options
+   */
   private Single<AssertBlock> createAssertBlock(
       WebAuthnContext context, V2WebAuthnStartRequestDto requestDto, String tenantId) {
-    String assertState = generateState(STATE_TYPE_ASSERT);
+    String assertState = generateState(WEBAUTHN_STATE_TYPE_ASSERT);
     String assertChallenge = generateChallenge();
 
     WebAuthnStateModel assertStateModel =
@@ -280,7 +294,7 @@ public class WebAuthnService {
             .clientId(context.getClientId())
             .userId(context.getUserId())
             .challenge(assertChallenge)
-            .type(STATE_TYPE_ASSERT)
+            .type(WEBAUTHN_STATE_TYPE_ASSERT)
             .deviceMetadata(requestDto.getDeviceMetadata())
             .additionalInfo(new HashMap<>())
             .expiry(getCurrentTimeInSeconds() + STATE_TTL_SECONDS)
@@ -297,9 +311,17 @@ public class WebAuthnService {
             });
   }
 
+  /**
+   * Creates an enrollment block for WebAuthn credential registration.
+   *
+   * @param context the WebAuthn context
+   * @param requestDto the start request DTO
+   * @param tenantId the tenant identifier
+   * @return Single containing the enrollment block with state and options
+   */
   private Single<EnrollBlock> createEnrollBlock(
       WebAuthnContext context, V2WebAuthnStartRequestDto requestDto, String tenantId) {
-    String enrollState = generateState(STATE_TYPE_ENROLL);
+    String enrollState = generateState(WEBAUTHN_STATE_TYPE_ENROLL);
     String enrollChallenge = generateChallenge();
 
     WebAuthnStateModel enrollStateModel =
@@ -309,7 +331,7 @@ public class WebAuthnService {
             .clientId(context.getClientId())
             .userId(context.getUserId())
             .challenge(enrollChallenge)
-            .type(STATE_TYPE_ENROLL)
+            .type(WEBAUTHN_STATE_TYPE_ENROLL)
             .deviceMetadata(requestDto.getDeviceMetadata())
             .additionalInfo(new HashMap<>())
             .expiry(getCurrentTimeInSeconds() + STATE_TTL_SECONDS)
@@ -329,10 +351,21 @@ public class WebAuthnService {
             });
   }
 
+  /**
+   * Generates a unique state string for WebAuthn flow.
+   *
+   * @param prefix the prefix for the state (e.g., "assert" or "enroll")
+   * @return a unique state string
+   */
   private String generateState(String prefix) {
     return prefix + "_" + RandomStringUtils.randomAlphanumeric(STATE_RANDOM_LENGTH);
   }
 
+  /**
+   * Generates a cryptographically secure random challenge for WebAuthn.
+   *
+   * @return base64url-encoded challenge string
+   */
   private String generateChallenge() {
     SecureRandom random = new SecureRandom();
     byte[] challengeBytes = new byte[CHALLENGE_BYTES];
@@ -340,118 +373,153 @@ public class WebAuthnService {
     return Base64.getUrlEncoder().withoutPadding().encodeToString(challengeBytes);
   }
 
+  /**
+   * Builds assertion options for WebAuthn authentication.
+   *
+   * @param config the WebAuthn configuration
+   * @param credentials the list of existing credentials for the user
+   * @param challenge the challenge string
+   * @return map containing assertion options
+   */
   private Map<String, Object> buildAssertOptions(
       WebAuthnConfigModel config, List<CredentialModel> credentials, String challenge) {
     Map<String, Object> options = new HashMap<>();
-    options.put(KEY_CHALLENGE, challenge);
-    options.put(KEY_RP_ID, config.getRpId());
+    options.put(WEBAUTHN_KEY_CHALLENGE, challenge);
+    options.put(WEBAUTHN_KEY_RP_ID, config.getRpId());
     options.put(
-        KEY_USER_VERIFICATION, config.getRequireUvAuth() ? VALUE_REQUIRED : VALUE_PREFERRED);
-    options.put(KEY_TIMEOUT, WEBAUTHN_TIMEOUT_MS);
+        WEBAUTHN_KEY_USER_VERIFICATION,
+        config.getRequireUvAuth() ? WEBAUTHN_VALUE_REQUIRED : WEBAUTHN_VALUE_PREFERRED);
+    options.put(WEBAUTHN_KEY_TIMEOUT, WEBAUTHN_TIMEOUT_MS);
 
     List<Map<String, Object>> allowCredentials =
         credentials.stream()
             .map(
                 cred -> {
                   Map<String, Object> credMap = new HashMap<>();
-                  credMap.put(KEY_TYPE, VALUE_PUBLIC_KEY);
-                  // Credential ID is base64url encoded string - client will decode to ArrayBuffer
-                  credMap.put(KEY_ID, cred.getCredentialId());
-                  // Add transports from config if available (hint for client)
+                  credMap.put(WEBAUTHN_KEY_TYPE, WEBAUTHN_VALUE_PUBLIC_KEY);
+                  credMap.put(WEBAUTHN_KEY_ID, cred.getCredentialId());
                   if (config.getAllowedTransports() != null
                       && !config.getAllowedTransports().isEmpty()) {
-                    credMap.put(KEY_TRANSPORTS, config.getAllowedTransports());
+                    credMap.put(WEBAUTHN_KEY_TRANSPORTS, config.getAllowedTransports());
                   }
                   return credMap;
                 })
             .toList();
-    options.put(KEY_ALLOW_CREDENTIALS, allowCredentials);
+    options.put(WEBAUTHN_KEY_ALLOW_CREDENTIALS, allowCredentials);
 
     return options;
   }
 
+  /**
+   * Builds enrollment options for WebAuthn credential registration.
+   *
+   * @param config the WebAuthn configuration
+   * @param userId the user identifier
+   * @param challenge the challenge string
+   * @param existingCredentials the list of existing credentials to exclude
+   * @return map containing enrollment options
+   */
   private Map<String, Object> buildEnrollOptions(
       WebAuthnConfigModel config,
       String userId,
       String challenge,
       List<CredentialModel> existingCredentials) {
     Map<String, Object> options = new HashMap<>();
-    // Challenge is base64url encoded string - client will decode to ArrayBuffer
-    options.put(KEY_CHALLENGE, challenge);
-    options.put(KEY_RP, buildRpInfo(config));
-    options.put(KEY_USER, buildUserInfo(userId));
-    options.put(KEY_PUB_KEY_CRED_PARAMS, buildPubKeyCredParams(config));
-    options.put(KEY_AUTHENTICATOR_SELECTION, buildAuthenticatorSelection(config));
-    // Determine attestation preference based on AAGUID policy configuration
-    // If we need to validate AAGUIDs (allowlist, blocklist, or mds_enforced), we need
-    // "indirect" or "direct" attestation to get the AAGUID. "none" requires zero AAGUID
-    // which platform authenticators don't provide.
-    options.put(KEY_ATTESTATION, determineAttestationPreference(config));
-    // Exclude existing credentials to prevent duplicate enrollment
-    options.put(KEY_EXCLUDE_CREDENTIALS, buildExcludeCredentials(existingCredentials, config));
-    options.put(KEY_TIMEOUT, WEBAUTHN_TIMEOUT_MS);
+    options.put(WEBAUTHN_KEY_CHALLENGE, challenge);
+    options.put(WEBAUTHN_KEY_RP, buildRpInfo(config));
+    options.put(WEBAUTHN_KEY_USER, buildUserInfo(userId));
+    options.put(WEBAUTHN_KEY_PUB_KEY_CRED_PARAMS, buildPubKeyCredParams(config));
+    options.put(WEBAUTHN_KEY_AUTHENTICATOR_SELECTION, buildAuthenticatorSelection(config));
+    options.put(WEBAUTHN_KEY_ATTESTATION, determineAttestationPreference(config));
+    options.put(
+        WEBAUTHN_KEY_EXCLUDE_CREDENTIALS, buildExcludeCredentials(existingCredentials, config));
+    options.put(WEBAUTHN_KEY_TIMEOUT, WEBAUTHN_TIMEOUT_MS);
 
     return options;
   }
 
+  /**
+   * Builds relying party information for WebAuthn options.
+   *
+   * @param config the WebAuthn configuration
+   * @return map containing relying party information
+   */
   private Map<String, Object> buildRpInfo(WebAuthnConfigModel config) {
     Map<String, Object> rp = new HashMap<>();
-    rp.put(KEY_ID, config.getRpId());
-    // rp.name is required by WebAuthn spec - use rpId as fallback
-    rp.put(KEY_NAME, config.getRpId());
-    // rpId is the Relying Party ID - the domain/identifier of the service
-    // It's used for origin validation in WebAuthn to prevent phishing attacks
+    rp.put(WEBAUTHN_KEY_ID, config.getRpId());
+    rp.put(WEBAUTHN_KEY_NAME, config.getRpId());
     return rp;
   }
 
+  /**
+   * Builds user information for WebAuthn enrollment options.
+   *
+   * @param userId the user identifier
+   * @return map containing user information with base64url-encoded ID
+   */
   private Map<String, Object> buildUserInfo(String userId) {
     Map<String, Object> user = new HashMap<>();
-    // User ID should be base64url encoded, max 64 bytes
     String userIdBase64 = Base64.getUrlEncoder().withoutPadding().encodeToString(userId.getBytes());
-    user.put(KEY_ID, userIdBase64);
-    // user.name and user.displayName are required by WebAuthn spec
-    // Use userId as fallback if user name is not available
-    user.put(KEY_NAME, userId);
-    user.put(KEY_DISPLAY_NAME, userId);
+    user.put(WEBAUTHN_KEY_ID, userIdBase64);
+    user.put(WEBAUTHN_KEY_NAME, userId);
+    user.put(WEBAUTHN_KEY_DISPLAY_NAME, userId);
     return user;
   }
 
+  /**
+   * Builds public key credential parameters from allowed algorithms.
+   *
+   * @param config the WebAuthn configuration
+   * @return list of public key credential parameter maps
+   */
   private List<Map<String, Object>> buildPubKeyCredParams(WebAuthnConfigModel config) {
     return config.getAllowedAlgorithms().stream()
         .map(
             alg -> {
               Map<String, Object> param = new HashMap<>();
-              param.put(KEY_TYPE, VALUE_PUBLIC_KEY);
-              param.put(KEY_ALG, getCoseAlgorithmId(alg));
+              param.put(WEBAUTHN_KEY_TYPE, WEBAUTHN_VALUE_PUBLIC_KEY);
+              param.put(WEBAUTHN_KEY_ALG, getCoseAlgorithmId(alg));
               return param;
             })
         .toList();
   }
 
+  /**
+   * Builds authenticator selection criteria for WebAuthn enrollment.
+   *
+   * @param config the WebAuthn configuration
+   * @return map containing authenticator selection criteria
+   */
   private Map<String, Object> buildAuthenticatorSelection(WebAuthnConfigModel config) {
     Map<String, Object> authenticatorSelection = new HashMap<>();
     if (config.getRequireDeviceBound()) {
-      authenticatorSelection.put(KEY_AUTHENTICATOR_ATTACHMENT, VALUE_PLATFORM);
+      authenticatorSelection.put(WEBAUTHN_KEY_AUTHENTICATOR_ATTACHMENT, WEBAUTHN_VALUE_PLATFORM);
     }
     authenticatorSelection.put(
-        KEY_USER_VERIFICATION, config.getRequireUvEnrollment() ? VALUE_REQUIRED : VALUE_PREFERRED);
-    authenticatorSelection.put(KEY_RESIDENT_KEY, VALUE_PREFERRED);
+        WEBAUTHN_KEY_USER_VERIFICATION,
+        config.getRequireUvEnrollment() ? WEBAUTHN_VALUE_REQUIRED : WEBAUTHN_VALUE_PREFERRED);
+    authenticatorSelection.put(WEBAUTHN_KEY_RESIDENT_KEY, WEBAUTHN_VALUE_PREFERRED);
     return authenticatorSelection;
   }
 
+  /**
+   * Builds exclude credentials list to prevent duplicate enrollment.
+   *
+   * @param existingCredentials the list of existing credentials
+   * @param config the WebAuthn configuration
+   * @return list of credential maps to exclude
+   */
   private List<Map<String, Object>> buildExcludeCredentials(
       List<CredentialModel> existingCredentials, WebAuthnConfigModel config) {
     return existingCredentials.stream()
         .map(
             cred -> {
               Map<String, Object> credMap = new HashMap<>();
-              credMap.put(KEY_TYPE, VALUE_PUBLIC_KEY);
-              // Credential ID is base64url encoded string - client will decode to ArrayBuffer
-              credMap.put(KEY_ID, cred.getCredentialId());
-              // Add transports from config if available (hint for client)
+              credMap.put(WEBAUTHN_KEY_TYPE, WEBAUTHN_VALUE_PUBLIC_KEY);
+              credMap.put(WEBAUTHN_KEY_ID, cred.getCredentialId());
               if (config.getAllowedTransports() != null
                   && !config.getAllowedTransports().isEmpty()) {
-                credMap.put(KEY_TRANSPORTS, config.getAllowedTransports());
+                credMap.put(WEBAUTHN_KEY_TRANSPORTS, config.getAllowedTransports());
               }
               return credMap;
             })
@@ -459,72 +527,66 @@ public class WebAuthnService {
   }
 
   /**
-   * Determine attestation preference based on AAGUID policy configuration.
+   * Determines attestation preference based on AAGUID policy configuration.
    *
-   * <p>If AAGUID validation is required (allowlist, blocklist, or mds_enforced), we need "indirect"
-   * or "direct" attestation to receive the AAGUID from the authenticator. "none" attestation
-   * requires zero AAGUID which platform authenticators don't provide.
-   *
-   * <p>Note: Platform authenticators (Touch ID, Face ID, Windows Hello) may return fmt="none" with
-   * a non-zero AAGUID, which violates the WebAuthn spec but is what they do. Using "direct"
-   * attestation may help, but the library still validates based on the actual format returned by
-   * the authenticator.
+   * <p>If AAGUID validation is required, "direct" attestation is used to receive the AAGUID from
+   * the authenticator. Platform authenticators may return fmt="none" with non-zero AAGUID, which
+   * violates the WebAuthn spec.
    *
    * @param config WebAuthn configuration
-   * @return attestation preference: "direct" for platform authenticators, "indirect" otherwise
+   * @return attestation preference string ("direct")
    */
   private String determineAttestationPreference(WebAuthnConfigModel config) {
-    // If we have blocked AAGUIDs, we need to check AAGUID
     if (config.getBlockedAaguids() != null && !config.getBlockedAaguids().isEmpty()) {
-      // Use "direct" to get AAGUID from platform authenticators
-      return VALUE_ATTESTATION_DIRECT;
+      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
     }
 
-    // If policy mode requires AAGUID validation
     String policyMode = config.getAaguidPolicyMode();
-    if (AAGUID_POLICY_MODE_ALLOWLIST.equals(policyMode)
-        || AAGUID_POLICY_MODE_MDS_ENFORCED.equals(policyMode)) {
-      // Use "direct" to get AAGUID from platform authenticators
-      return VALUE_ATTESTATION_DIRECT;
+    if (WEBAUTHN_AAGUID_POLICY_MODE_ALLOWLIST.equals(policyMode)
+        || WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED.equals(policyMode)) {
+      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
     }
 
-    // If we have allowed AAGUIDs configured (even if policy mode is not explicitly allowlist)
     if (config.getAllowedAaguids() != null && !config.getAllowedAaguids().isEmpty()) {
-      // Use "direct" to get AAGUID from platform authenticators
-      return VALUE_ATTESTATION_DIRECT;
+      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
     }
 
-    // For platform authenticators, use "direct" to potentially get "packed" format instead of
-    // "none"
-    // This may help avoid the AAGUID validation issue with fmt="none"
     if (config.getRequireDeviceBound() != null && config.getRequireDeviceBound()) {
-      // Device-bound (platform) authenticators - use "direct"
-      return VALUE_ATTESTATION_DIRECT;
+      return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
     }
 
-    // Default: use "direct" to support platform authenticators and get proper attestation format
-    // "direct" may result in "packed" format which the library handles better than "none" with
-    // AAGUID
-    return VALUE_ATTESTATION_DIRECT;
+    return WEBAUTHN_VALUE_ATTESTATION_DIRECT;
   }
 
+  /**
+   * Converts algorithm name to COSE algorithm ID.
+   *
+   * @param algorithmName the algorithm name (e.g., "ES256", "RS256", "EDDSA")
+   * @return the COSE algorithm ID, defaults to ES256 if unknown
+   */
   private int getCoseAlgorithmId(String algorithmName) {
     return switch (algorithmName.toUpperCase()) {
       case "ES256" -> COSE_ALG_ES256;
       case "RS256" -> COSE_ALG_RS256;
       case "EDDSA" -> COSE_ALG_EDDSA;
-      default -> COSE_ALG_ES256; // Default to ES256
+      default -> COSE_ALG_ES256;
     };
   }
 
   /**
-   * Finish WebAuthn flow - verify assertion (login/step-up) or attestation (enroll). Includes MFA
-   * policy check: if client MFA is mandatory and refresh token has only one AMR, the request will
-   * be rejected. If MFA is not_required, the request is allowed on the first step.
+   * Finishes the WebAuthn flow by verifying assertion or attestation.
+   *
+   * <p>Includes MFA policy check: if client MFA is mandatory and refresh token has only one AMR,
+   * the request will be rejected.
+   *
+   * @param requestDto the finish request containing credential and state
+   * @param headers HTTP headers containing the refresh token
+   * @param tenantId the tenant identifier
+   * @return Single containing the response with access token, refresh token, and optionally ID
+   *     token
    */
   public Single<Map<String, Object>> finish(
       V2WebAuthnFinishRequestDto requestDto, HttpHeaders headers, String tenantId) {
-    // Extract headers map before entering reactive chain to avoid context issues
     MultivaluedMap<String, String> requestHeaders = headers.getRequestHeaders();
     return validateAndGetRefreshToken(headers, tenantId, requestDto.getClientId())
         .flatMap(
@@ -534,12 +596,14 @@ public class WebAuthnService {
                     webauthnStateDao
                         .getWebAuthnState(requestDto.getState(), tenantId)
                         .switchIfEmpty(
-                            Single.error(INVALID_REQUEST.getCustomException(ERROR_INVALID_STATE))),
+                            Single.error(
+                                INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_INVALID_STATE))),
                     clientDao
                         .getClient(requestDto.getClientId(), tenantId)
                         .switchIfEmpty(
                             Single.error(
-                                INVALID_REQUEST.getCustomException(ERROR_CLIENT_NOT_FOUND))),
+                                INVALID_REQUEST.getCustomException(
+                                    WEBAUTHN_ERROR_CLIENT_NOT_FOUND))),
                     FinishContext::new))
         .flatMap(this::validateState)
         .flatMap(this::checkMfaPolicy)
@@ -563,70 +627,88 @@ public class WebAuthnService {
                                 verifiedContext, requestDto, tenantId, requestHeaders)));
   }
 
-  /** Validate WebAuthn state: expiry, user ID, client ID, and type. */
+  /**
+   * Validates WebAuthn state: expiry, user ID, client ID, and type.
+   *
+   * @param context the finish context containing state and token context
+   * @return Single containing the validated context
+   */
   private Single<FinishContext> validateState(FinishContext context) {
     WebAuthnStateModel state = context.getState();
     RefreshTokenContext tokenContext = context.getTokenContext();
 
-    // Check state expiry
     if (state.getExpiry() <= getCurrentTimeInSeconds()) {
       webauthnStateDao.deleteWebAuthnState(state.getState(), state.getTenantId());
-      return Single.error(INVALID_REQUEST.getCustomException(ERROR_STATE_EXPIRED));
+      return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_STATE_EXPIRED));
     }
 
-    // Validate user ID matches
     if (!state.getUserId().equals(tokenContext.getUserId())) {
-      return Single.error(INVALID_REQUEST.getCustomException(ERROR_STATE_USER_MISMATCH));
+      return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_STATE_USER_MISMATCH));
     }
 
-    // Validate client ID matches
     if (!state.getClientId().equals(context.getTokenContext().getClientId())) {
-      return Single.error(INVALID_REQUEST.getCustomException(ERROR_STATE_CLIENT_MISMATCH));
+      return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_STATE_CLIENT_MISMATCH));
     }
 
     return Single.just(context);
   }
 
+  /**
+   * Checks MFA policy: rejects if MFA is mandatory and refresh token has only one AMR.
+   *
+   * @param context the finish context
+   * @return Single containing the context if MFA policy is satisfied
+   */
   private Single<FinishContext> checkMfaPolicy(FinishContext context) {
     ClientModel client = context.getClient();
     RefreshTokenModel refreshToken = context.getTokenContext().getRefreshToken();
 
-    // If MFA is mandatory and refresh token has only one AMR, reject
-    if (MFA_POLICY_MANDATORY.equals(client.getMfaPolicy())) {
+    if (WEBAUTHN_MFA_POLICY_MANDATORY.equals(client.getMfaPolicy())) {
       List<AuthMethod> authMethods = refreshToken.getAuthMethod();
       if (authMethods == null || authMethods.size() <= 1) {
-        return Single.error(INVALID_REQUEST.getCustomException(ERROR_MFA_REQUIRED));
+        return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_MFA_REQUIRED));
       }
     }
-    // If MFA is not_required, allow on first step (no additional check needed)
 
     return Single.just(context);
   }
 
+  /**
+   * Routes to appropriate verification method based on state type (enrollment or assertion).
+   *
+   * @param context the finish context with config
+   * @param requestDto the finish request DTO
+   * @param tenantId the tenant identifier
+   * @param headers HTTP headers
+   * @return Single containing the verified context
+   */
   private Single<FinishContextWithConfig> verifyWebAuthnCredential(
       FinishContextWithConfig context,
       V2WebAuthnFinishRequestDto requestDto,
       String tenantId,
       HttpHeaders headers) {
-    // Store headers in context for use in bypass method
-    // We'll pass it through the context
     WebAuthnStateModel state = context.getState();
 
-    // Route to appropriate verification based on state type
-    if (STATE_TYPE_ENROLL.equals(state.getType())) {
+    if (WEBAUTHN_STATE_TYPE_ENROLL.equals(state.getType())) {
       return verifyEnrollment(context, requestDto, tenantId, headers);
-    } else if (STATE_TYPE_ASSERT.equals(state.getType())) {
+    } else if (WEBAUTHN_STATE_TYPE_ASSERT.equals(state.getType())) {
       return verifyAssertion(context, requestDto, tenantId);
     } else {
       return Single.error(
           INVALID_REQUEST.getCustomException(
-              String.format(ERROR_INVALID_STATE_TYPE, state.getType())));
+              String.format(WEBAUTHN_ERROR_INVALID_STATE_TYPE, state.getType())));
     }
   }
 
   /**
-   * Verify enrollment (attestation): First verify challenge is bound by public key, then save to
+   * Verifies enrollment (attestation) by verifying challenge is bound by public key, then saves to
    * DB.
+   *
+   * @param context the finish context with config
+   * @param requestDto the finish request DTO
+   * @param tenantId the tenant identifier
+   * @param headers HTTP headers
+   * @return Single containing the verified context
    */
   private Single<FinishContextWithConfig> verifyEnrollment(
       FinishContextWithConfig context,
@@ -636,8 +718,6 @@ public class WebAuthnService {
     WebAuthnConfigModel config = context.getWebAuthnContext().getConfig();
     WebAuthnStateModel state = context.getState();
 
-    // Check for duplicate credential before verification
-    // Check both active and inactive credentials to catch any duplicates
     String credentialId = requestDto.getCredential().getId();
     return credentialDao
         .getCredentialById(
@@ -646,7 +726,7 @@ public class WebAuthnService {
             existingCredential ->
                 Maybe.<FinishContextWithConfig>error(
                     INVALID_REQUEST.getCustomException(
-                        ERROR_DUPLICATE_CREDENTIAL
+                        WEBAUTHN_ERROR_DUPLICATE_CREDENTIAL
                             + ". Credential ID: "
                             + credentialId
                             + " already exists for this user.")))
@@ -654,22 +734,16 @@ public class WebAuthnService {
         .toSingle()
         .flatMap(
             (FinishContextWithConfig ctx) -> {
-              // Create WebAuthn instance with configuration
               WebAuthn webAuthn = createWebAuthnInstance(config);
 
-              // Build authentication request (with workaround for platform authenticators)
               return buildAuthRequest(ctx, state, requestDto, config)
                   .flatMap(
                       authRequest -> {
-                        // For enrollment, no existing credentials to fetch
-                        // The library will check excludeCredentials from the enrollment options
                         webAuthn.authenticatorFetcher(
                             query -> Future.succeededFuture(new ArrayList<>()));
 
-                        // Store authenticator for later validation
                         final Authenticator[] storedAuthenticator = new Authenticator[1];
 
-                        // Set up authenticator updater to save credential after verification
                         webAuthn.authenticatorUpdater(
                             authenticator -> {
                               if (authenticator == null) {
@@ -684,20 +758,16 @@ public class WebAuthnService {
                                       authenticator, ctx, tenantId, requestDto));
                             });
 
-                        // Verify the attestation (challenge bound by public key)
                         return Single.fromCompletionStage(
                                 webAuthn.authenticate(authRequest).toCompletionStage())
                             .flatMap(
                                 user -> {
-                                  // Validate WebAuthn requirements after verification
-                                  // Pass stored authenticator if user principal doesn't have
-                                  // webauthn data
                                   return validateWebAuthnRequirements(
                                           user,
                                           config,
                                           requestDto,
                                           null,
-                                          STATE_TYPE_ENROLL,
+                                          WEBAUTHN_STATE_TYPE_ENROLL,
                                           storedAuthenticator[0])
                                       .andThen(Single.just(ctx));
                                 })
@@ -708,11 +778,7 @@ public class WebAuthnService {
                                   String errorMessage = err.getMessage();
                                   String errorClass = err.getClass().getName();
 
-                                  // Check if it's an AttestationException (which includes AAGUID
-                                  // validation errors)
                                   boolean isAaguidError = false;
-                                  // Check exception class name (since we can't import internal
-                                  // classes)
                                   if (errorClass != null
                                       && errorClass.contains("AttestationException")) {
                                     isAaguidError = true;
@@ -720,7 +786,6 @@ public class WebAuthnService {
                                         "Detected AttestationException by class name: {}",
                                         errorClass);
                                   }
-                                  // Also check error message for AAGUID-related errors
                                   if (errorMessage != null
                                       && (errorMessage.contains(
                                               "AAGUID is not 00000000-0000-0000-0000-000000000000")
@@ -743,44 +808,32 @@ public class WebAuthnService {
                                         config.getAllowedAaguids(),
                                         config.getBlockedAaguids());
 
-                                    // Check if AAGUID policy allows bypassing the check
                                     String policyMode = config.getAaguidPolicyMode();
                                     boolean hasRestrictions =
                                         (config.getBlockedAaguids() != null
                                                 && !config.getBlockedAaguids().isEmpty())
                                             || (config.getAllowedAaguids() != null
                                                 && !config.getAllowedAaguids().isEmpty())
-                                            || AAGUID_POLICY_MODE_ALLOWLIST.equals(policyMode)
-                                            || AAGUID_POLICY_MODE_MDS_ENFORCED.equals(policyMode);
+                                            || WEBAUTHN_AAGUID_POLICY_MODE_ALLOWLIST.equals(
+                                                policyMode)
+                                            || WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED.equals(
+                                                policyMode);
 
                                     log.info(
                                         "AAGUID error detected. Policy mode: {}, Has restrictions: {}, "
                                             + "Policy mode equals ANY: {}",
                                         policyMode,
                                         hasRestrictions,
-                                        AAGUID_POLICY_MODE_ANY.equals(policyMode));
+                                        WEBAUTHN_AAGUID_POLICY_MODE_ANY.equals(policyMode));
 
-                                    if (AAGUID_POLICY_MODE_ANY.equals(policyMode)
+                                    if (WEBAUTHN_AAGUID_POLICY_MODE_ANY.equals(policyMode)
                                         && !hasRestrictions) {
-                                      // Policy allows any AAGUID - bypass library's strict
-                                      // validation
-                                      // and perform minimal custom validation
                                       log.info(
                                           "AAGUID check disabled (policy: any). Bypassing library validation "
                                               + "and performing minimal custom validation for platform authenticator.");
-                                      // Bypass AAGUID validation and continue with enrollment
                                       return bypassAaguidValidationAndEnroll(
                                               ctx, requestDto, config, tenantId, state, headers)
-                                          .flatMap(
-                                              bypassedContext -> {
-                                                // The bypass method already saves the credential
-                                                // Now we need to continue with token generation
-                                                // But processWebAuthnResult expects a verified
-                                                // context
-                                                // So we'll return the context and let the caller
-                                                // handle it
-                                                return Single.just(bypassedContext);
-                                              });
+                                          .flatMap(Single::just);
                                     } else {
                                       return Single.error(
                                           INVALID_REQUEST.getCustomException(
@@ -795,7 +848,6 @@ public class WebAuthnService {
                                     }
                                   }
 
-                                  // Check if it's a duplicate credential error
                                   if (errorMessage != null
                                       && (errorMessage.contains("already registered")
                                           || errorMessage.contains("duplicate")
@@ -805,7 +857,7 @@ public class WebAuthnService {
                                         credentialId);
                                     return Single.error(
                                         INVALID_REQUEST.getCustomException(
-                                            ERROR_DUPLICATE_CREDENTIAL
+                                            WEBAUTHN_ERROR_DUPLICATE_CREDENTIAL
                                                 + ". This credential is already registered. "
                                                 + "Credential ID: "
                                                 + credentialId));
@@ -813,7 +865,7 @@ public class WebAuthnService {
 
                                   return Single.error(
                                       INVALID_REQUEST.getCustomException(
-                                          ERROR_WEBAUTHN_VERIFICATION_FAILED
+                                          WEBAUTHN_ERROR_VERIFICATION_FAILED
                                               + ": "
                                               + errorMessage));
                                 });
@@ -821,34 +873,37 @@ public class WebAuthnService {
             });
   }
 
-  /** Verify assertion: First fetch credential from DB, then verify challenge with public key. */
+  /**
+   * Verifies assertion by fetching credential from DB, then verifying challenge with public key.
+   *
+   * @param context the finish context with config
+   * @param requestDto the finish request DTO
+   * @param tenantId the tenant identifier
+   * @return Single containing the verified context
+   */
   private Single<FinishContextWithConfig> verifyAssertion(
       FinishContextWithConfig context, V2WebAuthnFinishRequestDto requestDto, String tenantId) {
     WebAuthnConfigModel config = context.getWebAuthnContext().getConfig();
     WebAuthnStateModel state = context.getState();
 
-    // First, fetch the credential from database using credential ID
     return credentialDao
         .getCredentialById(
             tenantId,
             requestDto.getClientId(),
             context.getTokenContext().getUserId(),
             requestDto.getCredential().getId())
-        .switchIfEmpty(Single.error(INVALID_REQUEST.getCustomException(ERROR_CREDENTIAL_NOT_FOUND)))
+        .switchIfEmpty(
+            Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_CREDENTIAL_NOT_FOUND)))
         .flatMap(
             credential -> {
-              // Create WebAuthn instance with configuration
               WebAuthn webAuthn = createWebAuthnInstance(config);
 
-              // Validate sign count before verification (replay attack prevention)
               long storedSignCount =
                   credential.getSignCount() != null ? credential.getSignCount() : 0L;
 
-              // Build authentication request
               return buildAuthRequest(context, state, requestDto, config)
                   .flatMap(
                       authRequest -> {
-                        // Set up authenticator fetcher to return the credential from DB
                         webAuthn.authenticatorFetcher(
                             query -> {
                               List<Authenticator> authenticators = new ArrayList<>();
@@ -858,29 +913,22 @@ public class WebAuthnService {
                               return Future.succeededFuture(authenticators);
                             });
 
-                        // Set up authenticator updater to update sign count after verification
                         webAuthn.authenticatorUpdater(
                             authenticator -> {
                               Long newSignCount = authenticator.getCounter();
-                              // Validate sign count is increasing (replay attack prevention)
-                              // Allow 0->0 transition only on first use (storedSignCount == 0)
-                              // Otherwise, require strictly increasing sign count
                               if (newSignCount != null) {
                                 if (storedSignCount == 0L && newSignCount == 0L) {
-                                  // First use: allow 0->0 transition (some authenticators return 0
-                                  // on first use)
                                   log.debug(
                                       "Allowing sign count 0->0 transition (first use). Credential ID: {}",
                                       requestDto.getCredential().getId());
                                 } else if (newSignCount <= storedSignCount) {
-                                  // Replay attack detected: sign count did not increase
                                   log.error(
                                       "Sign count validation failed: stored={}, new={}, credentialId={}",
                                       storedSignCount,
                                       newSignCount,
                                       requestDto.getCredential().getId());
                                   return Future.failedFuture(
-                                      new RuntimeException(ERROR_SIGN_COUNT_REPLAY));
+                                      new RuntimeException(WEBAUTHN_ERROR_SIGN_COUNT_REPLAY));
                                 }
                               }
                               return completableToFuture(
@@ -892,18 +940,16 @@ public class WebAuthnService {
                                       newSignCount));
                             });
 
-                        // Verify the assertion (challenge with public key from DB)
                         return Single.fromCompletionStage(
                                 webAuthn.authenticate(authRequest).toCompletionStage())
                             .flatMap(
                                 user -> {
-                                  // Validate WebAuthn requirements after verification
                                   return validateWebAuthnRequirements(
                                           user,
                                           config,
                                           requestDto,
                                           credential,
-                                          STATE_TYPE_ASSERT,
+                                          WEBAUTHN_STATE_TYPE_ASSERT,
                                           null)
                                       .andThen(Single.just(context));
                                 })
@@ -916,21 +962,31 @@ public class WebAuthnService {
                                   }
                                   return Single.error(
                                       INVALID_REQUEST.getCustomException(
-                                          ERROR_WEBAUTHN_VERIFICATION_FAILED
+                                          WEBAUTHN_ERROR_VERIFICATION_FAILED
                                               + (errorMessage != null ? ": " + errorMessage : "")));
                                 });
                       });
             });
   }
 
-  /** Convert Completable to Future<Void> for use with WebAuthn authenticator updater. */
+  /**
+   * Converts Completable to Future for use with WebAuthn authenticator updater.
+   *
+   * @param completable the Completable to convert
+   * @return Future that completes when the Completable completes
+   */
   private Future<Void> completableToFuture(Completable completable) {
     Promise<Void> promise = Promise.promise();
     completable.subscribe(() -> promise.complete(), promise::fail);
     return promise.future();
   }
 
-  /** Create WebAuthn instance with relying party configuration. */
+  /**
+   * Creates a WebAuthn instance with relying party configuration.
+   *
+   * @param config the WebAuthn configuration
+   * @return configured WebAuthn instance
+   */
   private WebAuthn createWebAuthnInstance(WebAuthnConfigModel config) {
     WebAuthnOptions webAuthnOptions =
         new WebAuthnOptions()
@@ -939,8 +995,13 @@ public class WebAuthnService {
   }
 
   /**
-   * Build authentication request JSON for WebAuthn verification. Validates origin against allowed
-   * origins from config.
+   * Builds authentication request JSON for WebAuthn verification and validates origin.
+   *
+   * @param context the finish context with config
+   * @param state the WebAuthn state
+   * @param requestDto the finish request DTO
+   * @param config the WebAuthn configuration
+   * @return Single containing the authentication request JSON
    */
   private Single<JsonObject> buildAuthRequest(
       FinishContextWithConfig context,
@@ -949,12 +1010,10 @@ public class WebAuthnService {
       WebAuthnConfigModel config) {
     JsonObject credentialJson = buildCredentialJson(requestDto, config);
 
-    // Extract origin from clientDataJSON to validate
     String origin = extractOriginFromClientData(requestDto);
     if (origin == null) {
       origin = getOriginFromConfig(config);
     } else {
-      // Validate origin matches allowed origins
       try {
         validateOrigin(origin, config);
       } catch (IllegalArgumentException e) {
@@ -965,18 +1024,19 @@ public class WebAuthnService {
     String domain = config.getRpId();
 
     JsonObject authRequest = new JsonObject();
-    authRequest.put(JSON_KEY_USERNAME, context.getTokenContext().getUserId());
-    authRequest.put(JSON_KEY_CHALLENGE, state.getChallenge());
-    authRequest.put(JSON_KEY_WEBAUTHN, credentialJson);
-    authRequest.put(JSON_KEY_ORIGIN, origin);
-    authRequest.put(JSON_KEY_DOMAIN, domain);
+    authRequest.put(WEBAUTHN_JSON_KEY_USERNAME, context.getTokenContext().getUserId());
+    authRequest.put(WEBAUTHN_JSON_KEY_CHALLENGE, state.getChallenge());
+    authRequest.put(WEBAUTHN_JSON_KEY_WEBAUTHN, credentialJson);
+    authRequest.put(WEBAUTHN_JSON_KEY_ORIGIN, origin);
+    authRequest.put(WEBAUTHN_JSON_KEY_DOMAIN, domain);
     return Single.just(authRequest);
   }
 
   /**
-   * Extract origin from clientDataJSON in the credential response. clientDataJSON is present in
-   * both enrollment (attestation) and assertion flows. The origin is always in clientDataJSON, not
-   * in attestationObject.
+   * Extracts origin from clientDataJSON in the credential response.
+   *
+   * @param requestDto the finish request DTO
+   * @return the origin string, or null if extraction fails
    */
   private String extractOriginFromClientData(V2WebAuthnFinishRequestDto requestDto) {
     try {
@@ -993,7 +1053,13 @@ public class WebAuthnService {
     return null;
   }
 
-  /** Validate origin against allowed origins from config. */
+  /**
+   * Validates origin against allowed origins from WebAuthn configuration.
+   *
+   * @param origin the origin to validate
+   * @param config the WebAuthn configuration
+   * @throws IllegalArgumentException if the origin is not allowed
+   */
   private void validateOrigin(String origin, WebAuthnConfigModel config) {
     if (config.getAllowedWebOrigins() != null && !config.getAllowedWebOrigins().isEmpty()) {
       if (!config.getAllowedWebOrigins().contains(origin)) {
@@ -1002,7 +1068,12 @@ public class WebAuthnService {
     }
   }
 
-  /** Build Authenticator object from CredentialModel. */
+  /**
+   * Builds an Authenticator object from a CredentialModel.
+   *
+   * @param credential the credential model to convert
+   * @return the Authenticator object
+   */
   private Authenticator buildAuthenticatorFromCredential(CredentialModel credential) {
     Authenticator authenticator = new Authenticator();
     authenticator.setCredID(credential.getCredentialId());
@@ -1011,10 +1082,21 @@ public class WebAuthnService {
     return authenticator;
   }
 
-  /** Build credential JSON from request DTO. */
+  /**
+   * Builds credential JSON from request DTO for WebAuthn verification.
+   *
+   * <p>Validates required fields and constructs the credential JSON structure. For enrollment
+   * response (attestation): includes attestation object and client data JSON. Workaround: Fixes
+   * fmt="none" with non-zero AAGUID for platform authenticators. For assertion response
+   * (authentication): includes authenticator data, client data JSON, and signature.
+   *
+   * @param requestDto the finish request DTO
+   * @param config the WebAuthn configuration
+   * @return the credential JSON object
+   * @throws IllegalArgumentException if required fields are missing
+   */
   private JsonObject buildCredentialJson(
       V2WebAuthnFinishRequestDto requestDto, WebAuthnConfigModel config) {
-    // Validate required fields
     if (requestDto.getCredential() == null) {
       throw new IllegalArgumentException("Credential cannot be null");
     }
@@ -1031,25 +1113,22 @@ public class WebAuthnService {
     }
 
     JsonObject credential = new JsonObject();
-    credential.put(JSON_KEY_ID, requestDto.getCredential().getId());
-    credential.put(JSON_KEY_RAW_ID, requestDto.getCredential().getId());
-    credential.put(JSON_KEY_TYPE, requestDto.getCredential().getType());
+    credential.put(WEBAUTHN_JSON_KEY_ID, requestDto.getCredential().getId());
+    credential.put(WEBAUTHN_JSON_KEY_RAW_ID, requestDto.getCredential().getId());
+    credential.put(WEBAUTHN_JSON_KEY_TYPE, requestDto.getCredential().getType());
 
     JsonObject response = new JsonObject();
     V2WebAuthnFinishRequestDto.ResponseDto responseDto = requestDto.getCredential().getResponse();
 
     if (responseDto.getAttestationObject() != null) {
-      // Enrollment response (attestation)
       if (responseDto.getClientDataJSON() == null || responseDto.getClientDataJSON().isEmpty()) {
         throw new IllegalArgumentException("clientDataJSON is required for enrollment");
       }
-      // Workaround: Fix fmt="none" with non-zero AAGUID for platform authenticators
       String attestationObject =
           fixAttestationObjectForPlatformAuthenticators(responseDto.getAttestationObject(), config);
-      response.put(JSON_KEY_ATTESTATION_OBJECT, attestationObject);
-      response.put(JSON_KEY_CLIENT_DATA_JSON, responseDto.getClientDataJSON());
+      response.put(WEBAUTHN_JSON_KEY_ATTESTATION_OBJECT, attestationObject);
+      response.put(WEBAUTHN_JSON_KEY_CLIENT_DATA_JSON, responseDto.getClientDataJSON());
     } else {
-      // Assertion response (authentication)
       if (responseDto.getAuthenticatorData() == null
           || responseDto.getAuthenticatorData().isEmpty()) {
         throw new IllegalArgumentException("authenticatorData is required for assertion");
@@ -1060,15 +1139,15 @@ public class WebAuthnService {
       if (responseDto.getSignature() == null || responseDto.getSignature().isEmpty()) {
         throw new IllegalArgumentException("signature is required for assertion");
       }
-      response.put(JSON_KEY_AUTHENTICATOR_DATA, responseDto.getAuthenticatorData());
-      response.put(JSON_KEY_CLIENT_DATA_JSON, responseDto.getClientDataJSON());
-      response.put(JSON_KEY_SIGNATURE, responseDto.getSignature());
+      response.put(WEBAUTHN_JSON_KEY_AUTHENTICATOR_DATA, responseDto.getAuthenticatorData());
+      response.put(WEBAUTHN_JSON_KEY_CLIENT_DATA_JSON, responseDto.getClientDataJSON());
+      response.put(WEBAUTHN_JSON_KEY_SIGNATURE, responseDto.getSignature());
       if (responseDto.getUserHandle() != null) {
-        response.put(JSON_KEY_USER_HANDLE, responseDto.getUserHandle());
+        response.put(WEBAUTHN_JSON_KEY_USER_HANDLE, responseDto.getUserHandle());
       }
     }
 
-    credential.put(JSON_KEY_RESPONSE, response);
+    credential.put(WEBAUTHN_JSON_KEY_RESPONSE, response);
     return credential;
   }
 
@@ -1089,17 +1168,35 @@ public class WebAuthnService {
    */
   private String fixAttestationObjectForPlatformAuthenticators(
       String attestationObjectBase64, WebAuthnConfigModel config) {
-    // Note: We cannot modify the AAGUID because it's part of the signed authenticatorData.
-    // Modifying it would break signature verification. The library's validation happens
-    // before we can intercept it, so we cannot work around this at this level.
-    //
-    // The error will be caught in the error handler and provide guidance to the user.
     return attestationObjectBase64;
   }
 
   /**
-   * Validate WebAuthn requirements: UV flag, transports, AAGUID, etc. For enrollment, checks
+   * Validates WebAuthn requirements: UV flag, transports, AAGUID, etc. For enrollment, checks
    * requireUvEnrollment; for assertion, checks requireUvAuth.
+   *
+   * <p>Gets authenticator data from user principal. If WebAuthn data is not available in principal,
+   * tries alternative key names or extracts from Authenticator object or attestation object
+   * directly. If WebAuthn data is still not available, logs warning but continues with lenient
+   * validation (creates empty webauthn object to avoid NPE, but skips strict validation).
+   *
+   * <p>For User Verification (UV) flag: checks if UV is required based on state type. If webauthn
+   * data is empty and UV validation is required, logs warning but doesn't fail (workaround for
+   * library versions that don't populate webauthn data).
+   *
+   * <p>Validates transports if required and available. If transport is null but webauthn data is
+   * empty, skips validation.
+   *
+   * <p>For enrollment, validates AAGUID if configured: checks if AAGUID is blocked or if it's in
+   * allowlist (if allowlist mode is enabled).
+   *
+   * @param user the authenticated user from WebAuthn verification
+   * @param config the WebAuthn configuration
+   * @param requestDto the finish request DTO
+   * @param credential the credential model (null for enrollment)
+   * @param stateType the state type (enrollment or assertion)
+   * @param authenticator the authenticator object (null for assertion)
+   * @return Completable that completes if validation passes, or errors if validation fails
    */
   private Completable validateWebAuthnRequirements(
       io.vertx.ext.auth.User user,
@@ -1115,7 +1212,7 @@ public class WebAuthnService {
     log.debug("User principal keys: {}", principal.fieldNames());
     log.debug("User principal: {}", principal.encodePrettily());
 
-    JsonObject webauthn = principal.getJsonObject(JSON_KEY_WEBAUTHN);
+    JsonObject webauthn = principal.getJsonObject(WEBAUTHN_JSON_KEY_WEBAUTHN);
 
     if (webauthn == null) {
       // Try alternative key names that the library might use
@@ -1124,73 +1221,59 @@ public class WebAuthnService {
         webauthn = principal.getJsonObject("webauthn_data");
       }
       if (webauthn == null && authenticator != null) {
-        // If webauthn data not in principal, try to extract from Authenticator object
-        // or from the attestation object directly
         log.debug(
             "WebAuthn data not in principal, attempting to extract from Authenticator or attestation object");
         webauthn = extractWebAuthnDataFromAuthenticator(authenticator, requestDto);
       }
       if (webauthn == null) {
-        // WebAuthn data not available in principal - this can happen with some library versions
-        // Log warning but continue with lenient validation
         log.warn(
             "WebAuthn data not found in user principal. Principal keys: {}. "
                 + "Skipping UV/transport validation. Principal structure: {}",
             principal.fieldNames(),
             principal.encodePrettily());
-        // Create empty webauthn object to avoid NPE, but skip strict validation
         webauthn = new JsonObject();
       }
     }
 
-    // Check User Verification (UV) flag if required
-    // For enrollment, check requireUvEnrollment; for assertion, check requireUvAuth
     boolean requireUv = false;
-    if (STATE_TYPE_ENROLL.equals(stateType)) {
+    if (WEBAUTHN_STATE_TYPE_ENROLL.equals(stateType)) {
       requireUv = config.getRequireUvEnrollment() != null && config.getRequireUvEnrollment();
-    } else if (STATE_TYPE_ASSERT.equals(stateType)) {
+    } else if (WEBAUTHN_STATE_TYPE_ASSERT.equals(stateType)) {
       requireUv = config.getRequireUvAuth() != null && config.getRequireUvAuth();
     }
 
     if (requireUv) {
-      // UV flag is in authenticator data - check if it's set to 1
-      Boolean uv = webauthn.getBoolean(JSON_KEY_UV);
+      Boolean uv = webauthn.getBoolean(WEBAUTHN_JSON_KEY_UV);
       if (uv == null || !uv) {
-        // If webauthn data is empty (not available), log warning but don't fail
-        // This is a workaround for library versions that don't populate webauthn data
         if (webauthn.isEmpty()) {
           log.warn(
               "UV validation required but webauthn data not available in principal. "
                   + "Skipping UV check. Consider extracting UV from attestation object directly.");
         } else {
           return Completable.error(
-              INVALID_REQUEST.getCustomException(ERROR_USER_VERIFICATION_REQUIRED));
+              INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_USER_VERIFICATION_REQUIRED));
         }
       }
     }
 
-    // Validate transports if required and available
     if (config.getAllowedTransports() != null && !config.getAllowedTransports().isEmpty()) {
-      String transport = webauthn.getString(JSON_KEY_TRANSPORT);
+      String transport = webauthn.getString(WEBAUTHN_JSON_KEY_TRANSPORT);
       if (transport != null && !config.getAllowedTransports().contains(transport)) {
-        return Completable.error(INVALID_REQUEST.getCustomException(ERROR_INVALID_TRANSPORT));
+        return Completable.error(
+            INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_INVALID_TRANSPORT));
       }
-      // If transport is null but webauthn data is empty, skip validation
       if (transport == null && webauthn.isEmpty()) {
         log.debug("Transport validation skipped - webauthn data not available in principal");
       }
     }
 
-    // Validate AAGUID if configured
-    if (STATE_TYPE_ENROLL.equals(stateType)) {
-      String aaguid = webauthn.getString("aaguid");
+    if (WEBAUTHN_STATE_TYPE_ENROLL.equals(stateType)) {
+      String aaguid = webauthn.getString(WEBAUTHN_JSON_KEY_AAGUID);
       if (aaguid != null && !aaguid.isEmpty()) {
-        // Check if AAGUID is blocked
         if (config.getBlockedAaguids() != null && config.getBlockedAaguids().contains(aaguid)) {
           return Completable.error(
               INVALID_REQUEST.getCustomException("AAGUID is blocked: " + aaguid));
         }
-        // Check if AAGUID is in allowlist (if allowlist mode)
         if ("allowlist".equals(config.getAaguidPolicyMode())
             && config.getAllowedAaguids() != null
             && !config.getAllowedAaguids().isEmpty()
@@ -1234,15 +1317,7 @@ public class WebAuthnService {
       }
 
       // Try to extract transport from Authenticator object if available
-      if (authenticator != null) {
-        // Check if Authenticator has transport information
-        // The Authenticator object may have a counter or other fields, but transport
-        // is typically not stored there - it's in the client response
-        // For now, we'll rely on the data extracted from authenticatorData
-      }
-
-      // Extract transport from clientDataJSON if available (it might be in the response)
-      // Note: Transport is typically not in clientDataJSON, but we check anyway
+      if (authenticator != null) {}
 
       log.debug("Extracted WebAuthn data: {}", webauthnData.encodePrettily());
       return webauthnData.isEmpty() ? null : webauthnData;
@@ -1253,9 +1328,23 @@ public class WebAuthnService {
   }
 
   /**
-   * Extract PIN information from attestation object. PIN detection: Check if user verification was
-   * performed and if PIN was the method used. This is typically indicated in the COSE key
-   * extensions or can be inferred from UV flag.
+   * Extracts PIN information from attestation object.
+   *
+   * <p>PIN detection: Checks if user verification was performed and if PIN was the method used.
+   * This is typically indicated in the COSE key extensions or can be inferred from UV flag.
+   *
+   * <p>Extracts "authData" to check UV flag. If UV is true, checks if PIN was used. Note: PIN
+   * detection in WebAuthn is complex - the UV flag indicates user verification was performed, but
+   * doesn't specify the method. For now, uses a heuristic: if UV is true, assumes PIN might have
+   * been used (this can be refined based on authenticator type or additional attestation statement
+   * parsing).
+   *
+   * <p>Sets PIN flag if detected - this will be used to determine AMR format. Actual PIN detection
+   * may require parsing COSE key extensions or attestation statement format-specific fields, which
+   * can be added here if needed.
+   *
+   * @param attestationObjectBase64 the base64-encoded attestation object
+   * @param webauthnData the JSON object to populate with extracted data
    */
   private void extractPinFromAttestationObject(
       String attestationObjectBase64, JsonObject webauthnData) {
@@ -1276,26 +1365,16 @@ public class WebAuthnService {
 
       co.nstant.in.cbor.model.Map cborMap = (co.nstant.in.cbor.model.Map) item;
 
-      // Extract "authData" to check UV flag
       DataItem authDataItem = cborMap.get(new UnicodeString("authData"));
       if (authDataItem instanceof ByteString) {
         ByteString authDataByteString = (ByteString) authDataItem;
         byte[] authData = authDataByteString.getBytes();
 
         if (authData.length >= 37) {
-          // Check UV flag (bit 2 of flags byte at position 32)
           byte flags = authData[32];
           boolean uv = (flags & 0x04) != 0;
 
-          // If UV is true, we'll check if PIN was used
-          // Note: PIN detection in WebAuthn is complex - the UV flag indicates user verification
-          // was performed, but doesn't specify the method. For now, we use a heuristic:
-          // If UV is true, we assume PIN might have been used (this can be refined based on
-          // authenticator type or additional attestation statement parsing)
           if (uv) {
-            // Set PIN flag - this will be used to determine AMR format
-            // Actual PIN detection may require parsing COSE key extensions or attestation
-            // statement format-specific fields, which can be added here if needed
             webauthnData.put("pin", true);
             log.debug("PIN detected from attestation object (UV flag set)");
           }
@@ -1330,7 +1409,6 @@ public class WebAuthnService {
 
       co.nstant.in.cbor.model.Map cborMap = (co.nstant.in.cbor.model.Map) item;
 
-      // Extract "authData" field (key is UnicodeString "authData")
       DataItem authDataItem = cborMap.get(new UnicodeString("authData"));
       if (authDataItem == null) {
         log.warn("authData not found in attestation object");
@@ -1361,7 +1439,6 @@ public class WebAuthnService {
    */
   private void extractDataFromAuthenticatorData(byte[] authenticatorData, JsonObject webauthnData) {
     if (authenticatorData == null || authenticatorData.length < 37) {
-      // Minimum size: 32 (rpIdHash) + 1 (flags) + 4 (signCount) = 37 bytes
       log.warn(
           "AuthenticatorData too short: {} bytes",
           authenticatorData != null ? authenticatorData.length : 0);
@@ -1371,24 +1448,18 @@ public class WebAuthnService {
     try {
       ByteBuffer buffer = ByteBuffer.wrap(authenticatorData).order(ByteOrder.BIG_ENDIAN);
 
-      // Skip rpIdHash (32 bytes)
       buffer.position(32);
 
-      // Read flags byte
       byte flags = buffer.get();
 
-      // Extract UV flag (bit 2)
       boolean uv = (flags & 0x04) != 0;
-      webauthnData.put(JSON_KEY_UV, uv);
+      webauthnData.put(WEBAUTHN_JSON_KEY_UV, uv);
 
-      // Read signCount (4 bytes) - advance buffer position
       buffer.getInt();
 
-      // Check if attestedCredentialData is present (bit 6 of flags)
       boolean attestedCredentialDataPresent = (flags & 0x40) != 0;
 
       if (attestedCredentialDataPresent && buffer.remaining() >= 18) {
-        // Extract AAGUID (16 bytes) - stored as big-endian
         long mostSignificantBits = buffer.getLong();
         long leastSignificantBits = buffer.getLong();
         UUID aaguid = new UUID(mostSignificantBits, leastSignificantBits);
@@ -1454,8 +1525,8 @@ public class WebAuthnService {
       }
 
       // Verify type
-      String type = clientData.getString("type");
-      if (!"webauthn.create".equals(type)) {
+      String type = clientData.getString(WEBAUTHN_JSON_KEY_TYPE);
+      if (!WEBAUTHN_CLIENT_DATA_TYPE_CREATE.equals(type)) {
         return Single.error(INVALID_REQUEST.getCustomException("Invalid clientData type: " + type));
       }
 
@@ -1464,18 +1535,7 @@ public class WebAuthnService {
               + "Performing minimal validation. Credential ID: {}",
           credentialId);
 
-      // For platform authenticators with fmt="none", we'll save the credential with minimal data
-      // The public key will be extracted from the attestation object on first authentication
-      // We'll store the attestation object and extract the public key later if needed
-      // For now, we'll create a credential with a placeholder public key that will be updated
-      // when the credential is first used for authentication
-
-      // Extract AAGUID from attestation object if possible (it's in the authenticatorData)
-      // For fmt="none", the AAGUID might be non-zero, which is what we're bypassing
-      String aaguid = null; // Will be extracted on first authentication
-
-      // Create credential with minimal validation
-      // Note: We're not fully verifying the signature here, just basic checks
+      String aaguid = null;
       CredentialModel credential =
           CredentialModel.builder()
               .tenantId(tenantId)
@@ -1483,22 +1543,17 @@ public class WebAuthnService {
               .userId(context.getTokenContext().getUserId())
               .credentialId(credentialId)
               .publicKey("") // Placeholder - will be extracted on first authentication
-              .bindingType(BINDING_TYPE_WEBAUTHN)
+              .bindingType(WEBAUTHN_BINDING_TYPE_WEBAUTHN)
               .alg(COSE_ALG_ES256) // Default, will be determined from attestation on first use
               .signCount(0L)
               .aaguid(aaguid)
               .build();
 
-      // Save credential with placeholder public key
-      // The public key will be properly extracted and updated on first authentication
       log.warn(
           "Saving credential with placeholder public key. "
               + "Public key will be extracted on first authentication. Credential ID: {}",
           credentialId);
 
-      // Save credential and continue with normal flow
-      // Note: We're skipping full signature verification, but we've validated challenge, origin,
-      // and type
       return credentialDao.saveCredential(credential).andThen(Single.just(context));
 
     } catch (Exception e) {
@@ -1509,7 +1564,20 @@ public class WebAuthnService {
     }
   }
 
-  /** Update refresh token's auth method (AMR) with WebAuthn. */
+  /**
+   * Updates the refresh token's authentication method (AMR) with WebAuthn.
+   *
+   * <p>Stores the original enum values directly (e.g., "hwk", "pwd") without transformation.
+   * Removes duplicates to ensure same value is not put in AMR.
+   *
+   * @param tenantId the tenant identifier
+   * @param clientId the client identifier
+   * @param refreshToken the refresh token string
+   * @param authMethods the list of authentication methods to update
+   * @param config the WebAuthn configuration
+   * @param webauthnData the WebAuthn data JSON object
+   * @return Completable that completes when the update is done
+   */
   private Completable updateRefreshTokenAuthMethod(
       String tenantId,
       String clientId,
@@ -1517,27 +1585,50 @@ public class WebAuthnService {
       List<AuthMethod> authMethods,
       WebAuthnConfigModel config,
       JsonObject webauthnData) {
-    // Store the original enum values directly (e.g., "hwk", "pwd") without transformation
-    // Remove duplicates to ensure same value is not put in AMR
     List<String> authMethodValues =
         authMethods.stream().map(AuthMethod::getValue).distinct().toList();
     return refreshTokenDao.updateRefreshTokenAuthMethod(
         tenantId, clientId, refreshToken, authMethodValues);
   }
 
+  /**
+   * Gets the origin from WebAuthn configuration. Uses the first allowed origin if available,
+   * otherwise constructs from rpId.
+   *
+   * @param config the WebAuthn configuration
+   * @return the origin string
+   */
   private String getOriginFromConfig(WebAuthnConfigModel config) {
-    // Use first allowed origin or construct from rpId
     if (config.getAllowedWebOrigins() != null && !config.getAllowedWebOrigins().isEmpty()) {
       return config.getAllowedWebOrigins().get(0);
     }
     return "https://" + config.getRpId();
   }
 
+  /**
+   * Updates the sign count for a WebAuthn credential.
+   *
+   * @param tenantId the tenant identifier
+   * @param clientId the client identifier
+   * @param userId the user identifier
+   * @param credentialId the credential identifier
+   * @param signCount the new sign count value
+   * @return Completable that completes when the update is done
+   */
   private Completable updateSignCount(
       String tenantId, String clientId, String userId, String credentialId, Long signCount) {
     return credentialDao.updateSignCount(tenantId, clientId, userId, credentialId, signCount);
   }
 
+  /**
+   * Saves a new WebAuthn credential from the authenticator after successful enrollment.
+   *
+   * @param authenticator the authenticator object containing credential information
+   * @param context the finish context with config
+   * @param tenantId the tenant identifier
+   * @param requestDto the finish request DTO
+   * @return Completable that completes when the credential is saved
+   */
   private Completable saveNewCredentialFromAuthenticator(
       Authenticator authenticator,
       FinishContextWithConfig context,
@@ -1558,8 +1649,7 @@ public class WebAuthnService {
     Long counter = authenticator.getCounter();
     String aaguid = authenticator.getAaguid();
 
-    // Determine algorithm from credential
-    Integer alg = COSE_ALG_ES256; // Default, could be extracted from authenticator
+    Integer alg = COSE_ALG_ES256;
 
     CredentialModel credential =
         CredentialModel.builder()
@@ -1568,7 +1658,7 @@ public class WebAuthnService {
             .userId(context.getTokenContext().getUserId())
             .credentialId(credentialId)
             .publicKey(publicKey)
-            .bindingType(BINDING_TYPE_WEBAUTHN)
+            .bindingType(WEBAUTHN_BINDING_TYPE_WEBAUTHN)
             .alg(alg)
             .signCount(counter != null ? counter : 0L)
             .aaguid(aaguid)
@@ -1577,6 +1667,24 @@ public class WebAuthnService {
     return credentialDao.saveCredential(credential);
   }
 
+  /**
+   * Processes the WebAuthn result after successful verification.
+   *
+   * <p>Extracts WebAuthn data (including PIN detection) from attestation object. Gets user
+   * information and builds authentication methods list, adding WebAuthn (hwk) if not already
+   * present.
+   *
+   * <p>For enrollment: updates existing refresh token AMR, then issues access token and ID token.
+   * For assertion: updates refresh token AMR and issues new access token (returns the same refresh
+   * token).
+   *
+   * @param context the finish context with config
+   * @param requestDto the finish request DTO
+   * @param tenantId the tenant identifier
+   * @param requestHeaders the HTTP request headers
+   * @return Single containing the response map with access token, refresh token, and optionally ID
+   *     token
+   */
   private Single<Map<String, Object>> processWebAuthnResult(
       FinishContextWithConfig context,
       V2WebAuthnFinishRequestDto requestDto,
@@ -1587,35 +1695,25 @@ public class WebAuthnService {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     WebAuthnConfigModel webauthnConfig = context.getWebAuthnContext().getConfig();
 
-    // Delete the used state
-    //    webauthnStateDao.deleteWebAuthnState(state.getState(), tenantId);
-
-    // Extract WebAuthn data (including PIN detection) from attestation object
     JsonObject webauthnData = extractWebAuthnDataFromAuthenticator(null, requestDto);
 
-    // Get user information
     return userService
         .getUser(Map.of("userId", tokenContext.getUserId()), requestHeaders, tenantId)
         .flatMap(
             user -> {
-              // Get scopes from refresh token
               RefreshTokenModel refreshToken = tokenContext.getRefreshToken();
               String scopes =
                   refreshToken.getScope() != null ? String.join(" ", refreshToken.getScope()) : "";
 
-              // Build auth methods - add webauthn if not already present
               List<AuthMethod> authMethods = new ArrayList<>(refreshToken.getAuthMethod());
               if (!authMethods.contains(AuthMethod.HARDWARE_KEY_PROOF)) {
-                authMethods.add(AuthMethod.HARDWARE_KEY_PROOF); // WebAuthn maps to hwk
+                authMethods.add(AuthMethod.HARDWARE_KEY_PROOF);
               }
 
               long iat = getCurrentTimeInSeconds();
 
-              if (STATE_TYPE_ENROLL.equals(state.getType())) {
-                // Enroll: update existing refresh token AMR, then issue access token
+              if (WEBAUTHN_STATE_TYPE_ENROLL.equals(state.getType())) {
                 String existingRefreshToken = refreshToken.getRefreshToken();
-
-                // Update the existing refresh token's AMR
                 return updateRefreshTokenAuthMethod(
                         tenantId,
                         requestDto.getClientId(),
@@ -1643,17 +1741,16 @@ public class WebAuthnService {
                                 config.getTenantId()),
                             (accessToken, idToken) -> {
                               Map<String, Object> response = new HashMap<>();
-                              response.put("access_token", accessToken);
-                              response.put("refresh_token", existingRefreshToken);
-                              response.put("id_token", idToken);
-                              response.put("token_type", "Bearer");
+                              response.put(WEBAUTHN_JSON_KEY_ACCESS_TOKEN, accessToken);
+                              response.put(WEBAUTHN_JSON_KEY_REFRESH_TOKEN, existingRefreshToken);
+                              response.put(WEBAUTHN_JSON_KEY_ID_TOKEN, idToken);
+                              response.put(WEBAUTHN_JSON_KEY_TOKEN_TYPE, TOKEN_TYPE);
                               response.put(
-                                  "expires_in", config.getTokenConfig().getAccessTokenExpiry());
+                                  WEBAUTHN_JSON_KEY_EXPIRES_IN,
+                                  config.getTokenConfig().getAccessTokenExpiry());
                               return response;
                             }));
               } else {
-                // Assert: update refresh token AMR and issue new access token
-                // Return the same refresh token (not a new one)
                 String existingRefreshToken = refreshToken.getRefreshToken();
                 return updateRefreshTokenAuthMethod(
                         tenantId,
@@ -1675,45 +1772,16 @@ public class WebAuthnService {
                     .map(
                         accessToken -> {
                           Map<String, Object> response = new HashMap<>();
-                          response.put("access_token", accessToken);
-                          response.put("refresh_token", existingRefreshToken);
-                          response.put("token_type", "Bearer");
+                          response.put(WEBAUTHN_JSON_KEY_ACCESS_TOKEN, accessToken);
+                          response.put(WEBAUTHN_JSON_KEY_REFRESH_TOKEN, existingRefreshToken);
+                          response.put(WEBAUTHN_JSON_KEY_TOKEN_TYPE, TOKEN_TYPE);
                           response.put(
-                              "expires_in", config.getTokenConfig().getAccessTokenExpiry());
+                              WEBAUTHN_JSON_KEY_EXPIRES_IN,
+                              config.getTokenConfig().getAccessTokenExpiry());
                           return response;
                         });
               }
             });
-  }
-
-  private Completable saveRefreshTokenForEnroll(
-      String refreshToken,
-      String ssoToken,
-      JsonObject user,
-      long iat,
-      String scopes,
-      List<AuthMethod> authMethods,
-      V2WebAuthnFinishRequestDto requestDto,
-      FinishContextWithConfig context,
-      String tenantId,
-      TenantConfig config) {
-    // Build refresh token model
-    RefreshTokenModel refreshTokenModel =
-        RefreshTokenModel.builder()
-            .tenantId(tenantId)
-            .clientId(requestDto.getClientId())
-            .userId(context.getTokenContext().getUserId())
-            .refreshToken(refreshToken)
-            .refreshTokenExp(iat + config.getTokenConfig().getRefreshTokenExpiry())
-            .scope(
-                scopes != null && !scopes.isEmpty()
-                    ? List.of(scopes.split(" "))
-                    : new ArrayList<>())
-            .authMethod(authMethods)
-            .build();
-
-    // Save refresh token (SSO token handling can be added if needed)
-    return refreshTokenDao.saveRefreshToken(refreshTokenModel);
   }
 
   // Helper classes for context passing

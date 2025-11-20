@@ -206,4 +206,101 @@ public final class Constants {
   public static final String OIDC_PARAM_CONSENT_CHALLENGE = "consent_challenge";
   public static final String OIDC_PARAM_LOGIN_HINT = "login_hint";
   public static final String OIDC_PARAM_PROMPT = "prompt";
+
+  // WebAuthn Constants
+  // State types
+  public static final String WEBAUTHN_STATE_TYPE_ASSERT = "assert";
+  public static final String WEBAUTHN_STATE_TYPE_ENROLL = "enroll";
+  public static final String WEBAUTHN_RECOMMENDED_MODE_ASSERT = "assert";
+  public static final String WEBAUTHN_RECOMMENDED_MODE_ENROLL = "enroll";
+
+  // WebAuthn JSON keys
+  public static final String WEBAUTHN_KEY_CHALLENGE = "challenge";
+  public static final String WEBAUTHN_KEY_RP_ID = "rpId";
+  public static final String WEBAUTHN_KEY_USER_VERIFICATION = "userVerification";
+  public static final String WEBAUTHN_KEY_TIMEOUT = "timeout";
+  public static final String WEBAUTHN_KEY_ALLOW_CREDENTIALS = "allowCredentials";
+  public static final String WEBAUTHN_KEY_TYPE = "type";
+  public static final String WEBAUTHN_KEY_ID = "id";
+  public static final String WEBAUTHN_KEY_RP = "rp";
+  public static final String WEBAUTHN_KEY_USER = "user";
+  public static final String WEBAUTHN_KEY_NAME = "name";
+  public static final String WEBAUTHN_KEY_DISPLAY_NAME = "displayName";
+  public static final String WEBAUTHN_KEY_PUB_KEY_CRED_PARAMS = "pubKeyCredParams";
+  public static final String WEBAUTHN_KEY_AUTHENTICATOR_SELECTION = "authenticatorSelection";
+  public static final String WEBAUTHN_KEY_ATTESTATION = "attestation";
+  public static final String WEBAUTHN_KEY_EXCLUDE_CREDENTIALS = "excludeCredentials";
+  public static final String WEBAUTHN_KEY_AUTHENTICATOR_ATTACHMENT = "authenticatorAttachment";
+  public static final String WEBAUTHN_KEY_RESIDENT_KEY = "residentKey";
+  public static final String WEBAUTHN_KEY_ALG = "alg";
+  public static final String WEBAUTHN_KEY_TRANSPORTS = "transports";
+  public static final String WEBAUTHN_JSON_KEY_USERNAME = "username";
+  public static final String WEBAUTHN_JSON_KEY_CHALLENGE = "challenge";
+  public static final String WEBAUTHN_JSON_KEY_WEBAUTHN = "webauthn";
+  public static final String WEBAUTHN_JSON_KEY_ORIGIN = "origin";
+  public static final String WEBAUTHN_JSON_KEY_DOMAIN = "domain";
+  public static final String WEBAUTHN_JSON_KEY_ID = "id";
+  public static final String WEBAUTHN_JSON_KEY_RAW_ID = "rawId";
+  public static final String WEBAUTHN_JSON_KEY_TYPE = "type";
+  public static final String WEBAUTHN_JSON_KEY_RESPONSE = "response";
+  public static final String WEBAUTHN_JSON_KEY_ATTESTATION_OBJECT = "attestationObject";
+  public static final String WEBAUTHN_JSON_KEY_CLIENT_DATA_JSON = "clientDataJSON";
+  public static final String WEBAUTHN_JSON_KEY_AUTHENTICATOR_DATA = "authenticatorData";
+  public static final String WEBAUTHN_JSON_KEY_SIGNATURE = "signature";
+  public static final String WEBAUTHN_JSON_KEY_USER_HANDLE = "userHandle";
+  public static final String WEBAUTHN_JSON_KEY_UV = "uv";
+  public static final String WEBAUTHN_JSON_KEY_TRANSPORT = "transport";
+  public static final String WEBAUTHN_JSON_KEY_AAGUID = "aaguid";
+  public static final String WEBAUTHN_JSON_KEY_ACCESS_TOKEN = "access_token";
+  public static final String WEBAUTHN_JSON_KEY_REFRESH_TOKEN = "refresh_token";
+  public static final String WEBAUTHN_JSON_KEY_ID_TOKEN = "id_token";
+  public static final String WEBAUTHN_JSON_KEY_TOKEN_TYPE = "token_type";
+  public static final String WEBAUTHN_JSON_KEY_EXPIRES_IN = "expires_in";
+
+  // WebAuthn values
+  public static final String WEBAUTHN_VALUE_PUBLIC_KEY = "public-key";
+  public static final String WEBAUTHN_VALUE_REQUIRED = "required";
+  public static final String WEBAUTHN_VALUE_PREFERRED = "preferred";
+  public static final String WEBAUTHN_VALUE_PLATFORM = "platform";
+  public static final String WEBAUTHN_VALUE_ATTESTATION_DIRECT = "direct";
+
+  // AAGUID policy mode values
+  public static final String WEBAUTHN_AAGUID_POLICY_MODE_ANY = "any";
+  public static final String WEBAUTHN_AAGUID_POLICY_MODE_ALLOWLIST = "allowlist";
+  public static final String WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED = "mds_enforced";
+
+  // WebAuthn error messages
+  public static final String WEBAUTHN_ERROR_MISSING_AUTH_HEADER = "Missing Authorization header";
+  public static final String WEBAUTHN_ERROR_INVALID_REFRESH_TOKEN = "Invalid refresh token";
+  public static final String WEBAUTHN_ERROR_REFRESH_TOKEN_EXPIRED = "Refresh token expired";
+  public static final String WEBAUTHN_ERROR_NOT_CONFIGURED =
+      "WebAuthn not configured for this client";
+  public static final String WEBAUTHN_ERROR_INVALID_STATE = "Invalid or expired state";
+  public static final String WEBAUTHN_ERROR_MFA_REQUIRED =
+      "MFA is mandatory and refresh token has only one AMR";
+  public static final String WEBAUTHN_ERROR_VERIFICATION_FAILED = "WebAuthn verification failed";
+  public static final String WEBAUTHN_ERROR_INVALID_STATE_TYPE = "Invalid state type: %s";
+  public static final String WEBAUTHN_ERROR_CREDENTIAL_NOT_FOUND =
+      "Credential not found for assertion";
+  public static final String WEBAUTHN_ERROR_CLIENT_NOT_FOUND = "Client not found";
+  public static final String WEBAUTHN_ERROR_USER_VERIFICATION_REQUIRED =
+      "User verification required but not performed";
+  public static final String WEBAUTHN_ERROR_INVALID_TRANSPORT = "Invalid transport used";
+  public static final String WEBAUTHN_ERROR_STATE_EXPIRED = "State has expired";
+  public static final String WEBAUTHN_ERROR_STATE_USER_MISMATCH =
+      "State user ID does not match refresh token user ID";
+  public static final String WEBAUTHN_ERROR_STATE_CLIENT_MISMATCH =
+      "State client ID does not match request client ID";
+  public static final String WEBAUTHN_ERROR_DUPLICATE_CREDENTIAL = "Credential already exists";
+  public static final String WEBAUTHN_ERROR_SIGN_COUNT_REPLAY =
+      "Sign count validation failed - possible replay attack";
+
+  // Client data types
+  public static final String WEBAUTHN_CLIENT_DATA_TYPE_CREATE = "webauthn.create";
+
+  // MFA policy values
+  public static final String WEBAUTHN_MFA_POLICY_MANDATORY = "mandatory";
+
+  // Binding type
+  public static final String WEBAUTHN_BINDING_TYPE_WEBAUTHN = "webauthn";
 }
