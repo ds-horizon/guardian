@@ -1,145 +1,235 @@
-<div align="center">
-  <h1>Guardian</h1>
-  <p><strong>Enterprise-grade Authentication & Authorization for Modern Applications</strong></p>
-</div>
+# Guardian
+
+**Enterprise-grade Authentication & Authorization for Modern Applications**
 
 ## 🌟 Overview
 
-Guardian is a robust, open-source authentication and authorization solution designed for modern applications.
-It provides a comprehensive suite of authentication methods while giving you complete control over your user data.
+Guardian is a robust, open-source authentication and authorization solution designed for modern applications. It provides a comprehensive suite of authentication methods while giving you complete control over your user data.
 
-### Why Guardian?
+## Why Guardian?
 
-- 🔐 **Enterprise-Grade Security**: Built with security best practices and regular security audits
-- 🎯 **Flexible Integration**: Works seamlessly with your existing user service
-- 🚀 **Quick Implementation**: Get up and running in minutes
-- 📱 **Multi-Platform Support**: Native support for web, mobile, and API authentication
+*   🔐 **Enterprise-Grade Security**: Built with security best practices, RS256 JWT tokens, refresh token rotation
+
+*   🎯 **Flexible Integration**: Works seamlessly with your existing user service
+
+*   🏢 **Multi-Tenant Ready**: Complete tenant isolation, perfect for SaaS applications
+
+*   🚀 **Quick Implementation**: Get up and running in minutes
+
+*   📱 **Multi-Platform Support**: Native support for web, mobile, and API authentication
+
+*   🔑 **OAuth 2.0 & OIDC**: Full protocol support with PKCE, discovery endpoints
+
+*   ⚡ **High Performance**: Built on Vert.x for reactive, non-blocking I/O
+
 
 ## 📋 Table of Contents
 
-- [Features](#-features)
-- [Getting Started](#-getting-started)
-- [Contributing](#-contributing)
-- [Community](#-community)
-- [License](#-license)
+*   [Features](#-features)
+*   [Getting Started](#-getting-started)
+*   [Documentation](#-documentation)
+*   [Contributing](#-contributing)
+*   [Community](#-community)
+*   [License](#-license)
 
 ## ✨ Features
 
 ### Authentication Methods
-- 📱 **Passwordless Authentication**
-  - SMS/Email OTP
-- 🔑 **Traditional Authentication**
-  - Username/Password
-- 🌐 **Social Authentication**
-  - Google
-  - Facebook
-  - Custom Providers
+
+*   **📱 Passwordless Authentication**
+
+    *   SMS/Email OTP
+
+    *   Configurable OTP length and validity
+
+    *   Rate limiting and retry mechanisms
+
+*   **🔑 Traditional Authentication**
+
+    *   Username/Password
+
+    *   Email/Phone as identifier
+
+    *   Password policy support via user service
+
+*   **🌐 Social Authentication**
+
+    *   Google (OIDC)
+
+    *   Facebook (OAuth 2.0)
+
+    *   Custom OIDC providers
+
+*   **👤 Guest Authentication**
+
+    *   Temporary access without registration
+
+    *   Scope-limited tokens
+
 
 ### Session Management
 
-- 📊 Multi-device session tracking
-- 🔒 Secure session management
-- ⚡ Real-time session invalidation
-- 🔄 Token refresh mechanisms
+*   📊 Multi-device session tracking
 
-### Developer Experience
+*   🔒 Secure session management
 
-- 🎯 RESTful APIs
-- 📚 Comprehensive SDK support
+*   ⚡ Real-time session invalidation
+
+*   🔄 Token refresh mechanisms
+
+*   🚪 Universal logout
+
+
+### OAuth 2.0 & OpenID Connect
+
+*   Full OAuth 2.0 implementation (Authorization Code, Implicit, ROPC, Client Credentials)
+
+*   OpenID Connect 1.0 compliant (Discovery, UserInfo, JWKS endpoints)
+
+*   PKCE support for enhanced security
+
+*   Consent management
+
+
+### Multi-Tenant Architecture
+
+*   Complete tenant isolation at database level
+
+*   Per-tenant configuration
+
+*   OAuth client management with automatic clientId generation
+
+*   Scalable design for serving multiple organizations
+
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-* **Docker** ([Download Docker Desktop](https://www.docker.com/products/docker-desktop/))
-* **Docker Compose CLI** ([Install instructions](https://docs.docker.com/compose/install/))
-* **Maven**
-* **Java 17**
+*   **Docker** ≥ 20.10 ([Download Docker Desktop](https://www.docker.com/products/docker-desktop/ "https://www.docker.com/products/docker-desktop/"))
 
-### Quick Start
+*   **Docker Compose** ≥ 2.0 (Usually included with Docker Desktop)([Install instructions](https://docs.docker.com/compose/install/))
 
-#### Prerequisites
+*   **Maven** ≥ 3.6 ([Download Maven](https://maven.apache.org/download.cgi "https://maven.apache.org/download.cgi"))
+
+*   **Java 17** (JDK) ([Download Java 17](https://www.oracle.com/java/technologies/downloads/#java17 "https://www.oracle.com/java/technologies/downloads/#java17"))
+
+
+### Verify Installations
+
 You can verify the installations by running the following commands in your terminal:
 
 ```bash
-docker --version
-mvn --version
-java -version
+    docker --version
+    mvn --version
+    java -version
 ```
 
-Ensure that **Java 17** is the active version in use. Maven should also be configured to use Java 17 - you can verify this by checking that `mvn --version` shows Java 17 in its output.
 
-Additionally, make sure the following ports are free and not in use by other services :
+**Important**: Ensure that Java 17 is the active version in use. Maven should also be configured to use Java 17 - you can verify this by checking that `mvn --version` shows Java 17 in its output.
 
-* `3306` – MySQL
-* `6379` – Redis
-* `8080` – Application server
-* `6000` – Auxiliary services/API
+### Port Requirements
+
+Additionally, make sure the following ports are free and not in use by other services:
+
+*   `3306` – MySQL
+
+*   `6379` – Redis
+
+*   `8080` – Application server
+
+*   `6000` – Auxiliary services/API
+
 
 These ports are required for the application to run without conflicts.
 
-1. Clone the repository:
+### Quick Start
+
+1.  **Clone the repository**:
 ```bash
-git clone https://github.com/ds-horizon/guardian.git
-cd guardian
+    `git clone https://github.com/ds-horizon/guardian.git cd guardian`
+```
+2.  **Start Guardian**:
+```bash
+    ./quick-start.sh
+```
+3.  **Test the setup** with a passwordless flow:
+
+    **Initialize passwordless authentication**:
+```bash
+    `curl --location 'http://localhost:8080/v2/passwordless/init' \ --header 'Content-Type: application/json' \ --header 'tenant-id: tenant1' \ --data '{ "flow": "signinup", "response_type": "token", "contacts": [{ "channel": "sms", "identifier": "9999999999" }], "meta_info": { "ip": "127.0.0.1", "location": "localhost", "device_name": "localhost", "source": "app" }, "client_id": "your_client_id" }'`
+
+    **Complete authentication** (using mock OTP for development):
+
+    `curl --location 'http://localhost:8080/v2/passwordless/complete' \ --header 'Content-Type: application/json' \ --header 'tenant-id: tenant1' \ --data '{ "state": "<state-from-init-response>", "otp": "999999" }'`
 ```
 
-2. Start Guardian:
-```bash
-./quick-start.sh
-```
+## 📚 Documentation
 
-3. Test the setup with a passwordless flow:
+Comprehensive documentation is available in the `docs/` directory:
 
-```bash
-# Initialize passwordless authentication
-curl --location 'localhost:8080/v1/passwordless/init' \
---header 'Content-Type: application/json' \
---header 'tenant-id: tenant1' \
---data '{
-  "flow": "signinup",
-  "responseType": "token",
-  "contacts": [{
-    "channel": "sms",
-    "identifier": "9999999999"
-  }],
-  "metaInfo": {
-    "ip": "127.0.0.1",
-    "location": "localhost",
-    "deviceName": "localhost",
-    "source": "app"
-  }
-}'
+| Document | Description |
+| --- | --- |
+| 📖 Getting Started | Setup, installation, and first steps |
+| 🏗️ Architecture | System architecture and design |
+| 📚 API Reference | Complete REST API documentation |
+| ⚙️ Configuration | Configuration options |
+| 🔌 Integration Guide | Integrate with your application |
+| 🏢 Multi-Tenancy | Multi-tenant setup and management |
+| 🚀 Deployment | Production deployment guide |
 
-# Complete authentication (using mock OTP for development)
-curl --location 'localhost:8080/v1/passwordless/complete' \
---header 'Content-Type: application/json' \
---header 'tenant-id: tenant1' \
---data '{
-  "state": "<state-from-init-response>",
-  "otp": "999999"
-}'
-```
+### Feature Documentation
+
+*   [Passwordless Authentication](https://guardian.dream11.com/docs/features/passwordless-authentication.md "https://guardian.dream11.com/docs/features/passwordless-authentication.md")
+
+*   [Social Authentication](https://guardian.dream11.com/docs/features/social-authentication.md "https://guardian.dream11.com/docs/features/social-authentication.md")
+
+*   [Username/Password Authentication](https://guardian.dream11.com/docs/features/username-password-authentication.md "https://guardian.dream11.com/docs/features/username-password-authentication.md")
+
+*   [Guest Authentication](https://guardian.dream11.com/docs/features/guest-authentication.md "https://guardian.dream11.com/docs/features/guest-authentication.md")
+
+*   [OIDC Flow](https://guardian.dream11.com/docs/features/oidc-flow.md "https://guardian.dream11.com/docs/features/oidc-flow.md")
+
+*   [Session Management](https://guardian.dream11.com/docs/features/session-management.md "https://guardian.dream11.com/docs/features/session-management.md")
+
+*   [Admin & Configuration APIs](https://guardian.dream11.com/docs/features/admin-configuration-apis.md "https://guardian.dream11.com/docs/features/admin-configuration-apis.md")
+
+
+### API Specifications
+
+*   [OpenAPI Specification](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml "https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml") - Complete API spec
+
+*   [Integration API Spec](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml "https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml") - All other services integrations (User service, Communication service)
+
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+We welcome contributions! Please see our [Contributing Guide](https://github.com/ds-horizon/guardian/blob/main/CONTRIBUTING.md "https://github.com/ds-horizon/guardian/blob/main/CONTRIBUTING.md") for details on:
 
-- Code of Conduct
-- Development Process
-- Pull Request Process
-- Coding Standards
+*   Code of Conduct
+
+*   Development Process
+
+*   Pull Request Process
+
+*   Coding Standards
+
+*   Testing Guidelines
+
 
 ## 👥 Community
 
-- [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions)
+*   💬 [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions "https://github.com/ds-horizon/guardian/discussions") - Ask questions and share ideas
+
+*   🐛 [Issue Tracker](https://github.com/ds-horizon/guardian/issues "https://github.com/ds-horizon/guardian/issues") - Report bugs and request features
+
+*   📖 [Documentation](https://guardian.dream11.com/docs/ "https://guardian.dream11.com/docs/") - Comprehensive guides
+
 
 ## 📄 License
 
-Guardian is licensed under the [MIT License](LICENSE).
+Guardian is licensed under the [MIT License](https://github.com/ds-horizon/guardian/blob/main/LICENSE "https://github.com/ds-horizon/guardian/blob/main/LICENSE").
 
----
+* * *
 
-<div align="center">
-  <sub>Built with ❤️ by the Guardian team and contributors</sub>
-</div>
+Built with ❤️ by the Guardian team and contributors
