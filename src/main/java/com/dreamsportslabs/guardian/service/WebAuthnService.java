@@ -863,9 +863,25 @@ public class WebAuthnService {
                             authenticator -> {
                               Long newSignCount = authenticator.getCounter();
                               // Validate sign count is increasing (replay attack prevention)
-                              if (newSignCount != null && newSignCount <= storedSignCount) {
-                                return Future.failedFuture(
-                                    new RuntimeException(ERROR_SIGN_COUNT_REPLAY));
+                              // Allow 0->0 transition only on first use (storedSignCount == 0)
+                              // Otherwise, require strictly increasing sign count
+                              if (newSignCount != null) {
+                                if (storedSignCount == 0L && newSignCount == 0L) {
+                                  // First use: allow 0->0 transition (some authenticators return 0
+                                  // on first use)
+                                  log.debug(
+                                      "Allowing sign count 0->0 transition (first use). Credential ID: {}",
+                                      requestDto.getCredential().getId());
+                                } else if (newSignCount <= storedSignCount) {
+                                  // Replay attack detected: sign count did not increase
+                                  log.error(
+                                      "Sign count validation failed: stored={}, new={}, credentialId={}",
+                                      storedSignCount,
+                                      newSignCount,
+                                      requestDto.getCredential().getId());
+                                  return Future.failedFuture(
+                                      new RuntimeException(ERROR_SIGN_COUNT_REPLAY));
+                                }
                               }
                               return completableToFuture(
                                   updateSignCount(
@@ -1637,16 +1653,18 @@ public class WebAuthnService {
                             }));
               } else {
                 // Assert: update refresh token AMR and issue new access token
+                // Return the same refresh token (not a new one)
+                String existingRefreshToken = refreshToken.getRefreshToken();
                 return updateRefreshTokenAuthMethod(
                         tenantId,
                         requestDto.getClientId(),
-                        refreshToken.getRefreshToken(),
+                        existingRefreshToken,
                         authMethods,
                         webauthnConfig,
                         webauthnData)
                     .andThen(
                         tokenIssuer.generateAccessToken(
-                            refreshToken.getRefreshToken(),
+                            existingRefreshToken,
                             iat,
                             scopes,
                             user,
@@ -1658,6 +1676,10 @@ public class WebAuthnService {
                         accessToken -> {
                           Map<String, Object> response = new HashMap<>();
                           response.put("access_token", accessToken);
+                          response.put("refresh_token", existingRefreshToken);
+                          response.put("token_type", "Bearer");
+                          response.put(
+                              "expires_in", config.getTokenConfig().getAccessTokenExpiry());
                           return response;
                         });
               }
