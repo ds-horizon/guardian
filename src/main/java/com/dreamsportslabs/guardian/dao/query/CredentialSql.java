@@ -28,4 +28,11 @@ public class CredentialSql {
       SET revoked_at = CURRENT_TIMESTAMP
       WHERE tenant_id = ? AND client_id = ? AND user_id = ? AND credential_id = ?
       """;
+
+  public static final String UPDATE_SIGN_COUNT =
+      """
+      UPDATE credentials
+      SET sign_count = ?
+      WHERE tenant_id = ? AND client_id = ? AND user_id = ? AND credential_id = ?
+      """;
 }

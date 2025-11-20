@@ -13,6 +13,7 @@ import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.OTP_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.SMS_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.TOKEN_CONFIG;
 import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.USER_CONFIG;
+import static com.dreamsportslabs.guardian.dao.query.ConfigQuery.WEBAUTHN_CONFIG;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
@@ -30,6 +31,7 @@ import com.dreamsportslabs.guardian.config.tenant.SmsConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.config.tenant.TokenConfig;
 import com.dreamsportslabs.guardian.config.tenant.UserConfig;
+import com.dreamsportslabs.guardian.dao.model.WebAuthnConfigModel;
 import com.dreamsportslabs.guardian.utils.JsonUtils;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
@@ -62,7 +64,8 @@ public class ConfigDao {
             appendAdminConfig(tenantId, builder),
             appendContactVerifyConfig(tenantId, builder),
             appendOidcConfig(tenantId, builder),
-            appendGuestConfig(tenantId, builder));
+            appendGuestConfig(tenantId, builder),
+            appendWebAuthnConfig(tenantId, builder));
     return Completable.merge(configSources)
         .andThen(Single.defer(() -> Single.just(builder.build())));
   }
@@ -151,6 +154,23 @@ public class ConfigDao {
                     .collect(
                         Collectors.toMap(OidcProviderConfig::getProviderName, config -> config)))
         .map(builder::oidcProviderConfig)
+        .ignoreElement();
+  }
+
+  private Completable appendWebAuthnConfig(
+      String tenantId, TenantConfig.TenantConfigBuilder builder) {
+    return getMultipleConfigFromDb(tenantId, WebAuthnConfigModel.class, WEBAUTHN_CONFIG)
+        .map(
+            configs ->
+                configs.stream()
+                    .collect(Collectors.toMap(WebAuthnConfigModel::getClientId, config -> config)))
+        .onErrorResumeNext(
+            err -> {
+              // If no configs found or error, set empty map instead of breaking
+              log.warn("No WebAuthn config found for tenantId: {}, setting empty map", tenantId);
+              return Single.just(java.util.Map.<String, WebAuthnConfigModel>of());
+            })
+        .map(builder::webauthnConfig)
         .ignoreElement();
   }
 

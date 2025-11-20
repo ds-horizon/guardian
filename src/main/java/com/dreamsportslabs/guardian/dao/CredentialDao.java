@@ -4,6 +4,7 @@ import static com.dreamsportslabs.guardian.dao.query.CredentialSql.GET_ACTIVE_CR
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.GET_CREDENTIAL_BY_ID;
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.REVOKE_CREDENTIAL;
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.SAVE_CREDENTIAL;
+import static com.dreamsportslabs.guardian.dao.query.CredentialSql.UPDATE_SIGN_COUNT;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
 import com.dreamsportslabs.guardian.dao.model.CredentialModel;
@@ -71,6 +72,17 @@ public class CredentialDao {
         .rxExecute(Tuple.of(tenantId, clientId, userId, credentialId))
         .doOnSuccess(v -> log.info("Credential revoked successfully"))
         .doOnError(err -> log.error("Error revoking credential", err))
+        .ignoreElement();
+  }
+
+  public Completable updateSignCount(
+      String tenantId, String clientId, String userId, String credentialId, Long signCount) {
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(UPDATE_SIGN_COUNT)
+        .rxExecute(Tuple.of(signCount, tenantId, clientId, userId, credentialId))
+        .doOnSuccess(v -> log.info("Sign count updated successfully"))
+        .doOnError(err -> log.error("Error updating sign count", err))
         .ignoreElement();
   }
 }
