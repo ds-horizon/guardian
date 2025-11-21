@@ -5,7 +5,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_AAGUID_PO
 import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_AAGUID_POLICY_MODE_ANY;
 import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_AAGUID_POLICY_MODE_MDS_ENFORCED;
 import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_BINDING_TYPE_WEBAUTHN;
-import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_CLIENT_DATA_TYPE_CREATE;
 import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_CLIENT_NOT_FOUND;
 import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_CREDENTIAL_NOT_FOUND;
 import static com.dreamsportslabs.guardian.constant.Constants.WEBAUTHN_ERROR_DUPLICATE_CREDENTIAL;
@@ -752,7 +751,8 @@ public class WebAuthnService {
                                           requestDto,
                                           null,
                                           WEBAUTHN_STATE_TYPE_ENROLL,
-                                          storedAuthenticator[0])
+                                          storedAuthenticator[0],
+                                          false)
                                       .andThen(Single.just(ctx));
                                 })
                             .onErrorResumeNext(
@@ -842,7 +842,8 @@ public class WebAuthnService {
                                           requestDto,
                                           credential,
                                           WEBAUTHN_STATE_TYPE_ASSERT,
-                                          null)
+                                          null,
+                                          false)
                                       .andThen(Single.just(context));
                                 })
                             .onErrorResumeNext(
@@ -1096,12 +1097,16 @@ public class WebAuthnService {
       V2WebAuthnFinishRequestDto requestDto,
       CredentialModel credential,
       String stateType,
-      Authenticator authenticator) {
+      Authenticator authenticator,
+      boolean skipAaguid) {
     JsonObject webauthn = extractWebAuthnData(user, requestDto, credential, authenticator);
 
     return validateUserVerification(webauthn, config, stateType)
         .andThen(validateTransport(webauthn, config))
-        .andThen(validateAaguid(webauthn, config, credential, stateType));
+        .andThen(
+            skipAaguid
+                ? Completable.complete()
+                : validateAaguid(webauthn, config, credential, stateType));
   }
 
   /**
@@ -1543,81 +1548,73 @@ public class WebAuthnService {
       String tenantId,
       WebAuthnStateModel state,
       HttpHeaders headers) {
-    try {
-      String credentialId = requestDto.getCredential().getId();
-      String clientDataJSON = requestDto.getCredential().getResponse().getClientDataJSON();
-      String attestationObjectBase64 =
-          requestDto.getCredential().getResponse().getAttestationObject();
 
-      if (clientDataJSON == null || clientDataJSON.isEmpty()) {
-        return Single.error(INVALID_REQUEST.getCustomException("clientDataJSON is required"));
-      }
-      if (attestationObjectBase64 == null || attestationObjectBase64.isEmpty()) {
-        return Single.error(INVALID_REQUEST.getCustomException("attestationObject is required"));
-      }
+    // Even when bypassing AAGUID enforcement, we should still perform full cryptographic
+    // verification via the Vert.x WebAuthn library. The only thing we skip is the AAGUID policy.
+    log.info(
+        "AAGUID check disabled by policy; proceeding with full library verification and skipping AAGUID enforcement. Credential ID: {}",
+        requestDto.getCredential() != null ? requestDto.getCredential().getId() : "unknown");
 
-      byte[] clientDataBytes = Base64.getUrlDecoder().decode(clientDataJSON);
-      JsonObject clientData = new JsonObject(new String(clientDataBytes));
+    return Maybe.<FinishContextWithConfig>empty()
+        .switchIfEmpty(Maybe.just(context))
+        .toSingle()
+        .flatMap(
+            (FinishContextWithConfig ctx) -> {
+              WebAuthn webAuthn = createWebAuthnInstance(config);
 
-      String challenge = clientData.getString("challenge");
-      if (challenge == null || !state.getChallenge().equals(challenge)) {
-        return Single.error(INVALID_REQUEST.getCustomException("Challenge mismatch"));
-      }
+              return buildAuthRequest(ctx, state, requestDto, config)
+                  .flatMap(
+                      authRequest -> {
+                        // Enrollment: no existing authenticators to fetch
+                        webAuthn.authenticatorFetcher(
+                            query -> Future.succeededFuture(new java.util.ArrayList<>()));
 
-      String origin = extractOriginFromClientData(null, requestDto);
-      if (origin != null) {
-        try {
-          validateOrigin(origin, config);
-        } catch (IllegalArgumentException e) {
-          return Single.error(INVALID_REQUEST.getCustomException(e.getMessage()));
-        }
-      }
+                        final Authenticator[] storedAuthenticator = new Authenticator[1];
+                        webAuthn.authenticatorUpdater(
+                            authenticator -> {
+                              if (authenticator == null) {
+                                log.error(
+                                    "Authenticator is null in authenticatorUpdater (bypass path)");
+                                return Future.failedFuture(
+                                    new RuntimeException(
+                                        "Authenticator is null - verification may have failed"));
+                              }
+                              storedAuthenticator[0] = authenticator;
+                              return completableToFuture(
+                                  saveNewCredentialFromAuthenticator(
+                                      authenticator, ctx, tenantId, requestDto));
+                            });
 
-      String type = clientData.getString(WEBAUTHN_JSON_KEY_TYPE);
-      if (!WEBAUTHN_CLIENT_DATA_TYPE_CREATE.equals(type)) {
-        return Single.error(INVALID_REQUEST.getCustomException("Invalid clientData type: " + type));
-      }
-
-      log.info(
-          "AAGUID check disabled - bypassing library validation for platform authenticator. "
-              + "Performing minimal validation. Credential ID: {}",
-          credentialId);
-
-      String aaguid = null;
-      CredentialModel credential =
-          CredentialModel.builder()
-              .tenantId(tenantId)
-              .clientId(requestDto.getClientId())
-              .userId(context.getTokenContext().getUserId())
-              .credentialId(credentialId)
-              .publicKey("")
-              .bindingType(WEBAUTHN_BINDING_TYPE_WEBAUTHN)
-              .alg(COSE_ALG_ES256)
-              .signCount(0L)
-              .aaguid(aaguid)
-              .build();
-
-      log.warn(
-          "Saving credential with placeholder public key. "
-              + "Public key will be extracted on first authentication. Credential ID: {}",
-          credentialId);
-
-      return credentialDao.saveCredential(credential).andThen(Single.just(context));
-
-    } catch (Exception e) {
-      log.error("Error in bypassAaguidValidationAndEnroll", e);
-      return Single.error(
-          INVALID_REQUEST.getCustomException(
-              "Error bypassing AAGUID validation: " + e.getMessage()));
-    }
+                        return Single.fromCompletionStage(
+                                webAuthn.authenticate(authRequest).toCompletionStage())
+                            .flatMap(
+                                user -> {
+                                  // Skip only AAGUID checks; still enforce UV/transport policies.
+                                  return validateWebAuthnRequirements(
+                                          user,
+                                          config,
+                                          requestDto,
+                                          null,
+                                          WEBAUTHN_STATE_TYPE_ENROLL,
+                                          storedAuthenticator[0],
+                                          true)
+                                      .andThen(Single.just(ctx));
+                                })
+                            .onErrorResumeNext(
+                                err -> {
+                                  log.error(
+                                      "WebAuthn enrollment verification failed (bypass path)", err);
+                                  return Single.error(
+                                      INVALID_REQUEST.getCustomException(
+                                          WEBAUTHN_ERROR_VERIFICATION_FAILED
+                                              + (err.getMessage() != null
+                                                  ? ": " + err.getMessage()
+                                                  : "")));
+                                });
+                      });
+            });
   }
 
-  /**
-   * Updates the refresh token's authentication method (AMR) with WebAuthn.
-   *
-   * <p>Stores the original enum values directly (e.g., "hwk", "pwd") without transformation.
-   * Removes duplicates to ensure same value is not put in AMR.
-   */
   private Completable updateRefreshTokenAuthMethod(
       String tenantId, String clientId, String refreshToken, List<AuthMethod> authMethods) {
     List<String> authMethodValues =
