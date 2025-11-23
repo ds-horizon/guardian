@@ -157,11 +157,12 @@ These ports are required for the application to run without conflicts.
 
     **Initialize passwordless authentication**:
 ```bash
-    `curl --location 'http://localhost:8080/v2/passwordless/init' \ --header 'Content-Type: application/json' \ --header 'tenant-id: tenant1' \ --data '{ "flow": "signinup", "response_type": "token", "contacts": [{ "channel": "sms", "identifier": "9999999999" }], "meta_info": { "ip": "127.0.0.1", "location": "localhost", "device_name": "localhost", "source": "app" }, "client_id": "your_client_id" }'`
+    curl --location 'localhost:8080/v2/passwordless/init' --header 'tenant-id: tenant1' --header 'Content-Type: application/json' --data '{"contacts":[{"channel": "SMS", "identifier": "7878787878"}],"flow":"SIGNINUP","response_type":"token", "client_id": "client1"}'
+```
 
-    **Complete authentication** (using mock OTP for development):
-
-    `curl --location 'http://localhost:8080/v2/passwordless/complete' \ --header 'Content-Type: application/json' \ --header 'tenant-id: tenant1' \ --data '{ "state": "<state-from-init-response>", "otp": "999999" }'`
+  **Complete authentication** (using mock OTP for development):
+```bash
+    curl --location 'localhost:8080/v2/passwordless/complete' --header 'tenant-id: tenant1' --header 'Content-Type: application/json' --data '{"state":"<state-from-init-response>", "otp": "999999" }'
 ```
 
 ## 📚 Documentation
