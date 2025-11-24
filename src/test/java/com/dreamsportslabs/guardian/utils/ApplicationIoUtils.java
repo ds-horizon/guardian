@@ -216,6 +216,24 @@ public class ApplicationIoUtils {
     return execute(body, headers, new HashMap<>(), spec -> spec.post("/v1/passwordless/init"));
   }
 
+  public static Response v2PasswordlessInit(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/passwordless/init"));
+  }
+
+  public static Response v2PasswordlessComplete(String tenantId, Map<String, Object> body) {
+    Map<String, String> headers = new HashMap<>();
+    if (tenantId != null) {
+      headers.put(HEADER_TENANT_ID, tenantId);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/passwordless/complete"));
+  }
+
   // Scope Config API methods
   public static Response createScope(String tenantId, Map<String, Object> body) {
     Map<String, String> headers = new HashMap<>();
@@ -662,5 +680,85 @@ public class ApplicationIoUtils {
           }
           return spec.post("/v2/logout");
         });
+  }
+
+  public static Response v2MfaSignIn(
+      String tenantId,
+      String factor,
+      String username,
+      String phoneNumber,
+      String email,
+      String password,
+      String pin,
+      String refreshToken,
+      List<String> scopes,
+      String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("factor", factor);
+    body.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    body.put(BODY_PARAM_CLIENT_ID, clientId);
+    if (username != null) {
+      body.put(BODY_PARAM_USERNAME, username);
+    }
+    if (phoneNumber != null) {
+      body.put(BODY_PARAM_PHONE_NUMBER_V2, phoneNumber);
+    }
+    if (email != null) {
+      body.put(BODY_PARAM_EMAIL, email);
+    }
+    if (password != null) {
+      body.put(BODY_PARAM_PASSWORD, password);
+    }
+    if (pin != null) {
+      body.put(BODY_PARAM_PIN, pin);
+    }
+    if (scopes != null) {
+      body.put(BODY_PARAM_SCOPES, scopes);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/mfa/signin"));
+  }
+
+  public static Response v2MfaEnroll(
+      String tenantId,
+      String factor,
+      String username,
+      String phoneNumber,
+      String email,
+      String password,
+      String pin,
+      String refreshToken,
+      List<String> scopes,
+      String clientId) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HEADER_TENANT_ID, tenantId);
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("factor", factor);
+    body.put(OIDC_BODY_PARAM_REFRESH_TOKEN, refreshToken);
+    body.put(BODY_PARAM_CLIENT_ID, clientId);
+    if (username != null) {
+      body.put(BODY_PARAM_USERNAME, username);
+    }
+    if (phoneNumber != null) {
+      body.put(BODY_PARAM_PHONE_NUMBER_V2, phoneNumber);
+    }
+    if (email != null) {
+      body.put(BODY_PARAM_EMAIL, email);
+    }
+    if (password != null) {
+      body.put(BODY_PARAM_PASSWORD, password);
+    }
+    if (pin != null) {
+      body.put(BODY_PARAM_PIN, pin);
+    }
+    if (scopes != null) {
+      body.put(BODY_PARAM_SCOPES, scopes);
+    }
+
+    return execute(body, headers, new HashMap<>(), spec -> spec.post("/v2/mfa/enroll"));
   }
 }

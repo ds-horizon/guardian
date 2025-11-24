@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.constant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,7 +18,7 @@ public class Template {
   private String name;
 
   @JsonProperty("params")
-  private Map<String, String> params;
+  private Map<String, String> params = new HashMap<>();
 
   public boolean validate() {
     return !StringUtils.isBlank(this.name);
