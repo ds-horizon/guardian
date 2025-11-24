@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__({@Inject}))
@@ -18,6 +19,7 @@ public class PasswordAuth {
   private final UserService userService;
   private final AuthorizationService authorizationService;
   private final UserFlowBlockService userFlowBlockService;
+  private final ClientService clientService;
 
   public Single<Object> signIn(
       V1SignInRequestDto dto, MultivaluedMap<String, String> headers, String tenantId) {
@@ -35,14 +37,17 @@ public class PasswordAuth {
                 tenantId))
         .flatMap(
             user ->
-                authorizationService.generate(
-                    user,
-                    dto.getResponseType(),
-                    "",
-                    List.of(AuthMethod.PASSWORD),
-                    dto.getMetaInfo(),
-                    null,
-                    tenantId));
+                resolveClientId(null, tenantId)
+                    .flatMap(
+                        clientId ->
+                            authorizationService.generate(
+                                user,
+                                dto.getResponseType(),
+                                "",
+                                List.of(AuthMethod.PASSWORD),
+                                dto.getMetaInfo(),
+                                clientId,
+                                tenantId)));
   }
 
   public Single<Object> signUp(
@@ -60,13 +65,23 @@ public class PasswordAuth {
                 tenantId))
         .flatMap(
             user ->
-                authorizationService.generate(
-                    user,
-                    dto.getResponseType(),
-                    "",
-                    List.of(AuthMethod.PASSWORD),
-                    dto.getMetaInfo(),
-                    null,
-                    tenantId));
+                resolveClientId(null, tenantId)
+                    .flatMap(
+                        clientId ->
+                            authorizationService.generate(
+                                user,
+                                dto.getResponseType(),
+                                "",
+                                List.of(AuthMethod.PASSWORD),
+                                dto.getMetaInfo(),
+                                clientId,
+                                tenantId)));
+  }
+
+  private Single<String> resolveClientId(String clientId, String tenantId) {
+    if (StringUtils.isBlank(clientId)) {
+      return clientService.getDefaultClientId(tenantId);
+    }
+    return Single.just(clientId);
   }
 }
