@@ -32,7 +32,10 @@ public class ConfigFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) {
     // Todo: create a filter annotation instead of filtering out routes here, @Config
     String path = requestContext.getUriInfo().getPath();
-    if (path.equalsIgnoreCase("/healthcheck") || path.equalsIgnoreCase("/v1/keys/generate")) {
+    // Skip tenant validation for OPTIONS (CORS preflight) and excluded paths
+    if (requestContext.getMethod().equals("OPTIONS")
+        || path.equalsIgnoreCase("/healthcheck")
+        || path.equalsIgnoreCase("/v1/keys/generate")) {
       return;
     }
 

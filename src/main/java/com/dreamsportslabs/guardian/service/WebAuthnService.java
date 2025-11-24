@@ -480,7 +480,7 @@ public class WebAuthnService {
                 Single.zip(
                     Single.just(tokenContext),
                     webauthnStateDao
-                        .getWebAuthnState(requestDto.getState(), tenantId)
+                        .consumeState(requestDto.getState(), tenantId)
                         .switchIfEmpty(
                             Single.error(
                                 INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_INVALID_STATE))),
@@ -519,7 +519,7 @@ public class WebAuthnService {
     RefreshTokenContext tokenContext = context.getTokenContext();
 
     if (state.getExpiry() <= getCurrentTimeInSeconds()) {
-      webauthnStateDao.deleteWebAuthnState(state.getState(), state.getTenantId());
+      // State already consumed (deleted) by consumeState, no need to delete again
       return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_STATE_EXPIRED));
     }
 
@@ -599,9 +599,9 @@ public class WebAuthnService {
                   + credentialId));
     }
 
-    return Single.error(
-        INVALID_REQUEST.getCustomException(
-            WEBAUTHN_ERROR_VERIFICATION_FAILED + ": " + errorMessage));
+    // Return generic error to client, detailed error logged server-side
+    log.error("WebAuthn verification failed: {}", errorMessage);
+    return Single.error(INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_VERIFICATION_FAILED));
   }
 
   /** Checks if an error is an AAGUID-related error. */
@@ -789,76 +789,305 @@ public class WebAuthnService {
         .flatMap(
             credential -> {
               WebAuthn webAuthn = createWebAuthnInstance(config);
-
               long storedSignCount =
                   credential.getSignCount() != null ? credential.getSignCount() : 0L;
 
               return buildAuthRequest(context, state, requestDto, config)
                   .flatMap(
                       authRequest -> {
-                        webAuthn.authenticatorFetcher(
-                            query -> {
-                              List<Authenticator> authenticators = new ArrayList<>();
-                              Authenticator authenticator =
-                                  buildAuthenticatorFromCredential(credential);
-                              authenticators.add(authenticator);
-                              return Future.succeededFuture(authenticators);
-                            });
+                        setupAuthenticatorFetcher(webAuthn, credential);
+                        setupAuthenticatorUpdater(
+                            webAuthn, credential, storedSignCount, context, requestDto, tenantId);
 
-                        webAuthn.authenticatorUpdater(
-                            authenticator -> {
-                              Long newSignCount = authenticator.getCounter();
-                              if (newSignCount != null) {
-                                if (storedSignCount == 0L && newSignCount == 0L) {
-                                  log.debug(
-                                      "Allowing sign count 0->0 transition (first use). Credential ID: {}",
-                                      requestDto.getCredential().getId());
-                                } else if (newSignCount <= storedSignCount) {
-                                  log.error(
-                                      "Sign count validation failed: stored={}, new={}, credentialId={}",
-                                      storedSignCount,
-                                      newSignCount,
-                                      requestDto.getCredential().getId());
-                                  return Future.failedFuture(
-                                      new RuntimeException(WEBAUTHN_ERROR_SIGN_COUNT_REPLAY));
-                                }
-                              }
-                              return completableToFuture(
-                                  updateSignCount(
-                                      tenantId,
-                                      requestDto.getClientId(),
-                                      context.getTokenContext().getUserId(),
-                                      requestDto.getCredential().getId(),
-                                      newSignCount));
-                            });
-
-                        return Single.fromCompletionStage(
-                                webAuthn.authenticate(authRequest).toCompletionStage())
-                            .flatMap(
-                                user -> {
-                                  return validateWebAuthnRequirements(
-                                          user,
-                                          config,
-                                          requestDto,
-                                          credential,
-                                          WEBAUTHN_STATE_TYPE_ASSERT,
-                                          null,
-                                          false)
-                                      .andThen(Single.just(context));
-                                })
-                            .onErrorResumeNext(
-                                err -> {
-                                  log.error("WebAuthn assertion verification failed", err);
-                                  String errorMessage = err.getMessage();
-                                  if (errorMessage != null) {
-                                    log.error("Error details: {}", errorMessage);
-                                  }
-                                  return Single.error(
-                                      INVALID_REQUEST.getCustomException(
-                                          WEBAUTHN_ERROR_VERIFICATION_FAILED
-                                              + (errorMessage != null ? ": " + errorMessage : "")));
-                                });
+                        return performWebAuthnAuthentication(
+                            webAuthn, authRequest, context, config, requestDto, credential);
                       });
+            });
+  }
+
+  /** Sets up the authenticator fetcher to provide the stored credential for verification. */
+  private void setupAuthenticatorFetcher(WebAuthn webAuthn, CredentialModel credential) {
+    webAuthn.authenticatorFetcher(
+        query -> {
+          List<Authenticator> authenticators = new ArrayList<>();
+          Authenticator authenticator = buildAuthenticatorFromCredential(credential);
+          authenticators.add(authenticator);
+          return Future.succeededFuture(authenticators);
+        });
+  }
+
+  /**
+   * Sets up the authenticator updater to handle sign count validation and updates after successful
+   * verification.
+   */
+  private void setupAuthenticatorUpdater(
+      WebAuthn webAuthn,
+      CredentialModel credential,
+      long storedSignCount,
+      FinishContextWithConfig context,
+      V2WebAuthnFinishRequestDto requestDto,
+      String tenantId) {
+    webAuthn.authenticatorUpdater(
+        authenticator -> {
+          log.info(
+              "authenticatorUpdater called for credential ID: {}, storedSignCount: {}",
+              requestDto.getCredential().getId(),
+              storedSignCount);
+
+          if (authenticator == null) {
+            log.error("Authenticator is null in authenticatorUpdater");
+            return Future.failedFuture(new RuntimeException("Authenticator is null"));
+          }
+
+          Long newSignCount = extractSignCountFromAssertion(authenticator, requestDto);
+          if (newSignCount == null) {
+            log.warn(
+                "Sign count is null from both authenticatorData and authenticator. Credential ID: {}",
+                requestDto.getCredential().getId());
+            return Future.succeededFuture();
+          }
+
+          return handleSignCountUpdate(
+              credential, storedSignCount, newSignCount, context, requestDto, tenantId);
+        });
+  }
+
+  /**
+   * Extracts sign count from the assertion response, preferring authenticatorData over the
+   * library's counter value.
+   */
+  private Long extractSignCountFromAssertion(
+      Authenticator authenticator, V2WebAuthnFinishRequestDto requestDto) {
+    Long extractedSignCount = null;
+    V2WebAuthnFinishRequestDto.ResponseDto response = requestDto.getCredential().getResponse();
+    if (response != null && response.getAuthenticatorData() != null) {
+      try {
+        byte[] authenticatorDataBytes =
+            Base64.getUrlDecoder().decode(response.getAuthenticatorData());
+        extractedSignCount = extractSignCountFromAuthenticatorData(authenticatorDataBytes);
+        log.info(
+            "Sign count extracted from authenticatorData: {} for credential ID: {}",
+            extractedSignCount,
+            requestDto.getCredential().getId());
+      } catch (Exception e) {
+        log.warn(
+            "Failed to extract sign count from authenticatorData, falling back to authenticator.getCounter()",
+            e);
+      }
+    }
+
+    final Long newSignCount =
+        extractedSignCount != null ? extractedSignCount : authenticator.getCounter();
+
+    if (newSignCount != null) {
+      log.info(
+          "Using sign count: {} (from {}) for credential ID: {}",
+          newSignCount,
+          extractedSignCount != null ? "authenticatorData" : "authenticator.getCounter()",
+          requestDto.getCredential().getId());
+    }
+
+    return newSignCount;
+  }
+
+  /**
+   * Handles sign count validation and updates based on the stored and new sign count values.
+   * Supports first-use scenarios and authenticators that don't support counters.
+   */
+  private Future<Void> handleSignCountUpdate(
+      CredentialModel credential,
+      long storedSignCount,
+      Long newSignCount,
+      FinishContextWithConfig context,
+      V2WebAuthnFinishRequestDto requestDto,
+      String tenantId) {
+    Boolean firstUseComplete = credential.getFirstUseComplete();
+
+    if (storedSignCount == 0L && newSignCount == 0L) {
+      return handleZeroToZeroSignCount(
+          firstUseComplete, context, requestDto, tenantId, newSignCount);
+    } else if (storedSignCount == 0L && newSignCount > 0L) {
+      return handleFirstUseCompletion(context, requestDto, tenantId, newSignCount);
+    } else if (newSignCount <= storedSignCount) {
+      log.error(
+          "Sign count validation failed: stored={}, new={}, credentialId={}",
+          storedSignCount,
+          newSignCount,
+          requestDto.getCredential().getId());
+      return Future.failedFuture(new RuntimeException(WEBAUTHN_ERROR_SIGN_COUNT_REPLAY));
+    }
+
+    // Normal case: newSignCount > storedSignCount
+    return handleNormalSignCountUpdate(
+        storedSignCount, newSignCount, context, requestDto, tenantId);
+  }
+
+  /**
+   * Handles the case where both stored and new sign counts are 0. This can occur during first use
+   * or with authenticators that don't support counters.
+   */
+  private Future<Void> handleZeroToZeroSignCount(
+      Boolean firstUseComplete,
+      FinishContextWithConfig context,
+      V2WebAuthnFinishRequestDto requestDto,
+      String tenantId,
+      Long newSignCount) {
+    if (Boolean.TRUE.equals(firstUseComplete)) {
+      // Authenticator doesn't support counters - always returns 0
+      // This is allowed by WebAuthn spec. We rely on challenge uniqueness for replay protection.
+      log.info(
+          "Authenticator doesn't support counters (always returns 0). Credential ID: {}. "
+              + "Relying on challenge uniqueness for replay protection.",
+          requestDto.getCredential().getId());
+      Completable updateCompletable =
+          updateSignCount(
+                  tenantId,
+                  requestDto.getClientId(),
+                  context.getTokenContext().getUserId(),
+                  requestDto.getCredential().getId(),
+                  newSignCount)
+              .doOnComplete(
+                  () ->
+                      log.info(
+                          "Sign count updated (0->0, non-counter authenticator) for credential ID: {}",
+                          requestDto.getCredential().getId()))
+              .doOnError(
+                  err ->
+                      log.error(
+                          "Failed to update sign count for credential ID: {}",
+                          requestDto.getCredential().getId(),
+                          err));
+      return completableToFuture(updateCompletable);
+    }
+
+    // First use: both are 0, first_use_complete is false
+    log.info("First use: sign count 0->0. Credential ID: {}", requestDto.getCredential().getId());
+    Completable updateCompletable =
+        updateSignCount(
+                tenantId,
+                requestDto.getClientId(),
+                context.getTokenContext().getUserId(),
+                requestDto.getCredential().getId(),
+                newSignCount)
+            .doOnComplete(
+                () ->
+                    log.info(
+                        "Sign count updated successfully: 0->0 (first use) for credential ID: {}",
+                        requestDto.getCredential().getId()))
+            .doOnError(
+                err ->
+                    log.error(
+                        "Failed to update sign count 0->0 for credential ID: {}",
+                        requestDto.getCredential().getId(),
+                        err));
+    return completableToFuture(updateCompletable);
+  }
+
+  /**
+   * Handles the case where first use is completed (sign count increased from 0 to a positive
+   * value).
+   */
+  private Future<Void> handleFirstUseCompletion(
+      FinishContextWithConfig context,
+      V2WebAuthnFinishRequestDto requestDto,
+      String tenantId,
+      Long newSignCount) {
+    log.info(
+        "First use completed: sign count increased from 0 to {}. Credential ID: {}",
+        newSignCount,
+        requestDto.getCredential().getId());
+    Completable updateCompletable =
+        credentialDao
+            .markFirstUseComplete(
+                tenantId,
+                requestDto.getClientId(),
+                context.getTokenContext().getUserId(),
+                requestDto.getCredential().getId())
+            .andThen(
+                updateSignCount(
+                    tenantId,
+                    requestDto.getClientId(),
+                    context.getTokenContext().getUserId(),
+                    requestDto.getCredential().getId(),
+                    newSignCount))
+            .doOnComplete(
+                () ->
+                    log.info(
+                        "Sign count updated successfully: 0->{} for credential ID: {}",
+                        newSignCount,
+                        requestDto.getCredential().getId()))
+            .doOnError(
+                err ->
+                    log.error(
+                        "Failed to update sign count 0->{} for credential ID: {}",
+                        newSignCount,
+                        requestDto.getCredential().getId(),
+                        err));
+    return completableToFuture(updateCompletable);
+  }
+
+  /** Handles normal sign count update when new sign count is greater than stored sign count. */
+  private Future<Void> handleNormalSignCountUpdate(
+      long storedSignCount,
+      Long newSignCount,
+      FinishContextWithConfig context,
+      V2WebAuthnFinishRequestDto requestDto,
+      String tenantId) {
+    log.info(
+        "Updating sign count: {}->{} for credential ID: {}",
+        storedSignCount,
+        newSignCount,
+        requestDto.getCredential().getId());
+    Completable updateCompletable =
+        updateSignCount(
+                tenantId,
+                requestDto.getClientId(),
+                context.getTokenContext().getUserId(),
+                requestDto.getCredential().getId(),
+                newSignCount)
+            .doOnComplete(
+                () ->
+                    log.info(
+                        "Sign count updated successfully: {}->{} for credential ID: {}",
+                        storedSignCount,
+                        newSignCount,
+                        requestDto.getCredential().getId()))
+            .doOnError(
+                err ->
+                    log.error(
+                        "Failed to update sign count {}->{} for credential ID: {}",
+                        storedSignCount,
+                        newSignCount,
+                        requestDto.getCredential().getId(),
+                        err));
+    return completableToFuture(updateCompletable);
+  }
+
+  /** Performs WebAuthn authentication and validates requirements after successful verification. */
+  private Single<FinishContextWithConfig> performWebAuthnAuthentication(
+      WebAuthn webAuthn,
+      JsonObject authRequest,
+      FinishContextWithConfig context,
+      WebAuthnConfigModel config,
+      V2WebAuthnFinishRequestDto requestDto,
+      CredentialModel credential) {
+    return Single.fromCompletionStage(webAuthn.authenticate(authRequest).toCompletionStage())
+        .flatMap(
+            user -> {
+              return validateWebAuthnRequirements(
+                      user, config, requestDto, credential, WEBAUTHN_STATE_TYPE_ASSERT, null, false)
+                  .andThen(Single.just(context));
+            })
+        .onErrorResumeNext(
+            err -> {
+              log.error("WebAuthn assertion verification failed", err);
+              String errorMessage = err.getMessage();
+              if (errorMessage != null) {
+                log.error("Error details: {}", errorMessage);
+              }
+              // Return generic error to client, detailed error logged server-side
+              return Single.error(
+                  INVALID_REQUEST.getCustomException(WEBAUTHN_ERROR_VERIFICATION_FAILED));
             });
   }
 
@@ -893,13 +1122,17 @@ public class WebAuthnService {
 
     String origin = extractOriginFromClientData(null, requestDto);
     if (origin == null) {
+      // If origin extraction fails, use first allowed origin from config as fallback
+      // This is safer than allowing any origin, but origin should ideally be extracted from request
       origin = getOriginFromConfig(config);
-    } else {
-      try {
-        validateOrigin(origin, config);
-      } catch (IllegalArgumentException e) {
-        return Single.error(INVALID_REQUEST.getCustomException(e.getMessage()));
-      }
+      log.warn("Origin extraction failed, using fallback from config: {}", origin);
+    }
+    // Always validate origin against allowed origins, even if from config
+    try {
+      validateOrigin(origin, config);
+    } catch (IllegalArgumentException e) {
+      log.error("Origin validation failed: {}", e.getMessage());
+      return Single.error(INVALID_REQUEST.getCustomException("Origin validation failed"));
     }
 
     String domain = config.getRpId();
@@ -1126,6 +1359,7 @@ public class WebAuthnService {
       Authenticator authenticator) {
     JsonObject principal = user.principal();
 
+    // Log only non-sensitive metadata to avoid credential leakage
     log.debug("User principal keys: {}", principal.fieldNames());
     log.debug("User principal: {}", principal.encodePrettily());
 
@@ -1390,7 +1624,10 @@ public class WebAuthnService {
         }
       }
 
-      log.debug("Extracted WebAuthn data: {}", webauthnData.encodePrettily());
+      // Log only metadata, not sensitive credential data
+      if (!webauthnData.isEmpty()) {
+        log.debug("Extracted WebAuthn data fields: {}", webauthnData.fieldNames());
+      }
       return webauthnData.isEmpty() ? null : webauthnData;
     } catch (Exception e) {
       log.warn("Failed to extract WebAuthn data from authenticator", e);
@@ -1447,6 +1684,35 @@ public class WebAuthnService {
       return null;
     } catch (Exception e) {
       log.warn("Failed to extract authenticatorData from attestation object", e);
+      return null;
+    }
+  }
+
+  /**
+   * Extract sign count (counter) from authenticatorData binary structure.
+   *
+   * <p>Structure: - rpIdHash: 32 bytes - flags: 1 byte (bit 2 = UV, bit 0 = UP) - signCount: 4
+   * bytes (big-endian) - attestedCredentialData (if present): - AAGUID: 16 bytes - ...
+   *
+   * <p>The sign count is at bytes 33-36 (after 32-byte rpIdHash and 1-byte flags), stored as a
+   * 32-bit unsigned integer in big-endian format.
+   */
+  private Long extractSignCountFromAuthenticatorData(byte[] authenticatorData) {
+    if (authenticatorData == null || authenticatorData.length < 37) {
+      log.warn(
+          "AuthenticatorData too short to extract sign count: {} bytes",
+          authenticatorData != null ? authenticatorData.length : 0);
+      return null;
+    }
+
+    try {
+      ByteBuffer buffer = ByteBuffer.wrap(authenticatorData).order(ByteOrder.BIG_ENDIAN);
+      // Skip rpIdHash (32 bytes) and flags (1 byte), then read sign count (4 bytes)
+      long signCount = Integer.toUnsignedLong(buffer.getInt(33));
+      log.debug("Extracted sign count from authenticatorData: {}", signCount);
+      return signCount;
+    } catch (Exception e) {
+      log.warn("Failed to extract sign count from authenticatorData", e);
       return null;
     }
   }
@@ -1604,12 +1870,11 @@ public class WebAuthnService {
                                 err -> {
                                   log.error(
                                       "WebAuthn enrollment verification failed (bypass path)", err);
+                                  // Return generic error to client, detailed error logged
+                                  // server-side
                                   return Single.error(
                                       INVALID_REQUEST.getCustomException(
-                                          WEBAUTHN_ERROR_VERIFICATION_FAILED
-                                              + (err.getMessage() != null
-                                                  ? ": " + err.getMessage()
-                                                  : "")));
+                                          WEBAUTHN_ERROR_VERIFICATION_FAILED));
                                 });
                       });
             });

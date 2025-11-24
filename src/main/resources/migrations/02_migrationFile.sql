@@ -17,10 +17,13 @@ CREATE TABLE credentials (
   aaguid            VARCHAR(128)    NULL,
   revoked_at        TIMESTAMP       NULL DEFAULT NULL,
   is_active         TINYINT(1) GENERATED ALWAYS AS (revoked_at IS NULL) STORED,
+  first_use_complete BOOLEAN        NOT NULL DEFAULT FALSE,
   created_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_user_credential (tenant_id, client_id, user_id, credential_id)
+  UNIQUE KEY uq_user_credential (tenant_id, client_id, user_id, credential_id),
+  INDEX idx_credentials_lookup (tenant_id, client_id, user_id, is_active),
+  INDEX idx_credentials_credential_id (tenant_id, client_id, user_id, credential_id, is_active)
 );
 
 -- Add columns to capture the complete authentication context

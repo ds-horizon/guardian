@@ -28,6 +28,28 @@ public class WebAuthnStateDao {
         .map(response -> objectMapper.readValue(response.toString(), WebAuthnStateModel.class));
   }
 
+  /**
+   * Atomically consumes (gets and deletes) a WebAuthn state to prevent race conditions. This
+   * ensures that a state can only be used once, even under concurrent requests.
+   */
+  @SneakyThrows
+  public Maybe<WebAuthnStateModel> consumeState(String state, String tenantId) {
+    String cacheKey = getCacheKey(tenantId, state);
+    // Use Lua script for atomic GET and DEL operation
+    String luaScript =
+        "local val = redis.call('GET', KEYS[1]); "
+            + "if val then redis.call('DEL', KEYS[1]); return val; else return nil; end";
+    return redisClient
+        .rxSend(Request.cmd(Command.EVAL).arg(luaScript).arg("1").arg(cacheKey))
+        .filter(
+            response ->
+                response != null
+                    && response.toString() != null
+                    && !response.toString().isEmpty()
+                    && !response.toString().equals("nil"))
+        .map(response -> objectMapper.readValue(response.toString(), WebAuthnStateModel.class));
+  }
+
   @SneakyThrows
   public Single<WebAuthnStateModel> setWebAuthnState(WebAuthnStateModel model, String tenantId) {
     return redisClient

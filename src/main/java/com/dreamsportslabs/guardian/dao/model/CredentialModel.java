@@ -19,4 +19,5 @@ public class CredentialModel {
   private Long signCount;
   private String aaguid;
   private Boolean isActive;
+  private Boolean firstUseComplete;
 }

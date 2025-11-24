@@ -2,6 +2,7 @@ package com.dreamsportslabs.guardian.dao;
 
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.GET_ACTIVE_CREDENTIALS_BY_USER_AND_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.GET_CREDENTIAL_BY_ID;
+import static com.dreamsportslabs.guardian.dao.query.CredentialSql.MARK_FIRST_USE_COMPLETE;
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.REVOKE_CREDENTIAL;
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.SAVE_CREDENTIAL;
 import static com.dreamsportslabs.guardian.dao.query.CredentialSql.UPDATE_SIGN_COUNT;
@@ -54,6 +55,8 @@ public class CredentialDao {
     params.addInteger(credential.getAlg());
     params.addLong(credential.getSignCount() != null ? credential.getSignCount() : 0L);
     params.addString(credential.getAaguid());
+    params.addBoolean(
+        credential.getFirstUseComplete() != null ? credential.getFirstUseComplete() : false);
 
     return mysqlClient
         .getWriterPool()
@@ -83,6 +86,17 @@ public class CredentialDao {
         .rxExecute(Tuple.of(signCount, tenantId, clientId, userId, credentialId))
         .doOnSuccess(v -> log.info("Sign count updated successfully"))
         .doOnError(err -> log.error("Error updating sign count", err))
+        .ignoreElement();
+  }
+
+  public Completable markFirstUseComplete(
+      String tenantId, String clientId, String userId, String credentialId) {
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(MARK_FIRST_USE_COMPLETE)
+        .rxExecute(Tuple.of(tenantId, clientId, userId, credentialId))
+        .doOnSuccess(v -> log.info("First use marked as complete"))
+        .doOnError(err -> log.error("Error marking first use complete", err))
         .ignoreElement();
   }
 }
