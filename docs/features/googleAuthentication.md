@@ -129,9 +129,24 @@ INSERT INTO google_config ( tenant_id, client_id, client_secret ) VALUES ( 'tena
 
 **Request Body**:
 
-```text
-{ "id_token": "eyJhbGciOiJSUzI1NiIs...", "response_type": "token", "client_id": "client1", "flow": "signinup", "scopes": ["default"], "meta_info": { "ip": "127.0.0.1", "location": "localhost", "device_name": "Chrome Browser", "source": "web" } }
+```json
+{
+  "id_token": "eyJhbGciOiJSUzI1NiIs...",
+  "response_type": "token",
+  "client_id": "client1",
+  "flow": "signinup",
+  "scopes": [
+    "default"
+  ],
+  "meta_info": {
+    "ip": "127.0.0.1",
+    "location": "localhost",
+    "device_name": "Chrome Browser",
+    "source": "web"
+  }
+}
 ```
+
 **Request Parameters**:
 
 | Parameter | Type | Required | Description |
@@ -144,8 +159,16 @@ INSERT INTO google_config ( tenant_id, client_id, client_secret ) VALUES ( 'tena
 
 **Response**: `200 OK`
 
-```text
-{ "access_token": "eyJhbGci...", "refresh_token": "xyz789...", "id_token": "eyJhbGci...", "sso_token": "eyJhbGci...", "token_type": "Bearer", "expires_in": 3600, "is_new_user": false }
+```json
+{
+  "access_token": "eyJhbGci...",
+  "refresh_token": "xyz789...",
+  "id_token": "eyJhbGci...",
+  "sso_token": "eyJhbGci...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "is_new_user": false
+}
 ```
 **Response Parameters**:
 
