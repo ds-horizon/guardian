@@ -153,4 +153,26 @@ public class UserService {
               return Utils.convertKeysToSnakeCase(resBody);
             });
   }
+
+  public Completable updateUser(
+      String userId, UserDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    UserConfig userConfig = registry.get(tenantId, TenantConfig.class).getUserConfig();
+    JsonObject requestBody = JsonObject.mapFrom(dto);
+    requestBody.put(USERID, userId);
+    return webClient
+        .post(userConfig.getPort(), userConfig.getHost(), userConfig.getUpdateUserPath())
+        .ssl(userConfig.getIsSslEnabled())
+        .putHeaders(Utils.getForwardingHeaders(headers))
+        .rxSendJson(requestBody)
+        .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
+        .map(
+            res -> {
+              JsonObject resBody = res.bodyAsJsonObject();
+              if (res.statusCode() / 100 != 2) {
+                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
+              }
+              return res;
+            })
+        .ignoreElement();
+  }
 }

@@ -67,4 +67,9 @@ public class V2SignInUpRequestDto {
     if (metaInfo == null) this.metaInfo = new MetaInfo();
     else this.metaInfo = metaInfo;
   }
+
+  public void setScopes(List<String> scopes) {
+    if (scopes == null) this.scopes = new ArrayList<>();
+    else this.scopes = scopes;
+  }
 }

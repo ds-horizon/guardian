@@ -58,4 +58,11 @@ public class RefreshTokenSql {
          SET is_active = false
          WHERE tenant_id = ? AND client_id = ? AND user_id = ?
       """;
+
+  public static final String UPDATE_REFRESH_TOKEN_AUTH_METHOD =
+      """
+         UPDATE refresh_tokens
+         SET auth_method = ?, scope = ?
+         WHERE tenant_id = ? AND client_id = ? AND refresh_token = ?
+      """;
 }
