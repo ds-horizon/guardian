@@ -6,22 +6,6 @@ description: Complete guide for implementing Google authentication using Guardia
 
 Complete guide for implementing Google authentication using Guardian's `/v2/auth/google` endpoint.
 
-## Table of Contents
-
-*   [Overview](#overview)
-
-*   [Prerequisites](#prerequisites)
-
-*   [Configuration](#configuration)
-
-*   [API Endpoint](#api-endpoint)
-
-*   [API Specification](#api-specification)
-
-*   [Frontend Implementation](#frontend-implementation)
-
-*   [Troubleshooting](#troubleshooting)
-
 
 ## Overview
 

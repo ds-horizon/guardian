@@ -73,8 +73,7 @@ export default function ContactSection() {
                     <p className="font-medium">Documentation</p>
                     <p className="text-sm text-muted-foreground">Comprehensive guides and API references</p>
                     <Link
-                      href="https://github.com/ds-horizon/guardian#readme"
-                      target="_blank"
+                      href="/docs/quick-start"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
                     >

@@ -1,116 +1,87 @@
 ---
-title: Quick Start
+title: Getting Started
 description: Get up and running with Guardian in 5 minutes!
 ---
 
-Get up and running with Guardian in 5 minutes!
 
-## Step 1: Install SDK
+### Prerequisites
+
+*   **Docker** ≥ 20.10 ([Download Docker Desktop](https://www.docker.com/products/docker-desktop/ "https://www.docker.com/products/docker-desktop/"))
+
+*   **Docker Compose** ≥ 2.0 (Usually included with Docker Desktop)([Install instructions](https://docs.docker.com/compose/install/))
+
+*   **Maven** ≥ 3.6 ([Download Maven](https://maven.apache.org/download.cgi "https://maven.apache.org/download.cgi"))
+
+*   **Java 17** (JDK) ([Download Java 17](https://www.oracle.com/java/technologies/downloads/#java17 "https://www.oracle.com/java/technologies/downloads/#java17"))
+
+
+### Verify Installations
+
+You can verify the installations by running the following commands in your terminal:
 
 ```bash
-npm install @guardian/sdk
+docker --version
+mvn --version
+java -version
 ```
 
-## Step 2: Initialize
 
-```typescript
-import { Guardian } from '@guardian/sdk';
+**Important**: Ensure that Java 17 is the active version in use. Maven should also be configured to use Java 17 - you can verify this by checking that `mvn --version` shows Java 17 in its output.
 
-const guardian = new Guardian({
-  tenantId: 'your-tenant-id',
-  apiUrl: 'https://guardian-api.example.com'
-});
+### Port Requirements
+
+Additionally, make sure the following ports are free and not in use by other services:
+
+*   `3306` – MySQL
+
+*   `6379` – Redis
+
+*   `8080` – Application server
+
+*   `6000` – Auxiliary services/API
+
+
+These ports are required for the application to run without conflicts.
+
+### Quick Start
+
+1.  **Clone the repository**:
+```bash
+  git clone https://github.com/ds-horizon/guardian.git
+```
+2.  **Start Guardian**:
+
+    **cd guardian**
+```bash
+  ./quick-start.sh
+```
+3.  **Test the setup** with passwordless flow:
+
+    **Initialize passwordless authentication**:
+```bash
+  curl --location 'localhost:8080/v2/passwordless/init' \
+--header 'tenant-id: tenant1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "contacts": [
+        {
+            "channel": "SMS",
+            "identifier": "7878787878"
+        }
+    ],
+    "flow": "SIGNINUP",
+    "response_type": "token",
+    "client_id": "client1"
+}'
 ```
 
-## Step 3: Authenticate
-
-### Option 1: Passwordless (Recommended)
-
-```typescript
-// Send OTP
-const { state } = await guardian.passwordless.init({
-  flow: 'signinup',
-  contacts: [{
-    channel: 'sms',
-    identifier: '+1234567890'
-  }]
-});
-
-// Verify OTP
-const { accessToken } = await guardian.passwordless.complete({
-  state,
-  otp: '123456'
-});
+  **Complete authentication** (using mock OTP for development):
+```bash
+  curl --location 'localhost:8080/v2/passwordless/complete' \
+--header 'tenant-id: tenant1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "state": "<state-from-init-response>",
+    "otp": "999999"
+}'
 ```
-
-### Option 2: Password-based
-
-```typescript
-// Sign up
-const { accessToken } = await guardian.signup({
-  username: 'user@example.com',
-  password: 'SecurePass123!'
-});
-
-// Sign in
-const { accessToken } = await guardian.signin({
-  username: 'user@example.com',
-  password: 'SecurePass123!'
-});
-```
-
-### Option 3: Social Login
-
-```typescript
-// Google
-const { accessToken } = await guardian.auth.google({
-  idToken: googleIdToken
-});
-
-// Facebook
-const { accessToken } = await guardian.auth.facebook({
-  accessToken: fbAccessToken
-});
-```
-
-## Step 4: Use Access Token
-
-```typescript
-// Make authenticated API call
-fetch('https://your-api.com/protected', {
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
-  }
-});
-```
-
-## Step 5: Refresh Token
-
-```typescript
-// Before token expires
-const { accessToken: newToken } = await guardian.refreshToken({
-  refresh_token: refreshToken
-});
-```
-
-## Next Steps
-
-- [Full Authentication Guide](/authentication/)
-- [Configuration Options](/configuration/)
-- [Security Best Practices](/security/)
-
-## Example App
-
-Check out our example applications:
-
-- [React Example](https://github.com/guardian/examples/react)
-- [Next.js Example](https://github.com/guardian/examples/nextjs)
-- [Node.js Backend](https://github.com/guardian/examples/nodejs)
-
-## Get Help
-
-- 📚 [Full Documentation](/getting-started/)
-- 💬 [Community Discord](https://discord.gg/guardian)
-- 🐛 [Report Issues](https://github.com/guardian/issues)
-- 📧 [Email Support](mailto:support@guardian.com)
-

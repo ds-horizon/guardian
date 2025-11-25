@@ -1,12 +1,14 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
   srcDir: './docs',
   integrations: [
+    react(),
     starlight({
-      title: 'Docs',
+      title: 'Guardian Docs',
       description: 'Authentication and Authorization Service Documentation',
       social: [
         {
@@ -20,7 +22,6 @@ export default defineConfig({
           label: 'Introduction',
           items: [
             { label: 'Quick Start', link: '/quick-start/' },
-            { label: 'API Reference', link: '/api-reference/' },
           ],
         },
         {
@@ -28,8 +29,7 @@ export default defineConfig({
           items: [
             { label: 'Configuration', link: '/configuration/configuration' },
             { label: 'User Configuration', link: '/configuration/user-configuration' },
-          
-            { label: 'SMS Configuration', link: 'configuration/sms-configuration' },
+            { label: 'SMS/Email Configuration', link: 'configuration/sms-email-configuration' },
           ],
         },
         {
@@ -41,6 +41,12 @@ export default defineConfig({
               { label: 'Facebook Authentication', link: '/features/facebook-authentication' },
               { label: 'Post Authentication', link: '/features/post-authentication' },
              
+            ],
+          },
+          {
+            label: 'API Reference',
+            items: [
+              { label: 'API Reference', link: '/api-docs/' }
             ],
           },
       ],
@@ -61,7 +67,7 @@ export default defineConfig({
     }),
   ],
   output: 'static',
-  outDir: './docs-dist',
+  outDir: './dist',
   base: '/docs',
 });
 

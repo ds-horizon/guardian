@@ -6,23 +6,6 @@ description: Complete guide for implementing Facebook authentication using Guard
 
 Complete guide for implementing Facebook authentication using Guardian's `/v2/auth/fb` endpoint.
 
-## Table of Contents
-
-
-*   [Overview](#overview)
-
-*   [Prerequisites](#prerequisites)
-
-*   [Configuration](#configuration)
-
-*   [API Endpoint](#api-endpoint)
-
-*   [API Specification](#api-specification)
-
-*   [Frontend Implementation](#frontend-implementation)
-
-*   [Troubleshooting](#troubleshooting)
-
 
 ## Overview
 

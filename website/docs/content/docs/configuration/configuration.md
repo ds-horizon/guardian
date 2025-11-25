@@ -7,34 +7,40 @@ This guide covers all configuration options available in Guardian.
 There are two types of configurations-
 
 1. Guardian application configuration, that includes configuration like database endpoints, server configuration etc,
-   configs that are required to start guardian.
+   configs that dictate the behaviour of guardian.
 2. Tenant Configurations that dictate behaviour of guardian for a tenant.
 
 ## Guardian Configuration
 
 Guardian application can be configured via environment variables
 
-| Configuration Name             | Environment Variable                    | Type    | Description                                            |
-|--------------------------------|-----------------------------------------|---------|--------------------------------------------------------|
-| mysql_writer_host              | GUARDIAN_MYSQL_WRITER_HOST              | String  | JDBC connection URL for the database writer            |
-| mysql_reader_host              | GUARDIAN_MYSQL_READER_HOST              | String  | JDBC connection URL for read replica                   |
-| mysql_database                 | GUARDIAN_MYSQL_DATABASE                 | String  | Database name                                          |
-| mysql_user                     | GUARDIAN_MYSQL_USER                     | String  | Username for database authentication                   |
-| mysql_password                 | GUARDIAN_MYSQL_PASSWORD                 | String  | Password for database authentication                   |
-| mysql_writer_max_pool_size     | GUARDIAN_MYSQL_WRITER_MAX_POOL_SIZE     | Integer | Maximum database connection pool size for writer       |
-| mysql_reader_max_pool_size     | GUARDIAN_MYSQL_READER_MAX_POOL_SIZE     | Integer | Maximum database connection pool size for reader       |
-| port                           | GUARDIAN_PORT                           | Integer | Port number for the Guardian server (default: 8080)    |
-| redis_host                     | GUARDIAN_REDIS_HOST                     | String  | Hostname for Redis cache server                        |
-| redis_port                     | GUARDIAN_REDIS_PORT                     | Integer | Port number for Redis server (default: 6379)           |
-| redis_type                     | GUARDIAN_REDIS_TYPE                     | String  | Type of redis setup, valid values: STANDALONE, ClUSTER |
-| http_connect_timeout           | GUARDIAN_HTTP_CONNECT_TIMEOUT           | Integer | Connection timeout value for external services in ms   |
-| http_read_timeout              | GUARDIAN_HTTP_READ_TIMEOUT              | Integer | Read timeout value for external services in ms         |
-| http_write_timeout             | GUARDIAN_HTTP_WRITE_TIMEOUT             | Integer | Write timeout value for external services in ms        |
-| tenant_config_refresh_interval | GUARDIAN_TENANT_CONFIG_REFRESH_INTERVAL | Integer | Expiry time for tenant config in seconds               |
-| http_client_keep_alive         | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE         | Boolean | Enable HTTP keep-alive for client connections          |
-| http_client_keep_alive_timeout | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE_TIMEOUT | Integer | Keep-alive timeout for HTTP client connections in ms (must be > 1000) |
-| http_client_idle_timeout       | GUARDIAN_HTTP_CLIENT_IDLE_TIMEOUT       | Integer | Idle timeout for HTTP client connections in ms         |
-| http_client_connection_pool_max_size | GUARDIAN_HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE | Integer | Maximum size of HTTP client connection pool            |
+## Guardian Configuration
+
+Guardian application can be configured via environment variables
+
+| Configuration Name             | Environment Variable                    | Type    | Default Value | Description                                            |
+|--------------------------------|-----------------------------------------|---------|---------------|--------------------------------------------------------|
+| mysql_writer_host              | GUARDIAN_MYSQL_WRITER_HOST              | String  | localhost     | JDBC connection URL for the database writer            |
+| mysql_reader_host              | GUARDIAN_MYSQL_READER_HOST              | String  | localhost     | JDBC connection URL for read replica                   |
+| mysql_database                 | GUARDIAN_MYSQL_DATABASE                 | String  | guardian      | Database name                                          |
+| mysql_user                     | GUARDIAN_MYSQL_USER                     | String  | root          | Username for database authentication                   |
+| mysql_password                 | GUARDIAN_MYSQL_PASSWORD                 | String  | root          | Password for database authentication                   |
+| mysql_writer_max_pool_size     | GUARDIAN_MYSQL_WRITER_MAX_POOL_SIZE     | Integer | 10            | Maximum database connection pool size for writer       |
+| mysql_reader_max_pool_size     | GUARDIAN_MYSQL_READER_MAX_POOL_SIZE     | Integer | 40            | Maximum database connection pool size for reader       |
+| port                           | GUARDIAN_PORT                           | Integer | 8080          | Port number for the Guardian server                    |
+| redis_host                     | GUARDIAN_REDIS_HOST                     | String  | localhost     | Hostname for Redis cache server                        |
+| redis_port                     | GUARDIAN_REDIS_PORT                     | Integer | 6379          | Port number for Redis server                           |
+| redis_type                     | GUARDIAN_REDIS_TYPE                     | String  | STANDALONE    | Type of redis setup, valid values: STANDALONE, ClUSTER |
+| http_connect_timeout           | GUARDIAN_HTTP_CONNECT_TIMEOUT           | Integer | 1000          | Connection timeout value for external services in ms   |
+| http_read_timeout              | GUARDIAN_HTTP_READ_TIMEOUT              | Integer | 1000          | Read timeout value for external services in ms         |
+| http_write_timeout             | GUARDIAN_HTTP_WRITE_TIMEOUT             | Integer | 1000          | Write timeout value for external services in ms        |
+| tenant_config_refresh_interval | GUARDIAN_TENANT_CONFIG_REFRESH_INTERVAL | Integer | 10            | Expiry time for tenant config in seconds               |
+| http_client_keep_alive         | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE         | Boolean | true          | Enable HTTP keep-alive for client connections          |
+| http_client_keep_alive_timeout | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE_TIMEOUT | Integer | 8000          | Keep-alive timeo_INTERVAL | Integer | 10            | Expiry time for tenant config in seconds               |
+| http_client_keep_alive         | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE         | Boolean | true          | Enable HTTP keep-alive for client connections          |
+| http_client_keep_alive_timeout | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE_TIMEOUT | Integer | 8000          | Keep-alive timeout for HTTP client connections in ms (must be > 1000) |
+| http_client_idle_timeout       | GUARDIAN_HTTP_CLIENT_IDLE_TIMEOUT       | Integer | 6000          | Idle timeout for HTTP client connections in ms         |
+| http_client_connection_pool_max_size | GUARDIAN_HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE | Integer | 256            | Maximum size of HTTP client connection pool            |
 
 ## Tenant Configuration
 

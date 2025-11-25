@@ -6,33 +6,6 @@ description: Complete guide for managing user sessions after authentication incl
 
 This guide covers everything you need to know about managing user sessions after authentication, including token management and logout functionality.
 
-## Table of Contents
-
-
-*   [Overview](#overview)
-
-*   [Understanding Tokens](#understanding-tokens)
-
-*   [Tokens Issued by Authentication Method](#tokens-issued-by-authentication-method)
-
-*   [Session Management](#session-management)
-
-*   [API Endpoints](#api-endpoints)
-
-*   [Token Refresh](#token-refresh)
-
-*   [Logout](#logout)
-
-*   [Token Revocation](#token-revocation)
-
-*   [Configuration](#configuration)
-
-*   [Examples](#examples)
-
-*   [Best Practices](#best-practices)
-
-*   [Troubleshooting](#troubleshooting)
-
 ## Overview
 
 

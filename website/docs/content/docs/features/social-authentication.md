@@ -6,17 +6,6 @@ description: Guide for implementing social authentication allowing users to sign
 
 Social authentication allows users to sign in using their existing social media accounts, providing a seamless authentication experience without requiring users to create new accounts.
 
-## Table of Contents
-
-* [Overview](#overview)
-* [Supported Providers](#supported-providers)
-* [Quick Start](#quick-start)
-* [Provider-Specific Guides](#provider-specific-guides)
-* [Common Configuration](#common-configuration)
-* [OIDC Provider Connect](#oidc-provider-connect)
-* [Best Practices](#best-practices)
-* [Troubleshooting](#troubleshooting)
-
 ## Overview
 
 Social authentication enables users to authenticate using their existing social media accounts, eliminating the need for separate username/password credentials. Guardian supports multiple social authentication providers with an unified API.
