@@ -167,7 +167,6 @@ Comprehensive documentation is available in the `docs/` directory:
 | --- | --- |
 | 📚 API Reference | Complete REST API documentation |
 | ⚙️ Configuration | Configuration options |
-| 🔌 Integration Guide | Integrate with your application |
 | 🚀 Deployment | Production deployment guide |
 
 ### API Specifications
