@@ -30,7 +30,7 @@ Sends an SMS message with OTP to a phone number.
 
 ### POST {send_email_path} - Send Email
 
-Sends an email message with OTP or other content to an email address.
+Sends an email message with OTP to an email address.
 
 **Request Body:**
 ```json
@@ -56,6 +56,9 @@ Sends an email message with OTP or other content to an email address.
 | templateParams | object | Yes      | Template parameters including OTP and variables |
 
 **Response (200 OK):**
+
+* In case of success, the sms/email service should return 2xx. 
+* Sample response:
 ```json
 {
   "status": "success",
@@ -64,6 +67,8 @@ Sends an email message with OTP or other content to an email address.
 ```
 
 **Response (400 Bad Request):**
+* In case of error, the sms/email service should return a json object
+* sample response:
 ```json
 {
   "error": {
@@ -84,10 +89,8 @@ Sends an email message with OTP or other content to an email address.
 **Important Notes:**
 - Both endpoints must accept POST requests
 - Status code 2xx indicates successful message delivery
-- Any non-2xx status code will be treated as a failure
+- Any non-2xx status code will be treated as an error
 - The `templateParams` object will always include an `otp` field when sending OTP codes
-- For SMS: Phone numbers should be in E.164 format (e.g., +1234567890)
-- For Email: Email addresses should be in standard format (e.g., user@example.com)
 - The `channel` field will be "sms" for SMS service calls and "email" for Email service calls
 
 ## Database Configuration
@@ -118,15 +121,15 @@ INSERT INTO sms_config (
 
 ### SMS Table Schema
 
-| Field           | Type         | Description                            |
-|-----------------|--------------|----------------------------------------|
-| tenant_id       | CHAR(10)     | Your tenant identifier (Primary Key)   |
-| is_ssl_enabled  | BOOLEAN      | Whether SSL is enabled for SMS service |
-| host            | VARCHAR(256) | SMS service host address               |
-| port            | INT          | SMS service port number                |
-| send_sms_path   | VARCHAR(256) | API path for sending SMS               |
-| template_name   | VARCHAR(256) | Name of the SMS template               |
-| template_params | JSON         | Template parameters in JSON format     |
+| Field           | Type         | Description                                |
+|-----------------|--------------|--------------------------------------------|
+| tenant_id       | CHAR(10)     | Your tenant identifier (Primary Key)       |
+| is_ssl_enabled  | BOOLEAN      | Whether SSL is enabled for SMS service     |
+| host            | VARCHAR(256) | SMS service host address                   |
+| port            | INT          | SMS service port number                    |
+| send_sms_path   | VARCHAR(256) | API path for sending SMS                   |
+| template_name   | VARCHAR(256) | Default sms template                       |
+| template_params | JSON         | Default template parameters in JSON format |
 
 ### Email Configuration
 
@@ -154,15 +157,15 @@ INSERT INTO email_config (
 
 ### Email Table Schema
 
-| Field           | Type         | Description                              |
-|-----------------|--------------|------------------------------------------|
-| tenant_id       | CHAR(10)     | Your tenant identifier (Primary Key)     |
-| is_ssl_enabled  | BOOLEAN      | Whether SSL is enabled for email service |
-| host            | VARCHAR(256) | Email service host address                |
-| port            | INT          | Email service port number                 |
-| send_email_path | VARCHAR(256) | API path for sending emails               |
-| template_name   | VARCHAR(256) | Name of the email template               |
-| template_params | JSON         | Template parameters in JSON format       |
+| Field           | Type         | Description                                |
+|-----------------|--------------|--------------------------------------------|
+| tenant_id       | CHAR(10)     | Your tenant identifier (Primary Key)       |
+| is_ssl_enabled  | BOOLEAN      | Whether SSL is enabled for email service   |
+| host            | VARCHAR(256) | Email service host address                 |
+| port            | INT          | Email service port number                  |
+| send_email_path | VARCHAR(256) | API path for sending emails                |
+| template_name   | VARCHAR(256) | Default email template                     |
+| template_params | JSON         | Default template parameters in JSON format |
 
 ### Configuration Fields Explained
 
@@ -184,7 +187,7 @@ INSERT INTO email_config (
 
 Guardian will call your SMS and Email services in the following scenarios:
 
-1. **Passwordless Authentication**: When a user initiates passwordless login/signup via SMS or Email
+1. **Passwordless Authentication**: When a user initiates passwordless signin/signup via SMS or Email
 2. **Contact Verification**: When verifying phone numbers or email addresses for account security
 3. **OTP Resend**: When a user requests to resend an OTP code
 
@@ -221,14 +224,12 @@ While both services use the same request format, there are key differences:
 1. **Recipient Format**: 
    - For SMS: Always validate and normalize phone numbers to E.164 format
    - For Email: Validate email addresses using standard email validation
-2. **Error Handling**: Return appropriate HTTP status codes and error messages
+2. **Error Handling**: Return appropriate HTTP status codes and error response as JSON
 3. **Security**: Use HTTPS (`is_ssl_enabled: true`) in production environments
 4. **Rate Limiting**: Implement rate limiting on your services to prevent abuse
 5. **Logging**: Log all message sending attempts for debugging and auditing
 6. **Template Management**: Support dynamic template names and parameters
-7. **Idempotency**: Consider implementing idempotency keys to prevent duplicate sends
-8. **Delivery Status**: Optionally implement webhooks to track message delivery status
-9. **Channel Detection**: Use the `channel` field to determine whether to process as SMS or Email
+7. **Delivery Status**: Optionally implement webhooks to track message delivery status
 
 ## Troubleshooting
 
@@ -245,7 +246,6 @@ While both services use the same request format, there are key differences:
 - Ensure your endpoint accepts JSON request bodies
 - Verify the request includes all required fields: `channel`, `to`, `templateName`, `templateParams`
 - Check that `templateParams` includes the `otp` field
-- Verify the `channel` field matches your service type ("sms" or "email")
 
 ### Authentication Failures
 
@@ -257,5 +257,3 @@ While both services use the same request format, there are key differences:
 
 - Ensure your SMS service only processes requests with `channel: "sms"`
 - Ensure your Email service only processes requests with `channel: "email"`
-- Implement validation to reject requests with incorrect channel types
-
