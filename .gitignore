@@ -16,3 +16,6 @@ logs/*
 .config
 .env
 .history
+
+### Dependencies ###
+node_modules/
