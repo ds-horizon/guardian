@@ -623,7 +623,7 @@ properties:
 
 ## Related Documentation
 
-*   [Configuration Guide](https://github.com/ds-horizon/guardian/blob/main/docs/configuration.md) - Guardian configuration options
+*   [Configuration Guide](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/Configuration.md) - Guardian configuration options
 
 *   [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/SocialAuthentication.md) - Social authentication overview
 
