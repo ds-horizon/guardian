@@ -4,9 +4,6 @@
     "docs": {
       "type": "object",
       "properties": {
-        "title": {
-          "type": "string"
-        },
         "description": {
           "type": "string"
         },
@@ -632,13 +629,13 @@
           "type": "boolean",
           "default": false
         },
+        "title": {
+          "type": "string"
+        },
         "$schema": {
           "type": "string"
         }
       },
-      "required": [
-        "title"
-      ],
       "additionalProperties": false
     }
   },

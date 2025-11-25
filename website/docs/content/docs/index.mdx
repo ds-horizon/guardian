@@ -1,92 +1,27 @@
 ---
-title: Guardian Documentation
-description: Authentication and Authorization Service Documentation
+title: Welcome
+description: Guardian Documentation - Enterprise-grade Authentication & Authorization
 ---
 
-## Key Features
+**Enterprise-grade Authentication & Authorization for Modern Applications**
 
-- **Passwordless Authentication**: Secure authentication using OTP via SMS, Email, or other channels
-- **Password-based Auth**: Traditional username/password authentication with strong security
-- **Social Login**: OAuth-based authentication with Google, Facebook, and other providers
-- **Multi-tenant**: Built-in multi-tenancy support for complex applications
-- **Token Management**: JWT-based access and refresh tokens with rotation support
-- **Security First**: Built with security best practices and compliance in mind
+Guardian is a robust, open-source authentication and authorization solution designed for modern applications. It provides a comprehensive suite of authentication methods while giving you complete control over your user data.
 
-## Why Guardian?
+## Quick Links
 
-Guardian provides a comprehensive authentication and authorization solution that combines security, flexibility, and ease of use. Whether you're building a mobile app, web application, or API service, Guardian has you covered.
+- [Quick Start](/docs/quick-start/) - Get up and running in 5 minutes
+- [API Reference](/docs/api-reference/) - Complete API documentation
+- [Configuration](/docs/configuration/configuration/) - Configuration guide
 
-### Multiple Authentication Methods
+## Features
 
-- **Passwordless**: Eliminate password vulnerabilities with OTP-based authentication
-- **Password-based**: Traditional authentication for applications that require it
-- **Social Authentication**: Seamless integration with popular identity providers
-- **Guest Access**: Allow temporary access without full registration
+- 🔐 **Enterprise-Grade Security** - Built with security best practices
+- 🎯 **Flexible Integration** - Works seamlessly with your existing user service
+- 🏢 **Multi-Tenant Ready** - Complete tenant isolation
+- 🚀 **Quick Implementation** - Get up and running in minutes
+- 📱 **Multi-Platform Support** - Native support for web, mobile, and API
 
-### Enterprise Features
+## Get Started
 
-- **Multi-tenancy**: Isolated environments for different organizations
-- **Role-based Access Control**: Fine-grained permission management
-- **Audit Logging**: Complete audit trail of authentication events
-- **Webhook Support**: Real-time notifications for critical events
-
-### Developer Friendly
-
-- **Simple SDK**: Easy-to-use client libraries for multiple platforms
-- **Comprehensive Documentation**: Detailed guides and API references
-- **Active Development**: Regular updates and new features
-- **Open Source**: Community-driven development
-
-## Quick Start
-
-Get up and running in minutes:
-
-```typescript
-import { Guardian } from '@guardian/sdk';
-
-const guardian = new Guardian({
-  tenantId: 'your-tenant-id',
-  apiUrl: 'https://guardian-api.dreamsportslabs.com'
-});
-
-// Passwordless authentication
-const { state } = await guardian.passwordless.init({
-  flow: 'signinup',
-  contacts: [{
-    channel: 'sms',
-    identifier: '+1234567890'
-  }]
-});
-
-const { accessToken } = await guardian.passwordless.complete({
-  state,
-  otp: '123456'
-});
-```
-
-## Getting Started
-
-- [Quick Start](/quick-start/) - Get started in 5 minutes with our quick start guide
-- [Authentication Flows](/authentication/) - Learn about authentication methods and how to implement them
-- [Configuration](/configuration/) - Configure Guardian for your specific requirements
-- [Security](/security/) - Follow best practices to keep your application secure
-
-## Architecture
-
-Guardian is built on a modern, scalable architecture:
-
-- **API-First Design**: RESTful API with comprehensive documentation
-- **Microservices**: Modular architecture for better scalability
-- **High Performance**: Optimized for low latency and high throughput
-- **Cloud Native**: Deploy on any cloud platform or on-premises
-
-## Community & Support
-
-- **GitHub**: [github.com/ds-horizon/guardian](https://github.com/ds-horizon/guardian)
-- **Documentation**: Comprehensive guides and API references
-- **Issues**: Report bugs and request features on GitHub
-
-## License
-
-Guardian is released under the MIT License. See [LICENSE](https://github.com/ds-horizon/guardian/blob/main/LICENSE) for details.
+Ready to get started? Check out our [Quick Start Guide](/docs/quick-start/) to begin integrating Guardian into your application.
 

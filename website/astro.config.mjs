@@ -19,20 +19,30 @@ export default defineConfig({
         {
           label: 'Introduction',
           items: [
-            { label: 'Getting Started', link: '/getting-started/' },
             { label: 'Quick Start', link: '/quick-start/' },
+            { label: 'API Reference', link: '/api-reference/' },
           ],
         },
         {
-          label: 'Core Concepts',
+          label: 'Configuration',
           items: [
-            { label: 'Authentication Flows', link: '/authentication/' },
-            { label: 'Configuration', link: '/configuration/' },
-            { label: 'Security', link: '/security/' },
-            { label: 'Performance', link: '/performance/' },
-            { label: 'SMS', link: '/sms-email-configuration/' },
+            { label: 'Configuration', link: '/configuration/configuration' },
+            { label: 'User Configuration', link: '/configuration/user-configuration' },
+          
+            { label: 'SMS Configuration', link: 'configuration/sms-configuration' },
           ],
         },
+        {
+            label: 'Features',
+            items: [
+              { label: 'Username/Password Authentication', link: '/features/username-password-authentication' },
+              { label: 'Social Authentication', link: '/features/social-authentication' },
+              { label: 'Google Authentication', link: '/features/google-authentication' },
+              { label: 'Facebook Authentication', link: '/features/facebook-authentication' },
+              { label: 'Post Authentication', link: '/features/post-authentication' },
+             
+            ],
+          },
       ],
       customCss: [
         './styles/starlight-custom.css',
