@@ -12,7 +12,7 @@ Your SMS and Email services must implement the following endpoints:
 
 ### POST {send_sms_path} - Send SMS
 
-Sends an SMS message with OTP or other content to a phone number.
+Sends an SMS message with OTP to a phone number.
 
 **Request Body:**
 ```json
@@ -83,7 +83,7 @@ Sends an email message with OTP or other content to an email address.
 
 **Important Notes:**
 - Both endpoints must accept POST requests
-- Status code 200 indicates successful message delivery
+- Status code 2xx indicates successful message delivery
 - Any non-2xx status code will be treated as a failure
 - The `templateParams` object will always include an `otp` field when sending OTP codes
 - For SMS: Phone numbers should be in E.164 format (e.g., +1234567890)
