@@ -36,7 +36,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ### Authentication Methods
 
-*   **📱 Passwordless Authentication**
+*   **📱 [Passwordless Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/passwordlessAuthentication.md)**
 
     *   SMS/Email OTP
 
@@ -44,7 +44,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
     *   Rate limiting and retry mechanisms
 
-*   **🔑 Traditional Authentication**
+*   **🔑 [Username/Password Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/usernamePasswordAuthentication.md)**
 
     *   Username/Password
 
@@ -52,22 +52,16 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
     *   Password policy support via user service
 
-*   **🌐 Social Authentication**
+*   **🌐 [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/socialAuthentication.md)**
 
-    *   Google (OIDC)
+    *   [Google Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/googleAuthentication.md) (OIDC)
 
-    *   Facebook (OAuth 2.0)
+    *   [Facebook Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/facebookAuthentication.md) (OAuth 2.0)
 
     *   Custom OIDC providers
 
-*   **👤 Guest Authentication**
 
-    *   Temporary access without registration
-
-    *   Scope-limited tokens
-
-
-### Session Management
+### [Post Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/postAuthentication.md)
 
 *   📊 Multi-device session tracking
 
@@ -171,34 +165,14 @@ Comprehensive documentation is available in the `docs/` directory:
 
 | Document | Description |
 | --- | --- |
-| 📖 Getting Started | Setup, installation, and first steps |
-| 🏗️ Architecture | System architecture and design |
 | 📚 API Reference | Complete REST API documentation |
 | ⚙️ Configuration | Configuration options |
 | 🔌 Integration Guide | Integrate with your application |
-| 🏢 Multi-Tenancy | Multi-tenant setup and management |
 | 🚀 Deployment | Production deployment guide |
-
-### Feature Documentation
-
-*   [Passwordless Authentication](https://guardian.dream11.com/docs/features/passwordless-authentication.md "https://guardian.dream11.com/docs/features/passwordless-authentication.md")
-
-*   [Social Authentication](https://guardian.dream11.com/docs/features/social-authentication.md "https://guardian.dream11.com/docs/features/social-authentication.md")
-
-*   [Username/Password Authentication](https://guardian.dream11.com/docs/features/username-password-authentication.md "https://guardian.dream11.com/docs/features/username-password-authentication.md")
-
-*   [Guest Authentication](https://guardian.dream11.com/docs/features/guest-authentication.md "https://guardian.dream11.com/docs/features/guest-authentication.md")
-
-*   [OIDC Flow](https://guardian.dream11.com/docs/features/oidc-flow.md "https://guardian.dream11.com/docs/features/oidc-flow.md")
-
-*   [Session Management](https://guardian.dream11.com/docs/features/session-management.md "https://guardian.dream11.com/docs/features/session-management.md")
-
-*   [Admin & Configuration APIs](https://guardian.dream11.com/docs/features/admin-configuration-apis.md "https://guardian.dream11.com/docs/features/admin-configuration-apis.md")
-
 
 ### API Specifications
 
-*   [OpenAPI Specification](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml "https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml") - Complete API spec
+*   [Guardian OpenAPI Specification](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml "https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml") - Guardian Complete API spec
 
 *   [Integration API Spec](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml "https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml") - All other services integrations (User service, Communication service)
 
