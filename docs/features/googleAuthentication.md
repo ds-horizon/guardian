@@ -14,9 +14,7 @@ Complete guide for implementing Google authentication using Guardian's `/v2/auth
 
 *   [API Specification](#api-specification)
 
-*   [Implementation Guide](#implementation-guide)
-
-*   [Examples](#examples)
+*   [Frontend Implementation](#frontend-implementation)
 
 *   [Troubleshooting](#troubleshooting)
 
@@ -190,6 +188,25 @@ INSERT INTO google_config ( tenant_id, client_id, client_secret ) VALUES ( 'tena
 
 *   `500 Internal Server Error`: Server error
 
+### cURL Example
+
+```text
+  curl --location 'http://localhost:8080/v2/auth/google' \
+  --header 'Content-Type: application/json' \ 
+  --header 'tenant-id: tenant1' \ 
+  --data '{
+    "id_token": "eyJhbGciOiJSUzI1NiIs...",
+    "response_type": "token",
+    "client_id": "aB3dE5fG7hI9jK1lM",
+    "flow": "signinup",
+    "meta_info": {
+        "ip": "127.0.0.1",
+        "location": "localhost",
+        "device_name": "Chrome Browser",
+        "source": "web"
+    }
+}'
+```
 
 ## API Specification
 
@@ -280,53 +297,13 @@ properties:
     type: boolean
     description: Whether this is a newly created user
 ```
-## Implementation Guide
+## Frontend Implementation
 
-### Step 1: Load Google Sign-In Library
+For implementing Google authentication in your frontend application, please refer to the official Google documentation:
 
-`<script src="https://accounts.google.com/gsi/client" async defer></script>`
-
-### Step 2: Initialize Google Sign-In
-
-`function initGoogleSignIn() { google.accounts.id.initialize({ client_id: 'your_google_client_id.apps.googleusercontent.com', callback: handleGoogleSignIn }); }`
-
-### Step 3: Handle Google Sign-In Response
-
-`async function handleGoogleSignIn(response) { const idToken = response.credential; // Send to Guardian const guardianResponse = await fetch('http://localhost:8080/v2/auth/google', { method: 'POST', headers: { 'Content-Type': 'application/json', 'tenant-id': 'tenant1' }, body: JSON.stringify({ id_token: idToken, response_type: 'token', client_id: 'aB3dE5fG7hI9jK1lM', // Your Guardian client ID flow: 'signinup', meta_info: { ip: await getClientIP(), location: 'Unknown', device_name: navigator.userAgent, source: 'web' } }) }); if (!guardianResponse.ok) { throw new Error('Authentication failed'); } const tokens = await guardianResponse.json(); // Store tokens localStorage.setItem('accessToken', tokens.access_token); localStorage.setItem('refreshToken', tokens.refresh_token); localStorage.setItem('idToken', tokens.id_token); return tokens; }`
-
-### Step 4: Render Google Sign-In Button
-
-`function renderGoogleButton() { google.accounts.id.renderButton( document.getElementById('google-signin-button'), { theme: 'outline', size: 'large' } ); }`
-
-## Examples
-
-### Complete JavaScript Example
-
-`// Initialize on page load window.onload = function() { initGoogleSignIn(); renderGoogleButton(); }; // Initialize Google Sign-In function initGoogleSignIn() { google.accounts.id.initialize({ client_id: 'your_google_client_id.apps.googleusercontent.com', callback: handleGoogleSignIn }); } // Handle sign-in async function handleGoogleSignIn(response) { try { const idToken = response.credential; const response = await fetch('http://localhost:8080/v2/auth/google', { method: 'POST', headers: { 'Content-Type': 'application/json', 'tenant-id': 'tenant1' }, body: JSON.stringify({ id_token: idToken, response_type: 'token', client_id: 'aB3dE5fG7hI9jK1lM', flow: 'signinup', meta_info: { ip: '0.0.0.0', location: 'Unknown', device_name: navigator.userAgent, source: 'web' } }) }); if (!response.ok) { const error = await response.json(); throw new Error(error.error?.message || 'Authentication failed'); } const tokens = await response.json(); // Store tokens localStorage.setItem('accessToken', tokens.access_token); localStorage.setItem('refreshToken', tokens.refresh_token); // Redirect to dashboard window.location.href = '/dashboard'; } catch (error) { console.error('Google sign-in error:', error); alert('Sign-in failed: ' + error.message); } } // Render button function renderGoogleButton() { google.accounts.id.renderButton( document.getElementById('google-signin-button'), { theme: 'outline', size: 'large', text: 'signin_with' } ); }`
-
-### React Example
-
-`import { useEffect } from 'react'; function GoogleSignIn() { useEffect(() => { // Load Google Sign-In script const script = document.createElement('script'); script.src = 'https://accounts.google.com/gsi/client'; script.async = true; script.defer = true; document.body.appendChild(script); script.onload = () => { google.accounts.id.initialize({ client_id: 'your_google_client_id.apps.googleusercontent.com', callback: handleGoogleSignIn }); google.accounts.id.renderButton( document.getElementById('google-signin-button'), { theme: 'outline', size: 'large' } ); }; return () => { document.body.removeChild(script); }; }, []); const handleGoogleSignIn = async (response) => { try { const guardianResponse = await fetch('http://localhost:8080/v2/auth/google', { method: 'POST', headers: { 'Content-Type': 'application/json', 'tenant-id': 'tenant1' }, body: JSON.stringify({ id_token: response.credential, response_type: 'token', client_id: 'aB3dE5fG7hI9jK1lM', flow: 'signinup', meta_info: { ip: '0.0.0.0', location: 'Unknown', device_name: navigator.userAgent, source: 'web' } }) }); const tokens = await guardianResponse.json(); // Handle tokens console.log('Authenticated:', tokens); } catch (error) { console.error('Error:', error); } }; return <div id="google-signin-button"></div>; }`
-
-### cURL Example
-
-```text
-  curl --location 'http://localhost:8080/v2/auth/google' \
-  --header 'Content-Type: application/json' \ 
-  --header 'tenant-id: tenant1' \ 
-  --data '{
-    "id_token": "eyJhbGciOiJSUzI1NiIs...",
-    "response_type": "token",
-    "client_id": "aB3dE5fG7hI9jK1lM",
-    "flow": "signinup",
-    "meta_info": {
-        "ip": "127.0.0.1",
-        "location": "localhost",
-        "device_name": "Chrome Browser",
-        "source": "web"
-    }
-}'
-```
+*   [Google Identity Services - Sign In With Google](https://developers.google.com/identity/gsi/web) - Official guide for implementing Google Sign-In in web applications
+*   [Google Sign-In for iOS](https://developers.google.com/identity/sign-in/ios) - Official guide for implementing Google Sign-In in iOS applications
+*   [Google Sign-In for Android](https://developers.google.com/identity/sign-in/android) - Official guide for implementing Google Sign-In in Android applications
 ## Flow Diagram
 
 ```text
