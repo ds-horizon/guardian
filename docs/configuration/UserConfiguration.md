@@ -10,25 +10,27 @@ Guardian integrates with your user service to manage user accounts, authenticati
 
 Your user service must implement the following endpoints:
 
-### 1. GET /user - Get User Details
+### 1. GET {get_user_path} - Get User Details
 
 Retrieves user information based on query parameters.
 
 **Query Parameters:**
 - `userId` (string, optional) - User identifier
 - `email` (string, optional) - User email address
-- `phoneNumber` (string, optional) - User phone number (recommended format E.164)
+- `phoneNumber` (string, optional) - User phone number
 - `providerName` (string, optional) - Name of the identity provider
 - `providerUserId` (string, optional) - Provider-specific user identifier
 
 **Request Example:**
+
+* If {get_user_path} is `/user`
 ```
 GET /user?email=user@example.com
 GET /user?phoneNumber=+1234567890
 GET /user?email=user@example.com&providerName=google&providerUserId=12345
 ```
 
-**Response (200 OK) - User Found:**
+**Response (2xx) - User Found:**
 ```json
 {
   "userId": "user123",
@@ -42,18 +44,19 @@ GET /user?email=user@example.com&providerName=google&providerUserId=12345
 }
 ```
 
-**Response (200 OK) - User Not Found:**
+**Response (2xx) - User Not Found:**
 ```json
 {}
 ```
 
 **Important Notes:**
 - Guardian can invoke this API with various combinations of query parameters
-- If a user is not found, return an empty JSON object `{}` with status code 200
-- Any response other than status code 200 will be considered a failure
+- In case a user exists, user service must return a value with key `userId` in response JSON
+- If a user is not found, return an empty JSON object `{}` with status code 2xx
+- Any response other than status code 2xx will be considered as an error
 - The user service is responsible for determining the correct user based on the provided query parameters
 
-### 2. POST /user - Create User
+### 2. POST {create_user_path} - Create User
 
 Creates a new user account.
 
@@ -61,9 +64,7 @@ Creates a new user account.
 ```json
 {
   "email": "user@example.com",
-  "emailVerified": true,
   "phoneNumber": "+1234567890",
-  "phoneNumberVerified": true,
   "username": "johndoe",
   "password": "securePassword123",
   "name": "John Doe",
@@ -77,14 +78,13 @@ Creates a new user account.
   }
 }
 ```
+**Request Parameters**:
+- `name` - Name of the external authentication provider (e.g., Google, Facebook).
+- `providerUserId` - This is the unique identifier assigned to the user by the external authentication provider
+- `data` - This contains the decoded and verified payload (claims) from the ID token provided by the external identity source.
+- `credentials` - This holds the security tokens necessary to interact with the provider's API on the user's behalf, such as the access token and refresh token.
 
-**Required Fields:**
-At least one of the following combinations must be present:
-- `phoneNumber` and `phoneNumberVerified`
-- `email` and `emailVerified`
-- `username` and `password`
-
-**Response (200 OK):**
+**Response (2xx):**
 ```json
 {
   "userId": "user123",
@@ -97,16 +97,14 @@ At least one of the following combinations must be present:
 ```
 
 **Important Notes:**
-- `emailVerified` will be `true` if email was verified via passwordless flow or IDP login
-- `phoneNumberVerified` will be `true` if phone was verified via passwordless flow or IDP login
-- If verification fields are missing or `false`, treat the contact as unverified
 - The `userId` field is required in the response
 
-### 3. POST /user/authenticate - Authenticate User
+### 3. POST {authenticate_user_path} - Authenticate User
 
-Validates username and password credentials.
+Validates username and password credentials
 
 **Request Body:**
+* The request body will contain exactly one identifier, which can be a username, email, or phone number
 ```json
 {
   "username": "johndoe",
@@ -114,7 +112,7 @@ Validates username and password credentials.
 }
 ```
 
-**Response (200 OK):**
+**Response (2xx):**
 ```json
 {
   "userId": "user123",
@@ -129,9 +127,9 @@ Validates username and password credentials.
 **Important Notes:**
 - The `userId` field is required in the response
 - Returns user details if authentication succeeds
-- Any non-200 status code indicates authentication failure
+- Any non-2xx status code indicates authentication failure
 
-### 4. POST /provider - Add Provider to User
+### 4. POST {add_provider_path} - Add Provider to User
 
 Adds or updates identity provider details for an existing user.
 
@@ -147,6 +145,13 @@ Adds or updates identity provider details for an existing user.
   }
 }
 ```
+**Request parameters**
+
+- `name` - Name of the external authentication provider (e.g., Google, Facebook).
+- `providerUserId` - This is the unique identifier assigned to the user by the external authentication provider
+- `data` - This contains the decoded and verified payload (claims) from the ID token provided by the external identity source.
+- `credentials` - This holds the security tokens necessary to interact with the provider's API on the user's behalf, such as the access token and refresh token.
+
 
 **Response (200 OK):**
 ```json
@@ -212,9 +217,7 @@ For detailed API specifications, refer to the [Integration Endpoints Specificati
 ## Best Practices
 
 1. **User Identification**: Implement flexible user lookup logic that can handle various query parameter combinations
-2. **Error Handling**: Return appropriate HTTP status codes (200 for success, 400 for bad requests, 500 for server errors)
-3. **Empty Responses**: Return `{}` with status 200 when a user is not found (not an error condition)
-4. **Verification Status**: Properly handle `emailVerified` and `phoneNumberVerified` flags
-5. **Security**: Use HTTPS (`is_ssl_enabled: true`) in production environments
-6. **Response Format**: Always include `userId` in successful responses for create and authenticate endpoints
-
+2. **Error Handling**: Return appropriate HTTP status codes (2xx for success, 400 for bad requests, 500 for server errors)
+3. **Empty Responses**: Return `{}` with status 2xx when a user is not found (not an error condition)
+4. **Security**: Use HTTPS (`is_ssl_enabled: true`) in production environments
+5. **Response Format**: Always include `userId` in successful responses for create and authenticate endpoints
