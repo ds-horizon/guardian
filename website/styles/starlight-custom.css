@@ -1,0 +1,16 @@
+/* Custom styles for Guardian Documentation */
+
+:root {
+  --sl-hue-accent: 210;
+  --sl-color-accent-low: #1e293b;
+  --sl-color-accent: #3b82f6;
+  --sl-color-accent-high: #60a5fa;
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] {
+  --sl-color-accent-low: #0f172a;
+  --sl-color-accent: #60a5fa;
+  --sl-color-accent-high: #93c5fd;
+}
+

@@ -1,0 +1,92 @@
+---
+title: Guardian Documentation
+description: Authentication and Authorization Service Documentation
+---
+
+## Key Features
+
+- **Passwordless Authentication**: Secure authentication using OTP via SMS, Email, or other channels
+- **Password-based Auth**: Traditional username/password authentication with strong security
+- **Social Login**: OAuth-based authentication with Google, Facebook, and other providers
+- **Multi-tenant**: Built-in multi-tenancy support for complex applications
+- **Token Management**: JWT-based access and refresh tokens with rotation support
+- **Security First**: Built with security best practices and compliance in mind
+
+## Why Guardian?
+
+Guardian provides a comprehensive authentication and authorization solution that combines security, flexibility, and ease of use. Whether you're building a mobile app, web application, or API service, Guardian has you covered.
+
+### Multiple Authentication Methods
+
+- **Passwordless**: Eliminate password vulnerabilities with OTP-based authentication
+- **Password-based**: Traditional authentication for applications that require it
+- **Social Authentication**: Seamless integration with popular identity providers
+- **Guest Access**: Allow temporary access without full registration
+
+### Enterprise Features
+
+- **Multi-tenancy**: Isolated environments for different organizations
+- **Role-based Access Control**: Fine-grained permission management
+- **Audit Logging**: Complete audit trail of authentication events
+- **Webhook Support**: Real-time notifications for critical events
+
+### Developer Friendly
+
+- **Simple SDK**: Easy-to-use client libraries for multiple platforms
+- **Comprehensive Documentation**: Detailed guides and API references
+- **Active Development**: Regular updates and new features
+- **Open Source**: Community-driven development
+
+## Quick Start
+
+Get up and running in minutes:
+
+```typescript
+import { Guardian } from '@guardian/sdk';
+
+const guardian = new Guardian({
+  tenantId: 'your-tenant-id',
+  apiUrl: 'https://guardian-api.dreamsportslabs.com'
+});
+
+// Passwordless authentication
+const { state } = await guardian.passwordless.init({
+  flow: 'signinup',
+  contacts: [{
+    channel: 'sms',
+    identifier: '+1234567890'
+  }]
+});
+
+const { accessToken } = await guardian.passwordless.complete({
+  state,
+  otp: '123456'
+});
+```
+
+## Getting Started
+
+- [Quick Start](/quick-start/) - Get started in 5 minutes with our quick start guide
+- [Authentication Flows](/authentication/) - Learn about authentication methods and how to implement them
+- [Configuration](/configuration/) - Configure Guardian for your specific requirements
+- [Security](/security/) - Follow best practices to keep your application secure
+
+## Architecture
+
+Guardian is built on a modern, scalable architecture:
+
+- **API-First Design**: RESTful API with comprehensive documentation
+- **Microservices**: Modular architecture for better scalability
+- **High Performance**: Optimized for low latency and high throughput
+- **Cloud Native**: Deploy on any cloud platform or on-premises
+
+## Community & Support
+
+- **GitHub**: [github.com/ds-horizon/guardian](https://github.com/ds-horizon/guardian)
+- **Documentation**: Comprehensive guides and API references
+- **Issues**: Report bugs and request features on GitHub
+
+## License
+
+Guardian is released under the MIT License. See [LICENSE](https://github.com/ds-horizon/guardian/blob/main/LICENSE) for details.
+
