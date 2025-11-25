@@ -36,7 +36,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ### Authentication Methods
 
-*   **📱 [Passwordless Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/passwordlessAuthentication.md)**
+*   **📱 [Passwordless Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/PasswordlessAuthentication.md)**
 
     *   SMS/Email OTP
 
@@ -44,7 +44,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
     *   Rate limiting and retry mechanisms
 
-*   **🔑 [Username/Password Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/usernamePasswordAuthentication.md)**
+*   **🔑 [Username/Password Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/UsernamePasswordAuthentication.md)**
 
     *   Username/Password
 
@@ -52,16 +52,16 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
     *   Password policy support via user service
 
-*   **🌐 [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/socialAuthentication.md)**
+*   **🌐 [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/SocialAuthentication.md)**
 
-    *   [Google](https://github.com/ds-horizon/guardian/blob/main/docs/features/googleAuthentication.md)
+    *   [Google](https://github.com/ds-horizon/guardian/blob/main/docs/features/GoogleAuthentication.md)
 
-    *   [Facebook](https://github.com/ds-horizon/guardian/blob/main/docs/features/facebookAuthentication.md) 
+    *   [Facebook](https://github.com/ds-horizon/guardian/blob/main/docs/features/FacebookAuthentication.md) 
 
     *   Custom OIDC providers
 
 
-### [Session Management](https://github.com/ds-horizon/guardian/blob/main/docs/features/postAuthentication.md)
+### [Session Management](https://github.com/ds-horizon/guardian/blob/main/docs/features/PostAuthentication.md)
 
 *   📊 Multi-device session tracking
 
@@ -181,8 +181,8 @@ Comprehensive documentation is available in the `docs/` directory:
 
 | Document                                                                                                | Description |
 |---------------------------------------------------------------------------------------------------------| --- |
-| 📚 [API Reference](https://github.com/ds-horizon/guardian/blob/main/docs/apiReference.md)               | Complete REST API documentation |
-| ⚙️ [Configuration](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/configuration.md) | Configuration options |
+| 📚 [API Reference](https://github.com/ds-horizon/guardian/blob/main/docs/ApiReference.md)               | Complete REST API documentation |
+| ⚙️ [Configuration](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/Configuration.md) | Configuration options |
 | 🚀 [Deployment](https://github.com/ds-horizon/guardian/blob/main/docs/deployment.md)                    | Production deployment guide |
 
 ### API Specifications

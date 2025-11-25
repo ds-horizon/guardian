@@ -52,7 +52,7 @@ Guardian supports the following social authentication providers:
 *   **User Info**: Extracted from ID token claims
 
 
-**📖** [**Complete Google Authentication Guide**](https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication")
+**📖** [**Complete Google Authentication Guide**](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication")
 
 ### Facebook
 
@@ -65,7 +65,7 @@ Guardian supports the following social authentication providers:
 *   **User Info**: Retrieved from Graph API
 
 
-**📖** [**Complete Facebook Authentication Guide**](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication")
+**📖** [**Complete Facebook Authentication Guide**](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication")
 
 ### Custom OIDC Providers
 
@@ -86,9 +86,9 @@ Guardian supports the following social authentication providers:
 
 Select which provider(s) you want to support:
 
-*   [Google Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication") - Recommended for most use cases
+*   [Google Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication") - Recommended for most use cases
 
-*   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication") - Popular for consumer apps
+*   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication") - Popular for consumer apps
 
 *   Custom OIDC Provider - For enterprise or custom providers(e.g.: apple)
 
@@ -101,14 +101,14 @@ Each provider requires specific credentials:
 
 *   Client ID and Client Secret from [Google Cloud Console](https://console.cloud.google.com/ "https://console.cloud.google.com/")
 
-*   See [Google Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication") for detailed steps
+*   See [Google Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication") for detailed steps
 
 
 **Facebook**:
 
 *   App ID and App Secret from [Facebook Developers](https://developers.facebook.com/ "https://developers.facebook.com/")
 
-*   See [Facebook Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication") for detailed steps
+*   See [Facebook Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication") for detailed steps
 
 
 ### 3\. Configure Guardian
@@ -131,16 +131,16 @@ INSERT INTO fb_config (tenant_id, app_id, app_secret, send_app_secret) VALUES ('
 
 Follow the provider-specific guide:
 
-*   [Google Implementation](https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication")
+*   [Google Implementation](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication")
 
-*   [Facebook Implementation](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication")
+*   [Facebook Implementation](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication")
 
 
 ## Provider-Specific Guides
 
 For complete implementation details, see the dedicated guides:
 
-### 📘 [Google Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication")
+### 📘 [Google Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication")
 
 Complete guide for Google authentication including:
 
@@ -157,7 +157,7 @@ Complete guide for Google authentication including:
 
 **Endpoint**: `POST /v2/auth/google`
 
-### 📘 [Facebook Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication")
+### 📘 [Facebook Authentication Guide](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication")
 
 Complete guide for Facebook authentication including:
 
@@ -339,13 +339,13 @@ INSERT INTO oidc_provider_config ( tenant_id, provider_name, issuer, jwks_url, t
 
 ### Provider-Specific Troubleshooting
 
-*   **Google Issues**: See [Google Authentication Troubleshooting](https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication#Troubleshooting "https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication#Troubleshooting")
+*   **Google Issues**: See [Google Authentication Troubleshooting](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication#Troubleshooting "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication#Troubleshooting")
 
-*   **Facebook Issues**: See [Facebook Authentication Troubleshooting](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication#Troubleshooting "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication#Troubleshooting")
+*   **Facebook Issues**: See [Facebook Authentication Troubleshooting](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication#Troubleshooting "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication#Troubleshooting")
 
 
 ## Related Documentation
 
-*   [Google Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/googleAuthentication") - Complete Google integration guide
+*   [Google Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication") - Complete Google integration guide
 
-*   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication") - Complete Facebook integration guide
+*   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication") - Complete Facebook integration guide
