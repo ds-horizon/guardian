@@ -20,7 +20,7 @@ Complete guide for implementing username/password authentication using Guardian'
 
 ## Overview
 
-Username/password authentication is the traditional authentication method where users provide a username and password to sign in or sign up. Guardian validates credentials through your user service and returns access tokens, refresh tokens, and ID tokens upon successful authentication.
+Username/password authentication is the traditional authentication method where users provide a username and password to sign in or sign up. Guardian validates credentials through user service and returns access token, refresh token, and ID token upon successful authentication.
 
 ### How It Works
 
@@ -28,13 +28,11 @@ Username/password authentication is the traditional authentication method where 
 
 1.  Client sends username, password, and response type to Guardian `/v1/signup`
 
-2.  Guardian checks if username exists via user service `GET /user` API
+2.  Guardian checks if user exists via user service `GET /user` API
 
-3.  If username doesn't exist, Guardian creates user via user service `POST /user` API
+3.  If user doesn't exist, Guardian creates user via user service `POST /user` API
 
-4.  Guardian generates access token, refresh token, and ID token
-
-5.  Guardian returns tokens to client
+4. Guardian returns tokens if `response_type` is set to `token`, otherwise it returns a `code`.
 
 **Sign In Flow**:
 
@@ -42,9 +40,7 @@ Username/password authentication is the traditional authentication method where 
 
 2.  Guardian validates credentials via user service `POST /authenticate` API
 
-3.  If credentials are valid, Guardian generates access token, refresh token, and ID token
-
-4.  Guardian returns tokens to client
+3. Guardian returns tokens if `response_type` is set to `token`, otherwise it returns a `code`.
 
 ## Prerequisites
 
@@ -68,65 +64,8 @@ Before implementing username/password authentication, you need:
 
 Ensure your user service is accessible and implements the required endpoints. The user service configuration should be set in the Guardian tenant configuration.
 
-**Required User Service Endpoints**:
+Refer [userConfiguration](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/UserConfiguration.md)
 
-*   **GET /user**: Retrieve user by identifier (username, email, or phone)
-
-    *   Query parameters: `identifier` (username/email/phone)
-
-    *   Returns: User object with user details
-
-*   **POST /user**: Create a new user
-
-    *   Request body: User object with username, password, and other user details
-
-    *   Returns: Created user object
-
-*   **POST /authenticate**: Authenticate user with credentials
-
-    *   Request body: User object with username and password
-
-    *   Returns: User object if authentication succeeds
-
-### Step 2: Configure Guardian Tenant
-
-The user service configuration should be set in the `user_config` table for your tenant:
-
-```text
-INSERT INTO user_config (
-  tenant_id,
-  is_ssl_enabled,
-  host,
-  port,
-  get_user_path,
-  create_user_path,
-  authenticate_user_path
-) VALUES (
-  'tenant1',
-  false,
-  'localhost',
-  8081,
-  '/user',
-  '/user',
-  '/authenticate'
-);
-```
-
-**Table Schema**:
-
-*   `tenant_id` (CHAR(10)): Your tenant identifier
-
-*   `is_ssl_enabled` (BOOLEAN): Whether SSL is enabled for user service
-
-*   `host` (VARCHAR(256)): Host address for user service
-
-*   `port` (INT): Port number for user service
-
-*   `get_user_path` (VARCHAR(256)): API path for getting user details
-
-*   `create_user_path` (VARCHAR(256)): API path for creating users
-
-*   `authenticate_user_path` (VARCHAR(256)): API path for user authentication
 
 ## API Endpoints
 
@@ -187,7 +126,7 @@ INSERT INTO user_config (
 | idToken | string | OpenID Connect ID token containing user information |
 | tokenType | string | Token type. Always "Bearer" |
 | expiresIn | integer | Access token expiration time in seconds |
-| isNewUser | boolean | Indicates if this is a newly created user (always `true` for signup) |
+| isNewUser | boolean | Indicates if this is a newly created user |
 
 **Error Responses**:
 
