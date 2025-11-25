@@ -9,7 +9,11 @@ import static com.dreamsportslabs.guardian.constant.Constants.APP_TOKEN_TYPE;
 
 import com.dreamsportslabs.guardian.dao.model.IdpCredentials;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -26,9 +30,30 @@ public class IdpConnectResponseDto {
   private Boolean isNewUser;
   private IdpCredentials idpCredentials;
 
+  @JsonProperty("mfa_factors")
+  private List<MfaFactorDto> mfaFactors;
+
   public static IdpConnectResponseDto buildIdpConnectResponse(
       Object authResponse, Boolean isNewUser, IdpCredentials idpTokens) {
     JsonObject responseJson = JsonObject.mapFrom(authResponse);
+
+    List<MfaFactorDto> mfaFactors = null;
+    if (responseJson.containsKey("mfaFactors")) {
+      JsonArray mfaFactorsArray = responseJson.getJsonArray("mfaFactors");
+      if (mfaFactorsArray != null) {
+        mfaFactors =
+            mfaFactorsArray.stream()
+                .map(
+                    item -> {
+                      JsonObject factorObj = (JsonObject) item;
+                      return MfaFactorDto.builder()
+                          .factor(factorObj.getString("factor"))
+                          .isEnabled(factorObj.getBoolean("isEnabled"))
+                          .build();
+                    })
+                .collect(Collectors.toList());
+      }
+    }
 
     return new IdpConnectResponseDto(
         responseJson.getString(APP_CODE),
@@ -38,6 +63,7 @@ public class IdpConnectResponseDto {
         responseJson.getString(APP_TOKEN_TYPE),
         responseJson.getInteger(APP_TOKEN_CODE_EXPIRY),
         isNewUser,
-        idpTokens);
+        idpTokens,
+        mfaFactors);
   }
 }

@@ -32,9 +32,11 @@ import com.dreamsportslabs.guardian.dto.request.v2.V2LogoutRequestDto;
 import com.dreamsportslabs.guardian.dto.request.v2.V2RefreshTokenRequestDto;
 import com.dreamsportslabs.guardian.dto.response.CodeResponseDto;
 import com.dreamsportslabs.guardian.dto.response.IdpConnectResponseDto;
+import com.dreamsportslabs.guardian.dto.response.MfaFactorDto;
 import com.dreamsportslabs.guardian.dto.response.RefreshTokenResponseDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.dreamsportslabs.guardian.registry.Registry;
+import com.dreamsportslabs.guardian.utils.MfaFactorUtil;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -151,6 +153,20 @@ public class AuthorizationService {
     String refreshToken = tokenIssuer.generateRefreshToken();
     String ssoToken = tokenIssuer.generateSsoToken();
     long iat = getCurrentTimeInSeconds();
+
+    Single<Pair<String, List<String>>> clientMfaInfoSingle =
+        clientService
+            .getClient(clientId, tenantId)
+            .map(
+                client -> {
+                  String mfaPolicy = client.getMfaPolicy();
+                  List<String> allowedMfaMethods = client.getAllowedMfaMethods();
+                  return Pair.of(
+                      mfaPolicy != null ? mfaPolicy : "not_required",
+                      allowedMfaMethods != null ? allowedMfaMethods : new ArrayList<String>());
+                })
+            .onErrorReturn(err -> Pair.of("not_required", new ArrayList<>()));
+
     return Single.zip(
             tokenIssuer.generateAccessToken(
                 refreshToken, iat, scopes, user, authMethods, clientId, tenantId, config),
@@ -161,15 +177,24 @@ public class AuthorizationService {
                 config.getTokenConfig().getIdTokenClaims(),
                 clientId,
                 config.getTenantId()),
-            (accessToken, idToken) ->
-                new TokenResponseDto(
-                    accessToken,
-                    refreshToken,
-                    idToken,
-                    ssoToken,
-                    TOKEN_TYPE,
-                    config.getTokenConfig().getAccessTokenExpiry(),
-                    user.getBoolean(IS_NEW_USER, false)))
+            clientMfaInfoSingle,
+            (accessToken, idToken, clientMfaInfo) -> {
+              String mfaPolicy = clientMfaInfo.getLeft();
+              List<String> clientMfaMethods = clientMfaInfo.getRight();
+              List<MfaFactorDto> mfaFactors = new ArrayList<>();
+              if ("mandatory".equals(mfaPolicy)) {
+                mfaFactors = MfaFactorUtil.buildMfaFactors(authMethods, user, clientMfaMethods);
+              }
+              return new TokenResponseDto(
+                  accessToken,
+                  refreshToken,
+                  idToken,
+                  ssoToken,
+                  TOKEN_TYPE,
+                  config.getTokenConfig().getAccessTokenExpiry(),
+                  user.getBoolean(IS_NEW_USER, false),
+                  mfaFactors);
+            })
         .flatMap(
             dto ->
                 refreshTokenDao

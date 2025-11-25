@@ -28,4 +28,6 @@ public class ClientModel {
   private List<OidcResponseType> responseTypes;
   private String clientType;
   private Boolean isDefault;
+  private String mfaPolicy;
+  private List<String> allowedMfaMethods;
 }

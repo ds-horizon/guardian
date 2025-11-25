@@ -601,6 +601,44 @@ public class DbUtils {
     }
   }
 
+  public static void updateClientAllowedMfaMethods(
+      String tenantId, String clientId, List<String> allowedMfaMethods) {
+    String updateQuery =
+        "UPDATE client SET allowed_mfa_methods = ? WHERE tenant_id = ? AND client_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
+      if (allowedMfaMethods == null || allowedMfaMethods.isEmpty()) {
+        stmt.setString(1, null);
+      } else {
+        ArrayNode arrayNode = objectMapper.createArrayNode();
+        for (String method : allowedMfaMethods) {
+          arrayNode.add(method);
+        }
+        stmt.setString(1, arrayNode.toString());
+      }
+      stmt.setString(2, tenantId);
+      stmt.setString(3, clientId);
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while updating client allowed MFA methods", e);
+    }
+  }
+
+  public static void updateClientMfaPolicy(String tenantId, String clientId, String mfaPolicy) {
+    String updateQuery = "UPDATE client SET mfa_policy = ? WHERE tenant_id = ? AND client_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
+      stmt.setString(1, mfaPolicy);
+      stmt.setString(2, tenantId);
+      stmt.setString(3, clientId);
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while updating client MFA policy", e);
+    }
+  }
+
   public static boolean clientScopeExists(String tenantId, String clientId, String scope) {
     String query =
         "SELECT COUNT(*) FROM client_scope WHERE tenant_id = ? AND client_id = ? AND scope = ?";

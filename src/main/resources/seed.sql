@@ -20,3 +20,6 @@ insert into client (tenant_id, client_id, client_name, client_secret, client_uri
 insert into client_scope (tenant_id, client_id, scope) values ('tenant1', 'client-id', 'profile');
 insert into client_scope (tenant_id, client_id, scope, is_default) values ('tenant1', 'client1', 'default', TRUE);
 insert into guest_config(tenant_id, is_encrypted, secret_key, allowed_scopes) values ('tenant1', true, '2CmxIQJd8UJWAdm8',JSON_ARRAY('profile', 'email', 'phone'));
+
+UPDATE client SET mfa_policy = 'not_required', allowed_mfa_methods = NULL WHERE tenant_id = 'tenant1' AND client_id = 'client-id';
+UPDATE client SET mfa_policy = 'mandatory', allowed_mfa_methods = JSON_ARRAY('password', 'pin', 'sms-otp', 'email-otp') WHERE tenant_id = 'tenant1' AND client_id = 'client1';

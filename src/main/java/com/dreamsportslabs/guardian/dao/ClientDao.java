@@ -49,7 +49,12 @@ public class ClientDao {
         .addString(serializeToJsonString(client.getRedirectUris(), objectMapper))
         .addString(serializeToJsonString(client.getResponseTypes(), objectMapper))
         .addString(client.getClientType())
-        .addBoolean(client.getIsDefault());
+        .addBoolean(client.getIsDefault())
+        .addString(client.getMfaPolicy() != null ? client.getMfaPolicy() : "not_required")
+        .addString(
+            client.getAllowedMfaMethods() != null
+                ? serializeToJsonString(client.getAllowedMfaMethods(), objectMapper)
+                : null);
     return mysqlClient
         .getWriterPool()
         .preparedQuery(CREATE_CLIENT)
