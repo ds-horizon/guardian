@@ -15,9 +15,7 @@ Complete guide for implementing Facebook authentication using Guardian's `/v2/au
 
 *   [API Specification](#api-specification)
 
-*   [Implementation Guide](#implementation-guide)
-
-*   [Examples](#examples)
+*   [Frontend Implementation](#frontend-implementation)
 
 *   [Troubleshooting](#troubleshooting)
 
@@ -194,6 +192,26 @@ Insert Facebook credentials into the `fb_config` table:
 
 *   `500 Internal Server Error`: Server error
 
+### cURL Example
+
+
+```text
+curl --location 'http://localhost:8080/v2/auth/fb' \ 
+--header 'Content-Type: application/json' \ 
+--header 'tenant-id: tenant1' \ 
+--data '{
+    "access_token": "facebook_access_token_here",
+    "response_type": "token",
+    "client_id": "aB3dE5fG7hI9jK1lM",
+    "flow": "signinup",
+    "meta_info": {
+        "ip": "127.0.0.1",
+        "location": "localhost",
+        "device_name": "Chrome Browser",
+        "source": "web"
+    }
+}'
+```
 
 ## API Specification
 
@@ -284,55 +302,13 @@ properties:
     description: Whether this is a newly created user
 
 ```
-## Implementation Guide
+## Frontend Implementation
 
-### Step 1: Load Facebook SDK
+For implementing Facebook authentication in your frontend application, please refer to the official Facebook documentation:
 
-
-`<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>`
-
-### Step 2: Initialize Facebook SDK
-
-
-`window.fbAsyncInit = function() { FB.init({ appId: 'your_facebook_app_id', cookie: true, xfbml: true, version: 'v18.0' }); };`
-
-### Step 3: Handle Facebook Login
-
-
-`async function signInWithFacebook() { return new Promise((resolve, reject) => { FB.login((response) => { if (response.authResponse) { const accessToken = response.authResponse.accessToken; // Send to Guardian fetch('http://localhost:8080/v2/auth/fb', { method: 'POST', headers: { 'Content-Type': 'application/json', 'tenant-id': 'tenant1' }, body: JSON.stringify({ access_token: accessToken, response_type: 'token', client_id: 'aB3dE5fG7hI9jK1lM', // Your Guardian client ID flow: 'signinup', meta_info: { ip: '0.0.0.0', location: 'Unknown', device_name: navigator.userAgent, source: 'web' } }) }) .then(res => res.json()) .then(tokens => { // Store tokens localStorage.setItem('accessToken', tokens.access_token); localStorage.setItem('refreshToken', tokens.refresh_token); localStorage.setItem('idToken', tokens.id_token); resolve(tokens); }) .catch(reject); } else { reject(new Error('Facebook login failed')); } }, { scope: 'email,public_profile' }); }); }`
-
-## Examples
-
-### Complete JavaScript Example
-
-
-`// Initialize Facebook SDK window.fbAsyncInit = function() { FB.init({ appId: 'your_facebook_app_id', cookie: true, xfbml: true, version: 'v18.0' }); }; // Load SDK asynchronously (function(d, s, id) { var js, fjs = d.getElementsByTagName(s)[0]; if (d.getElementById(id)) return; js = d.createElement(s); js.id = id; js.src = "https://connect.facebook.net/en_US/sdk.js"; fjs.parentNode.insertBefore(js, fjs); }(document, 'script', 'facebook-jssdk')); // Sign in with Facebook async function signInWithFacebook() { try { const response = await new Promise((resolve, reject) => { FB.login((response) => { if (response.authResponse) { resolve(response.authResponse.accessToken); } else { reject(new Error('Facebook login failed')); } }, { scope: 'email,public_profile' }); }); const guardianResponse = await fetch('http://localhost:8080/v2/auth/fb', { method: 'POST', headers: { 'Content-Type': 'application/json', 'tenant-id': 'tenant1' }, body: JSON.stringify({ access_token: response, response_type: 'token', client_id: 'aB3dE5fG7hI9jK1lM', flow: 'signinup', meta_info: { ip: '0.0.0.0', location: 'Unknown', device_name: navigator.userAgent, source: 'web' } }) }); if (!guardianResponse.ok) { const error = await guardianResponse.json(); throw new Error(error.error?.message || 'Authentication failed'); } const tokens = await guardianResponse.json(); // Store tokens localStorage.setItem('accessToken', tokens.access_token); localStorage.setItem('refreshToken', tokens.refresh_token); // Redirect to dashboard window.location.href = '/dashboard'; } catch (error) { console.error('Facebook sign-in error:', error); alert('Sign-in failed: ' + error.message); } }`
-
-### React Example
-
-
-`import { useEffect } from 'react'; function FacebookSignIn() { useEffect(() => { // Load Facebook SDK window.fbAsyncInit = function() { FB.init({ appId: 'your_facebook_app_id', cookie: true, xfbml: true, version: 'v18.0' }); }; // Load SDK script (function(d, s, id) { var js, fjs = d.getElementsByTagName(s)[0]; if (d.getElementById(id)) return; js = d.createElement(s); js.id = id; js.src = "https://connect.facebook.net/en_US/sdk.js"; fjs.parentNode.insertBefore(js, fjs); }(document, 'script', 'facebook-jssdk')); }, []); const handleFacebookLogin = async () => { try { const response = await new Promise((resolve, reject) => { FB.login((response) => { if (response.authResponse) { resolve(response.authResponse.accessToken); } else { reject(new Error('Facebook login failed')); } }, { scope: 'email,public_profile' }); }); const guardianResponse = await fetch('http://localhost:8080/v2/auth/fb', { method: 'POST', headers: { 'Content-Type': 'application/json', 'tenant-id': 'tenant1' }, body: JSON.stringify({ access_token: response, response_type: 'token', client_id: 'aB3dE5fG7hI9jK1lM', flow: 'signinup', meta_info: { ip: '0.0.0.0', location: 'Unknown', device_name: navigator.userAgent, source: 'web' } }) }); const tokens = await guardianResponse.json(); console.log('Authenticated:', tokens); } catch (error) { console.error('Error:', error); } }; return ( <button onClick={handleFacebookLogin}> Sign in with Facebook </button> ); }`
-
-### cURL Example
-
-
-```text
-curl --location 'http://localhost:8080/v2/auth/fb' \ 
---header 'Content-Type: application/json' \ 
---header 'tenant-id: tenant1' \ 
---data '{
-    "access_token": "facebook_access_token_here",
-    "response_type": "token",
-    "client_id": "aB3dE5fG7hI9jK1lM",
-    "flow": "signinup",
-    "meta_info": {
-        "ip": "127.0.0.1",
-        "location": "localhost",
-        "device_name": "Chrome Browser",
-        "source": "web"
-    }
-}'
-```
+*   [Facebook Login for Web](https://developers.facebook.com/docs/facebook-login/web) - Official guide for implementing Facebook Login in web applications
+*   [Facebook Login for iOS](https://developers.facebook.com/docs/facebook-login/ios) - Official guide for implementing Facebook Login in iOS applications
+*   [Facebook Login for Android](https://developers.facebook.com/docs/facebook-login/android) - Official guide for implementing Facebook Login in Android applications
 
 ## Flow Diagram
 
