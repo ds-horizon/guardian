@@ -412,6 +412,6 @@ For implementing Google authentication in your frontend application, please refe
 
 ## Related Documentation
 
-*   [Social Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/socialAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/socialAuthentication") - Overview of social auth
+*   [Social Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication") - Overview of social auth
 
-*   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/facebookAuthentication") - Facebook integration
+*   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication") - Facebook integration

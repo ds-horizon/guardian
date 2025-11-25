@@ -625,9 +625,9 @@ properties:
 
 *   [Configuration Guide](https://github.com/ds-horizon/guardian/blob/main/docs/configuration.md) - Guardian configuration options
 
-*   [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/socialAuthentication.md) - Social authentication overview
+*   [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/SocialAuthentication.md) - Social authentication overview
 
-*   [Google Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/googleAuthentication.md) - Google integration guide
+*   [Google Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/GoogleAuthentication.md) - Google integration guide
 
-*   [Facebook Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/facebookAuthentication.md) - Facebook integration guide
+*   [Facebook Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/FacebookAuthentication.md) - Facebook integration guide
 
