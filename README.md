@@ -8,7 +8,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ## Why Guardian?
 
-*   🔐 **Enterprise-Grade Security**: Built with security best practices, RS256 JWT tokens, refresh token rotation
+*   🔐 **Enterprise-Grade Security**: Built with security best practices and regular security audits
 
 *   🎯 **Flexible Integration**: Works seamlessly with your existing user service
 
@@ -18,7 +18,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 *   📱 **Multi-Platform Support**: Native support for web, mobile, and API authentication
 
-*   🔑 **OAuth 2.0 & OIDC**: Full protocol support with PKCE, discovery endpoints
+*   🔑 **OAuth 2.0 & OIDC**: Full OAuth 2.0 and OIDC protocol support, secured with PKCE and discovery endpoints.
 
 *   ⚡ **High Performance**: Built on Vert.x for reactive, non-blocking I/O
 
@@ -54,14 +54,14 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 *   **🌐 [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/socialAuthentication.md)**
 
-    *   [Google Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/googleAuthentication.md) (OIDC)
+    *   [Google](https://github.com/ds-horizon/guardian/blob/main/docs/features/googleAuthentication.md)
 
-    *   [Facebook Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/facebookAuthentication.md) (OAuth 2.0)
+    *   [Facebook](https://github.com/ds-horizon/guardian/blob/main/docs/features/facebookAuthentication.md) 
 
     *   Custom OIDC providers
 
 
-### [Post Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/postAuthentication.md)
+### [Session Management](https://github.com/ds-horizon/guardian/blob/main/docs/features/postAuthentication.md)
 
 *   📊 Multi-device session tracking
 
@@ -76,7 +76,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ### OAuth 2.0 & OpenID Connect
 
-*   Full OAuth 2.0 implementation (Authorization Code, Implicit, ROPC, Client Credentials)
+*   Full OAuth 2.0 implementation (Authorization Code, Implicit, Client Credentials)
 
 *   OpenID Connect 1.0 compliant (Discovery, UserInfo, JWKS endpoints)
 
@@ -87,13 +87,8 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ### Multi-Tenant Architecture
 
-*   Complete tenant isolation at database level
-
+*   Scalable design for serving multiple tenants
 *   Per-tenant configuration
-
-*   OAuth client management with automatic clientId generation
-
-*   Scalable design for serving multiple organizations
 
 
 ## 🚀 Getting Started
@@ -114,9 +109,9 @@ Guardian is a robust, open-source authentication and authorization solution desi
 You can verify the installations by running the following commands in your terminal:
 
 ```bash
-    docker --version
-    mvn --version
-    java -version
+docker --version
+mvn --version
+java -version
 ```
 
 
@@ -141,33 +136,54 @@ These ports are required for the application to run without conflicts.
 
 1.  **Clone the repository**:
 ```bash
-    `git clone https://github.com/ds-horizon/guardian.git cd guardian`
+  git clone https://github.com/ds-horizon/guardian.git
 ```
 2.  **Start Guardian**:
+
+    **cd guardian**
 ```bash
-    ./quick-start.sh
+  ./quick-start.sh
 ```
-3.  **Test the setup** with a passwordless flow:
+3.  **Test the setup** with passwordless flow:
 
     **Initialize passwordless authentication**:
 ```bash
-    curl --location 'localhost:8080/v2/passwordless/init' --header 'tenant-id: tenant1' --header 'Content-Type: application/json' --data '{"contacts":[{"channel": "SMS", "identifier": "7878787878"}],"flow":"SIGNINUP","response_type":"token", "client_id": "client1"}'
+  curl --location 'localhost:8080/v2/passwordless/init' \
+--header 'tenant-id: tenant1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "contacts": [
+        {
+            "channel": "SMS",
+            "identifier": "7878787878"
+        }
+    ],
+    "flow": "SIGNINUP",
+    "response_type": "token",
+    "client_id": "client1"
+}'
 ```
 
   **Complete authentication** (using mock OTP for development):
 ```bash
-    curl --location 'localhost:8080/v2/passwordless/complete' --header 'tenant-id: tenant1' --header 'Content-Type: application/json' --data '{"state":"<state-from-init-response>", "otp": "999999" }'
+  curl --location 'localhost:8080/v2/passwordless/complete' \
+--header 'tenant-id: tenant1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "state": "<state-from-init-response>",
+    "otp": "999999"
+}'
 ```
 
 ## 📚 Documentation
 
 Comprehensive documentation is available in the `docs/` directory:
 
-| Document | Description |
-| --- | --- |
-| 📚 API Reference | Complete REST API documentation |
-| ⚙️ Configuration | Configuration options |
-| 🚀 Deployment | Production deployment guide |
+| Document                                                                                                | Description |
+|---------------------------------------------------------------------------------------------------------| --- |
+| 📚 [API Reference](https://github.com/ds-horizon/guardian/blob/main/docs/apiReference.md)               | Complete REST API documentation |
+| ⚙️ [Configuration](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/configuration.md) | Configuration options |
+| 🚀 [Deployment](https://github.com/ds-horizon/guardian/blob/main/docs/deployment.md)                    | Production deployment guide |
 
 ### API Specifications
 
