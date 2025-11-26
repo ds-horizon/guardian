@@ -70,7 +70,7 @@ All configuration is tenant-specific and stored in database tables. You need to 
 3. **Email Service** - Configure email provider for OTP delivery via email
 4. **User Service** - Configure user management service integration
 
-Refer [Configuration Guide](../configuration/Configuration.md) for complete configuration details
+Refer [Configuration Guide](../configuration/configuration.md/#tenant-configuration) for complete configuration details
 ## API Endpoints
 
 ### Init Endpoint

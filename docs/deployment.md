@@ -219,39 +219,22 @@ curl --location 'http://localhost:8080/v2/passwordless/init' \
 sudo journalctl -u guardian -f
 ```
 ## Environment Variables Reference
-| Variable | Description | Example | Required | Default |
-| --- | --- | --- | --- | --- |
-| **Database** | | | | |
-| GUARDIAN_MYSQL_WRITER_HOST | MySQL primary host | db.example.com | Yes | None |
-| GUARDIAN_MYSQL_READER_HOST | MySQL read replica host | db-read.example.com | Yes | None |
-| GUARDIAN_MYSQL_DATABASE | Database name | guardian | Yes | None |
-| GUARDIAN_MYSQL_USER | Database username | admin | Yes | None |
-| GUARDIAN_MYSQL_PASSWORD | Database password | SecurePass123! | Yes | None |
-| GUARDIAN_MYSQL_WRITER_MAX_POOL_SIZE | Writer connection pool | 10 | No | 10 |
-| GUARDIAN_MYSQL_READER_MAX_POOL_SIZE | Reader connection pool | 40 | No | 40 |
-| **Redis** | | | | |
-| GUARDIAN_REDIS_HOST | Redis host | redis.example.com | Yes | None |
-| GUARDIAN_REDIS_PORT | Redis port | 6379 | No | 6379 |
-| GUARDIAN_REDIS_TYPE | Redis mode | STANDALONE or CLUSTER | No | STANDALONE |
-| **Application** | | | | |
-| GUARDIAN_PORT | Application port | 8080 | No | 8080 |
-| LOGBACK_FILE | Logback config | logback/logback.xml | No | logback/logback.xml |
-| **HTTP Client** | | | | |
-| GUARDIAN_HTTP_CONNECT_TIMEOUT | Connect timeout (ms) | 1000 | No | 1000 |
-| GUARDIAN_HTTP_READ_TIMEOUT | Read timeout (ms) | 1000 | No | 1000 |
-| GUARDIAN_HTTP_WRITE_TIMEOUT | Write timeout (ms) | 1000 | No | 1000 |
-| GUARDIAN_TENANT_CONFIG_REFRESH_INTERVAL | Config cache TTL (s) | 10 | No | 10 |
-| GUARDIAN_HTTP_CLIENT_KEEP_ALIVE | Enable keep-alive | true | No | true |
-| GUARDIAN_HTTP_CLIENT_KEEP_ALIVE_TIMEOUT | Keep-alive timeout (ms) | 8000 | No | 8000 |
-| GUARDIAN_HTTP_CLIENT_IDLE_TIMEOUT | Idle timeout (ms) | 6000 | No | 6000 |
-| GUARDIAN_HTTP_CLIENT_CONNECTION_POOL_MAX_SIZE | Max pool size | 256 | No | 256 |
-| GUARDIAN_APPLICATION_SHUTDOWN_GRACE_PERIOD | Shutdown grace period (s) | 30 | No | 30 |
+For a complete list of environment variables and configuration options, refer to the [Guardian Configuration](configuration/configuration.md/#guardian-configuration).
 ## Troubleshooting
 ### Check Service Logs First
+
+**If using Systemd:**
 ```bash
-# Systemd
 sudo journalctl -u guardian -n 100
 ```
+
+**If running directly (without Systemd):**
+```bash
+# Check application logs
+tail -f /var/logs/guardian.log
+```
+
+> **Note**: Log location is configured in `logback.xml`. Default: `/var/logs/guardian.log`
 If the issue isn't clear, continue with the checks below.
 ### Common Issues and Fixes
 1.  **Database connection failure**
