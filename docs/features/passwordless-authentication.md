@@ -64,74 +64,13 @@ Before implementing passwordless authentication, you need:
 
 All configuration is tenant-specific and stored in database tables. You need to configure OTP settings and service endpoints before using passwordless authentication.
 
-### Step 1: Configure OTP Settings
 
-Configure OTP behavior in the `otp_config` table:
+1. **OTP Settings** - Configure OTP behavior (length, validity, retry limits)
+2. **SMS Service** - Configure SMS provider for OTP delivery via phone
+3. **Email Service** - Configure email provider for OTP delivery via email
+4. **User Service** - Configure user management service integration
 
-```sql
-INSERT INTO otp_config (tenant_id, is_otp_mocked, otp_length, try_limit, resend_limit, otp_resend_interval, otp_validity, whitelisted_inputs)
-VALUES ('tenant1', false, 6, 5, 5, 30, 900, '{}');
-```
-
-**Table Schema**:
-
-| Field | Type | Default | Description |
-| --- | --- | --- | --- |
-| `tenant_id` | CHAR(10) | | Your tenant identifier |
-| `is_otp_mocked` | BOOLEAN | FALSE | Returns static OTP `999999` if true (useful for testing) |
-| `otp_length` | INT | 6 | OTP code length |
-| `try_limit` | INT | 5 | Maximum OTP verification attempts |
-| `resend_limit` | INT | 5 | Maximum resend attempts (excluding initial send) |
-| `otp_resend_interval` | INT | 30 | Minimum seconds between resends |
-| `otp_validity` | INT | 900 | OTP validity in seconds (15 minutes) |
-| `whitelisted_inputs` | JSON | {} | Map of identifier → OTP for testing (e.g., `{"9999999999": "123456"}`) |
-
-### Step 2: Configure SMS Service
-
-If you want to send OTP via SMS, configure the SMS service in the `sms_config` table:
-
-```sql
-INSERT INTO sms_config (tenant_id, host, port, is_ssl_enabled, send_sms_path, template_name, template_params)
-VALUES ('tenant1', 'sms-service.example.com', 443, true, '/api/v1/send-sms', 'otp_template', '{"app_name": "My App"}');
-```
-
-**Table Schema**:
-
-| Field | Type | Default | Description |
-| --- | --- | --- | --- |
-| `tenant_id` | CHAR(10) | | Your tenant identifier |
-| `host` | VARCHAR(256) | | SMS service hostname |
-| `port` | INT | | SMS service port |
-| `is_ssl_enabled` | BOOLEAN | FALSE | Enable SSL/TLS for SMS service |
-| `send_sms_path` | VARCHAR(256) | | API path for sending SMS |
-| `template_name` | VARCHAR(256) | | Default SMS template name |
-| `template_params` | JSON | {} | Default template parameters |
-
-### Step 3: Configure Email Service
-
-If you want to send OTP via Email, configure the email service in the `email_config` table:
-
-```sql
-INSERT INTO email_config (tenant_id, host, port, is_ssl_enabled, send_email_path, template_name, template_params)
-VALUES ('tenant1', 'email-service.example.com', 443, true, '/api/v1/send-email', 'otp_template', '{"app_name": "My App"}');
-```
-
-**Table Schema**:
-
-| Field | Type | Default | Description |
-| --- | --- | --- | --- |
-| `tenant_id` | CHAR(10) | | Your tenant identifier |
-| `host` | VARCHAR(256) | | Email service hostname |
-| `port` | INT | 80 | Email service port |
-| `is_ssl_enabled` | BOOLEAN | FALSE | Enable SSL/TLS for email service |
-| `send_email_path` | VARCHAR(256) | | API path for sending email |
-| `template_name` | VARCHAR(256) | | Default email template name |
-| `template_params` | JSON | {} | Default template parameters |
-
-### Step 4: Configure User Service
-
-You must also configure your user service. See the [Username/Password Authentication guide](https://github.com/ds-horizon/guardian/blob/main/docs/features/usernamePasswordAuthentication.md) for user service configuration details.
-
+Refer [Configuration Guide](../configuration/Configuration.md) for complete configuration details
 ## API Endpoints
 
 ### Init Endpoint
@@ -920,4 +859,5 @@ Guardian enforces rate limiting to prevent abuse and ensure security:
 
 ## Related Documentation
 
-*   [Post-Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/postAuthentication.md) - Session management and token refresh
+*   [Post Authentication](post-authentication.md) - Session management and Logout
+*   [Configuration](../configuration/configuration.md) - Guardian configuration options

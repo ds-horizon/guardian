@@ -7,7 +7,7 @@ paths:
     post:
       tags:
         - Passwordless
-      summary: Initate the passwordless flow
+      summary: Initiate the passwordless flow
       description: |
         API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
 
@@ -1354,7 +1354,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /revocations:
+  /v1/revocations:
     get:
       tags:
         - Token Management
@@ -3127,7 +3127,7 @@ components:
           type: string
         location:
           type: string
-        deviceName:
+        device_name:
           type: string
         source:
           type: string
@@ -3250,6 +3250,9 @@ components:
           example: state
     V1PasswordlessCompleteRequestBody:
       type: object
+      required:
+        - state
+        - otp
       properties:
         state:
           type: string
