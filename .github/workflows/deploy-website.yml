@@ -3,7 +3,7 @@ name: Deploy Website to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - chore/website-doc
     paths:
       - 'docs/**'
       - 'website/**'

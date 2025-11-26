@@ -191,7 +191,7 @@ export default function ApiDocsPage() {
     const loadApiSpec = async () => {
       try {
         setLoading(true)
-        const response = await fetch("/guardian.yaml")
+        const response = await fetch("/guardian/guardian.yaml")
         if (!response.ok) {
           throw new Error(`Failed to load API spec: ${response.status}`)
         }

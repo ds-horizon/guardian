@@ -69,6 +69,6 @@ export default defineConfig({
   ],
   output: 'static',
   outDir: './dist',
-  base: '/docs',
+  base: '/guardian/docs',
 });
 
