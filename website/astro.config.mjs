@@ -35,6 +35,7 @@ export default defineConfig({
         {
             label: 'Features',
             items: [
+              { label: 'Passwordless Authentication', link: '/features/passwordless-authentication' },
               { label: 'Username/Password Authentication', link: '/features/username-password-authentication' },
               { label: 'Social Authentication', link: '/features/social-authentication' },
               { label: 'Google Authentication', link: '/features/google-authentication' },
@@ -44,11 +45,11 @@ export default defineConfig({
             ],
           },
           {
-            label: 'API Reference',
+            label: 'Deployment',
             items: [
-              { label: 'API Reference', link: '/api-docs/' }
+              { label: 'Deployment', link: '/deployment/deployment' }
             ],
-          },
+          }
       ],
       customCss: [
         './styles/starlight-custom.css',

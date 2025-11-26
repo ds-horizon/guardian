@@ -7,7 +7,7 @@ paths:
     post:
       tags:
         - Passwordless
-      summary: Initate the passwordless flow
+      summary: Initiate the passwordless flow
       description: |
         API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
 
@@ -64,6 +64,85 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/passwordless/init:
+    post:
+      tags:
+        - Passwordless
+      summary: Initiate the passwordless flow
+      description: |
+        API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
+
+        The first time this API is called, a unique state is returned in the response. Every subsequent request to init (to resend otp), must include the state parameter in the request, otherwise it is treated as a fresh request.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2PasswordlessInitRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully sent an OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2PasswordlessInitResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/passwordless/complete:
+    post:
+      tags:
+        - Passwordless
+      summary: Complete the passwordless flow
+      description: |
+        API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V1PasswordlessCompleteRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed in or up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2TokenResponse'
+          headers:
+            Set-Cookie:
+              description: Sets authentication cookies (access token, refresh token, SSO token)
+              schema:
+                type: array
+                items:
+                  type: string
         '400':
           description: Bad Request due to missing parameters or invalid data
           content:
@@ -443,7 +522,7 @@ paths:
         - Provider-specific client credentials (client ID and secret)
         - Redirect URI for OAuth flows
         - Optional scope and endpoint configuration
-        
+
       parameters:
         - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
@@ -460,6 +539,222 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IdpConnectResponse'
+        '400':
+          description: Bad Request due to missing parameters, invalid configuration, or validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_provider:
+                  summary: Missing provider field
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Provider is required"
+                invalid_provider:
+                  summary: Invalid provider name
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Provider must be one of: google, facebook, oidc"
+                missing_credentials:
+                  summary: Missing credentials
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Credentials are required"
+                invalid_redirect_uri:
+                  summary: Invalid redirect URI
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Invalid redirect URI format"
+                missing_endpoints:
+                  summary: Missing endpoints for OIDC provider
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Endpoints configuration is required for OIDC providers"
+        '401':
+          description: Unauthorized - Invalid tenant or insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_tenant:
+                  summary: Invalid tenant ID
+                  value:
+                    error:
+                      code: "unauthorized"
+                      message: "Invalid tenant-id header"
+        '409':
+          description: Conflict - Connection already exists for this provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                connection_exists:
+                  summary: Provider connection already exists
+                  value:
+                    error:
+                      code: "conflict"
+                      message: "A connection for this provider already exists"
+                      metadata:
+                        existingConnectionId: "conn_google_existing123"
+        '422':
+          description: Unprocessable Entity - Provider validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                provider_validation_failed:
+                  summary: Failed to validate provider credentials
+                  value:
+                    error:
+                      code: "provider_validation_failed"
+                      message: "Unable to validate provider credentials"
+                invalid_client_credentials:
+                  summary: Invalid client credentials
+                  value:
+                    error:
+                      code: "invalid_client_credentials"
+                      message: "Provider rejected the client credentials"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/auth/fb:
+    post:
+      tags:
+        - Social
+      summary: Signin, Signup or Signinup using the facebook access_token
+      description: |
+        API to signin, signup or signinup using the facebook access_token. The access_token is verified via the https://graph.facebook.com/me endpoint.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2AuthFbRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2TokenResponse'
+          headers:
+            Set-Cookie:
+              description: Sets authentication cookies (access token, refresh token, SSO token)
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/auth/google:
+    post:
+      tags:
+        - Social
+      summary: Signin, Signup or Signinup user using ID token verification.
+      description: |
+        API to signin, signup or signinup a user using Google issued ID token.
+
+        The id token is verified statelessly via the public keys exposed by Google using the JWKS URI.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2AuthGoogleRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed up
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2TokenResponse'
+          headers:
+            Set-Cookie:
+              description: Sets authentication cookies (access token, refresh token, SSO token)
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/idp/connect:
+    post:
+      tags:
+        - Social
+      summary: Connect to external identity provider
+      description: |
+        Establish a connection with an external identity provider for authentication.
+        
+        This endpoint allows Guardian to connect to external identity providers
+        (IdPs) for user authentication and profile information retrieval.
+        
+        **Configuration Requirements:**
+        - Provider-specific client credentials (client ID and secret)
+        - Redirect URI for OAuth flows
+        - Optional scope and endpoint configuration
+        
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        description: Identity provider connection request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2IdpConnectRequestBody'
+        required: true
+      responses:
+        '200':
+          description: IdP authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2IdpConnectResponse'
+          headers:
+            Set-Cookie:
+              description: Sets authentication cookies when tokens are returned (access token, refresh token)
+              schema:
+                type: array
+                items:
+                  type: string
         '400':
           description: Bad Request due to missing parameters, invalid configuration, or validation errors
           content:
@@ -865,9 +1160,135 @@ paths:
                 type: array
                 items:
                   type: string
-                example: 
+                example:
                   - "AT=; Path=/; Domain=example.com; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
                   - "RT=; Path=/; Domain=example.com; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
+        '400':
+          description: Bad Request due to missing or invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_refresh_token:
+                  summary: Missing refresh token
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Refresh token is required"
+                invalid_refresh_token:
+                  summary: Invalid refresh token
+                  value:
+                    error:
+                      code: "unauthorized"
+                      message: "Invalid refresh token"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/refresh-token:
+    post:
+      tags:
+        - Session Management
+      summary: API to get a new access token using the refresh token
+      description: |
+        API to get a new access token using the refresh token. The refresh token can be provided in the request body or as a cookie.
+
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2RefreshTokenRequestBody'
+        required: false
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2RefreshTokenResponse'
+          headers:
+            Set-Cookie:
+              description: Sets the access token cookie
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          headers:
+            Set-Cookie:
+              description: Clears authentication cookies (access token and refresh token)
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/logout:
+    post:
+      tags:
+        - Session Management
+      summary: User logout
+      description: |
+        Log out a user by invalidating their refresh token and clearing session cookies.
+        
+        **Logout Types:**
+        - **Token Logout**: Invalidates only the provided refresh token (default)
+        - **Universal Logout**: If `logout_type` is set to `universal`, invalidates all refresh tokens for the user
+        
+        **Behavior:**
+        - Validates the provided refresh token (can be in request body or cookie)
+        - Invalidates the token(s) based on logout type
+        - Clears authentication cookies by setting them to null
+        - Returns 204 No Content on success
+        
+        **Request Body:**
+        - `refresh_token` (optional): The refresh token to invalidate (can also be provided as cookie)
+        - `logout_type` (optional): Type of logout - `token` (default) or `universal`
+        - `client_id` (optional): Client ID for the logout operation
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2LogoutRequestBody'
+        required: false
+      responses:
+        '204':
+          description: User successfully logged out
+          headers:
+            Set-Cookie:
+              description: Clears authentication cookies (access token, refresh token, and SSO token)
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - "AT=; Path=/; Domain=example.com; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
+                  - "RT=; Path=/; Domain=example.com; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
+                  - "SSO=; Path=/; Domain=example.com; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
         '400':
           description: Bad Request due to missing or invalid refresh token
           content:
@@ -933,7 +1354,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /revocations:
+  /v1/revocations:
     get:
       tags:
         - Token Management
@@ -1392,7 +1813,7 @@ paths:
                   policyUri: "https://myapp.example.com/privacy"
                 requested_scopes:
                   - "openid"
-                  - "email" 
+                  - "email"
                   - "profile"
                   - "phone"
                 consented_scopes:
@@ -2723,15 +3144,22 @@ components:
             variable-2: value-2
     Contact:
       type: object
+      required:
+        - channel
+        - identifier
       properties:
         channel:
           type: string
+          description: Contact channel
+          enum: ["sms", "email"]
           example: sms
         identifier:
           type: string
-          example: 999999999
+          description: Phone number (SMS) or email address (email)
+          example: "9999999999"
         template:
           $ref: "#/components/schemas/Template"
+          description: Template override (uses tenant default if not provided)
     V1PasswordlessInitRequestBody:
       type: object
       properties:
@@ -2750,6 +3178,76 @@ components:
             $ref: "#/components/schemas/Contact"
         metaInfo:
           $ref: '#/components/schemas/MetaInfo'
+    V2PasswordlessInitRequestBody:
+      type: object
+      required:
+        - client_id
+        - contacts
+      properties:
+        client_id:
+          type: string
+          description: Client identifier
+          example: "my-client-id"
+        state:
+          type: string
+          description: State from previous request (for resend)
+          example: state
+        response_type:
+          type: string
+          description: Desired response type
+          enum: ["code", "token"]
+          example: "token"
+        contacts:
+          type: array
+          description: List of contacts (email or phone) to send OTP to
+          items:
+            $ref: "#/components/schemas/Contact"
+          minItems: 1
+        scopes:
+          type: array
+          description: List of scopes to request
+          items:
+            type: string
+          example: ["openid", "email", "profile"]
+        flow:
+          type: string
+          description: Authentication flow type
+          enum: ["signinup", "signin", "signup"]
+          default: "signinup"
+          example: "signinup"
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
+    V2PasswordlessInitResponse:
+      type: object
+      properties:
+        tries:
+          type: integer
+          description: Number of verification attempts made
+          example: 1
+        retries_left:
+          type: integer
+          description: Number of verification attempts remaining
+          example: 4
+        resends:
+          type: integer
+          description: Number of times OTP has been resent
+          example: 1
+        resends_left:
+          type: integer
+          description: Number of resends remaining
+          example: 4
+        resend_after:
+          type: integer
+          description: Unix timestamp after which resend is allowed
+          example: 1640995230
+        is_new_user:
+          type: boolean
+          description: Whether this is a new user
+          example: false
+        state:
+          type: string
+          description: State token for subsequent requests
+          example: state
     V1PasswordlessCompleteRequestBody:
       type: object
       properties:
@@ -2809,13 +3307,133 @@ components:
           type: string
         metaInfo:
           $ref: '#/components/schemas/MetaInfo'
+    V2AuthGoogleRequestBody:
+      type: object
+      required:
+        - client_id
+        - id_token
+        - response_type
+      properties:
+        client_id:
+          type: string
+          description: Client identifier
+          example: "my-client-id"
+        id_token:
+          type: string
+          description: Google issued ID token
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        response_type:
+          type: string
+          description: Desired response type
+          enum: ["code", "token"]
+          example: "token"
+        scopes:
+          type: array
+          description: List of scopes to request
+          items:
+            type: string
+          example: ["openid", "email", "profile"]
+        flow:
+          type: string
+          description: Authentication flow type
+          enum: ["signinup", "signin", "signup"]
+          default: "signinup"
+          example: "signinup"
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
+    V2AuthFbRequestBody:
+      type: object
+      required:
+        - client_id
+        - access_token
+        - response_type
+      properties:
+        client_id:
+          type: string
+          description: Client identifier
+          example: "my-client-id"
+        access_token:
+          type: string
+          description: Facebook access token
+          example: "EAABwzLixnjYBO..."
+        response_type:
+          type: string
+          description: Desired response type
+          enum: ["code", "token"]
+          example: "token"
+        scopes:
+          type: array
+          description: List of scopes to request
+          items:
+            type: string
+          example: ["openid", "email", "profile"]
+        flow:
+          type: string
+          description: Authentication flow type
+          enum: ["signinup", "signin", "signup"]
+          default: "signinup"
+          example: "signinup"
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
+    V2RefreshTokenRequestBody:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          description: Refresh token (can also be provided as cookie)
+          example: "refresh_token_xyz789"
+        client_id:
+          type: string
+          description: Client identifier
+          example: "my-client-id"
+    V2RefreshTokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: New access token
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          description: Token type
+          enum: ["Bearer"]
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 3600
+    V2LogoutRequestBody:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          description: Refresh token to invalidate (can also be provided as cookie)
+          example: "refresh_token_xyz789"
+        logout_type:
+          type: string
+          description: Type of logout
+          enum: ["token", "universal"]
+          default: "token"
+          example: "token"
+        client_id:
+          type: string
+          description: Client identifier
+          example: "my-client-id"
     V1RefreshTokenRequestBody:
       type: object
+      required:
+        - refreshToken
       properties:
         refreshToken:
           type: string
     V1LogoutRequestBody:
       type: object
+      required:
+        - refreshToken
       properties:
         refreshToken:
           type: string
@@ -2868,6 +3486,63 @@ components:
           example: "signinup"
         metaInfo:
           $ref: '#/components/schemas/MetaInfo'
+    V2IdpConnectRequestBody:
+      type: object
+      description: Request body for connecting to external identity providers (v2)
+      required:
+        - client_id
+        - id_provider
+        - identifier
+        - identifier_type
+        - response_type
+      properties:
+        client_id:
+          type: string
+          description: Client identifier
+          example: "my-client-id"
+        id_provider:
+          type: string
+          description: Identity provider name (configured provider identifier)
+          example: "google"
+        identifier:
+          type: string
+          description: |
+            Provider-specific identifier for authentication:
+            - For authorization code flow: the authorization code
+            - For ID token flow: the ID token
+          example: "4/0AX4XfWjY1Z2X3Y4Z5..."
+        identifier_type:
+          type: string
+          description: Type of identifier being provided
+          enum: ["code", "id_token"]
+          example: "code"
+        response_type:
+          type: string
+          description: Desired response type for the authentication flow
+          enum: ["code", "token"]
+          example: "token"
+        nonce:
+          type: string
+          description: Optional nonce value for OIDC flows
+          example: "abc123nonce"
+        code_verifier:
+          type: string
+          description: PKCE code verifier for authorization code flow
+          example: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+        scopes:
+          type: array
+          description: List of scopes to request
+          items:
+            type: string
+          example: ["openid", "email", "profile"]
+        flow:
+          type: string
+          description: Authentication flow type
+          enum: ["signinup", "signin", "signup"]
+          default: "signinup"
+          example: "signinup"
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
     IdpConnectResponse:
       type: object
       description: Response from identity provider authentication
@@ -2913,6 +3588,54 @@ components:
               description: Provider's refresh token
               example: "1//04xxxxxxxxxxxxx"
             idToken:
+              type: string
+              description: Provider's ID token
+              example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+    V2IdpConnectResponse:
+      type: object
+      description: Response from identity provider authentication (v2 - uses snake_case field names)
+      properties:
+        code:
+          type: string
+          description: Authorization code (present when response_type is 'code')
+          example: "4/0AX4XfWjY1Z2X3Y4Z5A6B7C8D9E0F1G2H3I4J5K6L7M8N9O0P1Q2R3S4T5U6V7W8X9Y0Z1"
+        access_token:
+          type: string
+          description: Access token (present when response_type is 'token')
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: Refresh token for getting new access tokens
+          example: "1//04xxxxxxxxxxxxx-refreshtoken"
+        id_token:
+          type: string
+          description: OpenID Connect ID token
+          example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyNzg5..."
+        token_type:
+          type: string
+          description: Type of the access token
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 3600
+        is_new_user:
+          type: boolean
+          description: Whether this is a newly created user
+          example: false
+        idp_credentials:
+          type: object
+          description: Identity provider specific credentials
+          properties:
+            access_token:
+              type: string
+              description: Provider's access token
+              example: "ya29.a0AfH6SMC..."
+            refresh_token:
+              type: string
+              description: Provider's refresh token
+              example: "1//04xxxxxxxxxxxxx"
+            id_token:
               type: string
               description: Provider's ID token
               example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
@@ -3014,7 +3737,7 @@ components:
         idToken:
           type: string
           example: idToken
-          description: type of token. Only supports Bearer for now.
+          description: OpenID Connect ID token
         tokenType:
           type: string
           example: Bearer
@@ -3024,6 +3747,38 @@ components:
           example: 3600
           description: expiry of the access token in seconds
         isNewUser:
+          type: boolean
+          description: Indicates if the user is new
+          example: false
+    V2TokenResponse:
+      type: object
+      description: Token response for v2 endpoints (uses snake_case field names)
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          description: Short lived Bearer JWT token to access APIs
+        refresh_token:
+          type: string
+          example: "refresh_token_xyz789"
+          description: Long lived token used to refresh access token
+        id_token:
+          type: string
+          example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyNzg5..."
+          description: OpenID Connect ID token
+        sso_token:
+          type: string
+          example: "sso_token_abc123"
+          description: Single Sign-On token for session management
+        token_type:
+          type: string
+          example: "Bearer"
+          description: Type of token. Only supports Bearer for now
+        expires_in:
+          type: integer
+          example: 3600
+          description: Expiry of the access token in seconds
+        is_new_user:
           type: boolean
           description: Indicates if the user is new
           example: false
