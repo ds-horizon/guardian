@@ -176,7 +176,7 @@ Complete guide for Facebook authentication including:
 
 ## Common Configuration
 
-### User Service Integration
+### [User Service Integration](./configuration/user-configuration.md)
 
 Guardian integrates with your user service to create and retrieve users. Your user service must implement:
 
@@ -186,8 +186,6 @@ Guardian integrates with your user service to create and retrieve users. Your us
 
 *   `POST /provider` - Add provider to existing user
 
-
-User service Swagger
 
 ## OIDC Provider Connect
 

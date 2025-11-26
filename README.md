@@ -179,11 +179,11 @@ These ports are required for the application to run without conflicts.
 
 Comprehensive documentation is available in the `docs/` directory:
 
-| Document                                                  | Description |
-|-----------------------------------------------------------| --- |
-| 📚 [API Reference](./docs/ApiReference.md)                | Complete REST API documentation |
-| ⚙️ [Configuration](./docs/configuration/Configuration.md) | Configuration options |
-| 🚀 [Deployment](./docs/deployment.md)                     | Production deployment guide |
+| Document                                                 | Description |
+|----------------------------------------------------------| --- |
+| 📚 [API Reference](/docs/api-reference.md)               | Complete REST API documentation |
+| ⚙️ [Configuration](/docs/configuration/configuration.md) | Configuration options |
+| 🚀 [Deployment](/docs/deployment.md)                     | Production deployment guide |
 
 ### API Specifications
 
