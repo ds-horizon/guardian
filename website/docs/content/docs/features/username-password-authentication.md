@@ -5,7 +5,6 @@ description: Complete guide for implementing username/password authentication us
 
 Complete guide for implementing username/password authentication using Guardian's `/v1/signin` and `/v1/signup` endpoints.
 
-
 ## Overview
 
 Username/password authentication is the traditional authentication method where users provide a username and password to sign in or sign up. Guardian validates credentials through user service and returns access token, refresh token, and ID token upon successful authentication.
@@ -34,7 +33,7 @@ Username/password authentication is the traditional authentication method where 
 
 Before implementing username/password authentication, you need:
 
-1.  **Guardian Tenant**: A tenant configured in Guardian
+1.  **Guardian Tenant**: A [tenant configured](/docs/configuration/configuration#tenant-onboarding) in Guardian
 
 2.  **User Service**: A user service that implements the following endpoints:
 
@@ -52,7 +51,7 @@ Before implementing username/password authentication, you need:
 
 Ensure your user service is accessible and implements the required endpoints. The user service configuration should be set in the Guardian tenant configuration.
 
-Refer [userConfiguration](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/UserConfiguration.md)
+Refer [userConfiguration](/docs/configuration/user-configuration)
 
 
 ## API Endpoints
@@ -548,12 +547,3 @@ properties:
 
     *   Sanitize user inputs to prevent injection attacks
 
-## Related Documentation
-
-*   [Configuration Guide](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/Configuration.md) - Guardian configuration options
-
-*   [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/SocialAuthentication.md) - Social authentication overview
-
-*   [Google Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/GoogleAuthentication.md) - Google integration guide
-
-*   [Facebook Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/FacebookAuthentication.md) - Facebook integration guide

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronDown, ChevronRight, Code, Copy, Lock, MessageSquare, RefreshCw, Send, User, Search } from "lucide-react"
+import { ChevronDown, ChevronRight, Code, Copy, Lock, MessageSquare, RefreshCw, Send, User, Search, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,9 +10,6 @@ import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import Layout from "@/components/layout"
 import SectionHeader from "@/components/ui/section-header"
-
-// Extract API spec to a separate file to reduce page size
-import { apiSpec } from "@/lib/api-spec"
 
 // Helper function to get the icon for a tag
 const getTagIcon = (tag: string) => {
@@ -63,7 +60,116 @@ const formatJSON = (obj: any) => {
   return JSON.stringify(obj, null, 2)
 }
 
+// Helper function to get schema type
+const getSchemaType = (schema: any): string => {
+  if (schema.type) {
+    if (schema.type === 'array' && schema.items) {
+      const itemType = getSchemaType(schema.items)
+      return `array<${itemType}>`
+    }
+    return schema.type
+  }
+  if (schema.$ref) {
+    const refPath = schema.$ref.replace("#/components/schemas/", "")
+    return refPath
+  }
+  if (schema.enum) {
+    return `enum: ${schema.enum.join(' | ')}`
+  }
+  if (schema.oneOf) return "oneOf"
+  if (schema.anyOf) return "anyOf"
+  if (schema.allOf) return "allOf"
+  return "object"
+}
+
+// Helper function to render schema properties as a table
+const renderSchemaTable = (schema: any, components: any, level: number = 0): React.ReactElement[] => {
+  if (!schema) return []
+
+  let properties: Record<string, any> = {}
+  let required: string[] = []
+
+  // Resolve schema reference
+  if (schema.$ref && components) {
+    const resolved = resolveRef(schema.$ref, components)
+    properties = resolved.properties || {}
+    required = resolved.required || []
+  } else if (schema.properties) {
+    properties = schema.properties
+    required = schema.required || []
+  } else {
+    return []
+  }
+
+  const rows: React.ReactElement[] = []
+
+  Object.entries(properties).forEach(([key, prop]: [string, any]) => {
+    const isRequired = required.includes(key)
+    const propType = getSchemaType(prop)
+    const description = prop.description || ""
+    const example = prop.example !== undefined 
+      ? (typeof prop.example === 'object' ? JSON.stringify(prop.example) : String(prop.example))
+      : ""
+    const defaultValue = prop.default !== undefined 
+      ? (typeof prop.default === 'object' ? JSON.stringify(prop.default) : String(prop.default))
+      : ""
+
+    // Handle nested objects
+    const hasNestedProperties = (prop.properties && Object.keys(prop.properties).length > 0) || (prop.$ref && components)
+
+    rows.push(
+      <div key={key} className={`grid grid-cols-4 gap-4 py-2 ${level > 0 ? 'pl-4 border-l-2 border-border/20' : ''}`}>
+        <div className="text-sm font-medium">
+          {level > 0 && <span className="text-muted-foreground mr-1">└─</span>}
+          {key}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          <Badge variant="outline" className="text-xs mr-2">
+            {propType}
+          </Badge>
+          {description}
+        </div>
+        <div className="text-sm">
+          {isRequired ? (
+            <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">
+              Required
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/20">
+              Optional
+            </Badge>
+          )}
+        </div>
+        <div className="text-sm text-muted-foreground font-mono">
+          {example ? (
+            <span className="text-xs" title={example.length > 30 ? example : undefined}>
+              {example.length > 30 ? `${example.substring(0, 30)}...` : example}
+            </span>
+          ) : defaultValue ? (
+            <span className="text-xs text-blue-500" title={defaultValue.length > 30 ? defaultValue : undefined}>
+              default: {defaultValue.length > 30 ? `${defaultValue.substring(0, 30)}...` : defaultValue}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground/50">—</span>
+          )}
+        </div>
+      </div>
+    )
+
+    // Recursively render nested properties
+    if (hasNestedProperties && level < 2) {
+      const nestedSchema = prop.$ref ? resolveRef(prop.$ref, components) : prop
+      const nestedRows = renderSchemaTable(nestedSchema, components, level + 1)
+      rows.push(...nestedRows)
+    }
+  })
+
+  return rows
+}
+
 export default function ApiDocsPage() {
+  const [apiSpec, setApiSpec] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [activeEndpoint, setActiveEndpoint] = useState<string | null>(null)
   const [expandedTags, setExpandedTags] = useState<Record<string, boolean>>({})
   const [copiedText, setCopiedText] = useState<string | null>(null)
@@ -80,20 +186,52 @@ export default function ApiDocsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [responseTime, setResponseTime] = useState<number | null>(null)
 
+  // Load API spec from YAML file
+  useEffect(() => {
+    const loadApiSpec = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch("/guardian.yaml")
+        if (!response.ok) {
+          throw new Error(`Failed to load API spec: ${response.status}`)
+        }
+        const yamlText = await response.text()
+        
+        // Dynamically import js-yaml for client-side usage
+        const yamlModule = await import('js-yaml')
+        const parsed = yamlModule.load(yamlText) as any
+        setApiSpec(parsed)
+      } catch (error) {
+        console.error("Error loading API spec:", error)
+        toast({
+          title: "Failed to load API specification",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadApiSpec()
+  }, [])
+
   // Group endpoints by tags
   const endpointsByTag: Record<string, { path: string; method: string; operation: any }[]> = {}
 
-  Object.entries(apiSpec.paths).forEach(([path, pathItem]: [string, any]) => {
-    Object.entries(pathItem).forEach(([method, operation]: [string, any]) => {
-      const tags = operation.tags || ["default"]
-      tags.forEach((tag: string) => {
-        if (!endpointsByTag[tag]) {
-          endpointsByTag[tag] = []
-        }
-        endpointsByTag[tag].push({ path, method, operation })
+  if (apiSpec?.paths) {
+    Object.entries(apiSpec.paths).forEach(([path, pathItem]: [string, any]) => {
+      Object.entries(pathItem).forEach(([method, operation]: [string, any]) => {
+        const tags = operation.tags || ["default"]
+        tags.forEach((tag: string) => {
+          if (!endpointsByTag[tag]) {
+            endpointsByTag[tag] = []
+          }
+          endpointsByTag[tag].push({ path, method, operation })
+        })
       })
     })
-  })
+  }
 
   // Toggle tag expansion
   const toggleTag = (tag: string) => {
@@ -229,9 +367,9 @@ export default function ApiDocsPage() {
       const schema = operation.requestBody.content["application/json"].schema
       let exampleObj = {}
 
-      if (schema.$ref) {
+      if (schema.$ref && apiSpec?.components) {
         const resolvedSchema = resolveRef(schema.$ref, apiSpec.components)
-        exampleObj = Object.entries(resolvedSchema.properties || {}).reduce((acc, [key, value]: [string, any]) => {
+        exampleObj = Object.entries(resolvedSchema.properties || {}).reduce((acc: Record<string, any>, [key, value]: [string, any]) => {
           acc[key] = value.example || ""
           return acc
         }, {})
@@ -243,23 +381,56 @@ export default function ApiDocsPage() {
     }
   }
 
-  // Initialize expanded tags
+  // Initialize expanded tags when API spec loads
   useEffect(() => {
-    const initialExpandedTags: Record<string, boolean> = {}
-    Object.keys(endpointsByTag).forEach((tag) => {
-      initialExpandedTags[tag] = true
-    })
-    setExpandedTags(initialExpandedTags)
+    if (apiSpec?.paths) {
+      const initialExpandedTags: Record<string, boolean> = {}
+      Object.keys(endpointsByTag).forEach((tag) => {
+        initialExpandedTags[tag] = true
+      })
+      setExpandedTags(initialExpandedTags)
 
-    // Set the first endpoint as active by default
-    const firstTag = Object.keys(endpointsByTag)[0]
-    if (firstTag && endpointsByTag[firstTag].length > 0) {
-      const firstEndpoint = endpointsByTag[firstTag][0]
-      const endpointKey = `${firstEndpoint.path}-${firstEndpoint.method}`
-      setActiveEndpoint(endpointKey)
-      updateRequestBodyForEndpoint(firstEndpoint.path, firstEndpoint.method, firstEndpoint.operation)
+      // Set the first endpoint as active by default
+      const firstTag = Object.keys(endpointsByTag)[0]
+      if (firstTag && endpointsByTag[firstTag].length > 0) {
+        const firstEndpoint = endpointsByTag[firstTag][0]
+        const endpointKey = `${firstEndpoint.path}-${firstEndpoint.method}`
+        setActiveEndpoint(endpointKey)
+        updateRequestBodyForEndpoint(firstEndpoint.path, firstEndpoint.method, firstEndpoint.operation)
+      }
     }
-  }, [])
+  }, [apiSpec])
+
+  if (loading) {
+    return (
+      <Layout showBackButton simplifiedHeader>
+        <div className="container max-w-[1600px] py-6">
+          <div className="flex flex-col items-center justify-center h-[60vh]">
+            <Loader2 className="size-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading API specification...</p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (!apiSpec) {
+    return (
+      <Layout showBackButton simplifiedHeader>
+        <div className="container max-w-[1600px] py-6">
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+            <div className="size-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+              <Code className="size-8 text-destructive" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Failed to load API specification</h2>
+            <p className="text-muted-foreground max-w-md">
+              Unable to load the API specification. Please try refreshing the page.
+            </p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout showBackButton simplifiedHeader>
@@ -341,10 +512,11 @@ export default function ApiDocsPage() {
 
           {/* Endpoint Details */}
           <div className="col-span-12 md:col-span-9">
-            {activeEndpoint ? (
+            {activeEndpoint && apiSpec?.paths ? (
               (() => {
                 const [path, method] = activeEndpoint.split("-")
-                const operation = apiSpec.paths[path][method]
+                const operation = apiSpec.paths[path]?.[method]
+                if (!operation) return null
 
                 return (
                   <div className="p-6 space-y-8">
@@ -400,21 +572,30 @@ export default function ApiDocsPage() {
                             <h3 className="text-lg font-medium">Request Body</h3>
                             <Card>
                               <CardContent className="p-4">
-                                <div className="relative">
-                                  <pre className="text-sm overflow-x-auto p-4 bg-muted/30 rounded-lg">
-                                    {formatJSON(
-                                      operation.requestBody.content["application/json"].schema.$ref
-                                        ? resolveRef(
-                                            operation.requestBody.content["application/json"].schema.$ref,
-                                            apiSpec.components,
-                                          )
-                                        : operation.requestBody.content["application/json"].schema,
-                                    )}
-                                  </pre>
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-4 gap-4 py-2 border-b border-border/40">
+                                    <div className="font-medium">Field</div>
+                                    <div className="font-medium">Type & Description</div>
+                                    <div className="font-medium">Required</div>
+                                    <div className="font-medium">Example</div>
+                                  </div>
+                                  {operation.requestBody.content["application/json"].schema.$ref
+                                    ? renderSchemaTable(
+                                        resolveRef(
+                                          operation.requestBody.content["application/json"].schema.$ref,
+                                          apiSpec.components,
+                                        ),
+                                        apiSpec.components,
+                                      )
+                                    : renderSchemaTable(
+                                        operation.requestBody.content["application/json"].schema,
+                                        apiSpec.components,
+                                      )}
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-border/40">
                                   <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute top-2 right-2 h-8 w-8 hover:bg-muted rounded-full"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() =>
                                       copyToClipboard(
                                         formatJSON(
@@ -425,16 +606,21 @@ export default function ApiDocsPage() {
                                               )
                                             : operation.requestBody.content["application/json"].schema,
                                         ),
-                                        "request-body",
+                                        "request-body-json",
                                       )
                                     }
                                   >
-                                    {copiedText === "request-body" ? (
-                                      <span className="text-green-500">✓</span>
+                                    {copiedText === "request-body-json" ? (
+                                      <>
+                                        <span className="text-green-500 mr-2">✓</span>
+                                        Copied!
+                                      </>
                                     ) : (
-                                      <Copy className="size-4" />
+                                      <>
+                                        <Copy className="size-4 mr-2" />
+                                        Copy JSON Schema
+                                      </>
                                     )}
-                                    <span className="sr-only">Copy code</span>
                                   </Button>
                                 </div>
                               </CardContent>
@@ -575,7 +761,7 @@ export default function ApiDocsPage() {
                                               operation.requestBody.content["application/json"].schema.$ref,
                                               apiSpec.components,
                                             )
-                                            const example = {}
+                                            const example: Record<string, any> = {}
                                             Object.entries(schema.properties || {}).forEach(
                                               ([key, value]: [string, any]) => {
                                                 example[key] = value.example || ""
@@ -604,7 +790,7 @@ export default function ApiDocsPage() {
                                                   operation.requestBody.content["application/json"].schema.$ref,
                                                   apiSpec.components,
                                                 )
-                                                const example = {}
+                                                const example: Record<string, any> = {}
                                                 Object.entries(schema.properties || {}).forEach(
                                                   ([key, value]: [string, any]) => {
                                                     example[key] = value.example || ""
@@ -646,7 +832,7 @@ export default function ApiDocsPage() {
                                                 .$ref,
                                               apiSpec.components,
                                             )
-                                            const example = {}
+                                            const example: Record<string, any> = {}
                                             Object.entries(schema.properties || {}).forEach(
                                               ([key, value]: [string, any]) => {
                                                 example[key] = value.example || ""
@@ -671,7 +857,7 @@ export default function ApiDocsPage() {
                                                     .$ref,
                                                   apiSpec.components,
                                                 )
-                                                const example = {}
+                                                const example: Record<string, any> = {}
                                                 Object.entries(schema.properties || {}).forEach(
                                                   ([key, value]: [string, any]) => {
                                                     example[key] = value.example || ""

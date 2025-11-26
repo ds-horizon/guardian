@@ -51,7 +51,7 @@ export default function Navbar({ showBackButton = false, simplifiedHeader = fals
     },
     {
       label: "API Reference",
-      href: "/docs/api-docs",
+      href: "/api-docs",
     },
   ]
 

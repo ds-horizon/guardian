@@ -3,7 +3,6 @@ title: Facebook Authentication
 description: Complete guide for implementing Facebook authentication using Guardian's OAuth integration
 ---
 
-
 Complete guide for implementing Facebook authentication using Guardian's `/v2/auth/fb` endpoint.
 
 
@@ -33,9 +32,9 @@ Facebook authentication uses OAuth 2.0 protocol with Facebook access tokens. Gua
 
 Before implementing Facebook authentication, you need:
 
-1.  **Guardian Tenant**: A tenant configured in Guardian
+1.  **Guardian Tenant**: A [tenant configured](/docs/configuration/configuration#tenant-onboarding) in Guardian
 
-2.  **OAuth Client**: A client created in Guardian (for `client_id`)
+2.  **OAuth Client**: A [client created](/docs/configuration/configuration#create-client) in Guardian (for `client_id`)
 
 3.  **Facebook Credentials**: App ID and App Secret from Facebook Developers
 
@@ -144,6 +143,7 @@ Insert Facebook credentials into the `fb_config` table:
 | response_type | string | Yes | Desired response type. Options: "token", "code" |
 | client_id | string | Yes | Guardian OAuth client ID |
 | flow | string | No | Authentication flow type. Options: "signinup" (default), "signin", "signup" |
+| scopes | array | No | Array of scope names to include in the access token |
 | meta_info | object | No | Request metadata |
 
 **Response**: `200 OK`
@@ -191,6 +191,7 @@ curl --location 'http://localhost:8080/v2/auth/fb' \
     "response_type": "token",
     "client_id": "aB3dE5fG7hI9jK1lM",
     "flow": "signinup",
+    "scopes": ["default"],
     "meta_info": {
         "ip": "127.0.0.1",
         "location": "localhost",
@@ -419,6 +420,6 @@ For implementing Facebook authentication in your frontend application, please re
 ## Related Documentation
 
 
-*   [Social Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication.md "https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication.md") - Overview of social auth
+*   [Social Authentication](/docs/features/social-authentication) - Overview of social auth
 
-*   [Google Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication.md "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication.md") - Google integration
+*   [Google Authentication](/docs/features/google-authentication ) - Google integration
