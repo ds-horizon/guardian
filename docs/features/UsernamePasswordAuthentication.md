@@ -46,7 +46,7 @@ Username/password authentication is the traditional authentication method where 
 
 Before implementing username/password authentication, you need:
 
-1.  **Guardian Tenant**: A tenant configured in Guardian
+1.  **Guardian Tenant**: A [tenant configured](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#tenant-onboarding) in Guardian
 
 2.  **User Service**: A user service that implements the following endpoints:
 

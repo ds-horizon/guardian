@@ -15,7 +15,7 @@ Social authentication allows users to sign in using their existing social media 
 
 ## Overview
 
-Social authentication enables users to authenticate using their existing social media accounts, eliminating the need for separate username/password credentials. Guardian supports multiple social authentication providers with an unified API.
+Social authentication enables users to authenticate using their existing social media accounts, eliminating the need for separate username/password credentials. Guardian supports multiple social authentication providers with a unified API.
 
 ### Benefits
 
@@ -90,7 +90,7 @@ Select which provider(s) you want to support:
 
 *   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication.md "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication.md") - Popular for consumer apps
 
-*   Custom OIDC Provider - For enterprise or custom providers(e.g.: apple)
+*   Custom OIDC Provider - For enterprise or custom providers(e.g.: Apple)
 
 
 ### 2\. Get Provider Credentials

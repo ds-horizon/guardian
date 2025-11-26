@@ -56,7 +56,7 @@ Guardian issues four types of tokens after successful authentication:
 
 
 **Type**: JWT (JSON Web Token), stateless  
-**Algorithm**: RS256 (RSA Signature with SHA-256) & RS512 both are supported  
+**Algorithm**: RS256 (RSA Signature with SHA-256) and RS512 are supported. 
 **Purpose**: An access token is a credential used by an application to authorize access to an API and define the permitted actions (scope).  
 **Validity**: Configurable (default: 1 day)
 
@@ -86,7 +86,7 @@ Guardian issues four types of tokens after successful authentication:
   "tid": "tenant1", 
   "jti": "unique_token_id",
   "rft_id": "refresh_token_id",
-  "amr": ["passwordless", "social"]
+  "amr": ["otp"]
 }
 ```
 **Claims**:
@@ -119,7 +119,7 @@ Guardian issues four types of tokens after successful authentication:
 
 **Type**: Opaque string (random alphanumeric, 32 characters)  
 **Purpose**: A refresh token is a long-lived credential that allows an application to securely mint new access tokens, allowing continuous access without re-authenticating.  
-**validity**: Configurable (default: 6 months)  
+**Validity**: Configurable (default: 6 months)  
 **Storage**: Database
 
 **Characteristics**:
@@ -139,7 +139,7 @@ Guardian issues four types of tokens after successful authentication:
 
 **Storage Recommendations**:
 
-*   **Web**: Use httpOnly cookies (preferred) or secure localStorage
+*   **Web**: Use HttpOnly cookies (preferred) or secure localStorage
 
 *   **Mobile**: Use secure keychain/keystore
 
@@ -151,8 +151,8 @@ Guardian issues four types of tokens after successful authentication:
 
 **Type**: JWT (JSON Web Token)  
 **Algorithm**: RS256 & RS512 supported  
-**Purpose**: A parsable token containing user-specific data, intended only for the client's internal processes.  
-**validity**: Configurable (default: 1 day)
+**Purpose**: A parsable token containing user-specific data, intended for client applications.  
+**Validity**: Configurable (default: 1 day)
 
 **Structure**:
 
@@ -188,24 +188,20 @@ Guardian issues four types of tokens after successful authentication:
 
 *   `email`: User email
 
-*   `email_verified`: Email verification status
-
 *   `phone_number`: User phone number
-
-*   `phone_number_verified`: Phone verification status
 
 *   `name`: User's full name
 
 
 **Usage**: Client-side user identification, OpenID Connect flows
 
-### 44\. SSO Token
+### 4\. SSO Token
 
 
 **Type**: Opaque string (alphanumeric, 15 characters)  
 **Purpose**: Single Sign-On token for cross-application authentication  
 **Usage**: Used in `/login-accept` endpoint to get access and refresh tokens for a different application  
-**validity**: Configurable (typically matches refresh token expiry)  
+**Validity**: Configurable (typically matches refresh token expiry)  
 **Storage**: Database
 
 **Characteristics**:
@@ -299,7 +295,7 @@ When users authenticate as guests, Guardian issues:
   "expires_in": 3600
 }
 ```
-**Note**: Guest tokens typically have shorter expiry times. Users must call the same initialize endpoint again to refresh token.
+**Note**: Guest tokens typically have shorter expiry times. Users must call the same /v1/guest/login endpoint again to refresh token.
 
 ## Session Management
 
@@ -355,7 +351,7 @@ Guardian tracks sessions per device:
 
 *   **Device Identification**: Based on `device_name` from `meta_info`
 
-*   **Multiple Sessions**: Users can have multiple active sessions (one per device)
+*   **Multiple Sessions**: Users can have multiple active sessions
 
 *   **Session Isolation**: Each device has independent session
 
@@ -387,7 +383,8 @@ Guardian tracks sessions per device:
 
 *   `refresh_token` (string): Refresh token to use
 
-*   `client_id` (string): Guardian client ID
+**Optional Fields**
+*   `client_id` (string): validates against client id if provided
 
 
 **Response**: `200 OK`
@@ -510,7 +507,7 @@ Guardian tracks sessions per device:
 
 1.  **Client sends refresh token** to `/v2/refresh-token`
 
-2.  **Guardian validates** refresh token (checks expiry, revocation)
+2.  **Guardian validates** refresh token
 
 3.  **Guardian generates** new access token
 
@@ -536,7 +533,7 @@ Guardian tracks sessions per device:
 
 *   **Before Expiry**: Refresh access token before it expires
 
-*   **On 401 Error**: If API returns 401, refresh the access token and retry
+*   **Reactively (on failure)**: If an API call returns an HTTP 401 Unauthorized error, use the refresh token to get a new access token
 
 *   **Proactively**: Refresh 5 minutes before access token expiry
 
@@ -546,7 +543,7 @@ Guardian tracks sessions per device:
 
 **Recommended Storage**:
 
-*   **Web Applications**: Use httpOnly cookies (set by Guardian) or secure localStorage
+*   **Web Applications**: Use HttpOnly cookies (set by Guardian) or secure localStorage
 
 *   **Mobile Applications**: Use secure keychain/keystore
 
@@ -799,7 +796,7 @@ curl --location 'http://localhost:8080/v2/logout' \
 
 1.  **Token Storage**:
 
-    *   **Web**: Use httpOnly cookies for refresh tokens (preferred)
+    *   **Web**: Use HttpOnly cookies for refresh tokens (preferred)
 
     *   **Mobile**: Use secure keychain/keystore
 

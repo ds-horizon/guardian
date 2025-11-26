@@ -17,6 +17,8 @@ Complete guide for implementing Facebook authentication using Guardian's `/v2/au
 
 *   [Frontend Implementation](#frontend-implementation)
 
+*   [Flow Diagram](#flow-diagram)
+
 *   [Troubleshooting](#troubleshooting)
 
 
@@ -46,9 +48,9 @@ Facebook authentication uses OAuth 2.0 protocol with Facebook access tokens. Gua
 
 Before implementing Facebook authentication, you need:
 
-1.  **Guardian Tenant**: A tenant configured in Guardian
+1.  **Guardian Tenant**: A [tenant configured](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#tenant-onboarding) in Guardian
 
-2.  **OAuth Client**: A client created in Guardian (for `client_id`)
+2.  **OAuth Client**: A [client created](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#create-client) in Guardian (for `client_id`)
 
 3.  **Facebook Credentials**: App ID and App Secret from Facebook Developers
 
@@ -157,6 +159,7 @@ Insert Facebook credentials into the `fb_config` table:
 | response_type | string | Yes | Desired response type. Options: "token", "code" |
 | client_id | string | Yes | Guardian OAuth client ID |
 | flow | string | No | Authentication flow type. Options: "signinup" (default), "signin", "signup" |
+| scopes | array | No | Array of scope names to include in the access token |
 | meta_info | object | No | Request metadata |
 
 **Response**: `200 OK`
@@ -204,6 +207,7 @@ curl --location 'http://localhost:8080/v2/auth/fb' \
     "response_type": "token",
     "client_id": "aB3dE5fG7hI9jK1lM",
     "flow": "signinup",
+    "scopes": ["default"],
     "meta_info": {
         "ip": "127.0.0.1",
         "location": "localhost",

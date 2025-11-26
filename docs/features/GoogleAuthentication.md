@@ -16,6 +16,8 @@ Complete guide for implementing Google authentication using Guardian's `/v2/auth
 
 *   [Frontend Implementation](#frontend-implementation)
 
+*   [Flow Diagram](#flow-diagram)
+
 *   [Troubleshooting](#troubleshooting)
 
 
@@ -42,9 +44,9 @@ Google authentication uses OpenID Connect (OIDC) protocol with Google ID tokens.
 
 Before implementing Google authentication, you need:
 
-1.  **Guardian Tenant**: A tenant configured in Guardian
+1.  **Guardian Tenant**: A [tenant configured](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#tenant-onboarding) in Guardian
 
-2.  **OAuth Client**: A client created in Guardian (for `client_id`)
+2.  **OAuth Client**: A [client created](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#create-client) in Guardian (for `client_id`)
 
 3.  **Google Credentials**: Client ID and Client Secret from Google Cloud Console
 
@@ -153,6 +155,7 @@ INSERT INTO google_config ( tenant_id, client_id, client_secret ) VALUES ( 'tena
 | response_type | string | Yes | Desired response type. Options: "token", "code" |
 | client_id | string | Yes | Guardian OAuth client ID |
 | flow | string | No | Authentication flow type. Options: "signinup" (default), "signin", "signup" |
+| scopes | array | No | Array of scope names to include in the access token |
 | meta_info | object | No | Request metadata |
 
 **Response**: `200 OK`
@@ -198,6 +201,7 @@ INSERT INTO google_config ( tenant_id, client_id, client_secret ) VALUES ( 'tena
     "id_token": "eyJhbGciOiJSUzI1NiIs...",
     "response_type": "token",
     "client_id": "aB3dE5fG7hI9jK1lM",
+    "scopes": ["default"],
     "flow": "signinup",
     "meta_info": {
         "ip": "127.0.0.1",

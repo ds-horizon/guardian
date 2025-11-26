@@ -41,6 +41,128 @@ Guardian application can be configured via environment variables
 
 ## Tenant Configuration
 
+### Tenant Onboarding
+
+Before configuring any tenant-specific settings, you need to create a tenant in Guardian. The tenant is the top-level entity that groups all configurations for a specific organization or application.
+
+#### Tenant Table Schema
+
+| Field      | Type         | Description                          |
+|------------|--------------|--------------------------------------|
+| id         | CHAR(10)     | Unique tenant identifier (Primary Key) |
+| name       | VARCHAR(256) | Human-readable tenant name            |
+| created_at | TIMESTAMP    | Timestamp when tenant was created    |
+| updated_at | TIMESTAMP    | Timestamp when tenant was last updated |
+
+#### Creating a Tenant
+
+To onboard a new tenant, insert a record into the `tenant` table:
+
+```sql
+INSERT INTO tenant (id, name) 
+VALUES ('tenant1', 'My Application');
+```
+
+**Important Notes:**
+- The `id` must be unique and exactly 10 characters (CHAR(10))
+- The `name` must be unique across all tenants
+- Once a tenant is created, you can configure all tenant-specific settings using the tenant `id`
+
+### Client Configuration
+
+OAuth 2.0 clients are applications that can authenticate users and access protected resources. Each client belongs to a tenant and must be configured before it can be used in authentication flows.
+
+#### Client Table Schema
+
+| Field          | Type         | Description                                                                 |
+|----------------|--------------|-----------------------------------------------------------------------------|
+| tenant_id      | CHAR(10)     | Tenant identifier (Part of Primary Key)                                    |
+| client_id      | VARCHAR(100) | Unique client identifier (Part of Primary Key, auto-generated)              |
+| client_name    | VARCHAR(100) | Human-readable client name (must be unique within tenant)                  |
+| client_secret  | VARCHAR(100) | Client secret for authentication (auto-generated)                          |
+| client_uri     | VARCHAR(2083)| URL of the client's home page                                               |
+| contacts       | JSON         | Array of contact email addresses                                           |
+| grant_types    | JSON         | OAuth 2.0 grant types supported (e.g., ["authorization_code", "refresh_token"]) |
+| logo_uri       | VARCHAR(2083)| URL of the client's logo                                                   |
+| policy_uri     | VARCHAR(2083)| URL of the client's privacy policy                                          |
+| redirect_uris  | JSON         | Array of authorized redirect URIs                                          |
+| response_types | JSON         | OAuth 2.0 response types supported (e.g., ["code"])                        |
+| client_type    | CHAR(11)     | Client type: "first_party" or "third_party" (default: "third_party")      |
+| is_default     | BOOLEAN      | Whether this is the default client for the tenant (default: false)         |
+| created_at     | TIMESTAMP    | Timestamp when client was created                                          |
+| updated_at     | TIMESTAMP    | Timestamp when client was last updated                                     |
+
+#### Client Configuration via API
+
+Guardian provides REST API endpoints for managing OAuth 2.0 clients. All client management endpoints require the `tenant-id` header.
+
+##### Create Client
+
+**Endpoint**: `POST /v1/admin/client`
+
+**Headers**:
+- `Content-Type: application/json`
+- `tenant-id: <your-tenant-id>` (required)
+
+**Request Body**:
+```json
+{
+  "client_name": "My Application",
+  "client_uri": "https://myapp.com",
+  "contacts": ["admin@myapp.com", "support@myapp.com"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "logo_uri": "https://myapp.com/logo.png",
+  "policy_uri": "https://myapp.com/privacy",
+  "redirect_uris": ["https://myapp.com/callback", "https://myapp.com/silent-renew"],
+  "response_types": ["code"],
+  "client_type": "third_party",
+  "is_default": false
+}
+```
+
+**Request Parameters**:
+
+| Parameter      | Type   | Required | Description                                                                 |
+|----------------|--------|----------|-----------------------------------------------------------------------------|
+| client_name    | string | Yes      | Human-readable name for the client (must be unique within tenant)         |
+| grant_types    | array  | Yes      | OAuth 2.0 grant types: ["authorization_code", "client_credentials", "refresh_token"] |
+| redirect_uris  | array  | Yes      | List of authorized redirect URIs (must be valid URIs)                       |
+| response_types | array  | Yes      | OAuth 2.0 response types: ["code"]                                          |
+| client_uri     | string | No       | URL of the client's home page                                               |
+| contacts       | array  | No       | List of contact email addresses                                             |
+| logo_uri       | string | No       | URL of the client's logo                                                    |
+| policy_uri     | string | No       | URL of the client's privacy policy                                          |
+| client_type    | string | No       | Client type: "first_party" or "third_party" (default: "third_party")      |
+| is_default     | boolean| No       | Whether this is the default client (default: false)                        |
+
+**Response**: `201 Created`
+```json
+{
+  "client_id": "aB3dE5fG7hI9jK1lM",
+  "client_name": "My Application",
+  "client_secret": "xyz789abc123...",
+  "client_uri": "https://myapp.com",
+  "contacts": ["admin@myapp.com"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "logo_uri": "https://myapp.com/logo.png",
+  "policy_uri": "https://myapp.com/privacy",
+  "redirect_uris": ["https://myapp.com/callback"],
+  "response_types": ["code"],
+  "client_type": "third_party",
+  "is_default": false
+}
+```
+
+**Important Notes:**
+- `client_id` and `client_secret` are automatically generated
+- Store the `client_secret` securely as it cannot be retrieved later
+- Redirect URIs are validated to prevent open redirect attacks
+- Grant types and response types must be valid OAuth 2.0 values
+
+## Tenant-Specific Configuration
+
+After creating a tenant and client, you can configure the following tenant-specific settings:
+
 ### User Configuration
 
 | Field                  | Type         | Description                                  |
