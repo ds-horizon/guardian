@@ -176,7 +176,7 @@ Complete guide for Facebook authentication including:
 
 ## Common Configuration
 
-### [User Service Integration](./configuration/user-configuration.md)
+### [User Service Integration](../configuration/user-configuration.md)
 
 Guardian integrates with your user service to create and retrieve users. Your user service must implement:
 
