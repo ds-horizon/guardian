@@ -36,7 +36,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ### Authentication Methods
 
-*   **📱 [Passwordless Authentication](/website/docs/content/docs/features/passwordless-authentication)**
+*   **📱 [Passwordless Authentication](./docs/features/passwordless-authentication.md)**
 
     *   SMS/Email OTP
 
@@ -52,16 +52,16 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
     *   Password policy support via user service
 
-*   **🌐 [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/SocialAuthentication.md)**
+*   **🌐 [Social Authentication](./docs/features/social-authentication.md)**
 
-    *   [Google](https://github.com/ds-horizon/guardian/blob/main/docs/features/GoogleAuthentication.md)
+    *   [Google](./docs/features/google-authentication.md)
 
-    *   [Facebook](https://github.com/ds-horizon/guardian/blob/main/docs/features/FacebookAuthentication.md) 
+    *   [Facebook](./docs/features/facebook-authentication.md) 
 
     *   Custom OIDC providers
 
 
-### [Session Management](https://github.com/ds-horizon/guardian/blob/main/docs/features/PostAuthentication.md)
+### [Session Management](./docs/features/post-authentication.md)
 
 *   📊 Multi-device session tracking
 
@@ -109,7 +109,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 You can verify the installations by running the following commands in your terminal:
 
 ```bash
-docker --version
+ docker --version
 mvn --version
 java -version
 ```
@@ -179,22 +179,22 @@ These ports are required for the application to run without conflicts.
 
 Comprehensive documentation is available in the `docs/` directory:
 
-| Document                                                                                                | Description |
-|---------------------------------------------------------------------------------------------------------| --- |
-| 📚 [API Reference](https://github.com/ds-horizon/guardian/blob/main/docs/ApiReference.md)               | Complete REST API documentation |
-| ⚙️ [Configuration](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/Configuration.md) | Configuration options |
-| 🚀 [Deployment](https://github.com/ds-horizon/guardian/blob/main/docs/deployment.md)                    | Production deployment guide |
+| Document                                                  | Description |
+|-----------------------------------------------------------| --- |
+| 📚 [API Reference](./docs/ApiReference.md)                | Complete REST API documentation |
+| ⚙️ [Configuration](./docs/configuration/Configuration.md) | Configuration options |
+| 🚀 [Deployment](./docs/deployment.md)                     | Production deployment guide |
 
 ### API Specifications
 
-*   [Guardian OpenAPI Specification](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml "https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml") - Guardian Complete API spec
+*   [Guardian OpenAPI Specification](./src/main/resources/oas/guardian.yaml) - Guardian Complete API spec
 
-*   [Integration API Spec](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml "https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml") - All other services integrations (User service, Communication service)
+*   [Integration API Spec](./src/main/resources/oas/integrations.yaml) - All other services integrations (User service, Communication service)
 
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](https://github.com/ds-horizon/guardian/blob/main/CONTRIBUTING.md "https://github.com/ds-horizon/guardian/blob/main/CONTRIBUTING.md") for details on:
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details on:
 
 *   Code of Conduct
 
@@ -209,16 +209,16 @@ We welcome contributions! Please see our [Contributing Guide](https://github.com
 
 ## 👥 Community
 
-*   💬 [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions "https://github.com/ds-horizon/guardian/discussions") - Ask questions and share ideas
+*   💬 [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions) - Ask questions and share ideas
 
 *   🐛 [Issue Tracker](https://github.com/ds-horizon/guardian/issues "https://github.com/ds-horizon/guardian/issues") - Report bugs and request features
 
-*   📖 [Documentation](https://guardian.dream11.com/docs/ "https://guardian.dream11.com/docs/") - Comprehensive guides
+*   📖 [Documentation](./docs) - Comprehensive guides
 
 
 ## 📄 License
 
-Guardian is licensed under the [MIT License](https://github.com/ds-horizon/guardian/blob/main/LICENSE "https://github.com/ds-horizon/guardian/blob/main/LICENSE").
+Guardian is licensed under the [MIT License](./LICENSE).
 
 * * *
 

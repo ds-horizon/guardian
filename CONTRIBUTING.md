@@ -70,7 +70,7 @@ When creating a bug report, please include as many details as possible:
 
 #### Before Submitting a Bug Report
 
-*   **Check the documentation** - The issue might be covered in the [docs](https://guardian.dream11.com/docs "https://guardian.dream11.com/docs")
+*   **Check the documentation** - The issue might be covered in the [docs](./docs)
 
 *   **Check existing issues** - The bug might already be reported
 
@@ -138,7 +138,7 @@ Add any other context about the problem here.
 
 ### Suggesting Enhancements
 
-Enhancement suggestions are tracked as [GitHub issues](https://github.com/ds-horizon/guardian/issues "https://github.com/ds-horizon/guardian/issues"). When creating an enhancement suggestion, make sure to:
+Enhancement suggestions are tracked as [GitHub issues](https://github.com/ds-horizon/guardian/issues). When creating an enhancement suggestion, make sure to:
 
 1.  **Use a clear and descriptive title**
 
@@ -198,11 +198,11 @@ Pull requests are welcome! Please follow these guidelines:
 
 ### Prerequisites
 
-*   **Java 17** (JDK) - [Download](https://www.oracle.com/java/technologies/downloads/#java17 "https://www.oracle.com/java/technologies/downloads/#java17")
+*   **Java 17** (JDK) - [Download](https://www.oracle.com/java/technologies/downloads/#java17)
 
-*   **Maven 3.6+** - [Download](https://maven.apache.org/download.cgi "https://maven.apache.org/download.cgi")
+*   **Maven 3.6+** - [Download](https://maven.apache.org/download.cgi)
 
-*   **Docker** ≥ 20.10 - [Download](https://www.docker.com/products/docker-desktop/ "https://www.docker.com/products/docker-desktop/")
+*   **Docker** ≥ 20.10 - [Download](https://www.docker.com/products/docker-desktop/)
 
 *   **Docker Compose** ≥ 2.0
 
@@ -293,7 +293,7 @@ Stop all the components of Guardian
 
 ### Commit Messages
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/ "https://www.conventionalcommits.org/") format:
+Follow [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 **Important**: Commits should be GPG-signed for authenticity.
 
@@ -383,7 +383,7 @@ Fixes #456
 
 ### Java Style Guide
 
-*   Follow [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html "https://google.github.io/styleguide/javaguide.html")
+*   Follow [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)
 
 *   Use meaningful variable and method names
 
@@ -627,11 +627,11 @@ guardian/
 
 ### Getting Help
 
-*   **Documentation**: Check [docs](https://guardian.dream11.com/docs "https://guardian.dream11.com/docs") first
+*   **Documentation**: Check [docs](./docs) first
 
-*   **Discussions**: Ask on [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions "https://github.com/ds-horizon/guardian/discussions")
+*   **Discussions**: Ask on [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions)
 
-*   **Issues**: Search [existing issues](https://github.com/ds-horizon/guardian/issues "https://github.com/ds-horizon/guardian/issues")
+*   **Issues**: Search [existing issues](https://github.com/ds-horizon/guardian/issues)
 
 
 ### Communication Channels
@@ -658,18 +658,18 @@ Contributors will be:
 
 If you have questions about contributing:
 
-1.  Check the [documentation](https://guardian.dream11.com/docs "https://guardian.dream11.com/docs")
+1.  Check the [documentation](./docs)
 
-2.  Search [existing issues](https://github.com/ds-horizon/guardian/issues "https://github.com/ds-horizon/guardian/issues")
+2.  Search [existing issues](https://github.com/ds-horizon/guardian/issues)
 
-3.  Ask on [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions "https://github.com/ds-horizon/guardian/discussions")
+3.  Ask on [GitHub Discussions](https://github.com/ds-horizon/guardian/discussions)
 
 4.  Contact maintainers (if needed)
 
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [MIT License](https://github.com/ds-horizon/guardian/blob/main/LICENSE "https://github.com/ds-horizon/guardian/blob/main/LICENSE").
+By contributing, you agree that your contributions will be licensed under the [MIT License](./LICENSE).
 
 * * *
 

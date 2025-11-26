@@ -180,7 +180,7 @@ After creating a tenant and client, you can configure the following tenant-speci
 | template_name   | VARCHAR(256) | Name of the email template               |
 | template_params | JSON         | Template parameters in JSON format       |
 
-### SMS Configuration
+### [SMS Configuration](./sms-email-configuration.md)
 
 | Field           | Type         | Description                            |
 |-----------------|--------------|----------------------------------------|

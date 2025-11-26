@@ -60,7 +60,7 @@ Before implementing Facebook authentication, you need:
 ### Step 1: Get Facebook Credentials
 
 
-1.  Go to [Facebook Developers](https://developers.facebook.com/ "https://developers.facebook.com/")
+1.  Go to [Facebook Developers](https://developers.facebook.com/)
 
 2.  Click **My Apps** → **Create App**
 

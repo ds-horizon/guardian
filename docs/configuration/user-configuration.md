@@ -212,7 +212,7 @@ INSERT INTO user_config (
 
 ## Integration Reference
 
-For detailed API specifications, refer to the [Integration Endpoints Specification](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml).
+For detailed API specifications, refer to the [Integration Endpoints Specification](.../src/main/resources/oas/integrations.yaml).
 
 ## Best Practices
 

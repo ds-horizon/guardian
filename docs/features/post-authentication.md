@@ -346,7 +346,6 @@ User is logged into App B without re-authenticating
 ```
 ### Multi-Device Sessions
 
-
 Guardian tracks sessions per device:
 
 *   **Device Identification**: Based on `device_name` from `meta_info`
@@ -354,7 +353,6 @@ Guardian tracks sessions per device:
 *   **Multiple Sessions**: Users can have multiple active sessions
 
 *   **Session Isolation**: Each device has independent session
-
 
 ## API Endpoints
 

@@ -8,8 +8,8 @@ Guardian provides a comprehensive REST API for authentication and authorization.
 
 ## Guardian API Specification
 
-The complete API specification including all endpoints, request/response schemas, and examples can be found in the [Guardian OpenAPI Specification](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/guardian.yaml).
+The complete API specification including all endpoints, request/response schemas, and examples can be found in the [Guardian OpenAPI Specification](../src/main/resources/oas/guardian.yaml).
 
 ## Integration Endpoints
 
-For information about the endpoints that your services need to implement to integrate with Guardian, refer to the [Integration Endpoints Specification](https://github.com/ds-horizon/guardian/blob/main/src/main/resources/oas/integrations.yaml).
+For information about the endpoints that your services need to implement to integrate with Guardian, refer to the [Integration Endpoints Specification](../src/main/resources/oas/integrations.yaml).
