@@ -1,0 +1,329 @@
+openapi: 3.0.1
+info:
+  title: Guardian integration endpoints
+  description: Endpoints required to integrate with Guardian.
+  version: "1.0.0"
+paths:
+  /user:
+    get:
+      tags:
+        - User
+      summary: Get User Details
+      description: |
+        API to validate and return User Details.
+        The following query parameters are supported -
+        
+        - **userId** - string
+        - **email** - string
+        - **phoneNumber** - string (recommended format E.164)
+        - **providerName** - string
+        - **providerUserId** - string
+        
+        The logic for determining the user account based on query parameters is delegated to the user service implementation. This approach offers flexibility to clients integrating with Guardian.
+        
+        Guardian can invoke this API using the following query parameters:
+        
+        - email
+        - phoneNumber
+        - userId
+        - email and phoneNumber 
+        - email, providerName, and providerUserId
+        - phoneNumber, providerName, and providerUserId
+        - email, phoneNumber, providerName, and providerUserId
+        
+        The user service is responsible for ensuring that the correct user identity is returned in the response to the Get User API call based on the provided query parameters.  
+        
+        If a user is found and the fields are verified, then the response will contain the following fields with stause code 200 -
+        
+        - **userId** - string
+        - **email** - string
+        - **phoneNumber** - string (recommended format E.164)
+        - **emailVerified** - boolean, true if the email has been verified
+        - **phoneNumberVerified** - boolean, true if the phoneNumber has been verified
+        and any other fields required in the ID token or Access token.
+        
+        If a user is not found, i.e. No account is associated with the combination of query params, then the user service must return an empty response with 200 status code. In certain scenarios, an empty response translates to an error condition, for example in case of signin, if the user response is empty, the flow ends there and and error is returned by Guardian. 
+        
+        It's important to note that any response other than status code 200 will be considered a failure.
+
+      parameters:
+        - name: userId
+          in: query
+          description: User Identifier
+          required: false
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: User email
+          required: false
+          schema:
+            type: string
+        - name: phoneNumber
+          in: query
+          description: User phone number (recommended format E.164)
+          required: false
+          schema:
+            type: string
+        - name: providerName
+          in: query
+          description: name of the provider configured in Guardian IDP Login
+          required: false
+          schema:
+            type: string
+        - name: providerUserId
+          in: query
+          description: value of the sub claim in IDP login
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User Details if user is found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+                  - $ref: '#/components/schemas/EmptyUserResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+
+
+    post:
+      tags:
+        - User
+      summary: Create a new user
+      description: |
+        API to create a new user with given details
+        
+        A valid request must have atleast one of the following combination of fields in the request body -
+        - phoneNumber, phoneNumberVerified
+        - email, emailVerified
+        - username and password
+        
+        Additionally, the request can have other params in the request body-
+        - name
+        - firstName
+        - lastName
+        - email
+        - phoneNumber
+        - provider
+        
+        phoneNumberVerified will be sent as true if the phoneNumber was verified by guardian via
+        
+        - passwordless flow
+        - IDP login flow, IDP response has a phone_number and phone_number_verified is true
+        
+        phoneNumberVerified may be sent as false, or may not be sent at all. In both cases phone number should be treated as non verified. 
+        
+        emailVerified will be sent as true the email was verified by guardian via
+        
+        - passwordless flow
+        - IDP login flow, IDP response has an email and email_verified is true
+        
+        emailVerified may be sent as false, or may not be sent at all. In both cases email should be treated as non verified. 
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+        required: true
+      responses:
+        '200':
+          description: Returns user details after registering
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+  /provider:
+    post:
+      tags:
+        - Provider
+      summary: Update identity provider details for a user
+      description: |
+        API to update provider details of an user
+        
+        A valid request must have the following fields in the request-
+        - userId
+        - provider
+        
+        Provider details are included in the provider object.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProviderDetailsRequest'
+        required: true
+      responses:
+        '200':
+          description: Returns user details after registering
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+
+  /user/authenticate:
+    post:
+      tags:
+        - User
+      summary: Authenticate User
+      description: |
+        This API validates the username against the given password, and returns a positive response if the credentials are valid.
+      operationId: authenticateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticateUserRequest'
+        required: true
+      responses:
+        '200':
+          description: Returns user details after succesful authentication
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+components:
+  schemas:
+    errorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Something went wrong.
+    EmptyUserResponse:
+      type: object
+    CreateUserRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          example: 9999999999
+        email:
+          type: string
+          example: abcdef@gmail.com
+        emailVerified:
+          type: boolean
+          example: abcdef@gmail.com
+        username:
+          type: string
+          example: JohnTheMan
+        password:
+          type: string
+          example: wordpass@1234
+        name:
+          type: string
+          example: John Doe
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        provider:
+          $ref: '#/components/schemas/ProviderData'
+    ProviderData:
+      type: object
+      properties:
+        name:
+          type: string
+          example: google
+        providerUserId:
+          type: string
+          example: "1234"
+        data:
+          type: object
+        credentials:
+          type: object
+    AddProviderDetailsRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: 1234
+        provider:
+          $ref: '#/components/schemas/ProviderData'
+    User:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          example: 9999999999
+        email:
+          type: string
+          example: abcdef@gmail.com
+        name:
+          type: string
+          example: John Doe
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+    AuthenticateUserRequest:
+      required:
+        - password
+        - username
+      type: object
+      properties:
+        username:
+          type: string
+          example: JohnTheMan
+        password:
+          type: string
+          example: wordpass@1234
