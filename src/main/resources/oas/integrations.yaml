@@ -234,6 +234,103 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/errorResponse'
+
+  /sendEmail:
+    post:
+      tags:
+        - Communication
+      summary: Send Email
+      description: |
+        API to send an email message using a template.
+        
+        Guardian invokes this API to send emails, typically for OTP delivery or other notifications.
+        
+        The request body includes:
+        - **channel**: Communication channel (always "email" for this endpoint)
+        - **to**: Recipient email address
+        - **templateName**: Name of the email template to use
+        - **templateParams**: Template parameters as a JSON object (e.g., {"otp": "123456"})
+        
+        The communication service is responsible for:
+        - Rendering the template with the provided parameters
+        - Sending the email to the recipient
+        - Handling email delivery failures gracefully
+        
+        **Response**: Returns status code 200 on successful email queuing/sending. Any response other than status code 200 will be considered a failure by Guardian.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+        required: true
+      responses:
+        '200':
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+
+  /sendSms:
+    post:
+      tags:
+        - Communication
+      summary: Send SMS
+      description: |
+        API to send an SMS message using a template.
+        
+        Guardian invokes this API to send SMS messages, typically for OTP delivery or other notifications.
+        
+        The request body includes:
+        - **channel**: Communication channel (always "sms" for this endpoint)
+        - **to**: Recipient phone number (recommended format E.164)
+        - **templateName**: Name of the SMS template to use
+        - **templateParams**: Template parameters as a JSON object (e.g., {"otp": "123456"})
+        
+        The communication service is responsible for:
+        - Rendering the template with the provided parameters
+        - Sending the SMS to the recipient
+        - Handling SMS delivery failures gracefully
+        
+        **Response**: Returns status code 200 on successful SMS queuing/sending. Any response other than status code 200 will be considered a failure by Guardian.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+        required: true
+      responses:
+        '200':
+          description: SMS sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+
 components:
   schemas:
     errorResponse:
@@ -258,7 +355,7 @@ components:
           example: abcdef@gmail.com
         emailVerified:
           type: boolean
-          example: abcdef@gmail.com
+          example: true
         username:
           type: string
           example: JohnTheMan
@@ -327,3 +424,31 @@ components:
         password:
           type: string
           example: wordpass@1234
+    SendMessageRequest:
+      type: object
+      required:
+        - channel
+        - to
+        - templateName
+        - templateParams
+      properties:
+        channel:
+          type: string
+          description: Communication channel
+          enum: ["email", "sms"]
+          example: "email"
+        to:
+          type: string
+          description: Recipient identifier (email address for email channel, phone number for SMS channel)
+          example: "user@example.com"
+        templateName:
+          type: string
+          description: Name of the template to use for rendering the message
+          example: "otp_template"
+        templateParams:
+          type: object
+          description: Template parameters as a JSON object
+          additionalProperties: true
+          example:
+            otp: "123456"
+            name: "John Doe"

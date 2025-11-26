@@ -9,7 +9,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ## Why Guardian?
 
-*   🔐 **Enterprise-Grade Security**: Built with security best practices and regular security audits
+*   🔐 **Enterprise-Grade Security**: Built with security best practices
 
 *   🎯 **Flexible Integration**: Works seamlessly with your existing user service
 
@@ -19,7 +19,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 *   📱 **Multi-Platform Support**: Native support for web, mobile, and API authentication
 
-*   🔑 **OAuth 2.0 & OIDC**: Full OAuth 2.0 and OIDC protocol support, secured with PKCE and discovery endpoints.
+*   🔑 **OAuth 2.0 & OIDC**: Full OAuth 2.0 and OIDC protocol support, secured with PKCE and discovery endpoints
 
 *   ⚡ **High Performance**: Built on Vert.x for reactive, non-blocking I/O
 
@@ -45,6 +45,10 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 *   **🌐 Social Authentication**
 
+*   **👤 Guest Login** (coming soon)
+
+*   **📲 Multi Factor Authentication** (coming soon)
+
 ### Session Management
 
 *   **📊 Multi-device session tracking**
@@ -55,9 +59,9 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 *   **🔄 Token refresh mechanisms**
 
-*   **🚪 Universal logout**
+*   **🚪 Universal Logout**
 
-### OAuth 2.0 & OpenID Connect
+### Become an Identity Provider
 
 *   **🔐 Full OAuth 2.0 implementation (Authorization Code, Implicit, Client Credentials)**
 
@@ -65,9 +69,9 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 *   **🛡️ PKCE support for enhanced security**
 
-*   **📝 Consent management**
+*   **📝 Consent Management(coming soon)**
 
-### Multi-Tenant Architecture
+### Tenant Management
 
 *   **📈 Scalable design for serving multiple tenants**
 
@@ -127,11 +131,6 @@ This script will:
 - Start all required services (MySQL, Redis, Guardian, and mock services) using Docker Compose
 - Run database migrations and seed initial data
 
-**Wait for services to be ready**: The first startup may take 2-3 minutes. You can verify Guardian is running by checking:
-```bash
-curl http://localhost:8080/healthcheck
-```
-
 3.  **Test the setup** with passwordless flow:
 
 The seed data includes a pre-configured tenant (`tenant1`) and client (`client1`) for testing.
@@ -167,30 +166,30 @@ curl --location 'localhost:8080/v2/passwordless/complete' \
 }'
 ```
 
-## ⚙️ Configuration
+Follow our comprehensive guide on [website](https://guardian-docs.horizonos.in/docs/guides/passwordless-authentication/) to set up Guardian in minutes.
 
-Guardian supports a wide range of configuration options for both the core application and individual tenants, including database, client, google, passwordless, and admin settings.
+## ⚙️ Configuration <a name="-configuration"></a>
 
-For the full list of configuration parameters and how to configure them, see the [Configuration Guide](https://ds-horizon.github.io/guardian-website/docs/configuration/configuration/).
+For the complete configuration reference and detailed setup instructions, see the [Configuration Guide](https://guardian-docs.horizonos.in/docs/configuration/configuration/).
 
 ## 📚 API Reference
 
 ### Guardian API Specification
-The complete API specification including all endpoints, request/response schemas, and examples can be found in the [Guardian OpenAPI Specification](../src/main/resources/oas/guardian.yaml).
+The complete API specification including all endpoints, request/response schemas, and examples can be found in the [Guardian OpenAPI Specification](/src/main/resources/oas/guardian.yaml).
 
 ### Integration Endpoints
-For information about the endpoints that your services need to implement to integrate with Guardian, refer to the [Integration Endpoints Specification](../src/main/resources/oas/integrations.yaml).
+For information about the endpoints that your services need to implement to integrate with Guardian, refer to the [Integration Endpoints Specification](/src/main/resources/oas/integrations.yaml).
 
 ## 🚀 Deployment
 
-Guardian can be deployed using Docker Compose for development or containerized / virtual machine deployments for production environments.
+Guardian can be deployed using Docker Compose for development or containerized / virtual machine for production environments.
 
-For detailed deployment instructions, production best practices, and infrastructure setup, see the [Deployment Guide](https://ds-horizon.github.io/guardian-website/docs/deployment/deployment/).
+For detailed deployment instructions, production best practices, and infrastructure setup, see the [Deployment Guide](https://guardian-docs.horizonos.in/docs/deployment/deployment/).
 
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](https://github.com/ds-horizon/guardian/blob/main/CONTRIBUTING.md "https://github.com/ds-horizon/guardian/blob/main/CONTRIBUTING.md") for details on:
+We welcome contributions! Please see our [Contributing Guide](/CONTRIBUTING.md) for details on:
 
 *   Code of Conduct
 
@@ -209,7 +208,7 @@ We welcome contributions! Please see our [Contributing Guide](https://github.com
 
 *   🐛 [Issue Tracker](https://github.com/ds-horizon/guardian/issues "https://github.com/ds-horizon/guardian/issues") - Report bugs and request features
 
-*   📖 [Documentation](https://ds-horizon.github.io/guardian-website/docs/ "https://ds-horizon.github.io/guardian-website/docs/") - Comprehensive guides
+*   📖 [Documentation](https://guardian-docs.horizonos.in/docs/ "https://guardian-docs.horizonos.in/docs/") - Comprehensive guides
 
 
 ## 📄 License
