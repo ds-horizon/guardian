@@ -16,3 +16,7 @@ logs/*
 .config
 .env
 .history
+.astro
+
+### Dependencies ###
+node_modules/
