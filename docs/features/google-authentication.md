@@ -44,9 +44,9 @@ Google authentication uses OpenID Connect (OIDC) protocol with Google ID tokens.
 
 Before implementing Google authentication, you need:
 
-1.  **Guardian Tenant**: A [tenant configured](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#tenant-onboarding) in Guardian
+1.  **Guardian Tenant**: A [tenant configured](../configuration/configuration.md#tenant-onboarding) in Guardian
 
-2.  **OAuth Client**: A [client created](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#create-client) in Guardian (for `client_id`)
+2.  **OAuth Client**: A [client created](../configuration/configuration.md#create-client) in Guardian (for `client_id`)
 
 3.  **Google Credentials**: Client ID and Client Secret from Google Cloud Console
 
@@ -416,6 +416,6 @@ For implementing Google authentication in your frontend application, please refe
 
 ## Related Documentation
 
-*   [Social Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication.md "https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication.md") - Overview of social auth
+*   [Social Authentication](./social-authentication.md) - Overview of social auth
 
-*   [Facebook Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication.md "https://github.com/ds-horizon/guardian/tree/main/docs/features/FacebookAuthentication.md") - Facebook integration
+*   [Facebook Authentication](./facebook-authentication.md) - Facebook integration

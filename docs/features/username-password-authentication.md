@@ -46,7 +46,7 @@ Username/password authentication is the traditional authentication method where 
 
 Before implementing username/password authentication, you need:
 
-1.  **Guardian Tenant**: A [tenant configured](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#tenant-onboarding) in Guardian
+1.  **Guardian Tenant**: A [tenant configured](../configuration/configuration.md#tenant-onboarding) in Guardian
 
 2.  **User Service**: A user service that implements the following endpoints:
 
@@ -64,7 +64,7 @@ Before implementing username/password authentication, you need:
 
 Ensure your user service is accessible and implements the required endpoints. The user service configuration should be set in the Guardian tenant configuration.
 
-Refer [userConfiguration](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/UserConfiguration.md)
+Refer [userConfiguration](../configuration/user-configuration.md)
 
 
 ## API Endpoints
@@ -562,11 +562,11 @@ properties:
 
 ## Related Documentation
 
-*   [Configuration Guide](https://github.com/ds-horizon/guardian/blob/main/docs/configuration/Configuration.md) - Guardian configuration options
+*   [Configuration Guide](../configuration/configuration.md) - Guardian configuration options
 
-*   [Social Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/SocialAuthentication.md) - Social authentication overview
+*   [Social Authentication](./social-authentication.md) - Social authentication overview
 
-*   [Google Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/GoogleAuthentication.md) - Google integration guide
+*   [Google Authentication](./google-authentication.md) - Google integration guide
 
-*   [Facebook Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/FacebookAuthentication.md) - Facebook integration guide
+*   [Facebook Authentication](./facebook-authentication.md) - Facebook integration guide
 

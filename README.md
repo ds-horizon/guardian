@@ -36,7 +36,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
 ### Authentication Methods
 
-*   **📱 [Passwordless Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/PasswordlessAuthentication.md)**
+*   **📱 [Passwordless Authentication](/website/docs/content/docs/features/passwordless-authentication)**
 
     *   SMS/Email OTP
 
@@ -44,7 +44,7 @@ Guardian is a robust, open-source authentication and authorization solution desi
 
     *   Rate limiting and retry mechanisms
 
-*   **🔑 [Username/Password Authentication](https://github.com/ds-horizon/guardian/blob/main/docs/features/UsernamePasswordAuthentication.md)**
+*   **🔑 [Username/Password Authentication](./docs/features/username-password-authentication.md)**
 
     *   Username/Password
 

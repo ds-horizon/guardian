@@ -11,10 +11,6 @@ There are two types of configurations-
 
 Guardian application can be configured via environment variables
 
-## Guardian Configuration
-
-Guardian application can be configured via environment variables
-
 | Configuration Name             | Environment Variable                    | Type    | Default Value | Description                                            |
 |--------------------------------|-----------------------------------------|---------|---------------|--------------------------------------------------------|
 | mysql_writer_host              | GUARDIAN_MYSQL_WRITER_HOST              | String  | localhost     | JDBC connection URL for the database writer            |
@@ -32,8 +28,6 @@ Guardian application can be configured via environment variables
 | http_read_timeout              | GUARDIAN_HTTP_READ_TIMEOUT              | Integer | 1000          | Read timeout value for external services in ms         |
 | http_write_timeout             | GUARDIAN_HTTP_WRITE_TIMEOUT             | Integer | 1000          | Write timeout value for external services in ms        |
 | tenant_config_refresh_interval | GUARDIAN_TENANT_CONFIG_REFRESH_INTERVAL | Integer | 10            | Expiry time for tenant config in seconds               |
-| http_client_keep_alive         | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE         | Boolean | true          | Enable HTTP keep-alive for client connections          |
-| http_client_keep_alive_timeout | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE_TIMEOUT | Integer | 8000          | Keep-alive timeo_INTERVAL | Integer | 10            | Expiry time for tenant config in seconds               |
 | http_client_keep_alive         | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE         | Boolean | true          | Enable HTTP keep-alive for client connections          |
 | http_client_keep_alive_timeout | GUARDIAN_HTTP_CLIENT_KEEP_ALIVE_TIMEOUT | Integer | 8000          | Keep-alive timeout for HTTP client connections in ms (must be > 1000) |
 | http_client_idle_timeout       | GUARDIAN_HTTP_CLIENT_IDLE_TIMEOUT       | Integer | 6000          | Idle timeout for HTTP client connections in ms         |
@@ -60,11 +54,11 @@ To onboard a new tenant, insert a record into the `tenant` table:
 
 ```sql
 INSERT INTO tenant (id, name) 
-VALUES ('tenant1', 'My Application');
+VALUES ('tenant1', 'Tenant Name');
 ```
 
 **Important Notes:**
-- The `id` must be unique and exactly 10 characters (CHAR(10))
+- The `id` must be unique and with in 10 characters
 - The `name` must be unique across all tenants
 - Once a tenant is created, you can configure all tenant-specific settings using the tenant `id`
 
@@ -163,7 +157,7 @@ Guardian provides REST API endpoints for managing OAuth 2.0 clients. All client 
 
 After creating a tenant and client, you can configure the following tenant-specific settings:
 
-### User Configuration
+### [User Configuration](./user-configuration.md)
 
 | Field                  | Type         | Description                                  |
 |------------------------|--------------|----------------------------------------------|
@@ -175,7 +169,7 @@ After creating a tenant and client, you can configure the following tenant-speci
 | authenticate_user_path | VARCHAR(256) | API path for user authentication             |
 | add_provider_path      | VARCHAR(256) | API path for adding authentication providers |
 
-### Email Configuration
+### [Email Configuration](./sms-email-configuration.md)
 
 | Field           | Type         | Description                              |
 |-----------------|--------------|------------------------------------------|
@@ -258,3 +252,66 @@ After creating a tenant and client, you can configure the following tenant-speci
 | otpResendInterval | INT     | Minimum time (in seconds) that must elapse before requesting another OTP |
 | otpValidity       | INT     | Duration (in seconds) for which the OTP remains valid                    |
 | whitelistedInputs | JSON    | Map of allowed input patterns for different channels                     |
+
+### Guest Configuration
+
+Guest Configuration enables guest user authentication for applications that need to allow unauthenticated or temporary access.
+
+| Field          | Type         | Description                                                              |
+|----------------|--------------|--------------------------------------------------------------------------|
+| tenant_id      | CHAR(10)     | Tenant identifier (Primary Key)                                          |
+| is_encrypted   | BOOLEAN      | Whether the secret key is encrypted (default: true)                     |
+| secret_key     | VARCHAR(16)  | Secret key for guest authentication                                      |
+| allowed_scopes | JSON         | Array of scope names allowed for guest users (default: empty array)     |
+
+
+### OIDC Provider Configuration
+
+OIDC Provider Configuration allows you to integrate with external OpenID Connect identity providers (e.g., custom OIDC providers, enterprise SSO solutions).
+
+| Field              | Type         | Description                                                                 |
+|--------------------|--------------|-----------------------------------------------------------------------------|
+| tenant_id          | CHAR(10)     | Tenant identifier (Part of Primary Key)                                    |
+| provider_name      | VARCHAR(50)  | Unique name for the OIDC provider within the tenant (Part of Primary Key)   |
+| issuer             | TEXT         | OIDC provider issuer URL (e.g., https://provider.example.com)              |
+| jwks_url           | TEXT         | JSON Web Key Set URL for token verification                                |
+| token_url          | TEXT         | Token endpoint URL for exchanging authorization codes                       |
+| client_id          | VARCHAR(256) | OAuth client ID registered with the OIDC provider                          |
+| client_secret      | TEXT         | OAuth client secret for the OIDC provider                                  |
+| redirect_uri       | TEXT         | Redirect URI registered with the OIDC provider                             |
+| client_auth_method | VARCHAR(256) | Client authentication method (e.g., "client_secret_basic", "client_secret_post") |
+| is_ssl_enabled     | BOOLEAN      | Whether SSL is enabled for communication with the provider (default: true)  |
+| user_identifier    | VARCHAR(20)  | Field to use for user identification: "email" or "sub" (default: "email")  |
+| audience_claims    | JSON         | Array of audience claim values expected in ID tokens                       |
+
+### OIDC Configuration
+
+OIDC Configuration defines the OpenID Connect discovery endpoints and settings for Guardian acting as an OIDC provider.
+
+| Field                              | Type         | Description                                                                 |
+|------------------------------------|--------------|-----------------------------------------------------------------------------|
+| tenant_id                          | CHAR(10)     | Tenant identifier (Primary Key)                                             |
+| issuer                             | VARCHAR(255) | Base URL of the Guardian OIDC issuer (e.g., https://guardian.example.com) |
+| authorization_endpoint             | VARCHAR(255) | Authorization endpoint URL                                                  |
+| token_endpoint                     | VARCHAR(255) | Token endpoint URL                                                          |
+| userinfo_endpoint                  | VARCHAR(255) | UserInfo endpoint URL                                                        |
+| revocation_endpoint                | VARCHAR(255) | Token revocation endpoint URL                                               |
+| jwks_uri                           | VARCHAR(255) | JSON Web Key Set URI                                                        |
+| grant_types_supported              | JSON         | Array of supported grant types (e.g., ["authorization_code", "refresh_token"]) |
+| response_types_supported           | JSON         | Array of supported response types (e.g., ["code"])                         |
+| subject_types_supported            | JSON         | Array of supported subject types (e.g., ["public"])                        |
+| id_token_signing_alg_values_supported | JSON      | Array of supported ID token signing algorithms (e.g., ["RS256", "RS512"])   |
+| token_endpoint_auth_methods_supported | JSON      | Array of supported token endpoint auth methods                             |
+| login_page_uri                     | VARCHAR(512) | Custom login page URI (optional)                                            |
+| consent_page_uri                   | VARCHAR(512) | Custom consent page URI (optional)                                          |
+| authorize_ttl                      | INT          | Authorization code time-to-live in seconds (optional)                       |
+
+### Admin Configuration
+
+Admin Configuration stores credentials for administrative access to Guardian for a tenant.
+
+| Field      | Type         | Description                          |
+|------------|--------------|--------------------------------------|
+| tenant_id  | CHAR(10)     | Tenant identifier (Primary Key)       |
+| username   | VARCHAR(50)  | Admin username for the tenant         |
+| password   | VARCHAR(50)  | Admin password for the tenant         |

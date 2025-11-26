@@ -48,9 +48,9 @@ Facebook authentication uses OAuth 2.0 protocol with Facebook access tokens. Gua
 
 Before implementing Facebook authentication, you need:
 
-1.  **Guardian Tenant**: A [tenant configured](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#tenant-onboarding) in Guardian
+1.  **Guardian Tenant**: A [tenant configured](../configuration/configuration.md#tenant-onboarding) in Guardian
 
-2.  **OAuth Client**: A [client created](https://github.com/ds-horizon/guardian/blob/fix/allDocUpdates/docs/configuration/Configuration.md#create-client) in Guardian (for `client_id`)
+2.  **OAuth Client**: A [client created](../configuration/configuration.md#create-client) in Guardian (for `client_id`)
 
 3.  **Facebook Credentials**: App ID and App Secret from Facebook Developers
 
@@ -436,6 +436,6 @@ For implementing Facebook authentication in your frontend application, please re
 ## Related Documentation
 
 
-*   [Social Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication.md "https://github.com/ds-horizon/guardian/tree/main/docs/features/SocialAuthentication.md") - Overview of social auth
+*   [Social Authentication](./social-authentication.md) - Overview of social auth
 
-*   [Google Authentication](https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication.md "https://github.com/ds-horizon/guardian/tree/main/docs/features/GoogleAuthentication.md") - Google integration
+*   [Google Authentication](./google-authentication.md) - Google integration
