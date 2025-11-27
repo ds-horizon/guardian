@@ -31,3 +31,4 @@ jobs:
         with:
           files: |
             target/guardian/guardian.jar
+            src/main/resources/logback/logback.xml
