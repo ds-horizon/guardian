@@ -92,9 +92,9 @@ public class PasswordAuth {
         .validateFirstPartyClientAndClientScopes(
             tenantId, requestDto.getClientId(), requestDto.getScopes())
         .andThen(
-            userFlowBlockService
-                .isFlowBlocked(tenantId, List.of(userIdentifier), BlockFlow.PASSWORD)
-                .andThen(userService.authenticate(buildUserDto(requestDto), headers, tenantId)))
+            userFlowBlockService.isFlowBlocked(
+                tenantId, List.of(userIdentifier), BlockFlow.PASSWORD))
+        .andThen(userService.authenticate(buildUserDto(requestDto), headers, tenantId))
         .flatMap(
             user ->
                 authorizationService.generate(

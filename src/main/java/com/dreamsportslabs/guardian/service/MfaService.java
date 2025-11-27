@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,10 +48,17 @@ public class MfaService {
         .flatMap(
             refreshTokenModel -> {
               List<AuthMethod> authMethods = refreshTokenModel.getAuthMethod();
-              if (authMethods == null || authMethods.size() < 1) {
+              if (authMethods == null || authMethods.isEmpty()) {
                 return Single.error(
                     INVALID_REQUEST.getCustomException(
                         "Refresh token must have at least one authentication method"));
+              }
+              // Check if the factor being enrolled is already in the refresh token's auth methods
+              AuthMethod factorAuthMethod = requestDto.getFactor().getAuthMethod();
+              if (authMethods.contains(factorAuthMethod)) {
+                return Single.error(
+                    MFA_FACTOR_ALREADY_ENROLLED.getCustomException(
+                        "The factor is already enrolled in the refresh token"));
               }
               if (authMethods.size() == 1) {
                 return validateSingleFactorEnrollment(refreshTokenModel.getUserId(), tenantId)
@@ -142,10 +150,35 @@ public class MfaService {
       String userId,
       String tenantId) {
     return switch (requestDto.getFactor()) {
-      case PASSWORD -> authenticateUser(requestDto, headers, userId, tenantId);
-      case PIN -> authenticateUser(requestDto, headers, userId, tenantId);
+      case PASSWORD, PIN -> validateFactorEnrolledAndAuthenticate(
+          requestDto, headers, userId, tenantId);
       default -> Single.error(MFA_FACTOR_NOT_SUPPORTED.getException());
     };
+  }
+
+  private Single<JsonObject> validateFactorEnrolledAndAuthenticate(
+      V2MfaSignInRequestDto requestDto,
+      MultivaluedMap<String, String> headers,
+      String userId,
+      String tenantId) {
+    MfaFactor factor = requestDto.getFactor();
+    String factorSetField = factor == MfaFactor.PASSWORD ? "passwordSet" : "pinSet";
+    String factorName = factor == MfaFactor.PASSWORD ? "password" : "PIN";
+
+    return userService
+        .getUser(Map.of(USERID, userId), headers, tenantId)
+        .flatMap(
+            user -> {
+              Boolean factorSet = user.getBoolean(factorSetField, false);
+              if (!Boolean.TRUE.equals(factorSet)) {
+                return Single.error(
+                    MFA_FACTOR_NOT_SUPPORTED.getCustomException(
+                        String.format(
+                            "%s factor is not enrolled for the user. Please enroll it first.",
+                            factorName)));
+              }
+              return authenticateUser(requestDto, headers, userId, tenantId);
+            });
   }
 
   private Single<JsonObject> authenticateUser(
@@ -176,8 +209,9 @@ public class MfaService {
 
   private List<AuthMethod> getMergedAuthMethods(
       List<AuthMethod> authMethods, AuthMethod newAuthMethod) {
-    authMethods.add(newAuthMethod);
-    return authMethods;
+    List<AuthMethod> mergedAuthMethods = new ArrayList<>(authMethods);
+    mergedAuthMethods.add(newAuthMethod);
+    return mergedAuthMethods;
   }
 
   private UserDto buildUserDto(V2MfaSignInRequestDto requestDto) {
@@ -226,21 +260,14 @@ public class MfaService {
       MultivaluedMap<String, String> headers,
       String userId,
       String tenantId) {
-    return userService
-        .getUser(Map.of(USERID, userId), headers, tenantId)
-        .flatMap(
-            user -> {
-              Boolean passwordSet = user.getBoolean("passwordSet", false);
-              if (Boolean.TRUE.equals(passwordSet)) {
-                return Single.error(
-                    MFA_FACTOR_ALREADY_ENROLLED.getCustomException(
-                        "Password factor cannot be enrolled as it is already set for the user"));
-              }
-              UserDto userDto = UserDto.builder().password(requestDto.getPassword()).build();
-              return userService
-                  .updateUser(userId, userDto, headers, tenantId)
-                  .andThen(Single.just(user));
-            });
+    return validateAndEnrollFactor(
+        requestDto,
+        headers,
+        userId,
+        tenantId,
+        "passwordSet",
+        "Password factor cannot be enrolled as it is already set for the user",
+        userDtoBuilder -> userDtoBuilder.password(requestDto.getPassword()));
   }
 
   private Single<JsonObject> validateAndEnrollPin(
@@ -248,17 +275,35 @@ public class MfaService {
       MultivaluedMap<String, String> headers,
       String userId,
       String tenantId) {
+    return validateAndEnrollFactor(
+        requestDto,
+        headers,
+        userId,
+        tenantId,
+        "pinSet",
+        "PIN factor cannot be enrolled as it is already set for the user",
+        userDtoBuilder -> userDtoBuilder.pin(requestDto.getPin()));
+  }
+
+  private Single<JsonObject> validateAndEnrollFactor(
+      V2MfaSignInRequestDto requestDto,
+      MultivaluedMap<String, String> headers,
+      String userId,
+      String tenantId,
+      String factorSetField,
+      String errorMessage,
+      Consumer<UserDto.UserDtoBuilder> userDtoBuilderConsumer) {
     return userService
         .getUser(Map.of(USERID, userId), headers, tenantId)
         .flatMap(
             user -> {
-              Boolean pinSet = user.getBoolean("pinSet", false);
-              if (Boolean.TRUE.equals(pinSet)) {
-                return Single.error(
-                    MFA_FACTOR_ALREADY_ENROLLED.getCustomException(
-                        "PIN factor cannot be enrolled as it is already set for the user"));
+              Boolean factorSet = user.getBoolean(factorSetField, false);
+              if (Boolean.TRUE.equals(factorSet)) {
+                return Single.error(MFA_FACTOR_ALREADY_ENROLLED.getCustomException(errorMessage));
               }
-              UserDto userDto = UserDto.builder().pin(requestDto.getPin()).build();
+              UserDto.UserDtoBuilder userDtoBuilder = UserDto.builder();
+              userDtoBuilderConsumer.accept(userDtoBuilder);
+              UserDto userDto = userDtoBuilder.build();
               return userService
                   .updateUser(userId, userDto, headers, tenantId)
                   .andThen(Single.just(user));
