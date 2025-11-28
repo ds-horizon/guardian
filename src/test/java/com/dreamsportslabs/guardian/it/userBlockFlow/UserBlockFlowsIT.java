@@ -85,6 +85,32 @@ public class UserBlockFlowsIT {
     return requestBody;
   }
 
+  private Map<String, Object> generatePasswordlessInitRequestBodyWithPhoneNumberAsIdentifier(
+      String phoneNumber) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_FLOW, PASSWORDLESS_FLOW_SIGNINUP);
+    requestBody.put(BODY_PARAM_RESPONSE_TYPE, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    List<Map<String, Object>> contacts = new ArrayList<>();
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, BODY_CHANNEL_SMS);
+    contact.put(BODY_PARAM_IDENTIFIER, phoneNumber);
+
+    Map<String, Object> template = new HashMap<>();
+    template.put(BODY_PARAM_NAME, BODY_PARAM_OTP);
+    contact.put(BODY_PARAM_TEMPLATE, template);
+
+    contacts.add(contact);
+    requestBody.put(BODY_PARAM_CONTACTS, contacts);
+
+    Map<String, Object> metaInfo = new HashMap<>();
+    metaInfo.put(BODY_PARAM_DEVICE_NAME, "testDevice");
+    requestBody.put(BODY_PARAM_META_INFO, metaInfo);
+    requestBody.put(BODY_PARAM_ADDITIONAL_INFO, new HashMap<>());
+
+    return requestBody;
+  }
+
   private Map<String, Object> createSendOtpBody(String email) {
     Map<String, Object> requestBody = new HashMap<>();
     Map<String, Object> contact = new HashMap<>();
@@ -539,7 +565,7 @@ public class UserBlockFlowsIT {
   @DisplayName("Should verify block is automatically lifted after unblockedAt time")
   public void testBlockAutomaticallyLiftedAfterUnblockedAt() {
     // Arrange
-    String contact = randomNumeric(10);
+    String contact = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
     String reason = randomAlphanumeric(10);
 
     DbUtils.createUserFlowBlockWithImmediateExpiry(TENANT_ID, contact, PASSWORDLESS_FLOW, reason);
@@ -681,7 +707,7 @@ public class UserBlockFlowsIT {
   public void testBlockOneIdentifierDoesNotAffectOthers() {
     // Arrange
     String email = randomAlphanumeric(10) + "@" + randomAlphanumeric(5) + ".com";
-    String phoneNumber = randomAlphanumeric(10);
+    String phoneNumber = randomNumeric(10);
 
     String reason = randomAlphanumeric(10);
 
@@ -694,7 +720,8 @@ public class UserBlockFlowsIT {
     StubMapping emailStub = getStubForSendEmail();
 
     // Act
-    Map<String, Object> passwordlessInitBody = generatePasswordlessInitRequestBody(phoneNumber);
+    Map<String, Object> passwordlessInitBody =
+        generatePasswordlessInitRequestBodyWithPhoneNumberAsIdentifier(phoneNumber);
     Response passwordlessInitResponse = passwordlessInit(TENANT_ID, passwordlessInitBody);
 
     // Assert

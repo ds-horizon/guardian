@@ -751,6 +751,90 @@ public class V2PasswordlessInitIT {
     wireMockServer.removeStub(stub);
   }
 
+  @Test
+  @DisplayName("Should return error when channel is invalid")
+  public void testInvalidChannel() {
+    // Arrange
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_CLIENT_ID, client1);
+    requestBody.put(BODY_PARAM_SCOPES, List.of(TEST_SCOPE_1));
+    requestBody.put(BODY_PARAM_FLOW, PASSWORDLESS_FLOW_SIGNINUP);
+    requestBody.put(BODY_PARAM_RESPONSE_TYPE, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+    requestBody.put(BODY_PARAM_META_INFO_V2, getMetaInfo());
+
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, "invalid_channel");
+    contact.put(BODY_PARAM_IDENTIFIER, "test@example.com");
+    contact.put(BODY_PARAM_TEMPLATE, getTemplate());
+    requestBody.put(BODY_PARAM_CONTACTS, List.of(contact));
+
+    // Act
+    Response response = v2PasswordlessInit(TENANT_1, requestBody);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should return error when channel is null")
+  public void testNullChannel() {
+    // Arrange
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_CLIENT_ID, client1);
+    requestBody.put(BODY_PARAM_SCOPES, List.of(TEST_SCOPE_1));
+    requestBody.put(BODY_PARAM_FLOW, PASSWORDLESS_FLOW_SIGNINUP);
+    requestBody.put(BODY_PARAM_RESPONSE_TYPE, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+    requestBody.put(BODY_PARAM_META_INFO_V2, getMetaInfo());
+
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, null);
+    contact.put(BODY_PARAM_IDENTIFIER, "test@example.com");
+    contact.put(BODY_PARAM_TEMPLATE, getTemplate());
+    requestBody.put(BODY_PARAM_CONTACTS, List.of(contact));
+
+    // Act
+    Response response = v2PasswordlessInit(TENANT_1, requestBody);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should return error when email format is invalid")
+  public void testInvalidEmailFormat() {
+    // Arrange
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_CLIENT_ID, client1);
+    requestBody.put(BODY_PARAM_SCOPES, List.of(TEST_SCOPE_1));
+    requestBody.put(BODY_PARAM_FLOW, PASSWORDLESS_FLOW_SIGNINUP);
+    requestBody.put(BODY_PARAM_RESPONSE_TYPE, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+    requestBody.put(BODY_PARAM_META_INFO_V2, getMetaInfo());
+
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, BODY_CHANNEL_EMAIL);
+    contact.put(BODY_PARAM_IDENTIFIER, "invalid-email");
+    contact.put(BODY_PARAM_TEMPLATE, getTemplate());
+    requestBody.put(BODY_PARAM_CONTACTS, List.of(contact));
+
+    // Act
+    Response response = v2PasswordlessInit(TENANT_1, requestBody);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
   private Map<String, Object> getRequestBodyInit(
       String clientId,
       List<String> scopes,
