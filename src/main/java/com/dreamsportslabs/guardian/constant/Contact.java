@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.constant;
 
+import com.dreamsportslabs.guardian.utils.Utils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,10 @@ public class Contact {
 
   public boolean validate() {
     if (identifier == null || channel == null) {
+      return false;
+    }
+
+    if (channel == Channel.EMAIL && !Utils.validateEmail(identifier)) {
       return false;
     }
 

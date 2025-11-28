@@ -1279,6 +1279,92 @@ public class PasswordlessInitIT {
     assertThat(ttlAfterApiCall, lessThanOrEqualTo(initialTtl));
   }
 
+  @Test
+  @DisplayName("Should return error when channel is invalid")
+  public void testInvalidChannel() {
+    // Arrange
+    Map<String, Object> metaInfo = new HashMap<>();
+    metaInfo.put(BODY_PARAM_DEVICE_NAME, "testDevice");
+
+    Map<String, Object> template = new HashMap<>();
+    template.put(BODY_PARAM_NAME, "otp");
+
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, "invalid_channel");
+    contact.put(BODY_PARAM_IDENTIFIER, "test@example.com");
+    contact.put(BODY_PARAM_TEMPLATE, template);
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_FLOW, PASSWORDLESS_FLOW_SIGNINUP);
+    requestBody.put(BODY_PARAM_RESPONSE_TYPE, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+    requestBody.put(BODY_PARAM_META_INFO, metaInfo);
+    requestBody.put(BODY_PARAM_CONTACTS, List.of(contact));
+
+    // Act
+    Response response = passwordlessInit(tenant1, requestBody);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should return error when channel is null")
+  public void testNullChannel() {
+    // Arrange
+    Map<String, Object> metaInfo = new HashMap<>();
+    metaInfo.put(BODY_PARAM_DEVICE_NAME, "testDevice");
+
+    Map<String, Object> template = new HashMap<>();
+    template.put(BODY_PARAM_NAME, "otp");
+
+    Map<String, Object> contact = new HashMap<>();
+    contact.put(BODY_PARAM_CHANNEL, null);
+    contact.put(BODY_PARAM_IDENTIFIER, "test@example.com");
+    contact.put(BODY_PARAM_TEMPLATE, template);
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put(BODY_PARAM_FLOW, PASSWORDLESS_FLOW_SIGNINUP);
+    requestBody.put(BODY_PARAM_RESPONSE_TYPE, BODY_PARAM_RESPONSE_TYPE_TOKEN);
+    requestBody.put(BODY_PARAM_META_INFO, metaInfo);
+    requestBody.put(BODY_PARAM_CONTACTS, List.of(contact));
+
+    // Act
+    Response response = passwordlessInit(tenant1, requestBody);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should return error when email format is invalid")
+  public void testInvalidEmailFormat() {
+    // Arrange
+    Map<String, Object> requestBody =
+        getRequestBodyInit(
+            BODY_CHANNEL_EMAIL,
+            "invalid-email",
+            PASSWORDLESS_FLOW_SIGNINUP,
+            BODY_PARAM_RESPONSE_TYPE_TOKEN);
+
+    // Act
+    Response response = passwordlessInit(tenant1, requestBody);
+
+    // Validate
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
   public Map<String, Object> getRequestBodyInit(
       String channel, String identifier, String flow, String responseType) {
     Map<String, Object> metaInfo = new HashMap<>();

@@ -602,6 +602,69 @@ public class ContactSendOtpIT {
     wireMockServer.removeStub(sendSmsStub);
   }
 
+  @Test
+  @DisplayName("Should validate contact when state is not provided")
+  public void testContactValidationWhenStateNotProvided() {
+    // Arrange - No state provided, so validation logic runs
+    // Create contact with invalid channel
+    Map<String, Object> contact = createContactWithTemplate("invalid_channel", TEST_EMAIL, null);
+    Map<String, Object> requestBody = new HashMap<>();
+    // state not included in request
+    requestBody.put(BODY_PARAM_CONTACT, contact);
+
+    // Act
+    Response response = ApplicationIoUtils.sendOtp(TENANT_ID, requestBody);
+
+    // Validate - Should get 400 because contact validation runs when no state
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should validate email format when state is not provided")
+  public void testEmailValidationWhenStateNotProvided() {
+    // Arrange - No state provided, so validation logic runs
+    // Create contact with invalid email format
+    Map<String, Object> contact = createEmailContact("not-an-email");
+    Map<String, Object> requestBody = new HashMap<>();
+    // state not included in request
+    requestBody.put(BODY_PARAM_CONTACT, contact);
+
+    // Act
+    Response response = ApplicationIoUtils.sendOtp(TENANT_ID, requestBody);
+
+    // Validate - Should get 400 because contact validation runs when no state
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
+  @Test
+  @DisplayName("Should validate null channel when state is not provided")
+  public void testNullChannelValidationWhenStateNotProvided() {
+    // Arrange - No state provided, so validation logic runs
+    // Create contact with null channel
+    Map<String, Object> contact = createContactWithTemplate(null, TEST_EMAIL, null);
+    Map<String, Object> requestBody = new HashMap<>();
+    // state not included in request
+    requestBody.put(BODY_PARAM_CONTACT, contact);
+
+    // Act
+    Response response = ApplicationIoUtils.sendOtp(TENANT_ID, requestBody);
+
+    // Validate - Should get 400 because contact validation runs when no state
+    response
+        .then()
+        .statusCode(SC_BAD_REQUEST)
+        .rootPath(ERROR)
+        .body(CODE, equalTo(ERROR_INVALID_REQUEST));
+  }
+
   private void addStateInRedis(
       String tenantId,
       String state,
