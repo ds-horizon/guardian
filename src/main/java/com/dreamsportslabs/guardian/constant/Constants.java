@@ -11,6 +11,7 @@ public final class Constants {
   public static final String PROVIDER = "provider";
   public static final String IS_NEW_USER = "isNewUser";
   public static final String SCOPE = "scope";
+  public static final String SCOPE_DELIMITER = " ";
   public static final String AES_ALGORITHM = "AES";
   public static final String AES_CBC_NO_PADDING = "AES/CBC/NoPadding";
   public static final String SHUTDOWN_STATUS = "__shutdown__";

@@ -11,5 +11,6 @@ public class UserConfig {
   private String getUserPath;
   private String authenticateUserPath;
   private String addProviderPath;
+  private String updateUserPath;
   private Boolean sendProviderDetails;
 }

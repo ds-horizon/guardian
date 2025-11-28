@@ -52,7 +52,12 @@ public enum ErrorEnum {
 
   OIDC_CONFIG_NOT_EXISTS(
       "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400),
-  SCOPE_NOT_FOUND("scope_not_found", "Scope not found", 400);
+  SCOPE_NOT_FOUND("scope_not_found", "Scope not found", 400),
+  MFA_FACTOR_NOT_SUPPORTED("unsupported_mfa_factor", "MFA factor is not supported", 400),
+  MFA_FACTOR_ALREADY_ENROLLED(
+      "mfa_factor_already_enrolled",
+      "MFA factor cannot be enrolled as it is already set for the user",
+      400);
 
   private final String code;
   private final String message;

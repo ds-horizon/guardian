@@ -81,6 +81,47 @@ public class AuthorizationService {
     throw INVALID_REQUEST.getException();
   }
 
+  public Single<TokenResponseDto> generateMfaSignInTokens(
+      JsonObject user,
+      String refreshToken,
+      List<String> scopes,
+      List<AuthMethod> authMethods,
+      String clientId,
+      String tenantId) {
+    TenantConfig config = registry.get(tenantId, TenantConfig.class);
+    long iat = getCurrentTimeInSeconds();
+    return Single.zip(
+            tokenIssuer.generateAccessToken(
+                refreshToken,
+                iat,
+                String.join(" ", scopes),
+                user,
+                authMethods,
+                clientId,
+                tenantId,
+                config),
+            tokenIssuer.generateIdToken(
+                iat,
+                null,
+                user,
+                config.getTokenConfig().getIdTokenClaims(),
+                clientId,
+                config.getTenantId()),
+            (accessToken, idToken) ->
+                new TokenResponseDto(
+                    accessToken,
+                    refreshToken,
+                    idToken,
+                    null,
+                    TOKEN_TYPE,
+                    config.getTokenConfig().getAccessTokenExpiry(),
+                    user.getBoolean(IS_NEW_USER, false)))
+        .flatMap(
+            tokenResponseDto ->
+                updateRefreshToken(refreshToken, authMethods, scopes, clientId, tenantId)
+                    .andThen(Single.just(tokenResponseDto)));
+  }
+
   public NewCookie[] getCookies(TokenResponseDto responseDto, String tenantId) {
     NewCookie accessTokenCookie = getAccessTokenCookie(responseDto.getAccessToken(), tenantId);
     NewCookie refreshTokenCookie = getRefreshTokenCookie(responseDto.getRefreshToken(), tenantId);
@@ -219,21 +260,7 @@ public class AuthorizationService {
     if (StringUtils.isBlank(dto.getRefreshToken())) {
       return Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token"));
     }
-    return refreshTokenDao
-        .getRefreshToken(tenantId, dto.getRefreshToken())
-        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
-        .filter(
-            refreshTokenModel -> {
-              if (StringUtils.isNotBlank(dto.getClientId())) {
-                return refreshTokenModel.getClientId().equals(dto.getClientId());
-              }
-              return true;
-            })
-        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
-        .filter(
-            refreshTokenModel ->
-                refreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
-        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+    return validateRefreshToken(tenantId, dto.getClientId(), dto.getRefreshToken())
         .flatMap(
             refreshTokenModel -> {
               if (shouldSetAccessTokenAdditionalClaims(config)) {
@@ -351,6 +378,37 @@ public class AuthorizationService {
                         () -> updateRevocations(List.of(dto.getRefreshToken()), tenantId));
               }
             });
+  }
+
+  public Single<RefreshTokenModel> validateRefreshToken(
+      String tenantId, String clientId, String refreshToken) {
+    return refreshTokenDao
+        .getRefreshToken(tenantId, refreshToken)
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel -> {
+              if (StringUtils.isNotBlank(clientId)) {
+                return refreshTokenModel.getClientId().equals(clientId);
+              }
+              return true;
+            })
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(
+            refreshTokenModel ->
+                refreshTokenModel.getRefreshTokenExp() > (getCurrentTimeInSeconds()))
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")))
+        .filter(RefreshTokenModel::getIsActive)
+        .switchIfEmpty(Single.error(UNAUTHORIZED.getCustomException("Invalid refresh token")));
+  }
+
+  public Completable updateRefreshToken(
+      String refreshToken,
+      List<AuthMethod> authMethods,
+      List<String> scopes,
+      String clientId,
+      String tenantId) {
+    return refreshTokenDao.updateRefreshToken(
+        refreshToken, authMethods, scopes, clientId, tenantId);
   }
 
   private Completable invalidateRefreshToken(V2LogoutRequestDto dto, String tenantId) {

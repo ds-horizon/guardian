@@ -31,6 +31,7 @@ public class ConfigQuery {
            create_user_path,
            authenticate_user_path,
            add_provider_path,
+           update_user_path,
            send_provider_details
     FROM user_config
     WHERE tenant_id = ?

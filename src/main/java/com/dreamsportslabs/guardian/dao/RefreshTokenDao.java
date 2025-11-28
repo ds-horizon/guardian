@@ -8,6 +8,7 @@ import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.SAVE_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.UPDATE_REFRESH_TOKEN_AUTH_METHOD;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_ALL_SSO_TOKENS_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_SSO_TOKENS_OF_CLIENT_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_SSO_TOKEN_BY_REFRESH_TOKEN;
@@ -15,6 +16,7 @@ import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.SAVE_SSO_TOKE
 import static com.dreamsportslabs.guardian.exception.OidcErrorEnum.INTERNAL_SERVER_ERROR;
 
 import com.dreamsportslabs.guardian.client.MysqlClient;
+import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
 import com.dreamsportslabs.guardian.dao.model.SsoTokenModel;
 import com.dreamsportslabs.guardian.utils.JsonUtils;
@@ -190,6 +192,29 @@ public class RefreshTokenDao {
                                 .rxExecute(refreshTokenParams)
                                 .filter(result -> result.rowCount() > 0)
                                 .map(rows -> true)))
+        .ignoreElement();
+  }
+
+  public Completable updateRefreshToken(
+      String refreshToken,
+      List<AuthMethod> authMethods,
+      List<String> scopes,
+      String clientId,
+      String tenantId) {
+    Tuple params = Tuple.tuple();
+    params.addJsonArray(new JsonArray(authMethods));
+    params.addJsonArray(new JsonArray(scopes));
+    params.addString(tenantId);
+    params.addString(clientId);
+    params.addString(refreshToken);
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(UPDATE_REFRESH_TOKEN_AUTH_METHOD)
+        .rxExecute(params)
+        .doOnSuccess(
+            v -> log.info("Refresh token auth method, expiry and scopes updated successfully"))
+        .doOnError(
+            err -> log.error("Error updating refresh token auth method, expiry and scopes", err))
         .ignoreElement();
   }
 }

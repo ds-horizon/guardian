@@ -20,6 +20,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava3.core.buffer.Buffer;
 import io.vertx.rxjava3.ext.web.client.HttpRequest;
+import io.vertx.rxjava3.ext.web.client.HttpResponse;
 import io.vertx.rxjava3.ext.web.client.WebClient;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Map;
@@ -70,11 +71,21 @@ public class UserService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              JsonObject resBody = res.bodyAsJsonObject();
-              if (res.statusCode() / 100 != 2 || !resBody.containsKey(USERID)) {
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
-              } else if (!resBody.containsKey(USERID)) {
-                throw USER_SERVICE_ERROR.getException();
+              int statusCode = res.statusCode();
+              JsonObject resBody;
+              try {
+                resBody = new JsonObject(res.bodyAsString());
+              } catch (Exception e) {
+                resBody = new JsonObject();
+              }
+
+              if (statusCode / 100 != 2) {
+                throw USER_SERVICE_ERROR.getCustomException(
+                    String.valueOf(statusCode), resBody.getMap());
+              } else {
+                if (!resBody.containsKey(USERID)) {
+                  throw USER_SERVICE_ERROR.getException();
+                }
               }
               resBody.put(IS_NEW_USER, true);
               return resBody;
@@ -92,13 +103,22 @@ public class UserService {
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
         .map(
             res -> {
-              JsonObject resBody = res.bodyAsJsonObject();
+              int statusCode = res.statusCode();
+              JsonObject resBody;
+              try {
+                resBody = new JsonObject(res.bodyAsString());
+              } catch (Exception e) {
+                resBody = new JsonObject();
+              }
+
               if (res.statusCode() != 200) {
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
+                throw USER_SERVICE_ERROR.getCustomException(
+                    String.valueOf(statusCode), resBody.getMap());
               } else if (!resBody.containsKey(USERID)) {
                 throw USER_SERVICE_ERROR.getException();
               }
-              return res.bodyAsJsonObject();
+
+              return resBody;
             });
   }
 
@@ -111,14 +131,7 @@ public class UserService {
         .putHeaders(Utils.getForwardingHeaders(headers))
         .rxSendJson(new JsonObject().put(USERID, userId).put(PROVIDER, provider))
         .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
-        .map(
-            res -> {
-              if (res.statusCode() / 100 != 2) {
-                JsonObject resBody = res.bodyAsJsonObject();
-                throw USER_SERVICE_ERROR.getCustomException(resBody.getMap());
-              }
-              return res;
-            })
+        .map(this::errorHandling)
         .ignoreElement();
   }
 
@@ -152,5 +165,35 @@ public class UserService {
               }
               return Utils.convertKeysToSnakeCase(resBody);
             });
+  }
+
+  public Completable updateUser(
+      String userId, UserDto dto, MultivaluedMap<String, String> headers, String tenantId) {
+    UserConfig userConfig = registry.get(tenantId, TenantConfig.class).getUserConfig();
+    JsonObject requestBody = JsonObject.mapFrom(dto);
+    requestBody.put(USERID, userId);
+    return webClient
+        .post(userConfig.getPort(), userConfig.getHost(), userConfig.getUpdateUserPath())
+        .ssl(userConfig.getIsSslEnabled())
+        .putHeaders(Utils.getForwardingHeaders(headers))
+        .rxSendJson(requestBody)
+        .onErrorResumeNext(err -> Single.error(INTERNAL_SERVER_ERROR.getException(err)))
+        .map(this::errorHandling)
+        .ignoreElement();
+  }
+
+  private JsonObject errorHandling(HttpResponse<Buffer> response) {
+    int statusCode = response.statusCode();
+    JsonObject resBody;
+    try {
+      resBody = new JsonObject(response.bodyAsString());
+    } catch (Exception e) {
+      resBody = new JsonObject();
+    }
+
+    if (response.statusCode() / 100 != 2) {
+      throw USER_SERVICE_ERROR.getCustomException(String.valueOf(statusCode), resBody.getMap());
+    }
+    return resBody;
   }
 }
