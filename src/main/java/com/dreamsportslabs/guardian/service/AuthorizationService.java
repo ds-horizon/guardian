@@ -92,6 +92,20 @@ public class AuthorizationService {
       String tenantId) {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     long iat = getCurrentTimeInSeconds();
+
+    Single<Pair<String, List<String>>> clientMfaInfoSingle =
+        clientService
+            .getClient(clientId, tenantId)
+            .map(
+                client -> {
+                  String mfaPolicy = client.getMfaPolicy();
+                  List<String> allowedMfaMethods = client.getAllowedMfaMethods();
+                  return Pair.of(
+                      mfaPolicy != null ? mfaPolicy : "not_required",
+                      allowedMfaMethods != null ? allowedMfaMethods : new ArrayList<String>());
+                })
+            .onErrorReturn(err -> Pair.of("not_required", new ArrayList<>()));
+
     return Single.zip(
             tokenIssuer.generateAccessToken(
                 refreshToken,
@@ -109,15 +123,24 @@ public class AuthorizationService {
                 config.getTokenConfig().getIdTokenClaims(),
                 clientId,
                 config.getTenantId()),
-            (accessToken, idToken) ->
-                new TokenResponseDto(
-                    accessToken,
-                    refreshToken,
-                    idToken,
-                    null,
-                    TOKEN_TYPE,
-                    config.getTokenConfig().getAccessTokenExpiry(),
-                    user.getBoolean(IS_NEW_USER, false)))
+            clientMfaInfoSingle,
+            (accessToken, idToken, clientMfaInfo) -> {
+              String mfaPolicy = clientMfaInfo.getLeft();
+              List<String> clientMfaMethods = clientMfaInfo.getRight();
+              List<MfaFactorDto> mfaFactors = new ArrayList<>();
+              if ("mandatory".equals(mfaPolicy)) {
+                mfaFactors = MfaFactorUtil.buildMfaFactors(authMethods, user, clientMfaMethods);
+              }
+              return new TokenResponseDto(
+                  accessToken,
+                  refreshToken,
+                  idToken,
+                  null,
+                  TOKEN_TYPE,
+                  config.getTokenConfig().getAccessTokenExpiry(),
+                  user.getBoolean(IS_NEW_USER, false),
+                  mfaFactors);
+            })
         .flatMap(
             tokenResponseDto ->
                 updateRefreshToken(refreshToken, authMethods, scopes, clientId, tenantId)

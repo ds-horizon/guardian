@@ -53,7 +53,7 @@ public class ClientDao {
         .addString(client.getMfaPolicy() != null ? client.getMfaPolicy() : "not_required")
         .addString(
             client.getAllowedMfaMethods() != null
-                ? serializeToJsonString(client.getAllowedMfaMethods(), objectMapper)
+                ? client.getAllowedMfaMethods().toString()
                 : null);
     return mysqlClient
         .getWriterPool()

@@ -48,7 +48,7 @@ public class ValidV2MfaSignInRequestValidator
             .addConstraintViolation();
         return false;
       }
-    } else if (factor == MfaFactor.PIN) {
+    } else if (factor == MfaFactor.PIN_OR_PATTERN) {
       if (StringUtils.isBlank(request.getPin())) {
         context
             .buildConstraintViolationWithTemplate("pin is required for pin factor")
@@ -69,6 +69,6 @@ public class ValidV2MfaSignInRequestValidator
 
   private boolean requiresIdentifier(MfaFactor factor) {
     // PASSWORD and PIN factors require identifier
-    return factor == MfaFactor.PASSWORD || factor == MfaFactor.PIN;
+    return factor == MfaFactor.PASSWORD || factor == MfaFactor.PIN_OR_PATTERN;
   }
 }

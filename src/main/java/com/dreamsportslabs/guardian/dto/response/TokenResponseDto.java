@@ -1,6 +1,5 @@
 package com.dreamsportslabs.guardian.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +14,5 @@ public class TokenResponseDto {
   private String tokenType;
   private Integer expiresIn;
   private Boolean isNewUser;
-
-  @JsonProperty("mfa_factors")
   private List<MfaFactorDto> mfaFactors;
 }
