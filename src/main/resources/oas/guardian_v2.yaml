@@ -1,0 +1,1189 @@
+openapi: 3.0.3
+info:
+  title: Guardian API (Core v2 + WebAuthn v2 + Passwordless/Social/Session)
+  version: 4.1.1
+
+servers:
+  - url: https://localhost:8080
+    description: Guardian API Server
+
+tags:
+  - name: Device-Bound Authentication
+  - name: Password
+  - name: Pin
+  - name: MFA
+  - name: Passwordless
+  - name: Social
+  - name: Session Management
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Required for WebAuthn: provide the long-lived Refresh Token in Authorization header to establish authentication context."
+
+  parameters:
+    TenantIdHeader:
+      in: header
+      name: tenant-id
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 10
+      description: tenant-id of the client integrating with Guardian
+
+  schemas:
+    # --- Shared / WebAuthn ---
+    DeviceMetadata:
+      type: object
+      properties:
+        platform:     { type: string, maxLength: 50 }
+        device_model: { type: string, maxLength: 100 }
+        os_version:   { type: string, maxLength: 50 }
+        app_version:  { type: string, maxLength: 50 }
+        device_name:  { type: string, maxLength: 100 }
+    PublicKeyCredentialCreationOptions:
+      type: object
+      description: "WebAuthn make credential options (binary fields are base64url)."
+      externalDocs: { url: "https://w3c.github.io/webauthn/#dictionary-makecredentialoptions" }
+    PublicKeyCredentialRequestOptions:
+      type: object
+      description: "WebAuthn get assertion options (binary fields are base64url)."
+      externalDocs: { url: "https://w3c.github.io/webauthn/#dictionary-assertion-options" }
+
+    AccessTokenOnlyResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+      required: [access_token]
+
+    # --- v2 (from existing Guardian spec) ---
+    ErrorEnvelopeResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code identifying the type of error
+              example: "invalid_request"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Something went wrong."
+    V2SigninRequestBody:
+      type: object
+      properties:
+        username:
+          type: string
+          example: JohnTheMan
+        password:
+          type: string
+          example: wordpass@1234
+        pin:
+          type: string
+          example: 123456
+        response_type:
+          type: string
+          example: token
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
+    V2MFAEnrollCompleteRequestBody:
+      type: object
+      properties:
+        pin:
+          type: string
+          example: 123456
+        password:
+          type: string
+          example: wordpass@1234
+        factor:
+          type: string
+          example: pin
+        refresh_token:
+          type: string
+          example: refresh_token
+    MetaInfo:
+      type: object
+      properties:
+        ip:         { type: string }
+        location:   { type: string }
+        device_name: { type: string }
+        source:     { type: string }
+    # --- Schemas from Passwordless/Social/Session doc ---
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code identifying the type of error
+              example: "invalid_request"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Something went wrong."
+    Template:
+      type: object
+      properties:
+        name:
+          type: string
+          example: templateName
+        params:
+          type: object
+          example:
+            variable-1: value-1
+            variable-2: value-2
+    Contact:
+      type: object
+      properties:
+        channel:
+          type: string
+          example: sms
+        identifier:
+          type: string
+          example: 999999999
+        template:
+          $ref: "#/components/schemas/Template"
+    V2PasswordlessInitRequestBody:
+      type: object
+      properties:
+        state:
+          type: string
+          example: state
+        flow:
+          type: string
+          example: signin
+        response_type:
+          type: string
+          example: token
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contact"
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
+        client_id:
+          type: string
+      required:
+        - contacts
+        - flow
+        - response_type
+        - client_id
+    V2PasswordlessCompleteRequestBody:
+      type: object
+      properties:
+        state:
+          type: string
+          example: state
+        otp:
+          type: string
+          example: 123456
+      required:
+        - state
+        - otp
+    V2RefreshTokenRequestBody:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+        client_id:
+          type: string
+      required:
+        - refresh_token
+    V2LogoutRequestBody:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+        client_id:
+          type: string
+        logout_type:
+          type: string
+          enum: [token, client, tenant]
+      required:
+        - refresh_token
+    IdpConnectRequestBody:
+      type: object
+      description: Request body for connecting to external identity providers
+      required:
+        - id_provider
+        - identifier
+        - response_type
+        - client_id
+      properties:
+        id_provider:
+          type: string
+          description: Identity provider name (configured provider identifier)
+          example: "google"
+        client_id:
+          type: string
+          description: Identity provider name (configured provider identifier)
+          example: "<given client id>"
+        identifier:
+          type: string
+          description: |
+            Provider-specific identifier for authentication:
+            - For authorization code flow: the authorization code
+            - For ID token flow: the ID token
+          example: "4/0AX4XfWjY1Z2X3Y4Z5..."
+        identifier_type:
+          type: string
+          description: Type of identifier being provided
+          enum: ["code", "id_token"]
+          default: "code"
+          example: "code"
+        response_type:
+          type: string
+          description: Desired response type for the authentication flow
+          enum: ["code", "token"]
+          example: "token"
+        nonce:
+          type: string
+          description: Optional nonce value for OIDC flows
+          example: "abc123nonce"
+        codeVerifier:
+          type: string
+          description: PKCE code verifier for authorization code flow
+          example: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+        flow:
+          type: string
+          description: Authentication flow type
+          enum: ["signinup", "signin", "signup"]
+          default: "signinup"
+          example: "signinup"
+        metaInfo:
+          $ref: '#/components/schemas/MetaInfo'
+    IdpConnectResponse:
+      type: object
+      description: Response from identity provider authentication
+      properties:
+        code:
+          type: string
+          description: Authorization code (present when responseType is 'code')
+          example: "4/0AX4XfWjY1Z2X3Y4Z5A6B7C8D9E0F1G2H3I4J5K6L7M8N9O0P1Q2R3S4T5U6V7W8X9Y0Z1"
+        access_token:
+          type: string
+          description: Access token (present when responseType is 'token')
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: Refresh token for getting new access tokens
+          example: "1//04xxxxxxxxxxxxx-refreshtoken"
+        id_token:
+          type: string
+          description: OpenID Connect ID token
+          example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyNzg5..."
+        sso_token:
+          type: string
+          description: SSO token
+          example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyNzg5..."
+        token_type:
+          type: string
+          description: Type of the access token
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 3600
+        is_new_user:
+          type: boolean
+          description: Whether this is a newly created user
+          example: false
+        idp_credentials:
+          type: object
+          description: Identity provider specific credentials
+          properties:
+            access_token:
+              type: string
+              description: Provider's access token
+              example: "ya29.a0AfH6SMC..."
+            refresh_token:
+              type: string
+              description: Provider's refresh token
+              example: "1//04xxxxxxxxxxxxx"
+            id_token:
+              type: string
+              description: Provider's ID token
+              example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+    V2AuthGoogleRequestBody:
+      type: object
+      properties:
+        id_token:
+          type: string
+        response_type:
+          type: string
+        flow:
+          type: string
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
+        client_id:
+          type: string
+    V2AuthFbRequestBody:
+      type: object
+      properties:
+        access_token:
+          type: string
+        response_type:
+          type: string
+        flow:
+          type: string
+        meta_info:
+          $ref: '#/components/schemas/MetaInfo'
+        client_id:
+          type: string
+    State:
+      type: object
+      properties:
+        state:
+          type: string
+          example: accesstoken
+        tries:
+          type: number
+          example: 1
+        retries_left:
+          type: number
+          example: 4
+        resends:
+          type: number
+          example: 1
+        resends_left:
+          type: number
+          example: 4
+        resend_after:
+          type: number
+          example: 30
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: accesstoken
+          description: Short lived Bearer JWT token to access APIs.
+        refresh_token:
+          type: string
+          example: refreshToken
+          description: Long Lived token used to refresh access token.
+        id_token:
+          type: string
+          example: idToken
+          description: Id token for user details
+        sso_token:
+          type: string
+          example: ssoToken
+          description: SSO token
+        token_type:
+          type: string
+          example: Bearer
+          description: type of token. Only supports Bearer for now.
+        expires_in:
+          type: integer
+          example: 3600
+          description: expiry of the access token in seconds
+        is_new_user:
+          type: boolean
+          description: Indicates if the user is new
+          example: false
+    RefreshToken:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: accesstoken
+          description: Short lived Bearer JWT token to access APIs.
+        token_type:
+          type: string
+          example: Bearer
+          description: type of token. Only supports Bearer for now.
+        expires_in:
+          type: integer
+          example: 3600
+          description: expiry of the access token in seconds
+
+paths:
+  # -------------------------
+  # WebAuthn v2 endpoints
+  # -------------------------
+  /v2/webauthn/start:
+    post:
+      tags: [Device-Bound Authentication]
+      summary: Start WebAuthn — return assertion and/or enrollment options
+      description: |
+        Requires Authorization: Bearer <refresh_token> header.
+        Response may include:
+          • `assert` block (if one or more credentials exist for this user/RP)
+          • `enroll` block (to register a new credential)
+        Client should attempt `assert` first; on platform "no credential" errors, fall back to `enroll` using its own `state`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id]
+              properties:
+                client_id:
+                  type: string
+                  description: "OIDC client/app identifier."
+                device_metadata:
+                  $ref: '#/components/schemas/DeviceMetadata'
+            examples:
+              with_device_metadata:
+                value:
+                  client_id: "dream11-app"
+                  device_metadata:
+                    platform: "iOS"
+                    device_model: "iPhone 14 Pro"
+                    os_version: "iOS 17.0"
+                    app_version: "1.2.3"
+                    device_name: "John's iPhone"
+              minimal:
+                value:
+                  client_id: "dream11-app"
+      responses:
+        '200':
+          description: Options generated. One or both blocks may be present.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommended_mode:
+                    type: string
+                    enum: [assert, enroll]
+                    description: "Server hint based on DB state (credentials exist?)."
+                  assert:
+                    type: object
+                    nullable: true
+                    properties:
+                      state:   { type: string, description: "Single-use state for assertion finish." }
+                      options: { $ref: '#/components/schemas/PublicKeyCredentialRequestOptions' }
+                  enroll:
+                    type: object
+                    nullable: true
+                    properties:
+                      state:   { type: string, description: "Single-use state for enrollment finish." }
+                      options: { $ref: '#/components/schemas/PublicKeyCredentialCreationOptions' }
+              examples:
+                both:
+                  value:
+                    recommended_mode: "assert"
+                    assert:
+                      state: "op_assert_P9h3..."
+                      options:
+                        challenge: "QmJ1f0o3d1b4W2Vx3m8HDA"
+                        rpId: "guardian.dream11.com"
+                        userVerification: "required"
+                        allowCredentials:
+                          - { type: "public-key", id: "pJ3wQkXW...", transports: ["internal", "hybrid"] }
+                        timeout: 60000
+                    enroll:
+                      state: "op_enroll_w7Zk..."
+                      options:
+                        rp: { id: "guardian.dream11.com" }
+                        user:
+                          id: "dXNlcl8xMjM="
+                        challenge: "7mU4xVgE2l2zH3o6sV4Aig"
+                        pubKeyCredParams: [{ type: "public-key", alg: -7 }]
+                        attestation: "none"
+                        authenticatorSelection:
+                          authenticatorAttachment: "platform"
+                          userVerification: "required"
+                          residentKey: "preferred"
+                        excludeCredentials: []
+                        timeout: 60000
+                enroll_only:
+                  value:
+                    recommended_mode: "enroll"
+                    enroll:
+                      state: "op_enroll_G7k2..."
+                      options:
+                        rp: { id: "guardian.dream11.com" }
+                        user:
+                          id: "dXNlcl8xMjM="
+                        challenge: "b4W2Vx3m8..."
+                        pubKeyCredParams: [{ type: "public-key", alg: -7 }]
+                        attestation: "none"
+                        authenticatorSelection: { userVerification: "required" }
+                        excludeCredentials: []
+                        timeout: 60000
+        '400':
+          description: "Bad Request (invalid_request)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+              examples:
+                invalid_request:
+                  value: { code: "invalid_request", message: "Invalid request parameters." }
+        '401':
+          description: "Unauthorized (invalid/expired Bearer refresh token)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+
+  /v2/webauthn/finish:
+    post:
+      tags: [Device-Bound Authentication]
+      summary: Finish WebAuthn — verify assertion (login/step-up) or attestation (enroll)
+      description: |
+        Consumes the `state` from /v2/webauthn/start and the WebAuthn credential response.
+        • If `state` is an ASSERT state → verify RP/Origin, challenge, UV/UP, signature, signCount; issue **access token only** (policy may rotate refresh).
+        • If `state` is an ENROLL state → verify attestation (or fmt=none), store credential, bind session; issue **access + refresh tokens**.
+        Requires Authorization: Bearer <refresh_token> header.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id, state, credential]
+              properties:
+                client_id:
+                  type: string
+                  description: "OIDC client/app identifier."
+                state:
+                  type: string
+                  description: "Single-use state from /v2/webauthn/start (assert or enroll)."
+                credential:
+                  type: object
+                  required: [id, type, response]
+                  properties:
+                    id:
+                      type: string
+                      description: "rawId (base64url, unpadded)"
+                    type:
+                      type: string
+                      enum: [public-key]
+                    response:
+                      oneOf:
+                        - type: object
+                          required: [attestationObject, clientDataJSON]
+                          properties:
+                            attestationObject: { type: string, description: "base64url" }
+                            clientDataJSON:    { type: string, description: "base64url" }
+                        - type: object
+                          required: [authenticatorData, clientDataJSON, signature]
+                          properties:
+                            authenticatorData: { type: string, description: "base64url" }
+                            clientDataJSON:    { type: string, description: "base64url" }
+                            signature:         { type: string, description: "base64url" }
+                            userHandle:        { type: string, description: "base64url", nullable: true }
+                device_metadata:
+                  $ref: '#/components/schemas/DeviceMetadata'
+            examples:
+              finish_assert:
+                value:
+                  client_id: "dream11-app"
+                  state: "op_assert_P9h3..."
+                  credential:
+                    id: "pJ3wQkXW..."
+                    type: "public-key"
+                    response:
+                      authenticatorData: "mPsv4VW-wth0V9gzsxWRF..."
+                      clientDataJSON:    "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUTNi..."
+                      signature:         "MEUCIQDUwlDp9aNcYQmvpVGLJ35H8lR..."
+              finish_enroll:
+                value:
+                  client_id: "dream11-app"
+                  state: "op_enroll_w7Zk..."
+                  credential:
+                    id: "HdN9wqP9mqOonacmiM2gIjASFYg"
+                    type: "public-key"
+                    response:
+                      attestationObject: "v2dhdHRTdG09mhhdXRoRGF0YV..."
+                      clientDataJSON:    "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoi..."
+      responses:
+        '200':
+          description: "Success — access-only (assert) or access+refresh (enroll/bootstrap)."
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AccessTokenOnlyResponse'
+                  - $ref: '#/components/schemas/TokenResponse'
+              examples:
+                assert_success:
+                  value:
+                    access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                enroll_success:
+                  value:
+                    access_token:  "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refresh_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: "Bad Request (signature_invalid, challenge_mismatch, clone_detected)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+        '403':
+          description: "Forbidden (state expired/used/invalid)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+
+  /v2/webauthn/revoke:
+    delete:
+      tags: [Device-Bound Authentication]
+      summary: Revoke WebAuthn credential (per-user, per-tenant)
+      description: |
+        Revokes/removes a stored WebAuthn credential (rawId) for the authenticated user.
+        Requires Bearer refresh token (reauth context). After revoke, that credential can no longer assert.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id, credential_id]
+              properties:
+                client_id:
+                  type: string
+                  description: "OIDC client/app identifier."
+                credential_id:
+                  type: string
+                  description: "WebAuthn rawId of the credential to revoke (base64url, unpadded)."
+            examples:
+              revoke_credential:
+                value:
+                  client_id: "dream11-app"
+                  credential_id: "pJ3wQkXW..."
+      responses:
+        '200':
+          description: "Credential revoked."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "Credential revoked successfully" }
+        '400':
+          description: "Bad Request (invalid_request, credential_id_required)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+        '401':
+          description: "Unauthorized (missing/invalid Bearer refresh token)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+        '404':
+          description: "Not Found (no such credential or not owned by user)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+        '403':
+          description: "Forbidden (credential not owned by user)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelopeResponse' }
+
+  # -------------------------
+  # Guardian Core v2 endpoints
+  # -------------------------
+  /v2/signin:
+    post:
+      tags: [Password, Pin]
+      summary: Signin existing user using username and password/pin
+      description: |
+        This API signs in an existing user using username and password/pin.
+
+        This API uses the clients post authenticate user API to validate if the username-password / username-pin combination is correct.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2SigninRequestBody'
+      responses:
+        '200':
+          description: User is successfully signed in
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+
+  /v2/signup:
+    post:
+      tags: [Password, Pin]
+      summary: Signup a new user using username-password or username-pin
+      description: |
+        API to sign up a new user using username and password.
+
+        If the username already exists, the API will return a failure, otherwise a new user is created with the given credentials.
+
+        This API uses the clients get user API to ascertain if the username exists or not.
+
+        This API uses the clients post user API to create a new user account with the provided credentials.
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2SigninRequestBody'
+      responses:
+        '200':
+          description: User is successfully signed in
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+
+  /v2/mfa/enroll/complete:
+    post:
+      tags: [MFA]
+      summary: Enroll MFA factor for user
+      description: |
+        This API completes enrolling MFA factors (pin, password) to user account and returns tokens (not mfa_factors)
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2MFAEnrollCompleteRequestBody'
+      responses:
+        '200':
+          description: The authentication factor is enrolled and new access token and refresh token with updated AMR value is returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+
+  /v2/mfa/signin:
+    post:
+      tags: [MFA]
+      summary: Login user using the provided MFA factor
+      description: |
+        This API logs in using MFA factors (pin, password) to user account and provides access token and refresh token with updated AMR value
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2MFAEnrollCompleteRequestBody'
+      responses:
+        '200':
+          description: The user is logged in and new access tokens and refresh tokens are minted (with updated AMR claims)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelopeResponse'
+
+  # -------------------------
+  # Passwordless / Social / Session Management
+  # -------------------------
+  /v2/passwordless/init:
+    post:
+      tags: [Passwordless]
+      summary: Initate the passwordless flow
+      description: |
+        API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
+
+        The first time this API is called, a unique state is returned in the response. Every subsequent request to init (to resend otp), must include the state parameter in the request, otherwise it is treated as a fresh request.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2PasswordlessInitRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully sent an OTP
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/State'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/passwordless/complete:
+    post:
+      tags: [Passwordless]
+      summary: Complete the passwordless flow
+      description: |
+        API to signin, signup or signinup a user using passwordless flows. Currently only otp based passwordless flow is supported.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2PasswordlessCompleteRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed in or up
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/auth/google:
+    post:
+      tags: [Social]
+      summary: Signin, Signup or Signinup user using ID token verification.
+      description: |
+        API to signin, signup or signinup a user using Google issued ID token.
+
+        The id token is verified statelessly via the public keys exposed by Google using the JWKS URI.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2AuthGoogleRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed up
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/auth/fb:
+    post:
+      tags: [Social]
+      summary: Signin, Signup or Signinup using the facebook access_token
+      description: |
+        API to signin, signup or signinup using the facebook access_token. The access_token is verified via the https://graph.facebook.com/me endpoint.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2AuthFbRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed in
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/refresh-token:
+    post:
+      tags: [Session Management]
+      summary: API to get a new access token using the refresh token
+      description: |
+        API to get a new access token using the refresh token.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2RefreshTokenRequestBody'
+        required: true
+      responses:
+        '200':
+          description: User is successfully signed up
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/RefreshToken'
+        '400':
+          description: Bad Request due to missing parameters or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v2/idp/connect:
+    post:
+      tags: [Social]
+      summary: Connect to external identity provider
+      description: |
+        Establish a connection with an external identity provider for authentication.
+        
+        This endpoint allows Guardian to connect to external identity providers
+        (IdPs) for user authentication and profile information retrieval.
+        
+        **Configuration Requirements:**
+        - Provider-specific client credentials (client ID and secret)
+        - Redirect URI for OAuth flows
+        - Optional scope and endpoint configuration
+      requestBody:
+        description: Identity provider connection request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdpConnectRequestBody'
+        required: true
+      responses:
+        '200':
+          description: IdP authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdpConnectResponse'
+        '400':
+          description: Bad Request due to missing parameters, invalid configuration, or validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_provider:
+                  summary: Missing provider field
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Provider is required"
+                invalid_provider:
+                  summary: Invalid provider name
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Provider must be one of: google, facebook, oidc"
+                missing_credentials:
+                  summary: Missing credentials
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Credentials are required"
+                invalid_redirect_uri:
+                  summary: Invalid redirect URI
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Invalid redirect URI format"
+                missing_endpoints:
+                  summary: Missing endpoints for OIDC provider
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Endpoints configuration is required for OIDC providers"
+        '401':
+          description: Unauthorized - Invalid tenant or insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_tenant:
+                  summary: Invalid tenant ID
+                  value:
+                    error:
+                      code: "unauthorized"
+                      message: "Invalid tenant-id header"
+        '409':
+          description: Conflict - Connection already exists for this provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                connection_exists:
+                  summary: Provider connection already exists
+                  value:
+                    error:
+                      code: "conflict"
+                      message: "A connection for this provider already exists"
+                      metadata:
+                        existingConnectionId: "conn_google_existing123"
+        '422':
+          description: Unprocessable Entity - Provider validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                provider_validation_failed:
+                  summary: Failed to validate provider credentials
+                  value:
+                    error:
+                      code: "provider_validation_failed"
+                      message: "Unable to validate provider credentials"
+                invalid_client_credentials:
+                  summary: Invalid client credentials
+                  value:
+                    error:
+                      code: "invalid_client_credentials"
+                      message: "Provider rejected the client credentials"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internal_error:
+                  summary: Internal server error
+                  value:
+                    error:
+                      code: "internal_server_error"
+                      message: "An unexpected error occurred while establishing the connection"
+
+  /v2/logout:
+    post:
+      tags: [Session Management]
+      summary: User logout
+      description: |
+        Log out a user by invalidating their refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2LogoutRequestBody'
+        required: true
+      responses:
+        '204':
+          description: User successfully logged out
+          headers:
+            Set-Cookie:
+              description: Clears authentication cookies (access token and refresh token)
+              schema:
+                type: array
+                items:
+                  type: string
+                example: 
+                  - "AT=; Path=/; Domain=example.com; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
+                  - "RT=; Path=/; Domain=example.com; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
+        '400':
+          description: Bad Request due to missing or invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_refresh_token:
+                  summary: Missing refresh token
+                  value:
+                    error:
+                      code: "invalid_request"
+                      message: "Refresh token is required"
+                invalid_refresh_token:
+                  summary: Invalid refresh token
+                  value:
+                    error:
+                      code: "unauthorized"
+                      message: "Invalid refresh token"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

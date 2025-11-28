@@ -16,3 +16,5 @@ logs/*
 .config
 .env
 .history
+
+*.DS_Store

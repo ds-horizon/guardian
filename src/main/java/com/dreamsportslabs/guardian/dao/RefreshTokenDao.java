@@ -8,6 +8,7 @@ import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKEN;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.INVALIDATE_REFRESH_TOKENS_OF_CLIENT_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.SAVE_REFRESH_TOKEN;
+import static com.dreamsportslabs.guardian.dao.query.RefreshTokenSql.UPDATE_REFRESH_TOKEN_AUTH_METHOD;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_ALL_SSO_TOKENS_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_SSO_TOKENS_OF_CLIENT_FOR_USER;
 import static com.dreamsportslabs.guardian.dao.query.SsoTokenQuery.INVALIDATE_SSO_TOKEN_BY_REFRESH_TOKEN;
@@ -190,6 +191,22 @@ public class RefreshTokenDao {
                                 .rxExecute(refreshTokenParams)
                                 .filter(result -> result.rowCount() > 0)
                                 .map(rows -> true)))
+        .ignoreElement();
+  }
+
+  public Completable updateRefreshTokenAuthMethod(
+      String tenantId, String clientId, String refreshToken, List<String> authMethods) {
+    Tuple params = Tuple.tuple();
+    params.addJsonArray(new JsonArray(authMethods));
+    params.addString(tenantId);
+    params.addString(clientId);
+    params.addString(refreshToken);
+    return mysqlClient
+        .getWriterPool()
+        .preparedQuery(UPDATE_REFRESH_TOKEN_AUTH_METHOD)
+        .rxExecute(params)
+        .doOnSuccess(v -> log.info("Refresh token auth method updated successfully"))
+        .doOnError(err -> log.error("Error updating refresh token auth method", err))
         .ignoreElement();
   }
 }

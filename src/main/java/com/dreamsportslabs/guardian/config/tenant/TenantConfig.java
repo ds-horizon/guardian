@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.config.tenant;
 
+import com.dreamsportslabs.guardian.dao.model.WebAuthnConfigModel;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,4 +24,5 @@ public class TenantConfig {
   private Map<String, OidcProviderConfig> oidcProviderConfig;
   private AdminConfig adminConfig;
   private GuestConfig guestConfig;
+  private Map<String, WebAuthnConfigModel> webauthnConfig;
 }

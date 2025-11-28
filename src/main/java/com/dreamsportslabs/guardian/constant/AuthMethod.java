@@ -1,5 +1,7 @@
 package com.dreamsportslabs.guardian.constant;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 @Getter
@@ -34,5 +36,23 @@ public enum AuthMethod {
 
   AuthMethod(String authMethod) {
     this.value = authMethod;
+  }
+
+  @JsonValue
+  public String getValue() {
+    return value;
+  }
+
+  @JsonCreator
+  public static AuthMethod fromValue(String value) {
+    if (value == null) {
+      return null;
+    }
+    for (AuthMethod authMethod : AuthMethod.values()) {
+      if (authMethod.value.equals(value)) {
+        return authMethod;
+      }
+    }
+    throw new IllegalArgumentException("Unknown AuthMethod value: " + value);
   }
 }
