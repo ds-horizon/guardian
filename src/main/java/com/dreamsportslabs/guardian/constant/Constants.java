@@ -133,6 +133,7 @@ public final class Constants {
   public static final String CACHE_KEY_CODE = "CODE";
   public static final String CACHE_KEY_STATE = "STATE";
   public static final String CACHE_KEY_AUTH_SESSION = "AUTH_SESSION";
+  public static final String CACHE_KEY_OTP_RESEND_COUNT = "OTP_RESEND_COUNT";
 
   public static final String TOKEN_TYPE = "Bearer";
 

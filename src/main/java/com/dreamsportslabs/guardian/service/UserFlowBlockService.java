@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.service;
 
+import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.FLOW_BLOCKED;
 
 import com.dreamsportslabs.guardian.constant.BlockFlow;
@@ -72,6 +73,10 @@ public class UserFlowBlockService {
       return Completable.complete();
     }
 
+    if (model.getUser() != null && model.getUser().get(USERID) != null) {
+      return isFlowBlocked(
+          tenantId, List.of(model.getUser().get(USERID).toString()), BlockFlow.PASSWORDLESS);
+    }
     List<String> contacts =
         model.getContacts().stream()
             .map(Contact::getIdentifier)

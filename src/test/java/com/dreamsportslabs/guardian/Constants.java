@@ -190,7 +190,9 @@ public class Constants {
   public static final String ERROR_USER_EXISTS = "user_exists";
   public static final String ERROR_RESENDS_NOT_ALLOWED = "resends_not_allowed";
   public static final String ERROR_INVALID_STATE = "invalid_state";
+  public static final String ERROR_INVALID_CONTACT_FOR_SIGNUP = "invalid_contact_for_signup";
   public static final String ERROR_RESENDS_EXHAUSTED = "resends_exhausted";
+  public static final String ERROR_MAX_RESEND_LIMIT_EXCEEDED = "max_resend_limit_exceeded";
   public static final String ERROR_RETRIES_EXHAUSTED = "retries_exhausted";
   public static final String ERROR_SMS_SERVICE = "sms_service_error";
   public static final String INVALID_STATE = "invalid_state";
