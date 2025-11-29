@@ -7,7 +7,9 @@ import static com.dreamsportslabs.guardian.constant.Constants.USERID;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_EMAIL;
 import static com.dreamsportslabs.guardian.constant.Constants.USER_FILTERS_PHONE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_CONTACT_FOR_SIGNUP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.MAX_RESEND_LIMIT_EXCEEDED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESEND_NOT_ALLOWED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RETRIES_EXHAUSTED;
@@ -17,10 +19,14 @@ import com.dreamsportslabs.guardian.cache.DefaultClientScopesCache;
 import com.dreamsportslabs.guardian.config.tenant.OtpConfig;
 import com.dreamsportslabs.guardian.config.tenant.TenantConfig;
 import com.dreamsportslabs.guardian.constant.AuthMethod;
+import com.dreamsportslabs.guardian.constant.BlockFlow;
 import com.dreamsportslabs.guardian.constant.Channel;
 import com.dreamsportslabs.guardian.constant.Contact;
 import com.dreamsportslabs.guardian.dao.PasswordlessDao;
+import com.dreamsportslabs.guardian.dao.UserFlowBlockDao;
 import com.dreamsportslabs.guardian.dao.model.PasswordlessModel;
+import com.dreamsportslabs.guardian.dao.model.UserFlowBlockModel;
+import com.dreamsportslabs.guardian.dto.PasswordlessContext;
 import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.dto.request.v1.V1PasswordlessCompleteRequestDto;
 import com.dreamsportslabs.guardian.dto.request.v1.V1PasswordlessInitRequestDto;
@@ -28,6 +34,7 @@ import com.dreamsportslabs.guardian.dto.request.v2.V2PasswordlessInitRequestDto;
 import com.dreamsportslabs.guardian.registry.Registry;
 import com.dreamsportslabs.guardian.utils.OtpUtils;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -49,6 +56,7 @@ public class Passwordless {
   private final AuthorizationService authorizationService;
   private final Registry registry;
   private final UserFlowBlockService userFlowBlockService;
+  private final UserFlowBlockDao userFlowBlockDao;
   private final ClientService clientService;
   private final DefaultClientScopesCache defaultClientScopesCache;
 
@@ -94,36 +102,26 @@ public class Passwordless {
         .validateFirstPartyClientAndClientScopes(
             tenantId, requestDto.getClientId(), requestDto.getScopes())
         .andThen(passwordlessModel)
-        .flatMap(
-            model ->
-                userFlowBlockService
-                    .isUserBlocked(model, tenantId)
-                    .andThen(
-                        Single.fromCallable(
-                            () -> {
-                              if (model.getResends() >= model.getMaxResends()) {
-                                passwordlessDao.deletePasswordlessModel(state, tenantId);
-                                throw RESENDS_EXHAUSTED.getException();
-                              }
-
-                              if ((getCurrentTimeInSeconds()) < model.getResendAfter()) {
-                                throw RESEND_NOT_ALLOWED.getCustomException(
-                                    Map.of(OTP_RESEND_AFTER, model.getResendAfter()));
-                              }
-
-                              return model;
-                            })))
-        .flatMap(
-            model -> {
-              if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
-                return Single.just(model);
-              }
-              return otpService
-                  .sendOtp(model.getContacts(), model.getOtp(), headers, tenantId)
-                  .andThen(Single.just(model));
-            })
+        .flatMap(model -> checkUserNotBlocked(model, tenantId))
+        .flatMap(model -> createPasswordlessContext(model, tenantId))
+        .flatMap(context -> validateResendLimits(context, state, tenantId))
+        .flatMap(model -> sendOtp(model, headers, tenantId))
         .map(PasswordlessModel::updateResend)
         .flatMap(model -> passwordlessDao.setPasswordlessModel(model, tenantId));
+  }
+
+  private Single<PasswordlessModel> checkUserNotBlocked(PasswordlessModel model, String tenantId) {
+    return userFlowBlockService.isUserBlocked(model, tenantId).andThen(Single.just(model));
+  }
+
+  private Single<PasswordlessModel> sendOtp(
+      PasswordlessModel model, MultivaluedMap<String, String> headers, String tenantId) {
+    if (Boolean.TRUE.equals(model.getIsOtpMocked())) {
+      return Single.just(model);
+    }
+    return otpService
+        .sendOtp(model.getContacts(), model.getOtp(), headers, tenantId)
+        .andThen(Single.just(model));
   }
 
   private void updateDefaultTemplate(V2PasswordlessInitRequestDto requestDto, String tenantId) {
@@ -164,6 +162,9 @@ public class Passwordless {
         .getUser(userFilters, headers, tenantId)
         .map(
             user -> {
+              if (user.getMap().get(USERID) == null && dto.getContacts().size() > 1) {
+                throw INVALID_CONTACT_FOR_SIGNUP.getException();
+              }
               OtpConfig config = registry.get(tenantId, TenantConfig.class).getOtpConfig();
               Map<String, String> h = new HashMap<>();
               headers.forEach((key, val) -> h.put(key, val.get(0)));
@@ -275,5 +276,78 @@ public class Passwordless {
               throw INCORRECT_OTP.getCustomException(
                   Map.of(OTP_RETRIES_LEFT, model.getMaxTries() - model.getTries()));
             });
+  }
+
+  private Single<PasswordlessContext> createPasswordlessContext(
+      PasswordlessModel model, String tenantId) {
+    String userIdentifier = extractUserIdentifier(model);
+    OtpConfig otpConfig = registry.get(tenantId, TenantConfig.class).getOtpConfig();
+    return passwordlessDao
+        .incrementGlobalResendCount(tenantId, userIdentifier, otpConfig.getOtpResendWindow())
+        .map(globalCount -> new PasswordlessContext(model, userIdentifier, globalCount));
+  }
+
+  private Single<PasswordlessModel> validateResendLimits(
+      PasswordlessContext context, String state, String tenantId) {
+    OtpConfig otpConfig = registry.get(tenantId, TenantConfig.class).getOtpConfig();
+
+    // Check global resend limit within the configured window (cross-session)
+    if (context.getGlobalResendCount() > otpConfig.getWindowResendCount()) {
+      return blockUserAndCleanup(state, context.getUserIdentifier(), tenantId, otpConfig)
+          .andThen(Single.error(MAX_RESEND_LIMIT_EXCEEDED.getException()));
+    }
+
+    // Check per-session resend limit
+    if (context.getModel().getResends() > context.getModel().getMaxResends()) {
+      passwordlessDao.deletePasswordlessModel(state, tenantId);
+      throw RESENDS_EXHAUSTED.getException();
+    }
+
+    // Check resend interval
+    if (getCurrentTimeInSeconds() < context.getModel().getResendAfter()) {
+      throw RESEND_NOT_ALLOWED.getCustomException(
+          Map.of(OTP_RESEND_AFTER, context.getModel().getResendAfter()));
+    }
+
+    return Single.just(context.getModel());
+  }
+
+  private String extractUserIdentifier(PasswordlessModel model) {
+    // If user exists, use user_id
+    if (model.getUser() != null && model.getUser().get(USERID) != null) {
+      return model.getUser().get(USERID).toString();
+    }
+    // For new users, use contact identifier (email or phone)
+    return model.getContacts().get(0).getIdentifier();
+  }
+
+  private Completable blockUserAndCleanup(
+      String passwordlessState, String userIdentifier, String tenantId, OtpConfig otpConfig) {
+
+    long unblockedAt = getCurrentTimeInSeconds() + otpConfig.getOtpBlockInterval();
+
+    UserFlowBlockModel blockModel =
+        UserFlowBlockModel.builder()
+            .tenantId(tenantId)
+            .userIdentifier(userIdentifier)
+            .flowName(BlockFlow.PASSWORDLESS.getFlowName())
+            .reason("Maximum OTP resend limit exceeded across sessions")
+            .unblockedAt(unblockedAt)
+            .isActive(true)
+            .build();
+
+    return userFlowBlockDao
+        .blockFlows(List.of(blockModel))
+        .andThen(passwordlessDao.deleteGlobalResendCount(tenantId, userIdentifier))
+        .andThen(
+            Completable.fromAction(
+                () -> passwordlessDao.deletePasswordlessModel(passwordlessState, tenantId)))
+        .doOnComplete(
+            () ->
+                log.info(
+                    "Blocked user {} from passwordless flow in tenant {} until {}",
+                    userIdentifier,
+                    tenantId,
+                    unblockedAt));
   }
 }

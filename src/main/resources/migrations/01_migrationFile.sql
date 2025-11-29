@@ -171,6 +171,9 @@ CREATE TABLE otp_config
     otp_resend_interval INT       NOT NULL DEFAULT 30,
     otp_validity        INT       NOT NULL DEFAULT 900,
     whitelisted_inputs  JSON      NOT NULL,
+    otp_resend_window   INT       NOT NULL DEFAULT 86400 COMMENT 'Window for OTP resend counter',
+    window_resend_count INT       NOT NULL DEFAULT 10 COMMENT 'Max resend count for a user within a window',
+    otp_block_interval  INT       NOT NULL DEFAULT 86400 COMMENT 'Block duration in seconds when max resend exceeded (default 24 hours)',
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 

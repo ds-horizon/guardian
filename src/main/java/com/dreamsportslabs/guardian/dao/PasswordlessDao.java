@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.dao;
 
+import static com.dreamsportslabs.guardian.constant.Constants.CACHE_KEY_OTP_RESEND_COUNT;
 import static com.dreamsportslabs.guardian.constant.Constants.CACHE_KEY_STATE;
 import static com.dreamsportslabs.guardian.constant.Constants.EXPIRE_AT_REDIS;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
@@ -7,6 +8,7 @@ import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_E
 import com.dreamsportslabs.guardian.dao.model.PasswordlessModel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.rxjava3.redis.client.Command;
@@ -46,7 +48,37 @@ public class PasswordlessDao {
     redisClient.rxSend(Request.cmd(Command.DEL).arg(getCacheKey(tenantId, state))).subscribe();
   }
 
+  public Single<Integer> incrementGlobalResendCount(
+      String tenantId, String userIdentifier, Integer ttlSeconds) {
+    String redisKey = getResendCountKey(tenantId, userIdentifier);
+
+    return redisClient
+        .rxSend(Request.cmd(Command.INCR).arg(redisKey))
+        .map(response -> response.toInteger())
+        .flatMap(
+            count -> {
+              // Set TTL on first increment to auto-expire after configured window
+              if (count == 1) {
+                return redisClient
+                    .rxSend(
+                        Request.cmd(Command.EXPIRE).arg(redisKey).arg(String.valueOf(ttlSeconds)))
+                    .map(__ -> count);
+              }
+              return Maybe.just(count);
+            })
+        .toSingle();
+  }
+
+  public Completable deleteGlobalResendCount(String tenantId, String userIdentifier) {
+    String redisKey = getResendCountKey(tenantId, userIdentifier);
+    return redisClient.rxSend(Request.cmd(Command.DEL).arg(redisKey)).ignoreElement();
+  }
+
   private String getCacheKey(String tenantId, String state) {
     return CACHE_KEY_STATE + "_" + tenantId + "_" + state;
+  }
+
+  private String getResendCountKey(String tenantId, String userIdentifier) {
+    return CACHE_KEY_OTP_RESEND_COUNT + ":" + tenantId + ":" + userIdentifier;
   }
 }
