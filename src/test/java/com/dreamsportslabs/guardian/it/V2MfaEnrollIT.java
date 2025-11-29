@@ -23,6 +23,7 @@ import static com.dreamsportslabs.guardian.Constants.BODY_PARAM_USERNAME;
 import static com.dreamsportslabs.guardian.Constants.ERROR;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_CLIENT;
 import static com.dreamsportslabs.guardian.Constants.ERROR_INVALID_REQUEST;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTORS;
 import static com.dreamsportslabs.guardian.Constants.PASSWORDLESS_FLOW_SIGNINUP;
 import static com.dreamsportslabs.guardian.Constants.V2_SIGNIN_TEST_EMAIL_1;
 import static com.dreamsportslabs.guardian.Constants.V2_SIGNIN_TEST_PASSWORD_1;
@@ -44,6 +45,7 @@ import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
@@ -96,6 +98,9 @@ public class V2MfaEnrollIT {
     Response passwordlessResponse =
         ApplicationIoUtils.v2PasswordlessComplete(TENANT_ID, completeBody);
     passwordlessResponse.then().statusCode(SC_OK);
+    // Verify passwordless response has MFA factors (passwordless uses POSSESSION, so KNOWLEDGE
+    // factors should be available)
+    passwordlessResponse.then().body(MFA_FACTORS, hasSize(2));
     String refreshToken = passwordlessResponse.jsonPath().getString("refresh_token");
     wireMockServer.removeStub(getUserStub);
 
@@ -126,6 +131,11 @@ public class V2MfaEnrollIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        // After MFA enrollment, both POSSESSION (passwordless) and KNOWLEDGE (password/pin)
+        // categories are used,
+        // so no additional MFA factors are available
+        .body(MFA_FACTORS, notNullValue())
+        .body(MFA_FACTORS, hasSize(0))
         .header("Set-Cookie", notNullValue());
 
     validateSetCookieTokens(response);
@@ -154,6 +164,9 @@ public class V2MfaEnrollIT {
     Response passwordlessResponse =
         ApplicationIoUtils.v2PasswordlessComplete(TENANT_ID, completeBody);
     passwordlessResponse.then().statusCode(SC_OK);
+    // Verify passwordless response has MFA factors (passwordless uses POSSESSION, so KNOWLEDGE
+    // factors should be available)
+    passwordlessResponse.then().body(MFA_FACTORS, hasSize(2));
     String refreshToken = passwordlessResponse.jsonPath().getString("refresh_token");
     wireMockServer.removeStub(getUserStub);
 
@@ -184,6 +197,11 @@ public class V2MfaEnrollIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        // After MFA enrollment, both POSSESSION (passwordless) and KNOWLEDGE (password/pin)
+        // categories are used,
+        // so no additional MFA factors are available
+        .body(MFA_FACTORS, notNullValue())
+        .body(MFA_FACTORS, hasSize(0))
         .header("Set-Cookie", notNullValue());
 
     validateSetCookieTokens(response);
@@ -211,6 +229,9 @@ public class V2MfaEnrollIT {
     Response passwordlessResponse =
         ApplicationIoUtils.v2PasswordlessComplete(TENANT_ID, completeBody);
     passwordlessResponse.then().statusCode(SC_OK);
+    // Verify passwordless response has MFA factors (passwordless uses POSSESSION, so KNOWLEDGE
+    // factors should be available)
+    passwordlessResponse.then().body(MFA_FACTORS, hasSize(2));
     String refreshToken = passwordlessResponse.jsonPath().getString("refresh_token");
     wireMockServer.removeStub(getUserStub);
 
@@ -302,6 +323,9 @@ public class V2MfaEnrollIT {
     Response passwordlessResponse =
         ApplicationIoUtils.v2PasswordlessComplete(TENANT_ID, completeBody);
     passwordlessResponse.then().statusCode(SC_OK);
+    // Verify passwordless response has MFA factors (passwordless uses POSSESSION, so KNOWLEDGE
+    // factors should be available)
+    passwordlessResponse.then().body(MFA_FACTORS, hasSize(2));
     String refreshToken = passwordlessResponse.jsonPath().getString("refresh_token");
     wireMockServer.removeStub(getUserStub);
 
@@ -346,6 +370,9 @@ public class V2MfaEnrollIT {
     Response passwordlessResponse =
         ApplicationIoUtils.v2PasswordlessComplete(TENANT_ID, completeBody);
     passwordlessResponse.then().statusCode(SC_OK);
+    // Verify passwordless response has MFA factors (passwordless uses POSSESSION, so KNOWLEDGE
+    // factors should be available)
+    passwordlessResponse.then().body(MFA_FACTORS, hasSize(2));
     String refreshToken = passwordlessResponse.jsonPath().getString("refresh_token");
     wireMockServer.removeStub(getUserStub);
 

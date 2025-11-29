@@ -49,6 +49,13 @@ public class Constants {
   public static final String BODY_PARAM_CLIENT_ID = "client_id";
   public static final String BODY_PARAM_GUEST_IDENTIFIER = "guest_identifier";
   public static final String BODY_PARAM_SCOPES = "scopes";
+  public static final String MFA_POLICY_NOT_REQUIRED = "not_required";
+  public static final String MFA_POLICY_MANDATORY = "mandatory";
+  public static final String MFA_FACTOR_PASSWORD = "password";
+  public static final String MFA_FACTOR_PIN = "pin";
+  public static final String MFA_FACTOR_SMS_OTP = "sms-otp";
+  public static final String MFA_FACTOR_EMAIL_OTP = "email-otp";
+  public static final String MFA_FACTORS = "mfa_factors";
 
   public static final String RESPONSE_BODY_PARAM_ACCESS_TOKEN = "access_token";
   public static final String RESPONSE_BODY_PARAM_TOKEN_TYPE = "token_type";

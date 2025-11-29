@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.dao;
 
+import static com.dreamsportslabs.guardian.constant.Constants.MFA_POLICY_NOT_REQUIRED;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.CREATE_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.DELETE_CLIENT;
 import static com.dreamsportslabs.guardian.dao.query.ClientQuery.GET_CLIENT;
@@ -49,7 +50,12 @@ public class ClientDao {
         .addString(serializeToJsonString(client.getRedirectUris(), objectMapper))
         .addString(serializeToJsonString(client.getResponseTypes(), objectMapper))
         .addString(client.getClientType())
-        .addBoolean(client.getIsDefault());
+        .addBoolean(client.getIsDefault())
+        .addString(client.getMfaPolicy() != null ? client.getMfaPolicy() : MFA_POLICY_NOT_REQUIRED)
+        .addString(
+            client.getAllowedMfaMethods() != null && !client.getAllowedMfaMethods().isEmpty()
+                ? serializeToJsonString(client.getAllowedMfaMethods(), objectMapper)
+                : "[]");
     return mysqlClient
         .getWriterPool()
         .preparedQuery(CREATE_CLIENT)

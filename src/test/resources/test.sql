@@ -55,3 +55,7 @@ insert into `oidc_config` (`tenant_id`, `issuer`, `authorization_endpoint`, `tok
 insert into guest_config (tenant_id, is_encrypted, secret_key, allowed_scopes) values ('tenant3', true, '3DmxIQJd8UJWAdnn', JSON_ARRAY('profile', 'phone')) ON DUPLICATE KEY UPDATE tenant_id = "tenant3";
 INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, client_type, is_default) VALUES ('tenant3','client1','Test Client App','s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),'first_party',TRUE);
 insert into client_scope (tenant_id, client_id, scope, is_default) values ('tenant3', 'client1', 'default', TRUE);
+
+# Update MFA policies for tenant1 clients
+UPDATE client SET mfa_policy = 'not_required', allowed_mfa_methods = NULL WHERE tenant_id = 'tenant1' AND client_id = 'client-id';
+UPDATE client SET mfa_policy = 'mandatory', allowed_mfa_methods = JSON_ARRAY('password', 'pin', 'sms-otp', 'email-otp') WHERE tenant_id = 'tenant1' AND client_id = 'client1';

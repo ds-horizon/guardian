@@ -539,7 +539,7 @@ public class DbUtils {
   public static String addFirstPartyClient(String tenantId) {
     String clientId = RandomStringUtils.randomAlphanumeric(10);
     String addClient =
-        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, client_type, is_default) VALUES (?,?,?,'s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),'first_party',TRUE);";
+        "INSERT INTO client (tenant_id, client_id, client_name, client_secret, client_uri, contacts, grant_types, logo_uri, policy_uri, redirect_uris, response_types, client_type, is_default, mfa_policy, allowed_mfa_methods) VALUES (?,?,?,'s3cr3tKey123','https://clientapp.example.com',JSON_ARRAY('admin@example.com','support@example.com'),JSON_ARRAY('authorization_code','refresh_token','client_credentials'),'https://clientapp.example.com/logo.png','https://clientapp.example.com/policy',JSON_ARRAY('https://clientapp.example.com/callback','https://clientapp.example.com/redirect'),JSON_ARRAY('code'),'first_party',TRUE,'mandatory',JSON_ARRAY('password','pin','sms-otp','email-otp'));";
 
     try (Connection conn = mysqlConnectionPool.getConnection();
         PreparedStatement stmt1 = conn.prepareStatement(addClient)) {
@@ -598,6 +598,44 @@ public class DbUtils {
       stmt1.executeUpdate();
     } catch (Exception e) {
       log.error("Error while adding client scopes", e);
+    }
+  }
+
+  public static void updateClientAllowedMfaMethods(
+      String tenantId, String clientId, List<String> allowedMfaMethods) {
+    String updateQuery =
+        "UPDATE client SET allowed_mfa_methods = ? WHERE tenant_id = ? AND client_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
+      if (allowedMfaMethods == null || allowedMfaMethods.isEmpty()) {
+        stmt.setString(1, null);
+      } else {
+        ArrayNode arrayNode = objectMapper.createArrayNode();
+        for (String method : allowedMfaMethods) {
+          arrayNode.add(method);
+        }
+        stmt.setString(1, arrayNode.toString());
+      }
+      stmt.setString(2, tenantId);
+      stmt.setString(3, clientId);
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while updating client allowed MFA methods", e);
+    }
+  }
+
+  public static void updateClientMfaPolicy(String tenantId, String clientId, String mfaPolicy) {
+    String updateQuery = "UPDATE client SET mfa_policy = ? WHERE tenant_id = ? AND client_id = ?";
+
+    try (Connection conn = mysqlConnectionPool.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
+      stmt.setString(1, mfaPolicy);
+      stmt.setString(2, tenantId);
+      stmt.setString(3, clientId);
+      stmt.executeUpdate();
+    } catch (Exception e) {
+      log.error("Error while updating client MFA policy", e);
     }
   }
 

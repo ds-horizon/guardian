@@ -1,5 +1,6 @@
 package com.dreamsportslabs.guardian.dto.response;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -13,4 +14,5 @@ public class TokenResponseDto {
   private String tokenType;
   private Integer expiresIn;
   private Boolean isNewUser;
+  private List<MfaFactorDto> mfaFactors;
 }

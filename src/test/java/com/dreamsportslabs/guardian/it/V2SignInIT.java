@@ -12,6 +12,9 @@ import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_IAT;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SCOPE;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_SUB;
 import static com.dreamsportslabs.guardian.Constants.JWT_CLAIM_TENANT_ID;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTORS;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTOR_EMAIL_OTP;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTOR_SMS_OTP;
 import static com.dreamsportslabs.guardian.Constants.V2_SIGNIN_CREDENTIAL_TYPE_PASSWORD;
 import static com.dreamsportslabs.guardian.Constants.V2_SIGNIN_CREDENTIAL_TYPE_PIN;
 import static com.dreamsportslabs.guardian.Constants.V2_SIGNIN_ERROR_UNAUTHORIZED;
@@ -39,7 +42,9 @@ import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
 import com.dreamsportslabs.guardian.utils.ApplicationIoUtils;
@@ -114,6 +119,15 @@ public class V2SignInIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body(
+            "mfa_factors[0].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[0].is_enabled", equalTo(true))
+        .body(
+            "mfa_factors[1].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[1].is_enabled", equalTo(true))
         .header("Set-Cookie", notNullValue());
 
     // Validate Set-Cookie values match response body tokens
@@ -170,6 +184,15 @@ public class V2SignInIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body(
+            "mfa_factors[0].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[0].is_enabled", equalTo(true))
+        .body(
+            "mfa_factors[1].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[1].is_enabled", equalTo(true))
         .header("Set-Cookie", notNullValue());
 
     // Validate Set-Cookie values match response body tokens
@@ -226,6 +249,15 @@ public class V2SignInIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body(
+            "mfa_factors[0].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[0].is_enabled", equalTo(true))
+        .body(
+            "mfa_factors[1].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[1].is_enabled", equalTo(true))
         .header("Set-Cookie", notNullValue());
 
     // Validate Set-Cookie values match response body tokens
@@ -282,6 +314,15 @@ public class V2SignInIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body(
+            "mfa_factors[0].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[0].is_enabled", equalTo(true))
+        .body(
+            "mfa_factors[1].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[1].is_enabled", equalTo(true))
         .header("Set-Cookie", notNullValue());
 
     // Validate Set-Cookie values match response body tokens
@@ -338,6 +379,15 @@ public class V2SignInIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body(
+            "mfa_factors[0].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[0].is_enabled", equalTo(true))
+        .body(
+            "mfa_factors[1].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[1].is_enabled", equalTo(true))
         .header("Set-Cookie", notNullValue());
 
     // Validate Set-Cookie values match response body tokens
@@ -394,6 +444,15 @@ public class V2SignInIT {
         .body("id_token", notNullValue())
         .body("sso_token", notNullValue())
         .body("expires_in", notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body(
+            "mfa_factors[0].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[0].is_enabled", equalTo(true))
+        .body(
+            "mfa_factors[1].factor",
+            anyOf(equalTo(MFA_FACTOR_SMS_OTP), equalTo(MFA_FACTOR_EMAIL_OTP)))
+        .body("mfa_factors[1].is_enabled", equalTo(true))
         .header("Set-Cookie", notNullValue());
 
     // Validate Set-Cookie values match response body tokens
