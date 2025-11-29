@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum MfaFactor {
   PASSWORD("password", AuthMethod.PASSWORD),
-  PIN_OR_PATTERN("pin", AuthMethod.PIN_OR_PATTERN),
+  PIN("pin", AuthMethod.PIN_OR_PATTERN),
   SMS_OTP("sms-otp", AuthMethod.ONE_TIME_PASSWORD),
   EMAIL_OTP("email-otp", AuthMethod.ONE_TIME_PASSWORD);
 

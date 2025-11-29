@@ -150,7 +150,7 @@ public class MfaService {
       String userId,
       String tenantId) {
     return switch (requestDto.getFactor()) {
-      case PASSWORD, PIN_OR_PATTERN -> validateFactorEnrolledAndAuthenticate(
+      case PASSWORD, PIN -> validateFactorEnrolledAndAuthenticate(
           requestDto, headers, userId, tenantId);
       default -> Single.error(MFA_FACTOR_NOT_SUPPORTED.getException());
     };
@@ -250,7 +250,7 @@ public class MfaService {
 
     return switch (factor) {
       case PASSWORD -> validateAndEnrollPassword(requestDto, headers, userId, tenantId);
-      case PIN_OR_PATTERN -> validateAndEnrollPin(requestDto, headers, userId, tenantId);
+      case PIN -> validateAndEnrollPin(requestDto, headers, userId, tenantId);
       default -> Single.error(MFA_FACTOR_NOT_SUPPORTED.getException());
     };
   }

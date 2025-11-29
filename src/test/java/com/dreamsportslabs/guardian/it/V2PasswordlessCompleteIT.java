@@ -24,9 +24,20 @@ import static com.dreamsportslabs.guardian.Constants.ERROR_RETRIES_EXHAUSTED;
 import static com.dreamsportslabs.guardian.Constants.ERROR_UNAUTHORIZED;
 import static com.dreamsportslabs.guardian.Constants.HEADER_TENANT_ID;
 import static com.dreamsportslabs.guardian.Constants.METADATA;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTORS;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTOR_EMAIL_OTP;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTOR_PASSWORD;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTOR_PIN;
+import static com.dreamsportslabs.guardian.Constants.MFA_FACTOR_SMS_OTP;
+import static com.dreamsportslabs.guardian.Constants.MFA_POLICY_MANDATORY;
+import static com.dreamsportslabs.guardian.Constants.MFA_POLICY_NOT_REQUIRED;
 import static com.dreamsportslabs.guardian.Constants.PASSWORDLESS_FLOW_SIGNINUP;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_ACCESS_TOKEN;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_EXPIRES_IN;
+import static com.dreamsportslabs.guardian.Constants.RESPONSE_BODY_PARAM_TOKEN_TYPE;
 import static com.dreamsportslabs.guardian.Constants.RESPONSE_HEADER_PARAM_SET_COOKIE;
 import static com.dreamsportslabs.guardian.Constants.TENANT_1;
+import static com.dreamsportslabs.guardian.Constants.TOKEN_TYPE_BEARER;
 import static com.dreamsportslabs.guardian.utils.DbUtils.addDefaultClientScopes;
 import static com.dreamsportslabs.guardian.utils.DbUtils.addFirstPartyClient;
 import static com.dreamsportslabs.guardian.utils.DbUtils.addScope;
@@ -224,9 +235,9 @@ public class V2PasswordlessCompleteIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("access_token", isA(String.class))
-        .body("token_type", equalTo("Bearer"))
-        .body("expires_in", isA(Integer.class))
+        .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
         .header(RESPONSE_HEADER_PARAM_SET_COOKIE, notNullValue());
 
     // Verify state is cleaned up
@@ -263,9 +274,9 @@ public class V2PasswordlessCompleteIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("access_token", isA(String.class))
-        .body("token_type", equalTo("Bearer"))
-        .body("expires_in", isA(Integer.class))
+        .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
         .header(RESPONSE_HEADER_PARAM_SET_COOKIE, notNullValue());
 
     // Verify state is cleaned up
@@ -305,9 +316,9 @@ public class V2PasswordlessCompleteIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("access_token", isA(String.class))
-        .body("token_type", equalTo("Bearer"))
-        .body("expires_in", isA(Integer.class));
+        .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class));
 
     // cleanup
     wireMockServer.removeStub(createUserStub);
@@ -341,8 +352,8 @@ public class V2PasswordlessCompleteIT {
     String phoneNumber = generateRandomPhoneNumber();
     String email = generateRandomEmail();
 
-    updateClientMfaPolicyHelper(client1, "mandatory");
-    updateClientWithAllowedMfaMethods(client1, List.of("password", "pin", "sms-otp", "email-otp"));
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_MANDATORY);
+    updateClientWithAllowedMfaMethods(client1, List.of(MFA_FACTOR_PASSWORD, MFA_FACTOR_PIN, MFA_FACTOR_SMS_OTP, MFA_FACTOR_EMAIL_OTP));
 
     addStateInRedisForExistingUserWithMfaFields(
         state,
@@ -373,14 +384,14 @@ public class V2PasswordlessCompleteIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("access_token", isA(String.class))
-        .body("token_type", equalTo("Bearer"))
-        .body("expires_in", isA(Integer.class))
-        .body("mfa_factors", notNullValue())
-        .body("mfa_factors", hasSize(2))
-        .body("mfa_factors[0].factor", equalTo("password"))
+        .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
+        .body(MFA_FACTORS, notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body("mfa_factors[0].factor", equalTo(MFA_FACTOR_PASSWORD))
         .body("mfa_factors[0].is_enabled", equalTo(true))
-        .body("mfa_factors[1].factor", equalTo("pin"))
+        .body("mfa_factors[1].factor", equalTo(MFA_FACTOR_PIN))
         .body("mfa_factors[1].is_enabled", equalTo(true))
         .header(RESPONSE_HEADER_PARAM_SET_COOKIE, notNullValue());
 
@@ -388,7 +399,7 @@ public class V2PasswordlessCompleteIT {
     assertThat(stateData, nullValue());
 
     // Cleanup
-    updateClientMfaPolicyHelper(client1, "not_required");
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
     updateClientWithAllowedMfaMethods(client1, null);
   }
 
@@ -400,8 +411,8 @@ public class V2PasswordlessCompleteIT {
     String phoneNumber = generateRandomPhoneNumber();
     String email = generateRandomEmail();
 
-    updateClientMfaPolicyHelper(client1, "not_required");
-    updateClientWithAllowedMfaMethods(client1, List.of("password", "pin", "otp"));
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
+    updateClientWithAllowedMfaMethods(client1, List.of(MFA_FACTOR_PASSWORD, MFA_FACTOR_PIN, "otp"));
 
     addStateInRedisForExistingUserWithMfaFields(
         state,
@@ -429,18 +440,18 @@ public class V2PasswordlessCompleteIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("access_token", isA(String.class))
-        .body("token_type", equalTo("Bearer"))
-        .body("expires_in", isA(Integer.class))
-        .body("mfa_factors", notNullValue())
-        .body("mfa_factors", hasSize(0))
+        .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
+        .body(MFA_FACTORS, notNullValue())
+        .body(MFA_FACTORS, hasSize(0))
         .header(RESPONSE_HEADER_PARAM_SET_COOKIE, notNullValue());
 
     JsonObject stateData = getState(state, TENANT_1);
     assertThat(stateData, nullValue());
 
     // Cleanup
-    updateClientMfaPolicyHelper(client1, "not_required");
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
     updateClientWithAllowedMfaMethods(client1, null);
   }
 
@@ -451,7 +462,7 @@ public class V2PasswordlessCompleteIT {
     // Arrange
     String state = RandomStringUtils.randomAlphabetic(10);
 
-    updateClientMfaPolicyHelper(client1, "mandatory");
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_MANDATORY);
     updateClientWithAllowedMfaMethods(client1, new ArrayList<>());
 
     addStateInRedisForExistingUser(
@@ -476,17 +487,17 @@ public class V2PasswordlessCompleteIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("access_token", isA(String.class))
-        .body("token_type", equalTo("Bearer"))
-        .body("expires_in", isA(Integer.class))
-        .body("mfa_factors", notNullValue())
-        .body("mfa_factors", hasSize(0));
+        .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
+        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
+        .body(MFA_FACTORS, notNullValue())
+        .body(MFA_FACTORS, hasSize(0));
 
     JsonObject stateData = getState(state, TENANT_1);
     assertThat(stateData, nullValue());
 
     // Cleanup
-    updateClientMfaPolicyHelper(client1, "not_required");
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
     updateClientWithAllowedMfaMethods(client1, null);
   }
 
@@ -498,8 +509,8 @@ public class V2PasswordlessCompleteIT {
     String phoneNumber = generateRandomPhoneNumber();
     String email = generateRandomEmail();
 
-    updateClientMfaPolicyHelper(client1, "mandatory");
-    updateClientWithAllowedMfaMethods(client1, List.of("password", "pin", "sms-otp", "email-otp"));
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_MANDATORY);
+    updateClientWithAllowedMfaMethods(client1, List.of(MFA_FACTOR_PASSWORD, MFA_FACTOR_PIN, MFA_FACTOR_SMS_OTP, MFA_FACTOR_EMAIL_OTP));
 
     addStateInRedisForExistingUserWithMfaFields(
         state,
@@ -530,19 +541,19 @@ public class V2PasswordlessCompleteIT {
     response
         .then()
         .statusCode(SC_OK)
-        .body("access_token", isA(String.class))
-        .body("mfa_factors", notNullValue())
-        .body("mfa_factors", hasSize(2))
-        .body("mfa_factors[0].factor", equalTo("password"))
+        .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
+        .body(MFA_FACTORS, notNullValue())
+        .body(MFA_FACTORS, hasSize(2))
+        .body("mfa_factors[0].factor", equalTo(MFA_FACTOR_PASSWORD))
         .body("mfa_factors[0].is_enabled", equalTo(true))
-        .body("mfa_factors[1].factor", equalTo("pin"))
+        .body("mfa_factors[1].factor", equalTo(MFA_FACTOR_PIN))
         .body("mfa_factors[1].is_enabled", equalTo(false));
 
     JsonObject stateData = getState(state, TENANT_1);
     assertThat(stateData, nullValue());
 
     // Cleanup
-    updateClientMfaPolicyHelper(client1, "not_required");
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
     updateClientWithAllowedMfaMethods(client1, null);
   }
 

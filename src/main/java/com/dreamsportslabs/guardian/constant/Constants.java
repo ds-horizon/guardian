@@ -15,6 +15,8 @@ public final class Constants {
   public static final String AES_ALGORITHM = "AES";
   public static final String AES_CBC_NO_PADDING = "AES/CBC/NoPadding";
   public static final String SHUTDOWN_STATUS = "__shutdown__";
+  public static final String MFA_POLICY_NOT_REQUIRED = "not_required";
+  public static final String MFA_POLICY_MANDATORY = "mandatory";
 
   // HTTP Request Headers
   public static final String AUTHORIZATION = "Authorization";

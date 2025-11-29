@@ -9,7 +9,6 @@ import static com.dreamsportslabs.guardian.constant.Constants.APP_TOKEN_TYPE;
 
 import com.dreamsportslabs.guardian.dao.model.IdpCredentials;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
@@ -29,8 +28,6 @@ public class IdpConnectResponseDto {
   private Integer expiresIn;
   private Boolean isNewUser;
   private IdpCredentials idpCredentials;
-
-  @JsonProperty("mfa_factors")
   private List<MfaFactorDto> mfaFactors;
 
   public static IdpConnectResponseDto buildIdpConnectResponse(

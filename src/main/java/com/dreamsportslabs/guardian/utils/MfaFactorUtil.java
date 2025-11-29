@@ -38,7 +38,7 @@ public class MfaFactorUtil {
         Boolean isPasswordSet = user.getBoolean("isPasswordSet");
         yield isPasswordSet != null && isPasswordSet;
       }
-      case PIN_OR_PATTERN -> {
+      case PIN -> {
         Boolean isPinSet = user.getBoolean("isPinSet");
         yield isPinSet != null && isPinSet;
       }

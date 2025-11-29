@@ -3,6 +3,7 @@ package com.dreamsportslabs.guardian.service;
 import static com.dreamsportslabs.guardian.constant.Constants.ACCESS_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.CODE;
 import static com.dreamsportslabs.guardian.constant.Constants.IS_NEW_USER;
+import static com.dreamsportslabs.guardian.constant.Constants.MFA_POLICY_MANDATORY;
 import static com.dreamsportslabs.guardian.constant.Constants.REFRESH_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.SSO_TOKEN_COOKIE_NAME;
 import static com.dreamsportslabs.guardian.constant.Constants.TOKEN;
@@ -22,6 +23,7 @@ import com.dreamsportslabs.guardian.constant.AuthMethod;
 import com.dreamsportslabs.guardian.dao.CodeDao;
 import com.dreamsportslabs.guardian.dao.RefreshTokenDao;
 import com.dreamsportslabs.guardian.dao.RevocationDao;
+import com.dreamsportslabs.guardian.dao.model.ClientModel;
 import com.dreamsportslabs.guardian.dao.model.CodeModel;
 import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
 import com.dreamsportslabs.guardian.dao.model.SsoTokenModel;
@@ -93,18 +95,9 @@ public class AuthorizationService {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     long iat = getCurrentTimeInSeconds();
 
-    Single<Pair<String, List<String>>> clientMfaInfoSingle =
+    Single<ClientModel> clientModelSingle =
         clientService
-            .getClient(clientId, tenantId)
-            .map(
-                client -> {
-                  String mfaPolicy = client.getMfaPolicy();
-                  List<String> allowedMfaMethods = client.getAllowedMfaMethods();
-                  return Pair.of(
-                      mfaPolicy != null ? mfaPolicy : "not_required",
-                      allowedMfaMethods != null ? allowedMfaMethods : new ArrayList<String>());
-                })
-            .onErrorReturn(err -> Pair.of("not_required", new ArrayList<>()));
+            .getClient(clientId, tenantId);
 
     return Single.zip(
             tokenIssuer.generateAccessToken(
@@ -123,12 +116,12 @@ public class AuthorizationService {
                 config.getTokenConfig().getIdTokenClaims(),
                 clientId,
                 config.getTenantId()),
-            clientMfaInfoSingle,
-            (accessToken, idToken, clientMfaInfo) -> {
-              String mfaPolicy = clientMfaInfo.getLeft();
-              List<String> clientMfaMethods = clientMfaInfo.getRight();
+            clientModelSingle,
+            (accessToken, idToken, clientModel) -> {
+              String mfaPolicy =  clientModel.getMfaPolicy();
+              List<String> clientMfaMethods =  clientModel.getAllowedMfaMethods();
               List<MfaFactorDto> mfaFactors = new ArrayList<>();
-              if ("mandatory".equals(mfaPolicy)) {
+              if (MFA_POLICY_MANDATORY.equals(mfaPolicy)) {
                 mfaFactors = MfaFactorUtil.buildMfaFactors(authMethods, user, clientMfaMethods);
               }
               return new TokenResponseDto(
@@ -177,18 +170,9 @@ public class AuthorizationService {
     String ssoToken = tokenIssuer.generateSsoToken();
     long iat = getCurrentTimeInSeconds();
 
-    Single<Pair<String, List<String>>> clientMfaInfoSingle =
+    Single<ClientModel> clientModelSingle =
         clientService
-            .getClient(clientId, tenantId)
-            .map(
-                client -> {
-                  String mfaPolicy = client.getMfaPolicy();
-                  List<String> allowedMfaMethods = client.getAllowedMfaMethods();
-                  return Pair.of(
-                      mfaPolicy != null ? mfaPolicy : "not_required",
-                      allowedMfaMethods != null ? allowedMfaMethods : new ArrayList<String>());
-                })
-            .onErrorReturn(err -> Pair.of("not_required", new ArrayList<>()));
+            .getClient(clientId, tenantId);
 
     return Single.zip(
             tokenIssuer.generateAccessToken(
@@ -200,12 +184,12 @@ public class AuthorizationService {
                 config.getTokenConfig().getIdTokenClaims(),
                 clientId,
                 config.getTenantId()),
-            clientMfaInfoSingle,
-            (accessToken, idToken, clientMfaInfo) -> {
-              String mfaPolicy = clientMfaInfo.getLeft();
-              List<String> clientMfaMethods = clientMfaInfo.getRight();
+            clientModelSingle,
+            (accessToken, idToken, clientModel) -> {
+              String mfaPolicy =  clientModel.getMfaPolicy();
+              List<String> clientMfaMethods =  clientModel.getAllowedMfaMethods();
               List<MfaFactorDto> mfaFactors = new ArrayList<>();
-              if ("mandatory".equals(mfaPolicy)) {
+              if (MFA_POLICY_MANDATORY.equals(mfaPolicy)) {
                 mfaFactors = MfaFactorUtil.buildMfaFactors(authMethods, user, clientMfaMethods);
               }
               return new TokenResponseDto(

@@ -358,7 +358,7 @@ CREATE TABLE client
     client_type        CHAR(11)     NOT NULL DEFAULT "third_party",
     is_default         BOOLEAN      NOT NULL DEFAULT FALSE,
     mfa_policy         ENUM('not_required', 'mandatory') NOT NULL DEFAULT 'not_required',
-    allowed_mfa_methods JSON NULL,
+    allowed_mfa_methods JSON NOT NULL DEFAULT (JSON_ARRAY()),
     updated_at         TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_at         TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (tenant_id, client_id),
