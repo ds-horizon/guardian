@@ -54,6 +54,7 @@ import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.isA;
@@ -65,7 +66,6 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -238,6 +238,11 @@ public class V2PasswordlessCompleteIT {
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
+        .body(MFA_FACTORS, hasSize(2))
+        .body("mfa_factors[0].factor", anyOf(equalTo(MFA_FACTOR_PASSWORD), equalTo(MFA_FACTOR_PIN)))
+        .body("mfa_factors[0].is_enabled", equalTo(false))
+        .body("mfa_factors[1].factor", anyOf(equalTo(MFA_FACTOR_PASSWORD), equalTo(MFA_FACTOR_PIN)))
+        .body("mfa_factors[1].is_enabled", equalTo(false))
         .header(RESPONSE_HEADER_PARAM_SET_COOKIE, notNullValue());
 
     // Verify state is cleaned up
@@ -277,6 +282,11 @@ public class V2PasswordlessCompleteIT {
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
+        .body(MFA_FACTORS, hasSize(2))
+        .body("mfa_factors[0].factor", anyOf(equalTo(MFA_FACTOR_PASSWORD), equalTo(MFA_FACTOR_PIN)))
+        .body("mfa_factors[0].is_enabled", equalTo(false))
+        .body("mfa_factors[1].factor", anyOf(equalTo(MFA_FACTOR_PASSWORD), equalTo(MFA_FACTOR_PIN)))
+        .body("mfa_factors[1].is_enabled", equalTo(false))
         .header(RESPONSE_HEADER_PARAM_SET_COOKIE, notNullValue());
 
     // Verify state is cleaned up
@@ -318,7 +328,12 @@ public class V2PasswordlessCompleteIT {
         .statusCode(SC_OK)
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
-        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class));
+        .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
+        .body(MFA_FACTORS, hasSize(2))
+        .body("mfa_factors[0].factor", anyOf(equalTo(MFA_FACTOR_PASSWORD), equalTo(MFA_FACTOR_PIN)))
+        .body("mfa_factors[0].is_enabled", equalTo(false))
+        .body("mfa_factors[1].factor", anyOf(equalTo(MFA_FACTOR_PASSWORD), equalTo(MFA_FACTOR_PIN)))
+        .body("mfa_factors[1].is_enabled", equalTo(false));
 
     // cleanup
     wireMockServer.removeStub(createUserStub);
@@ -352,9 +367,6 @@ public class V2PasswordlessCompleteIT {
     String phoneNumber = generateRandomPhoneNumber();
     String email = generateRandomEmail();
 
-    updateClientMfaPolicyHelper(client1, MFA_POLICY_MANDATORY);
-    updateClientWithAllowedMfaMethods(client1, List.of(MFA_FACTOR_PASSWORD, MFA_FACTOR_PIN, MFA_FACTOR_SMS_OTP, MFA_FACTOR_EMAIL_OTP));
-
     addStateInRedisForExistingUserWithMfaFields(
         state,
         300,
@@ -377,10 +389,6 @@ public class V2PasswordlessCompleteIT {
     // Act
     Response response = v2PasswordlessComplete(TENANT_1, requestBody);
 
-    // Validate
-    // Note: OTP factors (sms-otp, email-otp) are filtered out because passwordless uses
-    // ONE_TIME_PASSWORD (POSSESSION category), and OTP factors are also POSSESSION category.
-    // Only factors from different categories (KNOWLEDGE: password, pin) are returned.
     response
         .then()
         .statusCode(SC_OK)
@@ -397,10 +405,6 @@ public class V2PasswordlessCompleteIT {
 
     JsonObject stateData = getState(state, TENANT_1);
     assertThat(stateData, nullValue());
-
-    // Cleanup
-    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
-    updateClientWithAllowedMfaMethods(client1, null);
   }
 
   @Test
@@ -443,16 +447,17 @@ public class V2PasswordlessCompleteIT {
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
-        .body(MFA_FACTORS, notNullValue())
         .body(MFA_FACTORS, hasSize(0))
         .header(RESPONSE_HEADER_PARAM_SET_COOKIE, notNullValue());
 
     JsonObject stateData = getState(state, TENANT_1);
     assertThat(stateData, nullValue());
 
-    // Cleanup
-    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
-    updateClientWithAllowedMfaMethods(client1, null);
+    // Cleanup - restore default mandatory policy with methods
+    updateClientMfaPolicyHelper(client1, MFA_POLICY_MANDATORY);
+    updateClientWithAllowedMfaMethods(
+        client1,
+        List.of(MFA_FACTOR_PASSWORD, MFA_FACTOR_PIN, MFA_FACTOR_SMS_OTP, MFA_FACTOR_EMAIL_OTP));
   }
 
   @Test
@@ -462,8 +467,7 @@ public class V2PasswordlessCompleteIT {
     // Arrange
     String state = RandomStringUtils.randomAlphabetic(10);
 
-    updateClientMfaPolicyHelper(client1, MFA_POLICY_MANDATORY);
-    updateClientWithAllowedMfaMethods(client1, new ArrayList<>());
+    updateClientWithAllowedMfaMethods(client1, List.of());
 
     addStateInRedisForExistingUser(
         state,
@@ -490,15 +494,15 @@ public class V2PasswordlessCompleteIT {
         .body(RESPONSE_BODY_PARAM_ACCESS_TOKEN, isA(String.class))
         .body(RESPONSE_BODY_PARAM_TOKEN_TYPE, equalTo(TOKEN_TYPE_BEARER))
         .body(RESPONSE_BODY_PARAM_EXPIRES_IN, isA(Integer.class))
-        .body(MFA_FACTORS, notNullValue())
         .body(MFA_FACTORS, hasSize(0));
 
     JsonObject stateData = getState(state, TENANT_1);
     assertThat(stateData, nullValue());
 
-    // Cleanup
-    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
-    updateClientWithAllowedMfaMethods(client1, null);
+    // Cleanup - restore default mandatory policy with methods
+    updateClientWithAllowedMfaMethods(
+        client1,
+        List.of(MFA_FACTOR_PASSWORD, MFA_FACTOR_PIN, MFA_FACTOR_SMS_OTP, MFA_FACTOR_EMAIL_OTP));
   }
 
   @Test
@@ -508,9 +512,6 @@ public class V2PasswordlessCompleteIT {
     String state = RandomStringUtils.randomAlphabetic(10);
     String phoneNumber = generateRandomPhoneNumber();
     String email = generateRandomEmail();
-
-    updateClientMfaPolicyHelper(client1, MFA_POLICY_MANDATORY);
-    updateClientWithAllowedMfaMethods(client1, List.of(MFA_FACTOR_PASSWORD, MFA_FACTOR_PIN, MFA_FACTOR_SMS_OTP, MFA_FACTOR_EMAIL_OTP));
 
     addStateInRedisForExistingUserWithMfaFields(
         state,
@@ -534,10 +535,6 @@ public class V2PasswordlessCompleteIT {
     // Act
     Response response = v2PasswordlessComplete(TENANT_1, requestBody);
 
-    // Validate
-    // Note: OTP factors (sms-otp, email-otp) are filtered out because passwordless uses
-    // ONE_TIME_PASSWORD (POSSESSION category), and OTP factors are also POSSESSION category.
-    // Only factors from different categories (KNOWLEDGE: password, pin) are returned.
     response
         .then()
         .statusCode(SC_OK)
@@ -551,10 +548,6 @@ public class V2PasswordlessCompleteIT {
 
     JsonObject stateData = getState(state, TENANT_1);
     assertThat(stateData, nullValue());
-
-    // Cleanup
-    updateClientMfaPolicyHelper(client1, MFA_POLICY_NOT_REQUIRED);
-    updateClientWithAllowedMfaMethods(client1, null);
   }
 
   private String generateRandomPhoneNumber() {
@@ -652,15 +645,13 @@ public class V2PasswordlessCompleteIT {
       contact.put(BODY_PARAM_IDENTIFIER, emailAddr);
     }
 
-    // Add MFA-related fields if provided
     if (isPasswordSet != null) {
-      user.put("isPasswordSet", isPasswordSet);
+      user.put("passwordSet", isPasswordSet);
     }
     if (isPinSet != null) {
-      user.put("isPinSet", isPinSet);
+      user.put("pinSet", isPinSet);
     }
-    // Ensure both email and phoneNumber are in user object for OTP factors (if provided)
-    // This allows both SMS_OTP and EMAIL_OTP to be evaluated
+
     if (email != null) {
       user.put(BODY_PARAM_EMAIL, email);
     }

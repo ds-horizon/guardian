@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.USERID;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_REQUEST;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.MFA_FACTOR_ALREADY_ENROLLED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.MFA_FACTOR_NOT_SUPPORTED;
@@ -12,6 +13,7 @@ import com.dreamsportslabs.guardian.constant.MfaFactor;
 import com.dreamsportslabs.guardian.dao.model.RefreshTokenModel;
 import com.dreamsportslabs.guardian.dto.UserDto;
 import com.dreamsportslabs.guardian.dto.request.v2.V2MfaSignInRequestDto;
+import com.dreamsportslabs.guardian.dto.response.MfaFactorDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
@@ -308,5 +310,79 @@ public class MfaService {
                   .updateUser(userId, userDto, headers, tenantId)
                   .andThen(Single.just(user));
             });
+  }
+
+  public static Set<AuthMethodCategory> getUsedCategories(List<AuthMethod> authMethods) {
+    return authMethods.stream().map(AuthMethod::getCategory).collect(Collectors.toSet());
+  }
+
+  public static List<MfaFactor> getAvailableMfaFactors(Set<AuthMethodCategory> usedCategories) {
+    List<MfaFactor> availableFactors = new ArrayList<>();
+
+    for (MfaFactor factor : MfaFactor.values()) {
+      AuthMethodCategory factorCategory = factor.getAuthMethod().getCategory();
+      if (!usedCategories.contains(factorCategory)) {
+        availableFactors.add(factor);
+      }
+    }
+    return availableFactors;
+  }
+
+  public static boolean isFactorEnabled(MfaFactor factor, JsonObject user) {
+    if (user == null) {
+      return false;
+    }
+
+    return switch (factor) {
+      case PASSWORD -> {
+        Boolean isPasswordSet = user.getBoolean("passwordSet");
+        yield isPasswordSet != null && isPasswordSet;
+      }
+      case PIN -> {
+        Boolean isPinSet = user.getBoolean("pinSet");
+        yield isPinSet != null && isPinSet;
+      }
+      case SMS_OTP -> {
+        String phoneNumber = user.getString("phoneNumber");
+        yield phoneNumber != null && !phoneNumber.isBlank();
+      }
+      case EMAIL_OTP -> {
+        String email = user.getString("email");
+        yield email != null && !email.isBlank();
+      }
+      default -> false;
+    };
+  }
+
+  public static List<MfaFactorDto> buildMfaFactors(
+      List<AuthMethod> currentAuthMethods, JsonObject user, List<String> clientMfaEnabled) {
+    if (currentAuthMethods == null || currentAuthMethods.isEmpty()) {
+      throw INTERNAL_SERVER_ERROR.getCustomException(
+          "AuthMethods cannot be null or empty when building MFA factors");
+    }
+
+    Set<AuthMethodCategory> usedCategories = getUsedCategories(currentAuthMethods);
+    List<MfaFactor> availableFactors = getAvailableMfaFactors(usedCategories);
+
+    List<MfaFactor> clientEnabledFactors = new ArrayList<>();
+    if (clientMfaEnabled != null && !clientMfaEnabled.isEmpty()) {
+      for (MfaFactor factor : availableFactors) {
+        if (clientMfaEnabled.contains(factor.getValue())) {
+          clientEnabledFactors.add(factor);
+        }
+      }
+    } else {
+      return new ArrayList<>();
+    }
+
+    List<MfaFactorDto> mfaFactors = new ArrayList<>();
+    for (MfaFactor factor : clientEnabledFactors) {
+      mfaFactors.add(
+          MfaFactorDto.builder()
+              .factor(factor.getValue())
+              .isEnabled(isFactorEnabled(factor, user))
+              .build());
+    }
+    return mfaFactors;
   }
 }

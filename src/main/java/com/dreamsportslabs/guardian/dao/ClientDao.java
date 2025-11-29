@@ -53,9 +53,9 @@ public class ClientDao {
         .addBoolean(client.getIsDefault())
         .addString(client.getMfaPolicy() != null ? client.getMfaPolicy() : MFA_POLICY_NOT_REQUIRED)
         .addString(
-            client.getAllowedMfaMethods() != null
+            client.getAllowedMfaMethods() != null && !client.getAllowedMfaMethods().isEmpty()
                 ? serializeToJsonString(client.getAllowedMfaMethods(), objectMapper)
-                : "");
+                : "[]");
     return mysqlClient
         .getWriterPool()
         .preparedQuery(CREATE_CLIENT)

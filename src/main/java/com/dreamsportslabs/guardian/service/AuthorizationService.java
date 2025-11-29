@@ -38,7 +38,6 @@ import com.dreamsportslabs.guardian.dto.response.MfaFactorDto;
 import com.dreamsportslabs.guardian.dto.response.RefreshTokenResponseDto;
 import com.dreamsportslabs.guardian.dto.response.TokenResponseDto;
 import com.dreamsportslabs.guardian.registry.Registry;
-import com.dreamsportslabs.guardian.utils.MfaFactorUtil;
 import com.google.inject.Inject;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -95,9 +94,7 @@ public class AuthorizationService {
     TenantConfig config = registry.get(tenantId, TenantConfig.class);
     long iat = getCurrentTimeInSeconds();
 
-    Single<ClientModel> clientModelSingle =
-        clientService
-            .getClient(clientId, tenantId);
+    Single<ClientModel> clientModelSingle = clientService.getClient(clientId, tenantId);
 
     return Single.zip(
             tokenIssuer.generateAccessToken(
@@ -118,11 +115,11 @@ public class AuthorizationService {
                 config.getTenantId()),
             clientModelSingle,
             (accessToken, idToken, clientModel) -> {
-              String mfaPolicy =  clientModel.getMfaPolicy();
-              List<String> clientMfaMethods =  clientModel.getAllowedMfaMethods();
+              String mfaPolicy = clientModel.getMfaPolicy();
+              List<String> clientMfaMethods = clientModel.getAllowedMfaMethods();
               List<MfaFactorDto> mfaFactors = new ArrayList<>();
               if (MFA_POLICY_MANDATORY.equals(mfaPolicy)) {
-                mfaFactors = MfaFactorUtil.buildMfaFactors(authMethods, user, clientMfaMethods);
+                mfaFactors = MfaService.buildMfaFactors(authMethods, user, clientMfaMethods);
               }
               return new TokenResponseDto(
                   accessToken,
@@ -170,9 +167,7 @@ public class AuthorizationService {
     String ssoToken = tokenIssuer.generateSsoToken();
     long iat = getCurrentTimeInSeconds();
 
-    Single<ClientModel> clientModelSingle =
-        clientService
-            .getClient(clientId, tenantId);
+    Single<ClientModel> clientModelSingle = clientService.getClient(clientId, tenantId);
 
     return Single.zip(
             tokenIssuer.generateAccessToken(
@@ -186,11 +181,11 @@ public class AuthorizationService {
                 config.getTenantId()),
             clientModelSingle,
             (accessToken, idToken, clientModel) -> {
-              String mfaPolicy =  clientModel.getMfaPolicy();
-              List<String> clientMfaMethods =  clientModel.getAllowedMfaMethods();
+              String mfaPolicy = clientModel.getMfaPolicy();
+              List<String> clientMfaMethods = clientModel.getAllowedMfaMethods();
               List<MfaFactorDto> mfaFactors = new ArrayList<>();
               if (MFA_POLICY_MANDATORY.equals(mfaPolicy)) {
-                mfaFactors = MfaFactorUtil.buildMfaFactors(authMethods, user, clientMfaMethods);
+                mfaFactors = MfaService.buildMfaFactors(authMethods, user, clientMfaMethods);
               }
               return new TokenResponseDto(
                   accessToken,
