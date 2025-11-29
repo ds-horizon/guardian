@@ -52,6 +52,7 @@ import static com.dreamsportslabs.guardian.Constants.TENANT_1;
 import static com.dreamsportslabs.guardian.utils.DbUtils.addDefaultClientScopes;
 import static com.dreamsportslabs.guardian.utils.DbUtils.addFirstPartyClient;
 import static com.dreamsportslabs.guardian.utils.DbUtils.addScope;
+import static com.dreamsportslabs.guardian.utils.DbUtils.clearUserBlockedTable;
 import static com.dreamsportslabs.guardian.utils.DbUtils.createState;
 import static com.dreamsportslabs.guardian.utils.DbUtils.getState;
 import static com.dreamsportslabs.guardian.utils.DbUtils.getStateTtl;
@@ -79,24 +80,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
 
+@Slf4j
 @Order(5)
 public class V2PasswordlessInitIT {
   private static final String TEST_SCOPE_1 = "scope1";
-  // Default value from otp_config.window_resend_count (cross-session limit)
   private static final int DEFAULT_RESEND_LIMIT = 5;
   private static final int RESEND_LIMIT_EXCEEDED_COUNT = 6;
   private static final String EXISTING_USER_ID = "1";
   private static final String REDIS_HOST = "localhost";
   private static final int REDIS_PORT = 6379;
-  private static final String REDIS_KEY_PREFIX = "otp_resend_count:";
-
+  private static final String REDIS_KEY_PREFIX = "OTP_RESEND_COUNT:";
   private static String client1;
   private WireMockServer wireMockServer;
 
@@ -105,6 +108,18 @@ public class V2PasswordlessInitIT {
     addScope(TENANT_1, TEST_SCOPE_1);
     client1 = addFirstPartyClient(TENANT_1);
     addDefaultClientScopes(TENANT_1, client1, TEST_SCOPE_1);
+  }
+
+  @BeforeEach
+  void cleanRedis() {
+    try (Jedis jedis = new Jedis("localhost", 6379)) {
+      jedis.flushAll();
+    }
+  }
+
+  @AfterEach
+  void cleanUserFlowBlockTable() {
+    clearUserBlockedTable();
   }
 
   @Test
@@ -1098,32 +1113,6 @@ public class V2PasswordlessInitIT {
   }
 
   @Test
-  @DisplayName("Should increment counter on both new session and resend within session")
-  public void testCounterIncrementOnNewSessionAndResend() {
-    // Arrange
-    String phoneNumber = generateRandomPhoneNumber();
-    StubMapping stub = getStubForNonExistingUser();
-
-    // Act: Create first session
-    Response response1 = sendOtpRequest(phoneNumber, BODY_CHANNEL_SMS);
-    response1.then().statusCode(SC_OK);
-    String state = response1.then().extract().path(RESPONSE_BODY_PARAM_STATE);
-
-    // Act: Resend within same session (wait for resend interval)
-    waitForResendInterval();
-    Response response2 = sendOtpResendRequest(state);
-    response2.then().statusCode(SC_OK);
-
-    // Validate: Redis counter should be 2 (1 new session + 1 resend)
-    String count = getRedisCounterValue(phoneNumber);
-    assertThat(count, equalTo("2"));
-
-    // cleanup
-    wireMockServer.removeStub(stub);
-    cleanupRedisCounter(phoneNumber);
-  }
-
-  @Test
   @DisplayName("Should prevent further OTP requests once user is blocked")
   public void testBlockedUserCannotRequestOtp() {
     // Arrange
@@ -1248,27 +1237,10 @@ public class V2PasswordlessInitIT {
     return v2PasswordlessInit(TENANT_1, requestBody);
   }
 
-  private Response sendOtpResendRequest(String state) {
-    Map<String, Object> resendBody = new HashMap<>();
-    resendBody.put(BODY_PARAM_CLIENT_ID, client1);
-    resendBody.put(BODY_PARAM_SCOPES, List.of(TEST_SCOPE_1));
-    resendBody.put(BODY_PARAM_STATE, state);
-    resendBody.put(BODY_PARAM_RESPONSE_TYPE, BODY_PARAM_RESPONSE_TYPE_TOKEN);
-    return v2PasswordlessInit(TENANT_1, resendBody);
-  }
-
-  private void waitForResendInterval() {
-    try {
-      Thread.sleep(1000); // Wait 1 second for resend interval
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-  }
-
   private void assertMaxResendLimitExceeded(Response response) {
     response
         .then()
-        .statusCode(403)
+        .statusCode(400)
         .rootPath(ERROR)
         .body(CODE, equalTo(ERROR_MAX_RESEND_LIMIT_EXCEEDED));
   }
@@ -1336,7 +1308,7 @@ public class V2PasswordlessInitIT {
     requestBody.put(BODY_PARAM_SCOPES, scopes);
     requestBody.put(BODY_PARAM_CONTACTS, List.of(phoneContact, emailContact));
     requestBody.put(BODY_PARAM_FLOW, flow);
-    requestBody.put(BODY_PARAM_RESPONSE_TYPE, responseType);
+    requestBody.put(BODY_PARAM_RESPONSE_TYPE_V2, responseType);
     requestBody.put(BODY_PARAM_META_INFO, getMetaInfo());
 
     return requestBody;

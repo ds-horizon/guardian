@@ -31,9 +31,7 @@ public enum ErrorEnum {
   RESENDS_EXHAUSTED("resends_exhausted", "Resends exhausted", 400),
   RESEND_NOT_ALLOWED("resends_not_allowed", "Resend triggered too quick, Try again later", 400),
   MAX_RESEND_LIMIT_EXCEEDED(
-      "max_resend_limit_exceeded",
-      "Maximum OTP resend limit exceeded. You are temporarily blocked.",
-      403),
+      "max_resend_limit_exceeded", "Maximum OTP resend limit exceeded across sessions", 400),
   INCORRECT_OTP("incorrect_otp", "Incorrect otp", 400),
   RETRIES_EXHAUSTED("retries_exhausted", "Retries exhausted", 400),
 

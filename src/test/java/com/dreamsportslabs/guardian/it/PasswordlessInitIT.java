@@ -85,9 +85,11 @@ import java.util.Random;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.core.CombinableMatcher;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Jedis;
 
 @Order(4)
 public class PasswordlessInitIT {
@@ -108,6 +110,13 @@ public class PasswordlessInitIT {
 
     addDefaultClientScopes(tenant1, client1, TEST_SCOPE_1);
     addDefaultClientScopes(tenant2, client2, TEST_SCOPE_2);
+  }
+
+  @BeforeEach
+  void cleanRedis() {
+    try (Jedis jedis = new Jedis("localhost", 6379)) {
+      jedis.flushAll();
+    }
   }
 
   @Test

@@ -293,18 +293,18 @@ public class Passwordless {
 
     // Check global resend limit within the configured window (cross-session)
     if (context.getGlobalResendCount() > otpConfig.getWindowResendCount()) {
-      return blockUserAndCleanup(state, context.getUserIdentifier(), tenantId, otpConfig)
-          .andThen(Single.error(MAX_RESEND_LIMIT_EXCEEDED.getException()));
+      return blockUserAndCleanup(state, context.getUserIdentifier(), tenantId, otpConfig);
     }
 
     // Check per-session resend limit
-    if (context.getModel().getResends() > context.getModel().getMaxResends()) {
+    if (context.getModel().getResends() >= context.getModel().getMaxResends()) {
       passwordlessDao.deletePasswordlessModel(state, tenantId);
       throw RESENDS_EXHAUSTED.getException();
     }
 
     // Check resend interval
-    if (getCurrentTimeInSeconds() < context.getModel().getResendAfter()) {
+    if (StringUtils.isNotBlank(state)
+        && getCurrentTimeInSeconds() < context.getModel().getResendAfter()) {
       throw RESEND_NOT_ALLOWED.getCustomException(
           Map.of(OTP_RESEND_AFTER, context.getModel().getResendAfter()));
     }
@@ -321,33 +321,30 @@ public class Passwordless {
     return model.getContacts().get(0).getIdentifier();
   }
 
-  private Completable blockUserAndCleanup(
+  private Single blockUserAndCleanup(
       String passwordlessState, String userIdentifier, String tenantId, OtpConfig otpConfig) {
 
     long unblockedAt = getCurrentTimeInSeconds() + otpConfig.getOtpBlockInterval();
+    String blockReason = "Maximum OTP resend limit exceeded across sessions";
 
     UserFlowBlockModel blockModel =
         UserFlowBlockModel.builder()
             .tenantId(tenantId)
             .userIdentifier(userIdentifier)
             .flowName(BlockFlow.PASSWORDLESS.getFlowName())
-            .reason("Maximum OTP resend limit exceeded across sessions")
+            .reason(blockReason)
             .unblockedAt(unblockedAt)
             .isActive(true)
             .build();
-
     return userFlowBlockDao
         .blockFlows(List.of(blockModel))
         .andThen(passwordlessDao.deleteGlobalResendCount(tenantId, userIdentifier))
         .andThen(
             Completable.fromAction(
                 () -> passwordlessDao.deletePasswordlessModel(passwordlessState, tenantId)))
-        .doOnComplete(
-            () ->
-                log.info(
-                    "Blocked user {} from passwordless flow in tenant {} until {}",
-                    userIdentifier,
-                    tenantId,
-                    unblockedAt));
+        .andThen(
+            Single.error(
+                MAX_RESEND_LIMIT_EXCEEDED.getCustomException(
+                    blockReason, Map.of("retry_after", unblockedAt))));
   }
 }
