@@ -52,7 +52,31 @@ public enum ErrorEnum {
 
   OIDC_CONFIG_NOT_EXISTS(
       "oidc_config_not_exists", "OIDC config does not exist for this tenant", 400),
-  SCOPE_NOT_FOUND("scope_not_found", "Scope not found", 400);
+  SCOPE_NOT_FOUND("scope_not_found", "Scope not found", 400),
+  FEATURE_NOT_CONFIGURED(
+      "feature_not_configured", "This feature is not configured for the tenant", 400),
+  GOOGLE_AUTH_NOT_CONFIGURED(
+      "google_auth_not_configured", "Google authentication is not configured for this tenant", 400),
+  FACEBOOK_AUTH_NOT_CONFIGURED(
+      "facebook_auth_not_configured",
+      "Facebook authentication is not configured for this tenant",
+      400),
+  OIDC_PROVIDER_NOT_CONFIGURED(
+      "oidc_provider_not_configured", "OIDC provider is not configured for this tenant", 400),
+  OTP_NOT_CONFIGURED("otp_not_configured", "OTP feature is not configured for this tenant", 400),
+  EMAIL_NOT_CONFIGURED(
+      "email_not_configured", "Email service is not configured for this tenant", 400),
+  SMS_NOT_CONFIGURED("sms_not_configured", "SMS service is not configured for this tenant", 400),
+  CONTACT_VERIFY_NOT_CONFIGURED(
+      "contact_verify_not_configured",
+      "Contact verification is not configured for this tenant",
+      400),
+  GUEST_LOGIN_NOT_CONFIGURED(
+      "guest_login_not_configured", "Guest login is not configured for this tenant", 400),
+  AUTH_CODE_NOT_CONFIGURED(
+      "auth_code_not_configured",
+      "Authorization code feature is not configured for this tenant",
+      400);
 
   private final String code;
   private final String message;

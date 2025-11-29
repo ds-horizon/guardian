@@ -1,6 +1,7 @@
 package com.dreamsportslabs.guardian.service;
 
 import static com.dreamsportslabs.guardian.constant.Constants.STATIC_OTP_NUMBER;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.CONTACT_VERIFY_NOT_CONFIGURED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INCORRECT_OTP;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INVALID_STATE;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.RESENDS_EXHAUSTED;
@@ -100,6 +101,9 @@ public class ContactVerifyService {
         tenantConfig.getSmsConfig(), tenantConfig.getEmailConfig(), dto.getContact());
 
     ContactVerifyConfig config = tenantConfig.getContactVerifyConfig();
+    if (config == null) {
+      throw CONTACT_VERIFY_NOT_CONFIGURED.getException();
+    }
 
     Map<String, String> h = new HashMap<>();
     headers.forEach((key, val) -> h.put(key, val.get(0)));

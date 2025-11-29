@@ -5,8 +5,10 @@ import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_N
 import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_PARAMS;
 import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TEMPLATE_PARAMS_OTP;
 import static com.dreamsportslabs.guardian.constant.Constants.MESSAGE_TO;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.EMAIL_NOT_CONFIGURED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.EMAIL_SERVICE_ERROR;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.INTERNAL_SERVER_ERROR;
+import static com.dreamsportslabs.guardian.exception.ErrorEnum.SMS_NOT_CONFIGURED;
 import static com.dreamsportslabs.guardian.exception.ErrorEnum.SMS_SERVICE_ERROR;
 
 import com.dreamsportslabs.guardian.config.tenant.EmailConfig;
@@ -50,6 +52,9 @@ public class OtpService {
   public Completable sendOtpViaSms(
       Contact contact, MultivaluedMap<String, String> headers, String tenantId) {
     SmsConfig config = registry.get(tenantId, TenantConfig.class).getSmsConfig();
+    if (config == null) {
+      return Completable.error(SMS_NOT_CONFIGURED.getException());
+    }
     return webClient
         .post(config.getPort(), config.getHost(), config.getSendSmsPath())
         .ssl(config.isSslEnabled())
@@ -74,6 +79,9 @@ public class OtpService {
   public Completable sendOtpViaEmail(
       Contact contact, MultivaluedMap<String, String> headers, String tenantId) {
     EmailConfig config = registry.get(tenantId, TenantConfig.class).getEmailConfig();
+    if (config == null) {
+      return Completable.error(EMAIL_NOT_CONFIGURED.getException());
+    }
     return webClient
         .post(config.getPort(), config.getHost(), config.getSendEmailPath())
         .ssl(config.isSslEnabled())
